@@ -1,0 +1,27 @@
+[
+{
+  "directory": "/Users/harrywu/Documents/StdFunctions/build",
+  "command": "/usr/bin/clang++ -Dstd_fb_EXPORTS  -g -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk -fPIC -std=gnu++11 -o CMakeFiles/std_fb.dir/src/DataTypeConvert.o -c /Users/harrywu/Documents/StdFunctions/src/DataTypeConvert.cpp",
+  "file": "/Users/harrywu/Documents/StdFunctions/src/DataTypeConvert.cpp"
+},
+{
+  "directory": "/Users/harrywu/Documents/StdFunctions/build",
+  "command": "/usr/bin/clang++ -Dstd_fb_EXPORTS  -g -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk -fPIC -std=gnu++11 -o CMakeFiles/std_fb.dir/src/main.o -c /Users/harrywu/Documents/StdFunctions/src/main.cpp",
+  "file": "/Users/harrywu/Documents/StdFunctions/src/main.cpp"
+},
+{
+  "directory": "/Users/harrywu/Documents/StdFunctions/build",
+  "command": "/usr/bin/clang++   -g -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk -std=gnu++11 -o CMakeFiles/main.dir/src/main.o -c /Users/harrywu/Documents/StdFunctions/src/main.cpp",
+  "file": "/Users/harrywu/Documents/StdFunctions/src/main.cpp"
+},
+{
+  "directory": "/Users/harrywu/Documents/StdFunctions/build",
+  "command": "/usr/bin/clang++   -g -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk -std=gnu++11 -o CMakeFiles/test.dir/test.o -c /Users/harrywu/Documents/StdFunctions/test.cpp",
+  "file": "/Users/harrywu/Documents/StdFunctions/test.cpp"
+},
+{
+  "directory": "/Users/harrywu/Documents/StdFunctions/build",
+  "command": "/usr/bin/clang   -g -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk -o CMakeFiles/test2.dir/test2.o -c /Users/harrywu/Documents/StdFunctions/test2.c",
+  "file": "/Users/harrywu/Documents/StdFunctions/test2.c"
+}
+]
