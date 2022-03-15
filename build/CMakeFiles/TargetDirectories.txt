@@ -1,6 +1,0 @@
-/Users/harrywu/Documents/StdFunctions/build/CMakeFiles/main.dir
-/Users/harrywu/Documents/StdFunctions/build/CMakeFiles/std_fb.dir
-/Users/harrywu/Documents/StdFunctions/build/CMakeFiles/test.dir
-/Users/harrywu/Documents/StdFunctions/build/CMakeFiles/test2.dir
-/Users/harrywu/Documents/StdFunctions/build/CMakeFiles/edit_cache.dir
-/Users/harrywu/Documents/StdFunctions/build/CMakeFiles/rebuild_cache.dir
