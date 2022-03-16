@@ -47,11 +47,11 @@ extern "C"
 
     //最大值
     //根据已查询得到的结果获取最大值
-    int EDVDB_MAX(DataBuffer *buffer);  
+    //int EDVDB_MAX(DataBuffer *buffer);  
     //手动设置搜索条件，结果将存入buffer中
     //@param start  起始时间
     //@param end    结束时间
-    int EDVDB_MAX(DataBuffer *buffer, char pathCode[], int codeLength, long start, long end); 
+    int EDVDB_MAX(struct DataBuffer *buffer, char pathCode[], int codeLength, long start, long end); 
 
     //最小值
     int EDVDB_MIN();

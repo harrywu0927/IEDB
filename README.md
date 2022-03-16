@@ -3,15 +3,12 @@
 #### 介绍
 装备数据库标准函数
 
-#### 软件架构
-软件架构说明
-
 
 #### 安装教程
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
+0.  标准函数的运行依赖文件系统，需要在DB_FS文件夹中本地编译生成动态链接库，放到lib文件夹下
+1.  在CMakeLists.txt中修改上一步生成的链接库名(Windows为xxx.dll, Linux为xxx.so)
+2.  cmake .
+3.  make
 
 #### 使用说明
 
