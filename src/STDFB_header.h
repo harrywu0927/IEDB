@@ -59,7 +59,7 @@ extern "C"
 
     //最大值
     int EDVDB_MAX(struct DataBuffer *buffer, struct QueryParams *params); 
-
+    
     //最小值
     int EDVDB_MIN(struct DataBuffer *buffer, struct QueryParams *params);
 

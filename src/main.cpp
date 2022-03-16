@@ -295,12 +295,10 @@ int EDVDB_LoadSchema(char path[])
         }
         pathEncodes.push_back(pathCode);
     }
-    return CurrentSchemaTemplate.SetTemplate(pathEncodes, dataTypes);
+    return CurrentSchemaTemplate.SetTemplate(pathEncodes, dataTypes, path);
 }
 int EDVDB_UnloadSchema(char pathToUnset[])
 {
-
-
     return CurrentSchemaTemplate.UnsetTemplate();
 }
 // char* testQuery(long *len)
