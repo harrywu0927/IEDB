@@ -86,6 +86,8 @@ public:
     string maxValue;      //最大值
     string minValue;      //最小值
     //实现分割字符串
+    //@param srcstr     源字符串
+    //@param str        划分字符
     static vector<string> StringSplit(char srcstr[], char str[])
     {
         const char *d = str;
@@ -278,13 +280,6 @@ int EDVDB_UnloadSchema()
 {
     return SchemaTemplate.UnsetTemplate();
 }
-int EDVDB_MAX(DataBuffer *buffer)
-{
-}
-int EDVDB_MAX(DataBuffer *buffer, char pathcode[], int len)
-{
-}
-
 // char* testQuery(long *len)
 // {
 //     char* buffer = new char[50];
