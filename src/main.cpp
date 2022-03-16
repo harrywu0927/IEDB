@@ -1,6 +1,7 @@
 #include "FS_header.h"
 #include "STDFB_header.h"
 #include "DataTypeConvert.hpp"
+#include "QueryRequest.hpp"
 #include <vector>
 #include <string>
 #include <iostream>
@@ -197,8 +198,10 @@ public:
     vector<pair<PathCode, DataType> > schemas;
     // unordered_map<vector<int>, string> pathNames;
     string path; //挂载路径
+    char *temFileBuffer;    //模版文件缓存
+    long fileLength;
     //挂载模版
-    int SetTemplate(vector<PathCode> &pathEncodes, vector<DataType> &dataTypes)
+    int SetTemplate(vector<PathCode> &pathEncodes, vector<DataType> &dataTypes, char path[])
     {
         if (pathEncodes.size() != dataTypes.size())
         {
@@ -209,6 +212,10 @@ public:
             this->schemas.push_back(make_pair(pathEncodes[i], dataTypes[i]));
             // this->pathNames[pathEncodes[i].paths] = pathName[i];
         }
+        this->path = path;
+
+
+
         return 0;
     }
 
@@ -224,7 +231,21 @@ public:
     long FindDatatypePos(PathCode &pathCode)
     {
     }
-} SchemaTemplate;
+} CurrentSchemaTemplate;
+
+//模版的管理
+//内存中可同时存在若干数量的模版以提升存取效率，可按照LRU策略管理模版
+class TemplateManager
+{
+private:
+    int maxTemplates = 20;
+public:
+    vector<Template> templates;
+    Template CurrentTemplate;
+
+    void AddTemplate(Template &tem);
+
+} templateManager;
 
 struct DataSet
 {
@@ -274,11 +295,13 @@ int EDVDB_LoadSchema(char path[])
         }
         pathEncodes.push_back(pathCode);
     }
-    return SchemaTemplate.SetTemplate(pathEncodes, dataTypes);
+    return CurrentSchemaTemplate.SetTemplate(pathEncodes, dataTypes);
 }
-int EDVDB_UnloadSchema()
+int EDVDB_UnloadSchema(char pathToUnset[])
 {
-    return SchemaTemplate.UnsetTemplate();
+
+
+    return CurrentSchemaTemplate.UnsetTemplate();
 }
 // char* testQuery(long *len)
 // {
