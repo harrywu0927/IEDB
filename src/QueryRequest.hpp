@@ -1,4 +1,4 @@
-
+#include <string>
 using namespace std;
 
 //查询请求的管理

@@ -10,7 +10,8 @@ extern "C"
         long length;    //长度
         char *savePath; //存储路径
     };
-    enum compareType{
+    enum CompareType{
+        NONE,
         GT, //大于
         LT, //小于
         EQ, //等于
@@ -28,8 +29,9 @@ extern "C"
         long end;       //结束时间
         long queryNums; //查询记录条数
         char* compareValue;  //比较某个值
-        enum compareType type;  //比较类型
+        enum CompareType compareType;  //比较类型
     };
+    
     //在指定路径下从模版文件(.tem)加载模版
     int EDVDB_LoadSchema(char pathToSet[]);
 
@@ -52,10 +54,10 @@ extern "C"
     int EDVDB_InsertRecord(struct DataBuffer *buffer, int addTime);
 
     //插入多条记录
-    int EDVDB_InsertRecords(struct DataBuffer buffer[], int addTime);
+    int EDVDB_InsertRecords(struct DataBuffer buffer[], int recordsNum, int addTime);
 
     //按条件删除记录
-    int EDVDB_DeleteRecords(struct QureryParams *params);
+    int EDVDB_DeleteRecords(struct QueryParams *params);
 
     //最大值
     int EDVDB_MAX(struct DataBuffer *buffer, struct QueryParams *params); 

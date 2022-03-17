@@ -242,7 +242,7 @@ int EDVDB_Write(long fp, char *buf, long length)
 
     if (allowWrite)
     {
-        if (fwrite(buf, strlen(buf) + 1, 1, file) != 1)
+        if (fwrite(buf, length, 1, file) != 1)
         {
             perror("Error while writing");
             return errno;

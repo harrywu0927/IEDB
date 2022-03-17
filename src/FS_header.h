@@ -4,7 +4,7 @@
 int EDVDB_Open(char path[], char mode[], long *fptr);
 
 //写入数据
-int EDVDB_Write(long fp, char buf[]);
+int EDVDB_Write(long fp, char buf[], long length);
 
 //读取文件,数据将存放在buf数组中，在Open过后使用
 int EDVDB_Read(long fp,char buf[]);
