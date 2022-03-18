@@ -44,6 +44,12 @@ namespace ValueType
 }
 extern int errno;
 
+//获取某一目录下的所有文件
+//不递归子文件夹
+void readFileList(string path, vector<string> &files);
+//获取绝对时间(自1970/1/1至今)
+//精确到毫秒
+long getMilliTime();
 class PathCode
 {
 public:
@@ -244,8 +250,15 @@ class FileIDManager
 private:
     
 public:
+    //派发文件ID
     static string GetFileID(string path){
-
+        /*
+            临时使用，今后需修改
+            获取此路径下文件数量，以文件数量+1作为ID
+        */
+        vector<string> files;
+        readFileList(path,files);
+        return "XinFeng_"+to_string(files.size()+1)+"_";
     }
 };
 
@@ -280,11 +293,3 @@ struct DataSet
     vector<DataType> typeList;
     vector<int> timeList;
 };
-
-//获取某一目录下的所有文件
-//不递归子文件夹
-void readFileList(string path, vector<string> &files);
-
-//获取绝对时间(自1970/1/1至今)
-//精确到毫秒
-long getMilliTime();

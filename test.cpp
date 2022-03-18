@@ -1,13 +1,12 @@
 #include<iostream>
 #include"include/STDFB_header.h"
-#include"include/DataTypeConvert.hpp"
+#include<time.h>
 using namespace std;
 
 int main(){
     cout<<"DDD"<<endl;
     long len;
-    //char * buf = testQuery(&len);
-    //delete buf;
-    EDVDB_LoadSchema("data.dat");
+    struct tm *t;
+    
     return 0;
 }

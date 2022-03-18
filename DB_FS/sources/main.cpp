@@ -109,6 +109,7 @@ int EDVDB_GetFileLengthByPath(char path[], long *length)
     FILE *fp = fopen(finalPath, "r");
     if (fp == 0)
     {
+        cout<<finalPath<<endl;
         perror("Error while getting file length");
         return errno;
     }
@@ -262,6 +263,7 @@ int EDVDB_Open(char path[], char mode[], long *fptr)
     strcpy(finalPath, labelPath);
     strcat(finalPath, "/");
     strcat(finalPath, path);
+    cout<<finalPath<<endl;
     FILE *fp = fopen(finalPath, mode);
     if (fp == NULL)
     {
@@ -282,6 +284,7 @@ int EDVDB_Open(char path[], char mode[], long *fptr)
         }
         else
         {
+            cout<<finalPath<<endl;
             perror("Error while opening file");
             return errno;
         }

@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include"include/STDFB_header.h"
 #include <stdlib.h>
+#include <sys/sysctl.h>
 
 int main(){
     struct QueryParams params;

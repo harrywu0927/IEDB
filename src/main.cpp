@@ -48,13 +48,13 @@ int EDVDB_LoadSchema(char path[])
     vector<DataType> dataTypes;
     while (i < length)
     {
-        char variable[30], dataType[30], pathEncode[6];
+        char variable[30], dataType[30], pathEncode[10];
         memcpy(variable, buf + i, 30);
         i += 30;
         memcpy(dataType, buf + i, 30);
         i += 30;
-        memcpy(pathEncode, buf + i, 6);
-        i += 6;
+        memcpy(pathEncode, buf + i, 10);
+        i += 10;
         vector<string> paths;
         PathCode pathCode(pathEncode, sizeof(pathEncode) / 2, variable);
         DataType type;
@@ -80,8 +80,14 @@ int EDVDB_ExecuteQuery(DataBuffer *buffer, QueryParams *params)
 int EDVDB_InsertRecord(DataBuffer *buffer, int addTime)
 {
     long fp;
-    
-    int err = EDVDB_Open(buffer->savePath, "wb", &fp);
+    time_t curtime;
+    time(&curtime);
+    string fileID = FileIDManager::GetFileID(buffer->savePath);
+    string finalPath = "";
+    string time = ctime(&curtime);
+    time.pop_back();
+    finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(time).append(".idb");
+    int err = EDVDB_Open(const_cast<char*>(finalPath.c_str()), "ab", &fp);
     if (err == 0)
     {
         err = EDVDB_Write(fp, buffer->buffer, buffer->length);
@@ -143,6 +149,9 @@ int main()
     DataTypeConverter converter;
     converter.CheckBigEndian();
     cout << EDVDB_LoadSchema("./");
+    DataBuffer buffer;
+    buffer.savePath = "./";
+    EDVDB_InsertRecord(&buffer,0);
     //FILE *fp = fopen("exldata.tem", "rb");
     //long len;
     //EDVDB_GetFileLengthByFilePtr((long)fp, &len);

@@ -18,6 +18,13 @@ extern "C"
         GE, //大于等于
         LE  //小于等于
     };
+    //查询方式
+    enum QueryType{
+        PATH,
+        TIMEZONE,
+        LAST,
+        FILEID
+    };
     //查询请求参数
     struct QueryParams
     {
@@ -28,8 +35,11 @@ extern "C"
         long start;     //开始时间
         long end;       //结束时间
         long queryNums; //查询记录条数
-        char* compareValue;  //比较某个值
+        char *compareValue;  //比较某个值
         enum CompareType compareType;  //比较类型
+        char *fileID;   //文件ID
+        char *pathToLine;    //到产线层级的路径
+        enum QueryType QueryType;   //查询方式
     };
     
     //在指定路径下从模版文件(.tem)加载模版
@@ -46,6 +56,9 @@ extern "C"
 
     //读取指定路径编码下最新的若干条记录
     int EDVDB_QueryLastRecords(struct DataBuffer *buffer, struct QueryParams *params);
+
+    //按文件ID查找
+    int EDVDB_QueryByFileID(struct DataBuffer *buffer, struct QueryParams *params);
 
     //自定义查询
     int EDVDB_ExecuteQuery(struct DataBuffer *buffer, struct QueryParams *params);
