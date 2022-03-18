@@ -5,8 +5,7 @@
 
 
 #### 安装教程
-0.  标准函数的运行依赖文件系统，需要在DB_FS文件夹中本地编译生成动态链接库，放到lib文件夹下
-1.  在CMakeLists.txt中修改上一步生成的链接库名(Windows为xxx.dll, Linux为xxx.so)
+1.  在CMakeLists.txt中修改链接库后缀(Windows为xxx.dll, Linux为xxx.so)
 2.  ```cmake .```
 3.  ```make```
 

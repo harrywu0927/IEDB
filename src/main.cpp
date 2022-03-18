@@ -1,7 +1,7 @@
-#include "FS_header.h"
-#include "STDFB_header.h"
-#include "QueryRequest.hpp"
-#include "utils.hpp"
+#include "../include/FS_header.h"
+#include "../include/STDFB_header.h"
+#include "../include/QueryRequest.hpp"
+#include "../include/utils.hpp"
 #include <vector>
 #include <string>
 #include <iostream>
@@ -31,7 +31,7 @@ int EDVDB_LoadSchema(char path[])
     {
         string s = file;
         vector<string> vec = DataType::StringSplit(const_cast<char*>(s.c_str()),".");
-        if(vec[vec.size()-1] == "tem"){
+        if(vec[vec.size()-1].find("tem")!=string::npos){
             temPath = file;
             break;
         }
@@ -64,11 +64,12 @@ int EDVDB_LoadSchema(char path[])
         }
         pathEncodes.push_back(pathCode);
     }
-    return CurrentSchemaTemplate.SetTemplate(pathEncodes, dataTypes, path);
+    Template tem(pathEncodes,dataTypes,path);
+    return TemplateManager::SetTemplate(tem);
 }
 int EDVDB_UnloadSchema(char pathToUnset[])
 {
-    return CurrentSchemaTemplate.UnsetTemplate();
+    //return CurrentSchemaTemplate.UnsetTemplate();
 }
 
 int EDVDB_ExecuteQuery(DataBuffer *buffer, QueryParams *params)
@@ -141,7 +142,7 @@ int main()
     long length;
     DataTypeConverter converter;
     converter.CheckBigEndian();
-    cout << EDVDB_LoadSchema("/Users/harrywu/Documents/StdFunctions");
+    cout << EDVDB_LoadSchema("./");
     //FILE *fp = fopen("exldata.tem", "rb");
     //long len;
     //EDVDB_GetFileLengthByFilePtr((long)fp, &len);

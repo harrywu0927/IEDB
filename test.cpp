@@ -1,6 +1,6 @@
 #include<iostream>
-#include"src/STDFB_header.h"
-#include"src/DataTypeConvert.hpp"
+#include"include/STDFB_header.h"
+#include"include/DataTypeConvert.hpp"
 using namespace std;
 
 int main(){

@@ -194,24 +194,34 @@ public:
     string path; //挂载路径
     char *temFileBuffer;    //模版文件缓存
     long fileLength;
-    //挂载模版
-    int SetTemplate(vector<PathCode> &pathEncodes, vector<DataType> &dataTypes, char path[])
+    Template(){}
+    Template(vector<PathCode> &pathEncodes, vector<DataType> &dataTypes, char path[])
     {
-        if (pathEncodes.size() != dataTypes.size())
-        {
-            return StatusCode::TEMPLATE_RESOLUTION_ERROR;
-        }
         for (int i = 0; i < pathEncodes.size(); i++)
         {
             this->schemas.push_back(make_pair(pathEncodes[i], dataTypes[i]));
             // this->pathNames[pathEncodes[i].paths] = pathName[i];
         }
         this->path = path;
-
-
-
-        return 0;
     }
+    //挂载模版
+    // int SetTemplate(vector<PathCode> &pathEncodes, vector<DataType> &dataTypes, char path[])
+    // {
+    //     if (pathEncodes.size() != dataTypes.size())
+    //     {
+    //         return StatusCode::TEMPLATE_RESOLUTION_ERROR;
+    //     }
+    //     for (int i = 0; i < pathEncodes.size(); i++)
+    //     {
+    //         this->schemas.push_back(make_pair(pathEncodes[i], dataTypes[i]));
+    //         // this->pathNames[pathEncodes[i].paths] = pathName[i];
+    //     }
+    //     this->path = path;
+
+
+
+    //     return 0;
+    // }
 
     //卸载当前模版
     int UnsetTemplate()
@@ -225,7 +235,7 @@ public:
     long FindDatatypePos(PathCode &pathCode)
     {
     }
-} CurrentSchemaTemplate;
+};
 
 //文件ID管理
 //根据总体目录结构发放文件ID
@@ -234,25 +244,33 @@ class FileIDManager
 private:
     
 public:
-    string GetFileID(string path){
+    static string GetFileID(string path){
 
     }
-} fileIDManager;
+};
 
-
+static int maxTemplates = 20;
+static vector<Template> templates;
+static Template CurrentTemplate;
 //模版的管理
 //内存中可同时存在若干数量的模版以提升存取效率，可按照LRU策略管理模版
 class TemplateManager
 {
 private:
-    int maxTemplates = 20;
+    
 public:
-    vector<Template> templates;
-    Template CurrentTemplate;
+    
+    static void AddTemplate(Template &tem){
 
-    void AddTemplate(Template &tem);
-
-} templateManager;
+    }
+    static void ModifyMaxTemplates(int n){
+        maxTemplates = n;
+    }
+    //将模版设为当前模版
+    static int SetTemplate(Template &tem){
+        CurrentTemplate = tem;
+    }
+};
 
 //用于程序内部交换的数据集
 struct DataSet
@@ -265,29 +283,8 @@ struct DataSet
 
 //获取某一目录下的所有文件
 //不递归子文件夹
-void readFileList(string path, vector<string> &files){
-    struct dirent *ptr;
-    DIR *dir;
-    dir=opendir(path.c_str());
-    while((ptr=readdir(dir))!=NULL)
-    {
-        if(ptr->d_name[0] == '.')
-            continue;
-
-        if(ptr->d_type == 8)
-        {
-            string p;
-            files.push_back(p.assign(path).append("/").append(ptr->d_name));
-        }
-    }
-    closedir(dir);
-}
+void readFileList(string path, vector<string> &files);
 
 //获取绝对时间(自1970/1/1至今)
 //精确到毫秒
-long getMilliTime()
-{
-    struct timeval time;
-    gettimeofday(&time,NULL);
-    return time.tv_sec*1000 + time.tv_usec/1000;
-}
+long getMilliTime();
