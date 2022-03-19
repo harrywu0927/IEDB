@@ -8,10 +8,11 @@ extern "C"
     {
         char *buffer;   //缓冲区地址
         long length;    //长度
-        char *savePath; //存储路径
+        const char *savePath; //存储路径
+        int bufferMalloced; //是否查询到数据
     };
     enum CompareType{
-        NONE,
+        COM_NONE,
         GT, //大于
         LT, //小于
         EQ, //等于
@@ -23,30 +24,31 @@ extern "C"
         PATH,
         TIMEZONE,
         LAST,
-        FILEID
+        FILEID,
+        QRY_NONE
     };
     //查询请求参数
     struct QueryParams
     {
         char *pathCode; //路径编码
-        int codeLength; //编码长度
+        const char *valueName;  //变量名
         int isContinue; //是否继续获取数据，1表示接续上次未传输完的数据，0表示结束
         int hasMore;    //1表示缓冲区已满，还有数据
         long start;     //开始时间
         long end;       //结束时间
         long queryNums; //查询记录条数
-        char *compareValue;  //比较某个值
+        const char *compareValue;  //比较某个值
         enum CompareType compareType;  //比较类型
-        char *fileID;   //文件ID
-        char *pathToLine;    //到产线层级的路径
+        const char *fileID;   //文件ID
+        const char *pathToLine;    //到产线层级的路径
         enum QueryType QueryType;   //查询方式
     };
     
     //在指定路径下从模版文件(.tem)加载模版
-    int EDVDB_LoadSchema(char pathToSet[]);
+    int EDVDB_LoadSchema(const char *pathToSet);
 
     //卸载指定路径下的当前模版
-    int EDVDB_UnloadSchema(char pathToUnset[]);
+    int EDVDB_UnloadSchema(const char *pathToUnset[]);
 
     //读取指定路径编码下的数据到新开辟的缓冲区，读取后需要清空此缓冲区
     int EDVDB_QueryByPath(struct DataBuffer *buffer, struct QueryParams *params);

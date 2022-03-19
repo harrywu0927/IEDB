@@ -23,6 +23,7 @@ namespace StatusCode
         PATHENCODE_INVALID = 137,        //路径编码不合法
         UNKNOWN_TYPE = 138,              //未知数据类型
         TEMPLATE_RESOLUTION_ERROR = 139, //模版文件解析错误
+        DATAFILE_NOT_FOUND = 140        //未找到数据文件
     };
 }
 namespace ValueType
@@ -47,14 +48,19 @@ extern int errno;
 //获取某一目录下的所有文件
 //不递归子文件夹
 void readFileList(string path, vector<string> &files);
+
+void readIDBFilesList(string path, vector<string> &files);
+
 //获取绝对时间(自1970/1/1至今)
 //精确到毫秒
 long getMilliTime();
+
 class PathCode
 {
 public:
     vector<int> paths;
     string name;
+    char code[10];
     //解码路径为整数数组
     vector<int> DecodePath(char pathEncode[], int &levels)
     {
@@ -73,6 +79,12 @@ public:
     {
         this->paths = DecodePath(pathEncode, levels);
         this->name = name;
+        // this->code = pathEncode;
+        for (size_t i = 0; i < 10; i++)
+        {
+            this->code[i] = pathEncode[i];
+        }
+        
     }
 };
 
@@ -89,7 +101,7 @@ public:
     //实现分割字符串(源字符串也将改变)
     //@param srcstr     源字符串
     //@param str        划分字符
-    static vector<string> StringSplit(char srcstr[], char str[])
+    static vector<string> StringSplit(char srcstr[], const char *str)
     {
         const char *d = str;
         char *p;
@@ -160,6 +172,9 @@ public:
         case ValueType::BOOL: // int8
             return 1;
             break;
+        case ValueType::IMAGE:
+            return 1;
+            break;
         default:
             return 0;
             break;
@@ -175,6 +190,11 @@ public:
             vector<string> arr = StringSplit(const_cast<char *>(dtype.c_str()), " ");
             type.valueType = JudgeValueType(arr[2]); //数组的值类型
 
+            if (type.valueType == ValueType::USINT)
+            {
+                type.valueType = ValueType::IMAGE;
+            }
+
             //获取数组长度
             arr[0][arr[0].length() - 1] = '\0';
             vector<string> vec = DataType::StringSplit(const_cast<char *>(arr[0].c_str()), "..");
@@ -185,6 +205,7 @@ public:
         else
         {
             type.isArray = false;
+            type.arrayLen = 0;
             type.valueType = JudgeValueType(dataType);
             type.valueBytes = GetValueBytes(type.valueType);
             return 0;
@@ -195,13 +216,13 @@ public:
 class Template
 {
 public:
-    vector<pair<PathCode, DataType> > schemas;
+    vector<pair<PathCode, DataType>> schemas;
     // unordered_map<vector<int>, string> pathNames;
-    string path; //挂载路径
-    char *temFileBuffer;    //模版文件缓存
+    string path;         //挂载路径
+    char *temFileBuffer; //模版文件缓存
     long fileLength;
-    Template(){}
-    Template(vector<PathCode> &pathEncodes, vector<DataType> &dataTypes, char path[])
+    Template() {}
+    Template(vector<PathCode> &pathEncodes, vector<DataType> &dataTypes, const char *path)
     {
         for (int i = 0; i < pathEncodes.size(); i++)
         {
@@ -223,8 +244,6 @@ public:
     //         // this->pathNames[pathEncodes[i].paths] = pathName[i];
     //     }
     //     this->path = path;
-
-
 
     //     return 0;
     // }
@@ -248,17 +267,17 @@ public:
 class FileIDManager
 {
 private:
-    
 public:
     //派发文件ID
-    static string GetFileID(string path){
+    static string GetFileID(string path)
+    {
         /*
             临时使用，今后需修改
             获取此路径下文件数量，以文件数量+1作为ID
         */
         vector<string> files;
-        readFileList(path,files);
-        return "XinFeng_"+to_string(files.size()+1)+"_";
+        readFileList(path, files);
+        return "XinFeng" + to_string(files.size() + 1) + "_";
     }
 };
 
@@ -270,17 +289,17 @@ static Template CurrentTemplate;
 class TemplateManager
 {
 private:
-    
 public:
-    
-    static void AddTemplate(Template &tem){
-
+    static void AddTemplate(Template &tem)
+    {
     }
-    static void ModifyMaxTemplates(int n){
+    static void ModifyMaxTemplates(int n)
+    {
         maxTemplates = n;
     }
     //将模版设为当前模版
-    static int SetTemplate(Template &tem){
+    static int SetTemplate(Template &tem)
+    {
         CurrentTemplate = tem;
     }
 };
