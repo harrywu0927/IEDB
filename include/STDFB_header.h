@@ -12,7 +12,7 @@ extern "C"
         int bufferMalloced; //是否查询到数据
     };
     enum CompareType{
-        COM_NONE,
+        CMP_NONE,
         GT, //大于
         LT, //小于
         EQ, //等于

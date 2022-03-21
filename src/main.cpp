@@ -1,7 +1,7 @@
-#include "../include/FS_header.h"
-#include "../include/STDFB_header.h"
-#include "../include/QueryRequest.hpp"
-#include "../include/utils.hpp"
+#include <FS_header.h>
+#include <STDFB_header.h>
+#include <QueryRequest.hpp>
+#include <utils.hpp>
 #include <vector>
 #include <string>
 #include <iostream>
@@ -118,8 +118,8 @@ int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
                         {
 
                             char imgLen[2];
-                            imgLen[0] = buff[len];
-                            imgLen[1] = buff[len + 1];
+                            imgLen[0] = buff[pos];
+                            imgLen[1] = buff[pos + 1];
                             num = (int)converter.ToUInt16(imgLen) + 2;  
                         }
                         else
@@ -132,7 +132,8 @@ int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
                         j = 2;
                     }
                     char *data = (char *)malloc(buffer->length);
-                    buffer->bufferMalloced = 1;
+                    if(data != nullptr)
+                        buffer->bufferMalloced = 1;
                     
                     for (; j < buffer->length; j++)
                     {
@@ -254,6 +255,8 @@ int main()
     code[8] = (char)0;
     code[9] = (char)0;
 
+    CurrentTemplate.FindDatatypePos(code);
+    return 0;
     params.pathCode = code;
     for (size_t i = 0; i < 10; i++)
     {

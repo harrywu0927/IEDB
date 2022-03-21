@@ -12,7 +12,7 @@
 #include <sys/statvfs.h>
 #include <stdio.h>
 #include <string.h>
-#include "DataTypeConvert.hpp"
+#include <DataTypeConvert.hpp>
 using namespace std;
 namespace StatusCode
 {
@@ -20,10 +20,10 @@ namespace StatusCode
     {
         DATA_TYPE_MISMATCH_ERROR = 135,  //数据类型不匹配
         SCHEMA_FILE_NOT_FOUND = 136,     //未找到模版文件
-        PATHENCODE_INVALID = 137,        //路径编码不合法
+        PATHCODE_INVALID = 137,          //路径编码不合法
         UNKNOWN_TYPE = 138,              //未知数据类型
         TEMPLATE_RESOLUTION_ERROR = 139, //模版文件解析错误
-        DATAFILE_NOT_FOUND = 140        //未找到数据文件
+        DATAFILE_NOT_FOUND = 140         //未找到数据文件
     };
 }
 namespace ValueType
@@ -84,7 +84,6 @@ public:
         {
             this->code[i] = pathEncode[i];
         }
-        
     }
 };
 
@@ -249,17 +248,15 @@ public:
     // }
 
     //卸载当前模版
-    int UnsetTemplate()
-    {
-        // this->pathNames.clear();
-        this->schemas.clear();
-        return 0;
-    }
+    // int UnsetTemplate()
+    // {
+    //     // this->pathNames.clear();
+    //     this->schemas.clear();
+    //     return 0;
+    // }
 
-    //根据路径编码寻找数据在模版文件中的位置
-    long FindDatatypePos(PathCode &pathCode)
-    {
-    }
+    //根据当前模版寻找指定路径编码的数据在数据文件中的位置
+    long FindDatatypePos(char pathCode[]);
 };
 
 //文件ID管理
