@@ -12,7 +12,7 @@
 #include <sys/statvfs.h>
 #include <stdio.h>
 #include <string.h>
-#include <DataTypeConvert.hpp>
+#include "DataTypeConvert.hpp"
 using namespace std;
 namespace StatusCode
 {
@@ -230,33 +230,11 @@ public:
         }
         this->path = path;
     }
-    //挂载模版
-    // int SetTemplate(vector<PathCode> &pathEncodes, vector<DataType> &dataTypes, char path[])
-    // {
-    //     if (pathEncodes.size() != dataTypes.size())
-    //     {
-    //         return StatusCode::TEMPLATE_RESOLUTION_ERROR;
-    //     }
-    //     for (int i = 0; i < pathEncodes.size(); i++)
-    //     {
-    //         this->schemas.push_back(make_pair(pathEncodes[i], dataTypes[i]));
-    //         // this->pathNames[pathEncodes[i].paths] = pathName[i];
-    //     }
-    //     this->path = path;
-
-    //     return 0;
-    // }
-
-    //卸载当前模版
-    // int UnsetTemplate()
-    // {
-    //     // this->pathNames.clear();
-    //     this->schemas.clear();
-    //     return 0;
-    // }
 
     //根据当前模版寻找指定路径编码的数据在数据文件中的位置
-    long FindDatatypePos(char pathCode[]);
+    //@param position  数据起始位置
+    //@param bytes     数据长度
+    void FindDatatypePos(char pathCode[], long &position, long &bytes);
 };
 
 //文件ID管理

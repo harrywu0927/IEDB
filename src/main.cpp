@@ -1,7 +1,7 @@
-#include <FS_header.h>
-#include <STDFB_header.h>
-#include <QueryRequest.hpp>
-#include <utils.hpp>
+#include "../include/FS_header.h"
+#include "../include/STDFB_header.h"
+#include "../include/QueryRequest.hpp"
+#include "../include/utils.hpp"
 #include <vector>
 #include <string>
 #include <iostream>
@@ -77,6 +77,45 @@ int EDVDB_ExecuteQuery(DataBuffer *buffer, QueryParams *params)
 {
 }
 
+int EDVDB_QueryByFileID2(DataBuffer *buffer, QueryParams *params)
+{
+    // vector<string> arr = DataType::StringSplit(params->fileID,"_");
+    vector<string> files;
+    readIDBFilesList(params->pathToLine, files);
+    for (string file : files)
+    {
+        if (file.find(params->fileID) != string::npos)
+        {
+            long len;
+            EDVDB_GetFileLengthByPath(const_cast<char *>(file.c_str()), &len);
+            char buff[len];
+            EDVDB_OpenAndRead(const_cast<char *>(file.c_str()), buff);
+            EDVDB_LoadSchema(params->pathToLine);
+            DataTypeConverter converter;
+            char *pathCode = params->pathCode;
+            long pos = 0;
+            long bytes = 1;
+            CurrentTemplate.FindDatatypePos(pathCode,pos,bytes);
+            
+            char *data = (char *)malloc(bytes);
+            if (data == NULL)
+            {
+                buffer->buffer = NULL;
+                buffer->bufferMalloced = 0;
+            }
+            //内存分配成功，传入数据
+            buffer->bufferMalloced = 1;
+            buffer->length = bytes;
+            memcpy(data,buff+pos,bytes);
+            buffer->buffer = data;
+            return 0;
+
+            break;
+        }
+    }
+    return StatusCode::DATAFILE_NOT_FOUND;
+}
+
 int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
 {
     // vector<string> arr = DataType::StringSplit(params->fileID,"_");
@@ -97,14 +136,13 @@ int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
             for (size_t i = 0; i < CurrentTemplate.schemas.size(); i++)
             {
                 bool codeEquals = true;
-                for (size_t k = 0; k < 10; k++)     //判断路径编码是否相等
+                for (size_t k = 0; k < 10; k++) //判断路径编码是否相等
                 {
                     if (pathCode[k] != CurrentTemplate.schemas[i].first.code[k])
                         codeEquals = false;
                 }
                 if (codeEquals)
                 {
-                    // free(pathCode);
                     int num = 1;
                     if (CurrentTemplate.schemas[i].second.isArray)
                     {
@@ -113,28 +151,36 @@ int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
                             格式改变时，此处需要更改，下面else同理
                             请注意！
                         */
-                        
+
                         if (CurrentTemplate.schemas[i].second.valueType == ValueType::IMAGE)
                         {
 
                             char imgLen[2];
                             imgLen[0] = buff[pos];
                             imgLen[1] = buff[pos + 1];
-                            num = (int)converter.ToUInt16(imgLen) + 2;  
+                            num = (int)converter.ToUInt16(imgLen) + 2;
                         }
                         else
                             num = CurrentTemplate.schemas[i].second.arrayLen;
                     }
                     buffer->length = (long)(num * CurrentTemplate.schemas[i].second.valueBytes);
                     int j = 0;
-                    if(CurrentTemplate.schemas[i].second.valueType == ValueType::IMAGE){
-                        buffer->length -=2;
+                    if (CurrentTemplate.schemas[i].second.valueType == ValueType::IMAGE)
+                    {
+                        buffer->length -= 2;
                         j = 2;
                     }
                     char *data = (char *)malloc(buffer->length);
-                    if(data != nullptr)
-                        buffer->bufferMalloced = 1;
-                    
+                    if (data == NULL)
+                    {
+                        //内存分配失败，需要作处理
+                        //方案1:直接返回错误
+                        //方案2:尝试分配更小的内存
+                        buffer->buffer = NULL;
+                        buffer->bufferMalloced = 0;
+                    }
+                    //内存分配成功，传入数据
+                    buffer->bufferMalloced = 1;
                     for (; j < buffer->length; j++)
                     {
                         data[j] = buff[pos + j];
@@ -151,8 +197,8 @@ int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
                         {
 
                             char imgLen[2];
-                            imgLen[0] = buff[len];
-                            imgLen[1] = buff[len + 1];
+                            imgLen[0] = buff[pos];
+                            imgLen[1] = buff[pos + 1];
                             num = (int)converter.ToUInt16(imgLen) + 2;
                         }
                         else
@@ -236,12 +282,10 @@ int main()
     long length;
     DataTypeConverter converter;
     converter.CheckBigEndian();
-    cout << EDVDB_LoadSchema("./");
-    // DataBuffer buffer;
-    // QueryParams params;
-    // params.pathToLine = "./";
-    // params.fileID = "XinFeng8";
+    //cout << EDVDB_LoadSchema("./");
     QueryParams params;
+    params.pathToLine = "./";
+    params.fileID = "XinFeng8";
     // char *code = (char*)malloc(10);
     char code[10];
     code[0] = (char)0;
@@ -249,26 +293,31 @@ int main()
     code[2] = (char)0;
     code[3] = (char)1;
     code[4] = 'R';
-    code[5] = (char)1;
+    code[5] = (char)3;
     code[6] = 0;
     code[7] = (char)0;
     code[8] = (char)0;
     code[9] = (char)0;
-
-    CurrentTemplate.FindDatatypePos(code);
-    return 0;
     params.pathCode = code;
-    for (size_t i = 0; i < 10; i++)
-    {
-        cout << params.pathCode[i];
-    }
-    // params.pathCode = code;
-    params.pathToLine = "./";
-    params.fileID = "XinFeng1";
     DataBuffer buffer;
     buffer.length = 0;
-    EDVDB_QueryByFileID(&buffer, &params);
-    if(buffer.bufferMalloced)
+    // EDVDB_QueryByFileID2(&buffer, &params);
+    // if (buffer.bufferMalloced)
+    //     free(buffer.buffer);
+    // return 0;
+    // for (size_t i = 0; i < 10; i++)
+    // {
+    //     cout << params.pathCode[i];
+    // }
+    // params.pathCode = code;
+
+    DataBuffer buffer2;
+    buffer2.length = 0;
+    EDVDB_QueryByFileID2(&buffer, &params);
+    char d[2];
+    memcpy(d,buffer.buffer,2);
+    short value = converter.ToInt16(d);
+    if (buffer.bufferMalloced)
         free(buffer.buffer);
     // free(code);
     //  const char* path = "./";
