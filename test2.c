@@ -4,6 +4,11 @@
 #include <sys/sysctl.h>
 
 int main(){
+    time_t curtime;
+    time(&curtime);
+    struct tm *t = localtime(&curtime);
+    printf("%ld",curtime);
+    return 0;
     struct QueryParams params;
     char code[10];
     code[0] = (char)0;

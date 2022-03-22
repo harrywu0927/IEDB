@@ -21,10 +21,9 @@ extern "C"
     };
     //查询方式
     enum QueryType{
-        PATH,
-        TIMEZONE,
-        LAST,
-        FILEID,
+        TIMEZONE,   //时间区间
+        LAST,       //最新条数
+        FILEID,     //文件ID
         QRY_NONE
     };
     //查询请求参数
@@ -32,8 +31,8 @@ extern "C"
     {
         char *pathCode; //路径编码
         const char *valueName;  //变量名
+        int byPath;     //1表示根据路径编码查询，0表示根据变量名查询
         int isContinue; //是否继续获取数据，1表示接续上次未传输完的数据，0表示结束
-        int hasMore;    //1表示缓冲区已满，还有数据
         long start;     //开始时间
         long end;       //结束时间
         long queryNums; //查询记录条数
@@ -42,13 +41,14 @@ extern "C"
         const char *fileID;   //文件ID
         const char *pathToLine;    //到产线层级的路径
         enum QueryType QueryType;   //查询方式
+        int queryID;    //请求ID
     };
     
     //在指定路径下从模版文件(.tem)加载模版
     int EDVDB_LoadSchema(const char *pathToSet);
 
     //卸载指定路径下的当前模版
-    int EDVDB_UnloadSchema(const char *pathToUnset[]);
+    int EDVDB_UnloadSchema(const char *pathToUnset);
 
     //读取指定路径编码下的数据到新开辟的缓冲区，读取后需要清空此缓冲区
     int EDVDB_QueryByPath(struct DataBuffer *buffer, struct QueryParams *params);

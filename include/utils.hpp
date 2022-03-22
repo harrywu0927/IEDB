@@ -23,7 +23,9 @@ namespace StatusCode
         PATHCODE_INVALID = 137,          //路径编码不合法
         UNKNOWN_TYPE = 138,              //未知数据类型
         TEMPLATE_RESOLUTION_ERROR = 139, //模版文件解析错误
-        DATAFILE_NOT_FOUND = 140         //未找到数据文件
+        DATAFILE_NOT_FOUND = 140,        //未找到数据文件
+        UNKNOWN_PATHCODE = 141,          //未知的路径编码
+        BUFFER_FULL = 142,              //缓冲区满，还有数据
     };
 }
 namespace ValueType
@@ -91,6 +93,7 @@ class DataType
 {
 public:
     bool isArray;
+    bool hasTime;
     int arrayLen;
     int valueBytes;
     ValueType::ValueType valueType;
@@ -234,7 +237,12 @@ public:
     //根据当前模版寻找指定路径编码的数据在数据文件中的位置
     //@param position  数据起始位置
     //@param bytes     数据长度
-    void FindDatatypePos(char pathCode[], long &position, long &bytes);
+    int FindDatatypePosByCode(char pathCode[], long &position, long &bytes);
+
+    //根据当前模版寻找指定变量名的数据在数据文件中的位置
+    //@param position  数据起始位置
+    //@param bytes     数据长度
+    int FindDatatypePosByName(const char *name, long &position, long &bytes);
 };
 
 //文件ID管理
@@ -256,6 +264,7 @@ public:
     }
 };
 
+
 static int maxTemplates = 20;
 static vector<Template> templates;
 static Template CurrentTemplate;
@@ -276,6 +285,7 @@ public:
     static int SetTemplate(Template &tem)
     {
         CurrentTemplate = tem;
+        return 0;
     }
 };
 

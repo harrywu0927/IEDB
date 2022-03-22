@@ -20,7 +20,15 @@
 #include <sstream>
 #include <errno.h>
 using namespace std;
-
+/**
+ * @brief 从指定路径加载模版文件
+ * @param path    路径
+ *
+ * @return 0        success
+ *         others   fail
+ * @note    在文件夹中找到模版文件，找到后读取，每个变量的前30字节为变量名，接下来30字节为数据类型，最后10字节为
+ *          路径编码，分别解析之，构造模版并将其设置为当前模版
+ */
 int EDVDB_LoadSchema(const char *path)
 {
     vector<string> files;
@@ -68,6 +76,7 @@ int EDVDB_LoadSchema(const char *path)
     Template tem(pathEncodes, dataTypes, path);
     return TemplateManager::SetTemplate(tem);
 }
+
 int EDVDB_UnloadSchema(char pathToUnset[])
 {
     // return CurrentSchemaTemplate.UnsetTemplate();
@@ -77,12 +86,49 @@ int EDVDB_ExecuteQuery(DataBuffer *buffer, QueryParams *params)
 {
 }
 
-int EDVDB_QueryByFileID2(DataBuffer *buffer, QueryParams *params)
+int EDVDB_QueryByTimezone(DataBuffer *buffer, QueryParams *params)
 {
-    // vector<string> arr = DataType::StringSplit(params->fileID,"_");
     vector<string> files;
     readIDBFilesList(params->pathToLine, files);
-    for (string file : files)
+    vector<string> selectedFiles;
+    for (auto file : files)
+    {
+        auto tmp = file;
+        vector<string> time = DataType::StringSplit(const_cast<char*>(DataType::StringSplit(const_cast<char*>(tmp.c_str()),"_")[1].c_str()),"-");
+        if(time.size()==0){
+            continue;
+        }
+        time[time.size()-1] = DataType::StringSplit(const_cast<char*>(time[time.size()-1].c_str()),".")[0];
+        struct tm t;
+        t.tm_year = atoi(time[0].c_str()) - 1900;
+        t.tm_mon = atoi(time[1].c_str()) - 1;
+        t.tm_mday = atoi(time[2].c_str());
+        t.tm_hour = atoi(time[3].c_str());
+        t.tm_min = atoi(time[4].c_str());
+        t.tm_sec = atoi(time[5].c_str());
+        time_t seconds = mktime(&t);
+        int ms = atoi(time[6].c_str());
+        long millis = seconds * 1000 + ms;
+
+    }
+
+}
+
+/**
+ * @brief 根据文件ID和路径编码在某一产线文件夹下的数据文件中查询数据，数据存放在新开辟的缓冲区buffer中
+ * @param buffer    数据缓冲区
+ * @param params    查询请求参数
+ *
+ * @return 0        success
+ *         others   fail
+ *  @note 获取产线文件夹下的所有数据文件，找到带有指定ID的文件后读取，加载模版，根据模版找到变量在数据中的位置
+ *          找到后开辟内存空间，将数据放入，将缓冲区首地址赋值给buffer
+ */
+int EDVDB_QueryByFileID2(DataBuffer *buffer, QueryParams *params)
+{
+    vector<string> files;
+    readIDBFilesList(params->pathToLine, files);
+    for (string &file : files)
     {
         if (file.find(params->fileID) != string::npos)
         {
@@ -92,11 +138,21 @@ int EDVDB_QueryByFileID2(DataBuffer *buffer, QueryParams *params)
             EDVDB_OpenAndRead(const_cast<char *>(file.c_str()), buff);
             EDVDB_LoadSchema(params->pathToLine);
             DataTypeConverter converter;
-            char *pathCode = params->pathCode;
-            long pos = 0;
-            long bytes = 1;
-            CurrentTemplate.FindDatatypePos(pathCode,pos,bytes);
             
+            long pos = 0;
+            long bytes = 0;
+            int err;
+            if(params->byPath){
+                char *pathCode = params->pathCode;
+                err = CurrentTemplate.FindDatatypePosByCode(pathCode, pos, bytes);
+            }
+                
+            else
+                err = CurrentTemplate.FindDatatypePosByName(params->valueName,pos,bytes);
+            if (err != 0)
+            {
+                return err;
+            }
             char *data = (char *)malloc(bytes);
             if (data == NULL)
             {
@@ -106,7 +162,7 @@ int EDVDB_QueryByFileID2(DataBuffer *buffer, QueryParams *params)
             //内存分配成功，传入数据
             buffer->bufferMalloced = 1;
             buffer->length = bytes;
-            memcpy(data,buff+pos,bytes);
+            memcpy(data, buff + pos, bytes);
             buffer->buffer = data;
             return 0;
 
@@ -214,16 +270,25 @@ int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
     return StatusCode::DATAFILE_NOT_FOUND;
 }
 
+/**
+ * @brief 将一个缓冲区中的一条数据(文件)存放在指定路径下，以文件ID+时间的方式命名
+ * @param buffer    数据缓冲区
+ * @param addTime    是否添加时间戳
+ *
+ * @return 0        success
+ *         others   fail
+ * @note 文件ID的暂定的命名方式为当前文件夹下的文件数量+1，
+ *  时间戳格式为yyyy-mm-dd-hh-min-ss-ms
+ */
 int EDVDB_InsertRecord(DataBuffer *buffer, int addTime)
 {
     long fp;
-    time_t curtime;
-    time(&curtime);
+    long curtime = getMilliTime();
+    time_t time = curtime / 1000;
+    struct tm *dateTime = localtime(&time);
     string fileID = FileIDManager::GetFileID(buffer->savePath);
     string finalPath = "";
-    string time = ctime(&curtime);
-    time.pop_back();
-    finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(time).append(".idb");
+    finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000)).append(".idb");
     int err = EDVDB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
     if (err == 0)
     {
@@ -235,20 +300,46 @@ int EDVDB_InsertRecord(DataBuffer *buffer, int addTime)
     }
     return err;
 }
-
+/**
+ * @brief 将多条数据(文件)存放在指定路径下，以文件ID+时间的方式命名
+ * @param buffer[]    数据缓冲区
+ * @param recordsNum  数据(文件)条数
+ * @param addTime    是否添加时间戳
+ *
+ * @return 0        success
+ *         others   fail
+ * @note  文件ID的暂定的命名方式为当前文件夹下的文件数量+1，
+ *  时间戳格式为yyyy-mm-dd-hh-min-ss-ms
+ */
 int EDVDB_InsertRecords(DataBuffer buffer[], int recordsNum, int addTime)
 {
+    long curtime = getMilliTime();
+    time_t time = curtime / 1000;
+    struct tm *dateTime = localtime(&time);
+    string timestr = "";
+    timestr.append(to_string(1900 + dateTime->tm_year)).append("-")
+                        .append(to_string(1 + dateTime->tm_mon)).append("-")
+                        .append(to_string(dateTime->tm_mday)).append("-")
+                        .append(to_string(dateTime->tm_hour)).append("-")
+                        .append(to_string(dateTime->tm_min)).append("-")
+                        .append(to_string(dateTime->tm_sec)).append("-")
+                        .append(to_string(curtime % 1000)).append(".idb");
     for (int i = 0; i < recordsNum; i++)
     {
         long fp;
-        int err = EDVDB_Open(const_cast<char *>(buffer[i].savePath), "wb", &fp);
+
+        string fileID = FileIDManager::GetFileID(buffer->savePath);
+        string finalPath = "";
+        finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(timestr);
+        int err = EDVDB_Open(const_cast<char *>(buffer[i].savePath), "ab", &fp);
         if (err == 0)
         {
             err = EDVDB_Write(fp, buffer[i].buffer, buffer[i].length);
-            if (err == 0)
+            if (err != 0)
             {
-                return EDVDB_Close(fp);
+                return err;
             }
+            EDVDB_Close(fp);
         }
         else
         {
@@ -256,16 +347,6 @@ int EDVDB_InsertRecords(DataBuffer buffer[], int recordsNum, int addTime)
         }
     }
 }
-// char* testQuery(long *len)
-// {
-//     char* buffer = new char[50];
-//     for(int i=0;i<50;i++){
-//         buffer[i] = 'a';
-//     }
-//     cout<<buffer<<endl;
-//     *len = 50;
-//     return buffer;
-// }
 int testQuery2(DataBuffer *buffer, long *len)
 {
     char *buf = (char *)malloc(10);
@@ -282,7 +363,7 @@ int main()
     long length;
     DataTypeConverter converter;
     converter.CheckBigEndian();
-    //cout << EDVDB_LoadSchema("./");
+    // cout << EDVDB_LoadSchema("./");
     QueryParams params;
     params.pathToLine = "./";
     params.fileID = "XinFeng8";
@@ -299,8 +380,10 @@ int main()
     code[8] = (char)0;
     code[9] = (char)0;
     params.pathCode = code;
+    params.valueName = "S1R3";
     DataBuffer buffer;
     buffer.length = 0;
+    EDVDB_QueryByTimezone(&buffer,&params);
     // EDVDB_QueryByFileID2(&buffer, &params);
     // if (buffer.bufferMalloced)
     //     free(buffer.buffer);
@@ -315,10 +398,11 @@ int main()
     buffer2.length = 0;
     EDVDB_QueryByFileID2(&buffer, &params);
     char d[2];
-    memcpy(d,buffer.buffer,2);
+    memcpy(d, buffer.buffer, 2);
     short value = converter.ToInt16(d);
     if (buffer.bufferMalloced)
         free(buffer.buffer);
+    buffer.buffer = NULL;
     // free(code);
     //  const char* path = "./";
     //  buffer.savePath = path;
