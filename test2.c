@@ -2,12 +2,14 @@
 #include"include/STDFB_header.h"
 #include <stdlib.h>
 #include <sys/sysctl.h>
+#include<string.h>
 
 int main(){
-    time_t curtime;
-    time(&curtime);
-    struct tm *t = localtime(&curtime);
-    printf("%ld",curtime);
+    char *str = (char*) malloc(10);
+    memcpy(str,"123",3);
+    memcpy(str+3,"456",3);
+    
+    printf("%s",str);free(str);
     return 0;
     struct QueryParams params;
     char code[10];
