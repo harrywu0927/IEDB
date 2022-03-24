@@ -15,6 +15,22 @@
 using namespace std;
 
 int main(){
+    float a = -800.2345;
+    char buf[4];
+    memcpy(buf,&a,4);
+    float value = 0;
+    void *pf;
+    pf = &value;
+    for (char i = 0; i < 4; i++)
+    {
+        *((unsigned char *)pf + i) = buf[i];
+    }
+    DataTypeConverter converter;
+    cout<<value<<endl;
+    cout<<converter.ToFloat(buf)<<endl;
+    return 0;
+
+
     long curtime = getMilliTime();
     time_t time = curtime/1000;
     struct tm *dateTime = localtime(&time);

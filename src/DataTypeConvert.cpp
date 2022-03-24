@@ -2,45 +2,57 @@
 #include <stdlib.h>
 using namespace std;
 
-short DataTypeConverter::ToInt16(string str)
+short DataTypeConverter::ToInt16(const char *str)
 {
     short value = 0;
-    value |= str[0];
-    value <<= 8;
     value |= str[1];
+    value <<= 8;
+    value |= str[0];
     return value;
 }
-uint16_t DataTypeConverter::ToUInt16(string str)
+uint16_t DataTypeConverter::ToUInt16(const char *str)
 {
     uint16_t value = 0;
-    value |= str[0];
-    value <<= 8;
     value |= str[1];
+    value <<= 8;
+    value |= str[0];
     return value;
 }
-int DataTypeConverter::ToInt32(string str)
+int DataTypeConverter::ToInt32(const char *str)
 {
     int value = 0;
-    for (int i = 0; i < 3; i++)
+    void *pf;
+    pf = &value;
+    for (char i = 0; i < 4; i++)
     {
-        value |= str[i];
-        value <<= 8;
+        *((unsigned char *)pf + i) = str[3-i];
     }
-    value |= str[4];
+    // for (int i = 3; i > 0; i--)
+    // {
+    //     value |= str[i];
+    //     value <<= 8;
+    // }
+    // value |= str[0];
     return value;
 }
-uint32_t DataTypeConverter::ToUInt32(string str)
+uint32_t DataTypeConverter::ToUInt32(const char *str)
 {
     uint32_t value = 0;
-    for (int i = 0; i < 3; i++)
+    void *pf;
+    pf = &value;
+    for (char i = 0; i < 4; i++)
     {
-        value |= str[i];
-        value <<= 8;
+        *((unsigned char *)pf + i) = str[3-i];
     }
-    value |= str[4];
+    // for (int i = 3; i > 0; i--)
+    // {
+    //     value |= str[i];
+    //     value <<= 8;
+    // }
+    // value |= str[0];
     return value;
 }
-float DataTypeConverter::ToFloat(char str[])
+float DataTypeConverter::ToFloat(const char *str)
 {
     //转换字节数组到float数据
     float floatVariable;

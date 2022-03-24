@@ -73,7 +73,7 @@ public:
             string str = "  ";
             str[0] = pathEncode[i * 2];
             str[1] = pathEncode[i * 2 + 1];
-            res.push_back((int)converter.ToUInt16(str));
+            res.push_back((int)converter.ToUInt16(const_cast<char*>(str.c_str())));
         }
         return res;
     }
@@ -276,6 +276,7 @@ private:
 public:
     static void AddTemplate(Template &tem)
     {
+
     }
     static void ModifyMaxTemplates(int n)
     {
@@ -284,8 +285,23 @@ public:
     //将模版设为当前模版
     static int SetTemplate(Template &tem)
     {
+        AddTemplate(tem);
         CurrentTemplate = tem;
         return 0;
+    }
+
+    //卸载指定路径下的模版
+    static int UnsetTemplate(string path){
+        for (int i = 0; i < templates.size(); i++)
+        {
+            if(templates[i].path == path){
+                templates.erase(templates.begin() + i);
+            }
+        }
+        CurrentTemplate.path = "";
+        CurrentTemplate.schemas.clear();
+        CurrentTemplate.temFileBuffer = NULL;
+        
     }
 };
 

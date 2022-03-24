@@ -122,7 +122,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
         time_t seconds = mktime(&t);
         int ms = atoi(time[6].c_str());
         long millis = seconds * 1000 + ms;
-        if (millis > params->start && millis < params->end)
+        if (millis >= params->start && millis <= params->end)
         {
             selectedFiles.push_back(make_pair(file, millis));
         }
@@ -285,7 +285,7 @@ int EDVDB_QueryLastData(DataBuffer *buffer, QueryParams *params)
         break;
     }
 
-    //取排序后的文件中前queryNums个文件
+    //取排序后的文件中前queryNums个文件的数据
     long cur = 0;
     for (int i = 0; i < params->queryNums; i++)
     {
@@ -565,25 +565,21 @@ int main()
     code[9] = (char)0;
     params.pathCode = code;
     params.valueName = "S1R3";
+    params.start = 1648084207100;
+    params.end = 1648084216100;
+    params.order = TIME_ASC;
     DataBuffer buffer;
     buffer.length = 0;
     EDVDB_QueryByTimespan(&buffer, &params);
-    // EDVDB_QueryByFileID2(&buffer, &params);
-    // if (buffer.bufferMalloced)
-    //     free(buffer.buffer);
-    // return 0;
-    // for (size_t i = 0; i < 10; i++)
-    // {
-    //     cout << params.pathCode[i];
-    // }
-    // params.pathCode = code;
 
-    DataBuffer buffer2;
-    buffer2.length = 0;
-    EDVDB_QueryByFileID(&buffer, &params);
-    char d[2];
-    memcpy(d, buffer.buffer, 2);
-    short value = converter.ToInt16(d);
+    // EDVDB_QueryByFileID(&buffer, &params);
+    char v1[2],v2[2],v3[2];
+    memcpy(v1, buffer.buffer, 2);
+    memcpy(v2, buffer.buffer+2, 2);
+    memcpy(v3, buffer.buffer+4, 2);
+    short value1 = converter.ToInt16(v1);
+    short value2 = converter.ToInt16(v2);
+    short value3 = converter.ToInt16(v3);
     if (buffer.bufferMalloced)
         free(buffer.buffer);
     buffer.buffer = NULL;
