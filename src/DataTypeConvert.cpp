@@ -5,17 +5,29 @@ using namespace std;
 short DataTypeConverter::ToInt16(const char *str)
 {
     short value = 0;
-    value |= str[1];
-    value <<= 8;
-    value |= str[0];
+    void *pf;
+    pf = &value;
+    for (char i = 0; i < 2; i++)
+    {
+        *((unsigned char *)pf + i) = str[1-i];
+    }
+    // value |= str[0];
+    // value <<= 8;
+    // value |= str[1];
     return value;
 }
 uint16_t DataTypeConverter::ToUInt16(const char *str)
 {
     uint16_t value = 0;
-    value |= str[1];
-    value <<= 8;
-    value |= str[0];
+    void *pf;
+    pf = &value;
+    for (char i = 0; i < 2; i++)
+    {
+        *((unsigned char *)pf + i) = str[1-i];
+    }
+    // value |= str[1];
+    // value <<= 8;
+    // value |= str[0];
     return value;
 }
 int DataTypeConverter::ToInt32(const char *str)

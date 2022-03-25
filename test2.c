@@ -6,27 +6,27 @@
 
 int main()
 {
-    char *data = "test";
-    struct DataBuffer buffer;
-    buffer.buffer = data;
-    buffer.length = 4;
-    buffer.savePath = "./";
-    EDVDB_InsertRecord(&buffer,0);
-    return 0;
-
-    // struct tm t;
-    // t.tm_year = 122;
-    // t.tm_mon = 2;
-    // t.tm_mday = 24;
-    // t.tm_hour = 9;
-    // t.tm_min = 10;
-    // t.tm_sec = 16;
-    // time_t seconds = mktime(&t);
-    // int ms = 100;
-    // long millis = seconds * 1000 + ms;
+    // char *data = "test";
+    // struct DataBuffer buffer;
+    // buffer.buffer = data;
+    // buffer.length = 4;
+    // buffer.savePath = "";
+    // EDVDB_InsertRecord(&buffer,0);
     // return 0;
-    //start 1648084207100
-    //end 1648084216100
+
+    struct tm t;
+    t.tm_year = 122;
+    t.tm_mon = 2;
+    t.tm_mday = 24;
+    t.tm_hour = 23;
+    t.tm_min = 10;
+    t.tm_sec = 16;
+    time_t seconds = mktime(&t);
+    int ms = 100;
+    long millis = seconds * 1000 + ms;
+    return 0;
+    //start 1648123816100
+    //end 1648134616100
     struct QueryParams params;
     char code[10];
     code[0] = (char)0;
@@ -40,7 +40,7 @@ int main()
     code[8] = (char)0;
     code[9] = (char)0;
     params.pathCode = code;
-    //struct DataBuffer buffer;
+    struct DataBuffer buffer;
     if (buffer.buffer == NULL)
     {
         printf("buffer null\n");

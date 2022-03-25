@@ -12,12 +12,23 @@
 #include <sys/statvfs.h>
 #include <stdio.h>
 #include <string.h>
+#include <sstream>
 using namespace std;
 
 int main(){
+    float test = 123.45;
+    const char *res = "23456.78";
+    stringstream ss;
+    ss << res;
+    ss >> test;
+    return  0;
+
+
+
     float a = -800.2345;
     char buf[4];
-    memcpy(buf,&a,4);
+    int x = -800;
+    memcpy(buf,&x,4);
     float value = 0;
     void *pf;
     pf = &value;

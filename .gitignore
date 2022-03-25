@@ -50,3 +50,4 @@ src/main
 *.json
 *.dat
 *.idb
+*.tem
