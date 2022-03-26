@@ -30,6 +30,7 @@ namespace StatusCode
         UNKNOWN_VARIABLE_NAME = 142,     //未知的变量名
         BUFFER_FULL = 143,               //缓冲区满，还有数据
         UNKNWON_DATAFILE = 144,          //未知的数据文件或数据文件不合法
+        NO_QUERY_TYPE = 145,             //未指定主查询条件
     };
 }
 namespace ValueType
@@ -229,7 +230,7 @@ public:
      * @brief 根据指定的数据类型比较两个字节数据值的大小，暂不支持数组的比较。
      * @param type        数据类型
      * @param compared    被比较的值
-     * @param toCompare   要比较的值
+     * @param toCompare   要比较的字符串字面值，如"123"，则值就为123
      *
      * @return 1:        compared > toCompare,
      *         0:        compared = toCompare,
@@ -238,13 +239,14 @@ public:
      */
     static int CompareValue(DataType &type, char *compared, const char *toCompare)
     {
-        if (type.isArray)
+        if (type.isArray == 1)
         {
             return 0;
         }
         stringstream ss;
         ss << toCompare;
         int bytes = DataType::GetValueBytes(type.valueType);
+        if(bytes == 0) return StatusCode::UNKNOWN_TYPE;
         char bufferV1[bytes];
         char bufferV2[bytes];
         memcpy(bufferV1, compared, bytes);
@@ -448,6 +450,7 @@ public:
         CurrentTemplate.path = "";
         CurrentTemplate.schemas.clear();
         CurrentTemplate.temFileBuffer = NULL;
+        return 0;
     }
 };
 
@@ -468,6 +471,7 @@ public:
     static int SetTemplate(ZipTemplate &tem)
     {
         CurrentZipTemplate = tem;
+        return 0;
     }
 };
 

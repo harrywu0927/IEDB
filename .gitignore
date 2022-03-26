@@ -51,3 +51,4 @@ src/main
 *.dat
 *.idb
 *.tem
+CMakeLists.txt

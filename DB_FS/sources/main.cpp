@@ -17,13 +17,8 @@
 #include <sstream>
 #include "CJsonObject.hpp"
 using namespace std;
-<<<<<<< HEAD
-//extern int errno;
-neb::CJsonObject config = new neb::CJsonObject();
-=======
 extern int errno;
 static neb::CJsonObject config;
->>>>>>> fa0f9d8d4d6713d3bd9950fca4459c72927fe442
 long availableSpace = 1024 * 1024 * 10;
 size_t totalSpace = 0;
 char labelPath[100] = "./";
