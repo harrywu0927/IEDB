@@ -17,8 +17,13 @@
 #include <sstream>
 #include "CJsonObject.hpp"
 using namespace std;
+<<<<<<< HEAD
 //extern int errno;
 neb::CJsonObject config = new neb::CJsonObject();
+=======
+extern int errno;
+static neb::CJsonObject config;
+>>>>>>> fa0f9d8d4d6713d3bd9950fca4459c72927fe442
 long availableSpace = 1024 * 1024 * 10;
 size_t totalSpace = 0;
 char labelPath[100] = "./";
@@ -347,20 +352,54 @@ int EDVDB_OpenAndRead(char path[], char buf[])
 
 int EDVDB_CreateDirectory(char path[])
 {
-    // cout << path << endl;
-    char *str = new char[strlen(path) + 1];
+    char str[100];
     strcpy(str, path);
-    char *p = strtok(str, "/");
+    const char *d = "/";
+    char *p;
+    p = strtok(str, d);
+    vector<string> res;
+    while (p)
+    {
+        // printf("%s\n", p);
+        res.push_back(p);
+        p = strtok(NULL, d); // strtok内部记录了上次的位置
+    }
+    string dirs = "./";
+    for (int i = 0; i < res.size(); i++)
+    {
+        if(res[i].find("idb")!=string::npos) break;
+        if(res[i] == ".." || res[i] == "."){
+            dirs += res[i] + "/";
+        }
+        else{
+            dirs += res[i] + "/";
+            if(mkdir(dirs.c_str(),0777)!=0){
+                perror("Error while Creating directory");
+                return errno;
+            }
+        }
+    }
+    return 0;
+    // cout << path << endl;
+    
+    //char *p = strtok(str, "/");
     char dir[] = "./";
     while (p != NULL)
     {
-        if (strstr(p, "."))
+        string s = p;
+        if (s.find("idb")!=string::npos)
             break;
+        if(s == ".."){
+            p = strtok(NULL, "/");
+            strcat(dir,"../");
+            continue;
+        }
         strcat(dir, p);
         char dirpath[strlen(dir)];
         strcpy(dirpath, dir);
         strcat(dir, "/");
-        //cout<<dirpath<<endl;
+        cout<<dirpath<<endl;
+        
         if (mkdir(dirpath, 0777) != 0)
         {
             perror("Error while Creating directory");
@@ -402,5 +441,8 @@ int EDVDB_DeleteDirectory(char path[])
 
 int main()
 {
+    ReadConfig();
+    cout<<config("Filename_Label")<<endl;
+    EDVDB_CreateDirectory("../testIEDB/.//XinFeng14_2022-3-24-22-4-58-210.idb");
     return 0;
 }

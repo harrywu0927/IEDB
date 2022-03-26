@@ -108,7 +108,7 @@ int DataTypeConverter::ToInt32_m(const char *str)
 }
 uint32_t DataTypeConverter::ToUInt32_m(const char *str)
 {
-    uint32_t value=0;;
+    uint32_t value=0;
     void *pf;
     pf = &value;
     for (char i = 0; i < 4; i++)

@@ -49,4 +49,5 @@ src/main
 /.vscode/*
 *.json
 *.dat
-#*.idb
+*.idb
+*.tem

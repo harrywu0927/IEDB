@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "DataTypeConvert.hpp"
+#include <sstream>
+#include "../DB_FS/sources/CJsonObject.hpp"
 using namespace std;
 namespace StatusCode
 {
@@ -23,7 +25,9 @@ namespace StatusCode
         PATHCODE_INVALID = 137,          //路径编码不合法
         UNKNOWN_TYPE = 138,              //未知数据类型
         TEMPLATE_RESOLUTION_ERROR = 139, //模版文件解析错误
-        DATAFILE_NOT_FOUND = 140         //未找到数据文件
+        DATAFILE_NOT_FOUND = 140,        //未找到数据文件
+        UNKNOWN_PATHCODE = 141,          //未知的路径编码
+        BUFFER_FULL = 142,               //缓冲区满，还有数据
     };
 }
 namespace ValueType
@@ -91,6 +95,7 @@ class DataType
 {
 public:
     bool isArray;
+    bool hasTime;
     int arrayLen;
     int valueBytes;
     ValueType::ValueType valueType;
@@ -217,6 +222,96 @@ public:
         }
         return StatusCode::UNKNOWN_TYPE;
     }
+
+    /**
+     * @brief 根据指定的数据类型比较两个字节数据值的大小，暂不支持数组的比较。
+     * @param type        数据类型
+     * @param compared    被比较的值
+     * @param toCompare   要比较的值
+     *
+     * @return 1:        compared > toCompare,
+     *         0:        compared < toCompare,
+     *         -1:       compared = toCompare
+     * @note
+     */
+    static int CompareValue(DataType &type, char *compared, const char *toCompare)
+    {
+        if (type.isArray)
+        {
+            return 0;
+        }
+        stringstream ss;
+        ss << toCompare;
+        int bytes = DataType::GetValueBytes(type.valueType);
+        char bufferV1[bytes];
+        char bufferV2[bytes];
+        memcpy(bufferV1, compared, bytes);
+        memcpy(bufferV2, toCompare, bytes);
+        DataTypeConverter converter;
+        switch (type.valueType)
+        {
+        case ValueType::INT:
+        {
+            short value1 = converter.ToInt16(compared);
+            short value2 = 0;
+            ss >> value2;
+            return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
+            break;
+        }
+        case ValueType::DINT:
+        {
+            int value1 = converter.ToInt32(bufferV1);
+            int value2 = 0;
+            ss >> value2;
+            return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
+            break;
+        }
+        case ValueType::UDINT:
+        {
+            uint value1 = converter.ToUInt32(compared);
+            uint value2 = 0;
+            ss >> value2;
+            return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
+            break;
+        }
+        case ValueType::UINT:
+        {
+            uint16_t value1 = converter.ToUInt16(compared);
+            uint16_t value2 = 0;
+            ss >> value2;
+            return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
+            break;
+        }
+        case ValueType::SINT:
+        {
+            int value1 = (int)compared[0];
+            int value2 = 0;
+            ss >> value2;
+            return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
+            break;
+        }
+        case ValueType::TIME:
+        {
+            int value1 = converter.ToInt32(compared);
+            int value2 = 0;
+            ss >> value2;
+            return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
+            break;
+        }
+        case ValueType::REAL:
+        {
+            float f1 = converter.ToFloat(compared);
+            float f2 = 0;
+            ss >> f2;
+            return f1 == f2 ? 0 : (f1 > f2 ? 1 : -1);
+            break;
+        }
+
+        default:
+            return 0; //其他类型不作判断
+            break;
+        }
+    }
 };
 class Template//标准模板
 {
@@ -262,6 +357,9 @@ public:
     }
 };
 
+
+static char Label[100] = "./";
+
 //文件ID管理
 //根据总体目录结构发放文件ID
 class FileIDManager
@@ -276,10 +374,33 @@ public:
             获取此路径下文件数量，以文件数量+1作为ID
         */
         vector<string> files;
+        // GetSettings();
+        //  struct dirent *ptr;
+        //  DIR *dir;
+        //  string finalPath = Label;
+        //  finalPath += path;
+        //  cout << finalPath.c_str() << endl;
+        //  dir = opendir(finalPath.c_str());
+        //  cout << finalPath << endl;
+        //  while ((ptr = readdir(dir)) != NULL)
+        //  {
+        //      if (ptr->d_name[0] == '.')
+        //          continue;
+
+        //     if (ptr->d_type == 8)
+        //     {
+        //         string p;
+        //         files.push_back(p.append(path).append("/").append(ptr->d_name));
+        //     }
+        // }
+        // closedir(dir);
         readFileList(path, files);
         return "XinFeng" + to_string(files.size() + 1) + "_";
     }
+    static void GetSettings();
+    static neb::CJsonObject GetSetting();
 };
+static neb::CJsonObject settings;
 
 static int maxTemplates = 20;
 static vector<Template> templates;
@@ -300,7 +421,24 @@ public:
     //将模版设为当前模版
     static int SetTemplate(Template &tem)
     {
+        AddTemplate(tem);
         CurrentTemplate = tem;
+        return 0;
+    }
+
+    //卸载指定路径下的模版
+    static int UnsetTemplate(string path)
+    {
+        for (int i = 0; i < templates.size(); i++)
+        {
+            if (templates[i].path == path)
+            {
+                templates.erase(templates.begin() + i);
+            }
+        }
+        CurrentTemplate.path = "";
+        CurrentTemplate.schemas.clear();
+        CurrentTemplate.temFileBuffer = NULL;
     }
 };
 
