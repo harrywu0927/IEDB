@@ -3,7 +3,7 @@
 //不递归子文件夹
 void readFileList(string path, vector<string> &files)
 {
-    FileIDManager::GetSettings();
+    //FileIDManager::GetSettings();
     struct dirent *ptr;
     DIR *dir;
     string finalPath = Label;
@@ -28,7 +28,7 @@ void readFileList(string path, vector<string> &files)
 
 void readIDBFilesList(string path, vector<string> &files)
 {
-    FileIDManager::GetSettings();
+    //FileIDManager::GetSettings();
     struct dirent *ptr;
     DIR *dir;
     string finalPath = Label;
@@ -66,8 +66,8 @@ neb::CJsonObject FileIDManager::GetSetting()
     buffer << t.rdbuf();
     string contents(buffer.str());
     neb::CJsonObject tmp(contents);
-    settings = tmp;
     strcpy(Label, settings("Filename_Label").c_str());
+    return tmp;
 }
 
 //获取绝对时间(自1970/1/1至今)
@@ -218,7 +218,7 @@ int Template::FindDatatypePosByName(const char *name, long &position, long &byte
             pos += num * schema.second.valueBytes;
         }
     }
-    return StatusCode::UNKNOWN_PATHCODE;
+    return StatusCode::UNKNOWN_VARIABLE_NAME;
 }
 
 /**
@@ -265,5 +265,5 @@ int Template::FindDatatypePosByName(const char *name, long &position, long &byte
             pos += num * schema.second.valueBytes;
         }
     }
-    return StatusCode::UNKNOWN_PATHCODE;
+    return StatusCode::UNKNOWN_VARIABLE_NAME;
 }

@@ -27,7 +27,9 @@ namespace StatusCode
         TEMPLATE_RESOLUTION_ERROR = 139, //模版文件解析错误
         DATAFILE_NOT_FOUND = 140,        //未找到数据文件
         UNKNOWN_PATHCODE = 141,          //未知的路径编码
-        BUFFER_FULL = 142,               //缓冲区满，还有数据
+        UNKNOWN_VARIABLE_NAME = 142,     //未知的变量名
+        BUFFER_FULL = 143,               //缓冲区满，还有数据
+        UNKNWON_DATAFILE = 144,          //未知的数据文件或数据文件不合法
     };
 }
 namespace ValueType
@@ -224,8 +226,8 @@ public:
      * @param toCompare   要比较的值
      *
      * @return 1:        compared > toCompare,
-     *         0:        compared < toCompare,
-     *         -1:       compared = toCompare
+     *         0:        compared = toCompare,
+     *         -1:       compared < toCompare
      * @note
      */
     static int CompareValue(DataType &type, char *compared, const char *toCompare)
@@ -295,8 +297,8 @@ public:
         case ValueType::REAL:
         {
             float f1 = converter.ToFloat(compared);
-            float value2 = 0;
-            ss >> value2;
+            float f2 = 0;
+            ss >> f2;
             return f1 == f2 ? 0 : (f1 > f2 ? 1 : -1);
             break;
         }
@@ -325,7 +327,6 @@ public:
         }
         this->path = path;
     }
-
 
     int FindDatatypePosByCode(char pathCode[], long &position, long &bytes);
 
@@ -379,7 +380,7 @@ public:
     static void GetSettings();
     static neb::CJsonObject GetSetting();
 };
-static neb::CJsonObject settings;
+static neb::CJsonObject settings = FileIDManager::GetSetting();
 
 static int maxTemplates = 20;
 static vector<Template> templates;
