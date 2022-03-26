@@ -43,7 +43,7 @@ extern "C"
         const char *pathToLine;    //到产线层级的路径
         enum QueryType QueryType;   //查询方式
     };
-    
+
     //在指定路径下从模版文件(.tem)加载模版
     int EDVDB_LoadSchema(const char *pathToSet);
 
@@ -94,7 +94,6 @@ extern "C"
 
     //平均值
     int EDVDB_AVG(struct DataBuffer *buffer, struct QueryParams *params);
-
 
 #ifdef __cplusplus
 }

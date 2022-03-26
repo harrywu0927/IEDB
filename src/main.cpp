@@ -1,7 +1,8 @@
 #include "../include/FS_header.h"
 #include "../include/STDFB_header.h"
 #include "../include/QueryRequest.hpp"
-#include "../include/utils.hpp"
+//#include "../include/utils.hpp"
+#include "../include/Schema.h"
 #include <vector>
 #include <string>
 #include <iostream>
@@ -20,6 +21,7 @@
 #include <sstream>
 #include <errno.h>
 using namespace std;
+
 
 int EDVDB_LoadSchema(const char *path)
 {
@@ -62,6 +64,7 @@ int EDVDB_LoadSchema(const char *path)
         if (DataType::GetDataTypeFromStr(dataType, type) == 0)
         {
             dataTypes.push_back(type);
+             
         }
         pathEncodes.push_back(pathCode);
     }
@@ -75,6 +78,45 @@ int EDVDB_UnloadSchema(char pathToUnset[])
 
 int EDVDB_ExecuteQuery(DataBuffer *buffer, QueryParams *params)
 {
+}
+
+int EDVDB_QueryByFileID2(DataBuffer *buffer, QueryParams *params)
+{
+    // vector<string> arr = DataType::StringSplit(params->fileID,"_");
+    vector<string> files;
+    readIDBFilesList(params->pathToLine, files);
+    for (string file : files)
+    {
+        if (file.find(params->fileID) != string::npos)
+        {
+            long len;
+            EDVDB_GetFileLengthByPath(const_cast<char *>(file.c_str()), &len);
+            char buff[len];
+            EDVDB_OpenAndRead(const_cast<char *>(file.c_str()), buff);
+            EDVDB_LoadSchema(params->pathToLine);
+            DataTypeConverter converter;
+            char *pathCode = params->pathCode;
+            long pos = 0;
+            long bytes = 1;
+            CurrentTemplate.FindDatatypePos(pathCode,pos,bytes);
+            
+            char *data = (char *)malloc(bytes);
+            if (data == NULL)
+            {
+                buffer->buffer = NULL;
+                buffer->bufferMalloced = 0;
+            }
+            //内存分配成功，传入数据
+            buffer->bufferMalloced = 1;
+            buffer->length = bytes;
+            memcpy(data,buff+pos,bytes);
+            buffer->buffer = data;
+            return 0;
+
+            break;
+        }
+    }
+    return StatusCode::DATAFILE_NOT_FOUND;
 }
 
 int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
@@ -97,14 +139,13 @@ int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
             for (size_t i = 0; i < CurrentTemplate.schemas.size(); i++)
             {
                 bool codeEquals = true;
-                for (size_t k = 0; k < 10; k++)     //判断路径编码是否相等
+                for (size_t k = 0; k < 10; k++) //判断路径编码是否相等
                 {
                     if (pathCode[k] != CurrentTemplate.schemas[i].first.code[k])
                         codeEquals = false;
                 }
                 if (codeEquals)
                 {
-                    // free(pathCode);
                     int num = 1;
                     if (CurrentTemplate.schemas[i].second.isArray)
                     {
@@ -113,27 +154,36 @@ int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
                             格式改变时，此处需要更改，下面else同理
                             请注意！
                         */
-                        
+
                         if (CurrentTemplate.schemas[i].second.valueType == ValueType::IMAGE)
                         {
 
                             char imgLen[2];
-                            imgLen[0] = buff[len];
-                            imgLen[1] = buff[len + 1];
-                            num = (int)converter.ToUInt16(imgLen) + 2;  
+                            imgLen[0] = buff[pos];
+                            imgLen[1] = buff[pos + 1];
+                            num = (int)converter.ToUInt16(imgLen) + 2;
                         }
                         else
                             num = CurrentTemplate.schemas[i].second.arrayLen;
                     }
                     buffer->length = (long)(num * CurrentTemplate.schemas[i].second.valueBytes);
                     int j = 0;
-                    if(CurrentTemplate.schemas[i].second.valueType == ValueType::IMAGE){
-                        buffer->length -=2;
+                    if (CurrentTemplate.schemas[i].second.valueType == ValueType::IMAGE)
+                    {
+                        buffer->length -= 2;
                         j = 2;
                     }
                     char *data = (char *)malloc(buffer->length);
+                    if (data == NULL)
+                    {
+                        //内存分配失败，需要作处理
+                        //方案1:直接返回错误
+                        //方案2:尝试分配更小的内存
+                        buffer->buffer = NULL;
+                        buffer->bufferMalloced = 0;
+                    }
+                    //内存分配成功，传入数据
                     buffer->bufferMalloced = 1;
-                    
                     for (; j < buffer->length; j++)
                     {
                         data[j] = buff[pos + j];
@@ -150,8 +200,8 @@ int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
                         {
 
                             char imgLen[2];
-                            imgLen[0] = buff[len];
-                            imgLen[1] = buff[len + 1];
+                            imgLen[0] = buff[pos];
+                            imgLen[1] = buff[pos + 1];
                             num = (int)converter.ToUInt16(imgLen) + 2;
                         }
                         else
@@ -230,132 +280,11 @@ int testQuery2(DataBuffer *buffer, long *len)
     *len = 10;
     buffer->buffer = buf;
 }
+
 int main()
 {
-    long length;
-    DataTypeConverter converter;
-    converter.CheckBigEndian();
-    cout << EDVDB_LoadSchema("./");
-    // DataBuffer buffer;
-    // QueryParams params;
-    // params.pathToLine = "./";
-    // params.fileID = "XinFeng8";
-    QueryParams params;
-    // char *code = (char*)malloc(10);
-    char code[10];
-    code[0] = (char)0;
-    code[1] = (char)1;
-    code[2] = (char)0;
-    code[3] = (char)1;
-    code[4] = 'R';
-    code[5] = (char)1;
-    code[6] = 0;
-    code[7] = (char)0;
-    code[8] = (char)0;
-    code[9] = (char)0;
-
-    params.pathCode = code;
-    for (size_t i = 0; i < 10; i++)
-    {
-        cout << params.pathCode[i];
-    }
-    // params.pathCode = code;
-    params.pathToLine = "./";
-    params.fileID = "XinFeng1";
-    DataBuffer buffer;
-    buffer.length = 0;
-    EDVDB_QueryByFileID(&buffer, &params);
-    if(buffer.bufferMalloced)
-        free(buffer.buffer);
-    // free(code);
-    //  const char* path = "./";
-    //  buffer.savePath = path;
-    //  int len = 0;
-    //  for (size_t i = 0; i < CurrentTemplate.schemas.size(); i++)
-    //  {
-    //      if(CurrentTemplate.schemas[i].second.valueBytes == 2){
-    //          int num = 1;
-    //          if(CurrentTemplate.schemas[i].second.isArray){
-    //              num = CurrentTemplate.schemas[i].second.arrayLen;
-    //          }
-    //          len+=2*num;
-
-    //     }
-    //     else if(CurrentTemplate.schemas[i].second.valueBytes == 1){
-    //         int num = 1;
-    //         if(CurrentTemplate.schemas[i].second.isArray){
-    //             num = CurrentTemplate.schemas[i].second.arrayLen;
-    //         }
-    //         short value = 12345;
-    //         len+=num;
-    //     }
-    //     else if(CurrentTemplate.schemas[i].second.valueBytes == 4){
-    //         int num = 1;
-    //         if(CurrentTemplate.schemas[i].second.isArray){
-    //             num = CurrentTemplate.schemas[i].second.arrayLen;
-    //         }
-    //         len += 4*num;
-    //     }
-
-    // }
-    // char buff[len];
-    // len=0;
-
-    // for (size_t i = 0; i < CurrentTemplate.schemas.size(); i++)
-    // {
-    //     if(CurrentTemplate.schemas[i].second.valueBytes == 2){
-    //         int num = 1;
-    //         if(CurrentTemplate.schemas[i].second.isArray){
-    //             num = CurrentTemplate.schemas[i].second.arrayLen;
-    //         }
-    //         for(int j =0;j<num;j++){
-    //             short value = 12345;
-    //             buff[len+1] = value & 0xff;
-    //             value <<= 8;
-    //             buff[len] = value & 0xff;
-    //             len+=2;
-    //         }
-
-    //     }
-    //     else if(CurrentTemplate.schemas[i].second.valueBytes == 1){
-    //         int num = 1;
-    //         if(CurrentTemplate.schemas[i].second.isArray){
-    //             num = CurrentTemplate.schemas[i].second.arrayLen;
-    //         }
-    //         short value = 12345;
-    //         for(int j =0;j<num;j++){
-
-    //             buff[len] = value & 0xff;
-    //             len++;
-    //         }
-    //     }
-    //     else if(CurrentTemplate.schemas[i].second.valueBytes == 4){
-    //         int num = 1;
-    //         if(CurrentTemplate.schemas[i].second.isArray){
-    //             num = CurrentTemplate.schemas[i].second.arrayLen;
-    //         }
-    //         for(int j =0;j<num;j++){
-    //             int value = 123456;
-    //             buff[len+3] = value & 0xff;
-    //             value<<=8;
-    //             buff[len+2] = value&0xff;
-    //             value<<=8;
-    //             buff[len+1] = value&0xff;
-    //             value<<=8;
-    //             buff[len] = value&0xff;
-    //             len+=4;
-    //         }
-    //     }
-
-    // }
-    // buffer.buffer = buff;
-    // buffer.length = len;
-    // EDVDB_InsertRecord(&buffer,0);
-    // FILE *fp = fopen("exldata.tem", "rb");
-    // long len;
-    // EDVDB_GetFileLengthByFilePtr((long)fp, &len);
-    // char buf[len];
-    // EDVDB_Read((long)fp, buf);
-    // cout << sizeof(buf) << endl;
+    EDVDB_ZipFile("./","XinFeng_0100.dat");
+    //cout << EDVDB_LoadZipSchema("./");
+    //cout << EDVDB_LoadSchema("./");
     return 0;
 }

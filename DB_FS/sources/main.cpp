@@ -17,7 +17,7 @@
 #include <sstream>
 #include "CJsonObject.hpp"
 using namespace std;
-extern int errno;
+//extern int errno;
 neb::CJsonObject config = new neb::CJsonObject();
 long availableSpace = 1024 * 1024 * 10;
 size_t totalSpace = 0;

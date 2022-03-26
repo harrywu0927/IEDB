@@ -20,10 +20,10 @@ namespace StatusCode
     {
         DATA_TYPE_MISMATCH_ERROR = 135,  //数据类型不匹配
         SCHEMA_FILE_NOT_FOUND = 136,     //未找到模版文件
-        PATHENCODE_INVALID = 137,        //路径编码不合法
+        PATHCODE_INVALID = 137,          //路径编码不合法
         UNKNOWN_TYPE = 138,              //未知数据类型
         TEMPLATE_RESOLUTION_ERROR = 139, //模版文件解析错误
-        DATAFILE_NOT_FOUND = 140        //未找到数据文件
+        DATAFILE_NOT_FOUND = 140         //未找到数据文件
     };
 }
 namespace ValueType
@@ -43,7 +43,7 @@ namespace ValueType
         UNKNOWN = 0
     };
 }
-extern int errno;
+//extern int errno;
 
 //获取某一目录下的所有文件
 //不递归子文件夹
@@ -71,7 +71,7 @@ public:
             string str = "  ";
             str[0] = pathEncode[i * 2];
             str[1] = pathEncode[i * 2 + 1];
-            res.push_back((int)converter.ToUInt16(str));
+            res.push_back((int)converter.ToUInt16(const_cast<char *>(str.c_str())));
         }
         return res;
     }
@@ -84,7 +84,6 @@ public:
         {
             this->code[i] = pathEncode[i];
         }
-        
     }
 };
 
@@ -95,9 +94,15 @@ public:
     int arrayLen;
     int valueBytes;
     ValueType::ValueType valueType;
-    string standardValue; //标准值
-    string maxValue;      //最大值
-    string minValue;      //最小值
+
+    // string standardValue; //标准值
+    // string maxValue;      //最大值
+    // string minValue;      //最小值
+    
+    char maxValue[10];//最大值
+    char minValue[10];//最小值
+    char standardValue[10];//标准值
+
     //实现分割字符串(源字符串也将改变)
     //@param srcstr     源字符串
     //@param str        划分字符
@@ -213,7 +218,7 @@ public:
         return StatusCode::UNKNOWN_TYPE;
     }
 };
-class Template
+class Template//标准模板
 {
 public:
     vector<pair<PathCode, DataType>> schemas;
@@ -231,34 +236,29 @@ public:
         }
         this->path = path;
     }
-    //挂载模版
-    // int SetTemplate(vector<PathCode> &pathEncodes, vector<DataType> &dataTypes, char path[])
-    // {
-    //     if (pathEncodes.size() != dataTypes.size())
-    //     {
-    //         return StatusCode::TEMPLATE_RESOLUTION_ERROR;
-    //     }
-    //     for (int i = 0; i < pathEncodes.size(); i++)
-    //     {
-    //         this->schemas.push_back(make_pair(pathEncodes[i], dataTypes[i]));
-    //         // this->pathNames[pathEncodes[i].paths] = pathName[i];
-    //     }
-    //     this->path = path;
 
-    //     return 0;
-    // }
+    //根据当前模版寻找指定路径编码的数据在数据文件中的位置
+    //@param position  数据起始位置
+    //@param bytes     数据长度
+    void FindDatatypePos(char pathCode[], long &position, long &bytes);
+};
 
-    //卸载当前模版
-    int UnsetTemplate()
+class ZipTemplate//压缩模板
+{
+public:
+    vector<pair<string, DataType>> schemas;
+    // unordered_map<vector<int>, string> pathNames;
+    string path;         //挂载路径
+    char *temFileBuffer; //模版文件缓存
+    long fileLength;
+    ZipTemplate() {}
+    ZipTemplate(vector<string> &dataName, vector<DataType> &dataTypes, const char *path)
     {
-        // this->pathNames.clear();
-        this->schemas.clear();
-        return 0;
-    }
-
-    //根据路径编码寻找数据在模版文件中的位置
-    long FindDatatypePos(PathCode &pathCode)
-    {
+        for (int i = 0; i < dataName.size(); i++)
+        {
+            this->schemas.push_back(make_pair(dataName[i], dataTypes[i]));
+        }
+        this->path = path;
     }
 };
 
@@ -301,6 +301,26 @@ public:
     static int SetTemplate(Template &tem)
     {
         CurrentTemplate = tem;
+    }
+};
+
+static vector<ZipTemplate> ZipTemplates;
+static ZipTemplate CurrentZipTemplate;
+class ZipTemplateManager
+{
+private:
+public:
+    static void AddTemplate(ZipTemplate &tem)
+    {
+    }
+    static void ModifyMaxTemplates(int n)
+    {
+        maxTemplates = n;
+    }
+    //将模版设为当前模版
+    static int SetTemplate(ZipTemplate &tem)
+    {
+        CurrentZipTemplate = tem;
     }
 };
 
