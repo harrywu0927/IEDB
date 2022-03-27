@@ -17,9 +17,9 @@ using namespace std;
 
 int main(){
 
-    char buf[4];
-    int x = -800;
-    memcpy(buf,&x,4);
+    char buf[2];
+    short x = 80;
+    memcpy(buf,&x,2);
     float value = 0;
     void *pf;
     pf = &value;

@@ -256,7 +256,7 @@ public:
         {
         case ValueType::INT:
         {
-            short value1 = converter.ToInt16(compared);
+            short value1 = converter.ToInt16_m(compared);
             short value2 = 0;
             ss >> value2;
             return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
@@ -264,7 +264,7 @@ public:
         }
         case ValueType::DINT:
         {
-            int value1 = converter.ToInt32(bufferV1);
+            int value1 = converter.ToInt32_m(bufferV1);
             int value2 = 0;
             ss >> value2;
             return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
@@ -272,7 +272,7 @@ public:
         }
         case ValueType::UDINT:
         {
-            uint value1 = converter.ToUInt32(compared);
+            uint value1 = converter.ToUInt32_m(compared);
             uint value2 = 0;
             ss >> value2;
             return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
@@ -280,7 +280,7 @@ public:
         }
         case ValueType::UINT:
         {
-            uint16_t value1 = converter.ToUInt16(compared);
+            uint16_t value1 = converter.ToUInt16_m(compared);
             uint16_t value2 = 0;
             ss >> value2;
             return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
@@ -296,7 +296,7 @@ public:
         }
         case ValueType::TIME:
         {
-            int value1 = converter.ToInt32(compared);
+            int value1 = converter.ToInt32_m(compared);
             int value2 = 0;
             ss >> value2;
             return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);

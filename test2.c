@@ -18,15 +18,15 @@ int main()
     t.tm_year = 122;
     t.tm_mon = 2;
     t.tm_mday = 24;
-    t.tm_hour = 23;
+    t.tm_hour = 9;
     t.tm_min = 10;
-    t.tm_sec = 16;
+    t.tm_sec = 18;
     time_t seconds = mktime(&t);
     int ms = 100;
     long millis = seconds * 1000 + ms;
     return 0;
-    //start 1648123816100
-    //end 1648134616100
+    //start 1648084211100
+    //end 1648084218100
     struct QueryParams params;
     char code[10];
     code[0] = (char)0;

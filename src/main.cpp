@@ -84,6 +84,7 @@ int EDVDB_UnloadSchema(char pathToUnset[])
 
 int EDVDB_ExecuteQuery(DataBuffer *buffer, QueryParams *params)
 {
+    return 0;
 }
 
 /**
@@ -417,14 +418,17 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                 return StatusCode::BUFFER_FULL;
             }
             //拷贝数据
+            cur = 0;
             for (auto &mem : mallocedMemory)
             {
-                memcpy(data, mem.first, mem.second);
+                memcpy(data + cur, mem.first, mem.second);
+                free(mem.first);
+                cur += mem.second;
             }
 
             buffer->bufferMalloced = 1;
             buffer->buffer = data;
-            buffer->length = bytes * selectedFiles.size();
+            buffer->length = cur;
         }
         else
         {
@@ -489,10 +493,10 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
             if (params->byPath)
             {
                 char *pathCode = params->pathCode;
-                err = CurrentTemplate.FindDatatypePosByCode(pathCode, pos, bytes);
+                err = CurrentTemplate.FindDatatypePosByCode(pathCode, pos, bytes, type);
             }
             else
-                err = CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes);
+                err = CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes, type);
             if (err != 0)
             {
                 buffer->buffer = NULL;
@@ -597,19 +601,51 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                     return StatusCode::BUFFER_FULL;
                 }
                 //拷贝数据
+                cur = 0;
                 for (auto &mem : mallocedMemory)
                 {
-                    memcpy(data, mem.first, mem.second);
+                    memcpy(data + cur, mem.first, mem.second);
+                    free(mem.first);
+                    cur += mem.second;
                 }
 
                 buffer->bufferMalloced = 1;
                 buffer->buffer = data;
-                buffer->length = bytes * selectedFiles.size();
+                buffer->length = cur;
             }
             else
             {
                 buffer->bufferMalloced = 0;
             }
+        }
+        else //不需要比较数值,直接拷贝前N个文件
+        {
+            for (int i = 0; i < params->queryNums; i++)
+            {
+                long len;
+                EDVDB_GetFileLengthByPath(const_cast<char *>(selectedFiles[i].first.c_str()), &len);
+                char buff[len];
+                EDVDB_OpenAndRead(const_cast<char *>(selectedFiles[i].first.c_str()), buff);
+                char *memory = (char *)malloc(len);
+                memcpy(memory, buff, len);
+                mallocedMemory.push_back(make_pair(memory, len));
+                cur += len;
+            }
+            if (cur != 0)
+            {
+                char *data = (char *)malloc(cur);
+                cur = 0;
+                for (auto &mem : mallocedMemory)
+                {
+                    memcpy(data + cur, mem.first, mem.second);
+                    free(mem.first);
+                    cur += mem.second;
+                }
+                buffer->bufferMalloced = 1;
+                buffer->buffer = data;
+                buffer->length = cur;
+            }
+            else buffer->bufferMalloced = 0;
         }
 
         break;
@@ -1231,8 +1267,8 @@ int main()
     code[9] = (char)0;
     params.pathCode = code;
     params.valueName = "S1R3";
-    params.start = 1648123816100;
-    params.end = 1648134616100;
+    params.start = 1648084211100;
+    params.end = 1648084218100;
     params.order = TIME_DSC;
     params.compareType = GT;
     params.compareValue = "67";
