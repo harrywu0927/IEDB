@@ -319,6 +319,89 @@ public:
             break;
         }
     }
+    /**
+     * @brief 根据指定的数据类型比较两个字节数据值的大小，暂不支持数组的比较。
+     * @param type        数据类型
+     * @param compared    被比较的值
+     * @param toCompare   要比较的值
+     *
+     * @return 1:        compared > toCompare,
+     *         0:        compared = toCompare,
+     *         -1:       compared < toCompare
+     * @note
+     */
+    static int CompareValueInBytes(DataType &type, char *compared, const char *toCompare)
+    {
+        if (type.isArray == 1)
+        {
+            return 0;
+        }
+        int bytes = DataType::GetValueBytes(type.valueType);
+        if (bytes == 0)
+        {
+            errorCode = StatusCode::UNKNOWN_TYPE;
+            return StatusCode::UNKNOWN_TYPE;
+        }
+        char bufferV1[bytes];
+        memcpy(bufferV1, compared, bytes);
+        DataTypeConverter converter;
+        switch (type.valueType)
+        {
+        case ValueType::INT:
+        {
+            short value1 = converter.ToInt16_m(compared);
+            short value2 = converter.ToInt16_m(toCompare);
+            return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
+            break;
+        }
+        case ValueType::DINT:
+        {
+            int value1 = converter.ToInt32_m(bufferV1);
+            int value2 = converter.ToInt32_m(toCompare);
+            return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
+            break;
+        }
+        case ValueType::UDINT:
+        {
+            uint value1 = converter.ToUInt32_m(compared);
+            uint value2 = converter.ToUInt32_m(toCompare);
+            return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
+            break;
+        }
+        case ValueType::UINT:
+        {
+            uint16_t value1 = converter.ToUInt16_m(compared);
+            uint16_t value2 = converter.ToUInt16_m(toCompare);
+            return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
+            break;
+        }
+        case ValueType::SINT:
+        {
+            int value1 = (int)compared[0];
+            int value2 = (int)toCompare[0];
+            return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
+            break;
+        }
+        case ValueType::TIME:
+        {
+            int value1 = converter.ToInt32_m(compared);
+            int value2 = converter.ToInt32_m(toCompare);
+            return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
+            break;
+        }
+        case ValueType::REAL:
+        {
+            float f1 = converter.ToFloat(compared);
+            float f2 = converter.ToFloat(toCompare);
+            return f1 == f2 ? 0 : (f1 > f2 ? 1 : -1);
+            break;
+        }
+
+        default:
+            return 0; //其他类型不作判断
+            break;
+        }
+    }
 };
 class Template //标准模板
 {

@@ -70,7 +70,7 @@ int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, long pos, Quer
                  char value1[type.valueBytes], value2[type.valueBytes];
                  memcpy(value1, iter1.first + pos, type.valueBytes);
                  memcpy(value2, iter2.first + pos, type.valueBytes);
-                 return DataType::CompareValue(type, value1, value2) < 0;
+                 return DataType::CompareValueInBytes(type, value1, value2) < 0;
              });
         break;
     }
@@ -83,7 +83,7 @@ int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, long pos, Quer
                  char value1[type.valueBytes], value2[type.valueBytes];
                  memcpy(value1, iter1.first + pos, type.valueBytes);
                  memcpy(value2, iter2.first + pos, type.valueBytes);
-                 return DataType::CompareValue(type, value1, value2) > 0;
+                 return DataType::CompareValueInBytes(type, value1, value2) > 0;
              });
         break;
     }
