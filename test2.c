@@ -13,6 +13,7 @@ int main()
     // buffer.savePath = "";
     // EDVDB_InsertRecord(&buffer,0);
     // return 0;
+    
 
     struct tm t;
     t.tm_year = 122;
@@ -24,7 +25,7 @@ int main()
     time_t seconds = mktime(&t);
     int ms = 100;
     long millis = seconds * 1000 + ms;
-    return 0;
+    //return 0;
     //start 1648084211100
     //end 1648084218100
     struct QueryParams params;
@@ -41,6 +42,9 @@ int main()
     code[9] = (char)0;
     params.pathCode = code;
     struct DataBuffer buffer;
+
+    EDVDB_MAX(&buffer, &params);
+    return 0;
     if (buffer.buffer == NULL)
     {
         printf("buffer null\n");

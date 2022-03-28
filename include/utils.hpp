@@ -15,6 +15,7 @@
 #include "DataTypeConvert.hpp"
 #include <sstream>
 #include "../DB_FS/sources/CJsonObject.hpp"
+#include "FS_header.h"
 using namespace std;
 namespace StatusCode
 {
@@ -50,17 +51,17 @@ namespace ValueType
         UNKNOWN = 0
     };
 }
-//extern int errno;
-
+static int errorCode; //错误码
 //获取某一目录下的所有文件
 //不递归子文件夹
 void readFileList(string path, vector<string> &files);
 
 void readIDBFilesList(string path, vector<string> &files);
 
-//获取绝对时间(自1970/1/1至今)
-//精确到毫秒
+void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWithTime);
+
 long getMilliTime();
+
 
 class PathCode
 {
@@ -86,7 +87,6 @@ public:
     {
         this->paths = DecodePath(pathEncode, levels);
         this->name = name;
-        // this->code = pathEncode;
         for (size_t i = 0; i < 10; i++)
         {
             this->code[i] = pathEncode[i];
@@ -106,10 +106,10 @@ public:
     // string standardValue; //标准值
     // string maxValue;      //最大值
     // string minValue;      //最小值
-    
-    char maxValue[10];//最大值
-    char minValue[10];//最小值
-    char standardValue[10];//标准值
+
+    char maxValue[10];      //最大值
+    char minValue[10];      //最小值
+    char standardValue[10]; //标准值
 
     //实现分割字符串(源字符串也将改变)
     //@param srcstr     源字符串
@@ -223,6 +223,7 @@ public:
             type.valueBytes = GetValueBytes(type.valueType);
             return 0;
         }
+        errorCode = StatusCode::UNKNOWN_TYPE;
         return StatusCode::UNKNOWN_TYPE;
     }
 
@@ -246,11 +247,13 @@ public:
         stringstream ss;
         ss << toCompare;
         int bytes = DataType::GetValueBytes(type.valueType);
-        if(bytes == 0) return StatusCode::UNKNOWN_TYPE;
+        if (bytes == 0)
+        {
+            errorCode = StatusCode::UNKNOWN_TYPE;
+            return StatusCode::UNKNOWN_TYPE;
+        }
         char bufferV1[bytes];
-        char bufferV2[bytes];
         memcpy(bufferV1, compared, bytes);
-        memcpy(bufferV2, toCompare, bytes);
         DataTypeConverter converter;
         switch (type.valueType)
         {
@@ -317,7 +320,7 @@ public:
         }
     }
 };
-class Template//标准模板
+class Template //标准模板
 {
 public:
     vector<pair<PathCode, DataType>> schemas;
@@ -336,20 +339,19 @@ public:
         this->path = path;
     }
 
-    //根据当前模版寻找指定路径编码的数据在数据文件中的位置
-    //@param position  数据起始位置
-    //@param bytes     数据长度
 
-    int FindDatatypePosByCode(char pathCode[], long &position, long &bytes);
+    int FindDatatypePosByCode(char pathCode[], char buff[], long &position, long &bytes);
 
-    int FindDatatypePosByCode(char pathCode[], long &position, long &bytes, DataType &type);
-    
-    int FindDatatypePosByName(const char *name, long &position, long &bytes);
+    int FindDatatypePosByCode(char pathCode[], char buff[], long &position, long &bytes, DataType &type);
 
-    int FindDatatypePosByName(const char *name, long &position, long &bytes, DataType &type);
+    int FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<long> &positions, vector<long> &bytes, vector<DataType> &types);
+
+    int FindDatatypePosByName(const char *name, char buff[], long &position, long &bytes);
+
+    int FindDatatypePosByName(const char *name, char buff[], long &position, long &bytes, DataType &type);
 };
 
-class ZipTemplate//压缩模板
+class ZipTemplate //压缩模板
 {
 public:
     vector<pair<string, DataType>> schemas;
@@ -368,7 +370,6 @@ public:
     }
 };
 
-
 static char Label[100] = "./";
 
 //文件ID管理
@@ -385,26 +386,6 @@ public:
             获取此路径下文件数量，以文件数量+1作为ID
         */
         vector<string> files;
-        // GetSettings();
-        //  struct dirent *ptr;
-        //  DIR *dir;
-        //  string finalPath = Label;
-        //  finalPath += path;
-        //  cout << finalPath.c_str() << endl;
-        //  dir = opendir(finalPath.c_str());
-        //  cout << finalPath << endl;
-        //  while ((ptr = readdir(dir)) != NULL)
-        //  {
-        //      if (ptr->d_name[0] == '.')
-        //          continue;
-
-        //     if (ptr->d_type == 8)
-        //     {
-        //         string p;
-        //         files.push_back(p.append(path).append("/").append(ptr->d_name));
-        //     }
-        // }
-        // closedir(dir);
         readFileList(path, files);
         return "XinFeng" + to_string(files.size() + 1) + "_";
     }
@@ -430,8 +411,53 @@ public:
         maxTemplates = n;
     }
     //将模版设为当前模版
-    static int SetTemplate(Template &tem)
+    static int SetTemplate(const char *path)
     {
+        vector<string> files;
+        readFileList(path, files);
+        string temPath = "";
+        for (string file : files) //找到带有后缀tem的文件
+        {
+            string s = file;
+            vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
+            if (vec[vec.size() - 1].find("tem") != string::npos)
+            {
+                temPath = file;
+                break;
+            }
+        }
+        if (temPath == "")
+            return StatusCode::SCHEMA_FILE_NOT_FOUND;
+        long length;
+        EDVDB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &length);
+        char buf[length];
+        int err = EDVDB_OpenAndRead(const_cast<char *>(temPath.c_str()), buf);
+        if (err != 0)
+            return err;
+        int i = 0;
+        vector<PathCode> pathEncodes;
+        vector<DataType> dataTypes;
+        while (i < length)
+        {
+            char variable[30], dataType[30], pathEncode[10];
+            memcpy(variable, buf + i, 30);
+            i += 30;
+            memcpy(dataType, buf + i, 30);
+            i += 30;
+            memcpy(pathEncode, buf + i, 10);
+            i += 10;
+            vector<string> paths;
+            PathCode pathCode(pathEncode, sizeof(pathEncode) / 2, variable);
+            DataType type;
+            if (DataType::GetDataTypeFromStr(dataType, type) == 0)
+            {
+                dataTypes.push_back(type);
+            }
+            else
+                return errorCode;
+            pathEncodes.push_back(pathCode);
+        }
+        Template tem(pathEncodes, dataTypes, path);
         AddTemplate(tem);
         CurrentTemplate = tem;
         return 0;
@@ -451,6 +477,19 @@ public:
         CurrentTemplate.schemas.clear();
         CurrentTemplate.temFileBuffer = NULL;
         return 0;
+    }
+};
+
+//负责数据文件的打包
+static int packMode;          //定时打包或存储一定数量后打包
+static int packNum;           //一次打包的文件数量
+static long packTimeInterval; //定时打包时间间隔
+class Packer
+{
+public:
+    static int Pack(string path)
+    {
+
     }
 };
 

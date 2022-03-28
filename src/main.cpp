@@ -31,60 +31,125 @@ using namespace std;
  */
 int EDVDB_LoadSchema(const char *path)
 {
-    vector<string> files;
-    readFileList(path, files);
-    string temPath = "";
-    for (string file : files) //找到带有后缀tem的文件
-    {
-        string s = file;
-        vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
-        if (vec[vec.size() - 1].find("tem") != string::npos)
-        {
-            temPath = file;
-            break;
-        }
-    }
-    if (temPath == "")
-        return StatusCode::SCHEMA_FILE_NOT_FOUND;
-    long length;
-    EDVDB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &length);
-    char buf[length];
-    int err = EDVDB_OpenAndRead(const_cast<char *>(temPath.c_str()), buf);
-    if (err != 0)
-        return err;
-    int i = 0;
-    vector<PathCode> pathEncodes;
-    vector<DataType> dataTypes;
-    while (i < length)
-    {
-        char variable[30], dataType[30], pathEncode[10];
-        memcpy(variable, buf + i, 30);
-        i += 30;
-        memcpy(dataType, buf + i, 30);
-        i += 30;
-        memcpy(pathEncode, buf + i, 10);
-        i += 10;
-        vector<string> paths;
-        PathCode pathCode(pathEncode, sizeof(pathEncode) / 2, variable);
-        DataType type;
-        if (DataType::GetDataTypeFromStr(dataType, type) == 0)
-        {
-            dataTypes.push_back(type);
-        }
-        pathEncodes.push_back(pathCode);
-    }
-    Template tem(pathEncodes, dataTypes, path);
-    return TemplateManager::SetTemplate(tem);
+    return TemplateManager::SetTemplate(path);
 }
 
-int EDVDB_UnloadSchema(char pathToUnset[])
+/**
+ * @brief 卸载指定路径下的模版文件
+ * @param pathToUnset    路径
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note
+ */
+int EDVDB_UnloadSchema(const char *pathToUnset)
 {
-    // return CurrentSchemaTemplate.UnsetTemplate();
+    return TemplateManager::UnsetTemplate(pathToUnset);
 }
 
+/**
+ * @brief 根据指定数据类型的数值对查询结果排序或去重，此函数仅对内存地址-长度对操作
+ * @param mallocedMemory        已在堆区分配的内存地址-长度对集
+ * @param pos           指定数据在缓冲区中的位置
+ * @param params        查询参数
+ * @param type        数据类型
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note
+ */
+int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, long pos, QueryParams *params, DataType &type)
+{
+    switch (params->order)
+    {
+    case ASCEND:    //升序
+    {
+        sort(mallocedMemory.begin(), mallocedMemory.end(),
+             [&type, &pos](pair<char *, long> iter1, pair<char *, long> iter2) -> bool
+             {
+                 char value1[type.valueBytes], value2[type.valueBytes];
+                 memcpy(value1, iter1.first + pos, type.valueBytes);
+                 memcpy(value2, iter2.first + pos, type.valueBytes);
+                 return DataType::CompareValue(type, value1, value2) < 0;
+             });
+        break;
+    }
+
+    case DESCEND:   //降序
+    {
+        sort(mallocedMemory.begin(), mallocedMemory.end(),
+             [&type, &pos](pair<char *, long> iter1, pair<char *, long> iter2) -> bool
+             {
+                 char value1[type.valueBytes], value2[type.valueBytes];
+                 memcpy(value1, iter1.first + pos, type.valueBytes);
+                 memcpy(value2, iter2.first + pos, type.valueBytes);
+                 return DataType::CompareValue(type, value1, value2) > 0;
+             });
+        break;
+    }
+    case DISTINCT:  //去除重复
+    {
+        vector<pair<char *, long>> existedValues;
+        for (auto mem = mallocedMemory.begin(); mem != mallocedMemory.end(); mem++)
+        {
+            char value[type.valueBytes];
+            memcpy(value, mem->first + pos, type.valueBytes);
+            bool isRepeat = false;
+            for (auto &&added : existedValues)
+            {
+                bool equals = true;
+                for (int i = 0; i < added.second; i++)
+                {
+                    if(value[i] != added.first[i]) equals = false;
+                }
+                if(equals)
+                {
+                    free(mem->first);    //重复值，释放此内存
+                    mallocedMemory.erase(mem);
+                    isRepeat = true;
+                }
+            }
+            if(!isRepeat)   //不是重复值
+            {
+                char *v = value;
+                existedValues.push_back(make_pair(v,type.valueBytes));
+            }
+        }
+        
+        break;
+    }
+    default:
+        break;
+    }
+    return 0;
+}
+
+/**
+ * @brief 执行自定义查询，自由组合查询请求参数，按照3个主查询条件之一，附加辅助条件查询
+ * @param buffer    数据缓冲区
+ * @param params    查询请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note
+ */
 int EDVDB_ExecuteQuery(DataBuffer *buffer, QueryParams *params)
 {
-    return 0;
+    switch (params->queryType)
+    {
+    case TIMESPAN:
+        return EDVDB_QueryByTimespan(buffer, params);
+        break;
+    case LAST:
+        return EDVDB_QueryLastRecords(buffer, params);
+        break;
+    case FILEID:
+        return EDVDB_QueryByFileID(buffer, params);
+        break;
+    default:
+        break;
+    }
+    return StatusCode::NO_QUERY_TYPE;
 }
 
 /**
@@ -95,9 +160,10 @@ int EDVDB_ExecuteQuery(DataBuffer *buffer, QueryParams *params)
  *
  * @return  0:success,
  *          others: StatusCode
- * @note
+ * @note    deprecated
  */
-int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
+
+/*int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
 {
     vector<string> files;
     readIDBFilesList(params->pathToLine, files);
@@ -210,6 +276,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
     buffer->length = bytes * selectedFiles.size();
     return 0;
 }
+*/
 
 /**
  * @brief 根据给定的查询条件在某一产线文件夹下的数据文件中获取符合条件的整个文件的数据，可比较数据大小筛选，可按照时间
@@ -223,37 +290,22 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
  */
 int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
 {
-    vector<string> files;
-    readIDBFilesList(params->pathToLine, files);
-    vector<pair<string, long>> selectedFiles;
+    vector<pair<string, long>> filesWithTime, selectedFiles;
+
+    //获取每个数据文件，并带有时间戳
+    readIDBFilesWithTimestamps(params->pathToLine, filesWithTime);
+
     //根据主查询方式选择不同的方案
     switch (params->queryType)
     {
     case TIMESPAN: //根据时间段，附加辅助查询条件筛选
     {
         //筛选落入时间区间内的文件
-        for (auto file : files)
+        for (auto &file : filesWithTime)
         {
-            auto tmp = file;
-            vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[1].c_str()), "-");
-            if (time.size() == 0)
+            if (file.second >= params->start && file.second <= params->end)
             {
-                continue;
-            }
-            time[time.size() - 1] = DataType::StringSplit(const_cast<char *>(time[time.size() - 1].c_str()), ".")[0];
-            struct tm t;
-            t.tm_year = atoi(time[0].c_str()) - 1900;
-            t.tm_mon = atoi(time[1].c_str()) - 1;
-            t.tm_mday = atoi(time[2].c_str());
-            t.tm_hour = atoi(time[3].c_str());
-            t.tm_min = atoi(time[4].c_str());
-            t.tm_sec = atoi(time[5].c_str());
-            time_t seconds = mktime(&t);
-            int ms = atoi(time[6].c_str());
-            long millis = seconds * 1000 + ms;
-            if (millis >= params->start && millis <= params->end)
-            {
-                selectedFiles.push_back(make_pair(file, millis));
+                selectedFiles.push_back(make_pair(file.first, file.second));
             }
         }
         //确认当前模版
@@ -269,19 +321,6 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                 return err;
             }
         }
-        //获取数据的偏移量和数据类型
-        long pos = 0, bytes = 0;
-        DataType type;
-        int err;
-        if (params->byPath == 1)
-        {
-            char *pathCode = params->pathCode;
-            err = CurrentTemplate.FindDatatypePosByCode(pathCode, pos, bytes);
-        }
-        else
-            err = CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes, type);
-        if (err != 0)
-            return err;
 
         //根据时间升序或降序排序
         switch (params->order)
@@ -316,72 +355,59 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
             {
                 long len; //文件长度
                 EDVDB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
-                if (len < pos)
-                {
-                    return StatusCode::UNKNWON_DATAFILE;
-                }
                 char buff[len]; //文件内容缓存
                 EDVDB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+
+                //获取数据的偏移量和数据类型
+                long pos = 0, bytes = 0;
+                DataType type;
+                int err;
+                if (params->byPath == 1)
+                {
+                    char *pathCode = params->pathCode;
+                    err = CurrentTemplate.FindDatatypePosByCode(pathCode, buff, pos, bytes, type);
+                }
+                else
+                    err = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type);
+                if (err != 0)
+                    return err;
+
                 char value[bytes]; //值缓存
                 memcpy(value, buff + pos, bytes);
-                char *memory = (char *)malloc(len); //一次分配整个文件长度的内存
                 //根据比较结果决定是否加入结果集
                 int compareRes = DataType::CompareValue(type, value, params->compareValue);
+                bool canCopy = false;
                 switch (params->compareType)
                 {
                 case CompareType::GT:
                 {
-                    if (compareRes > 0)
+                    if (compareRes == 1)
                     {
-                        memcpy(memory, value, len);
-                        cur += len;
-                        mallocedMemory.push_back(make_pair(memory, len));
-                    }
-                    else
-                    {
-                        free(memory);
+                        canCopy = true;
                     }
                     break;
                 }
                 case CompareType::LT:
                 {
-                    if (compareRes < 0)
+                    if (compareRes == -1)
                     {
-                        memcpy(memory, value, len);
-                        cur += len;
-                        mallocedMemory.push_back(make_pair(memory, len));
-                    }
-                    else
-                    {
-                        free(memory);
+                        canCopy = true;
                     }
                     break;
                 }
                 case CompareType::GE:
                 {
-                    if (compareRes >= 0)
+                    if (compareRes == 0 || compareRes == 1)
                     {
-                        memcpy(memory, value, len);
-                        cur += len;
-                        mallocedMemory.push_back(make_pair(memory, len));
-                    }
-                    else
-                    {
-                        free(memory);
+                        canCopy = true;
                     }
                     break;
                 }
                 case CompareType::LE:
                 {
-                    if (compareRes <= 0)
+                    if (compareRes == 0 || compareRes == 1)
                     {
-                        memcpy(memory, value, len);
-                        cur += len;
-                        mallocedMemory.push_back(make_pair(memory, len));
-                    }
-                    else
-                    {
-                        free(memory);
+                        canCopy = true;
                     }
                     break;
                 }
@@ -389,20 +415,35 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                 {
                     if (compareRes == 0)
                     {
-                        memcpy(memory, value, len);
-                        cur += len;
-                        mallocedMemory.push_back(make_pair(memory, len));
-                    }
-                    else
-                    {
-                        free(memory);
+                        canCopy = true;
                     }
                     break;
                 }
                 default:
-                    free(memory);
                     break;
                 }
+                if (canCopy) //需要此数据
+                {
+                    char *memory = (char *)malloc(len); //一次分配整个文件长度的内存
+                    memcpy(memory, buff, len);
+                    cur += len;
+                    mallocedMemory.push_back(make_pair(memory, len));
+                }
+            }
+        }
+        else //不需要比较数据，直接拷贝数据
+        {
+            for (auto &file : selectedFiles)
+            {
+                long len; //文件长度
+                EDVDB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+                char buff[len]; //文件内容缓存
+                EDVDB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+
+                char *memory = (char *)malloc(len); //一次分配整个文件长度的内存
+                memcpy(memory, buff, len);
+                cur += len;
+                mallocedMemory.push_back(make_pair(memory, len));
             }
         }
 
@@ -453,31 +494,8 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
             }
         }
 
-        //获取每个文件的时间戳
-        for (auto file : files)
-        {
-            auto tmp = file;
-            vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[1].c_str()), "-");
-            if (time.size() == 0)
-            {
-                continue;
-            }
-            time[time.size() - 1] = DataType::StringSplit(const_cast<char *>(time[time.size() - 1].c_str()), ".")[0];
-            struct tm t;
-            t.tm_year = atoi(time[0].c_str()) - 1900;
-            t.tm_mon = atoi(time[1].c_str()) - 1;
-            t.tm_mday = atoi(time[2].c_str());
-            t.tm_hour = atoi(time[3].c_str());
-            t.tm_min = atoi(time[4].c_str());
-            t.tm_sec = atoi(time[5].c_str());
-            time_t seconds = mktime(&t);
-            int ms = atoi(time[6].c_str());
-            long millis = seconds * 1000 + ms;
-            selectedFiles.push_back(make_pair(file, millis));
-        }
-
         //根据时间降序排序
-        sort(selectedFiles.begin(), selectedFiles.end(),
+        sort(filesWithTime.begin(), filesWithTime.end(),
              [](pair<string, long> iter1, pair<string, long> iter2) -> bool
              {
                  return iter1.second > iter2.second;
@@ -486,87 +504,69 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
         long cur = 0;                              //记录已选中的文件总长度
         if (params->compareType != CMP_NONE)       //需要比较数值
         {
-            //获取数据的偏移量和字节数
-            long bytes = 0, pos = 0;
-            DataType type;
-            int err;
-            if (params->byPath)
-            {
-                char *pathCode = params->pathCode;
-                err = CurrentTemplate.FindDatatypePosByCode(pathCode, pos, bytes, type);
-            }
-            else
-                err = CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes, type);
-            if (err != 0)
-            {
-                buffer->buffer = NULL;
-                buffer->bufferMalloced = 0;
-                return err;
-            }
             int selectedNum = 0;
-            /*!!!警惕内存泄露!!!*/
-            for (auto &file : selectedFiles)
+            /*<-----!!!警惕内存泄露!!!----->*/
+            for (auto &file : filesWithTime)
             {
                 long len; //文件长度
                 EDVDB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
-                if (len < pos)
-                {
-                    return StatusCode::UNKNWON_DATAFILE;
-                }
                 char buff[len]; //文件内容缓存
                 EDVDB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+
+                //获取数据的偏移量和字节数
+                long bytes = 0, pos = 0;
+                DataType type;
+                int err;
+                if (params->byPath)
+                {
+                    char *pathCode = params->pathCode;
+                    err = CurrentTemplate.FindDatatypePosByCode(pathCode, buff, pos, bytes, type);
+                }
+                else
+                    err = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type);
+                if (err != 0)
+                {
+                    buffer->buffer = NULL;
+                    buffer->bufferMalloced = 0;
+                    return err;
+                }
                 char value[bytes]; //值缓存
                 memcpy(value, buff + pos, bytes);
 
                 //根据比较结果决定是否加入结果集
                 int compareRes = DataType::CompareValue(type, value, params->compareValue);
+                bool canCopy = false; //根据比较结果决定是否允许拷贝
                 switch (params->compareType)
                 {
                 case CompareType::GT:
                 {
-                    if (compareRes > 0)
+                    if (compareRes == 1)
                     {
-                        char *memory = (char *)malloc(len); //一次分配整个文件长度的内存
-                        memcpy(memory, value, len);
-                        cur += len;
-                        mallocedMemory.push_back(make_pair(memory, len));
-                        selectedNum++;
+                        canCopy = true;
                     }
                     break;
                 }
                 case CompareType::LT:
                 {
-                    if (compareRes < 0)
+                    if (compareRes == -1)
                     {
-                        char *memory = (char *)malloc(len);
-                        memcpy(memory, value, len);
-                        cur += len;
-                        mallocedMemory.push_back(make_pair(memory, len));
-                        selectedNum++;
+                        canCopy = true;
                     }
                     break;
                 }
                 case CompareType::GE:
                 {
-                    if (compareRes >= 0)
+                    if (compareRes == 0 || compareRes == 1)
                     {
-                        char *memory = (char *)malloc(len);
-                        memcpy(memory, value, len);
-                        cur += len;
-                        mallocedMemory.push_back(make_pair(memory, len));
-                        selectedNum++;
+                        canCopy = true;
                     }
                     break;
                 }
                 case CompareType::LE:
                 {
-                    if (compareRes <= 0)
+                    if (compareRes == 0 || compareRes == -1)
                     {
-                        char *memory = (char *)malloc(len);
-                        memcpy(memory, value, len);
-                        cur += len;
-                        mallocedMemory.push_back(make_pair(memory, len));
-                        selectedNum++;
+                        canCopy = true;
                     }
                     break;
                 }
@@ -574,16 +574,20 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                 {
                     if (compareRes == 0)
                     {
-                        char *memory = (char *)malloc(len);
-                        memcpy(memory, value, len);
-                        cur += len;
-                        mallocedMemory.push_back(make_pair(memory, len));
-                        selectedNum++;
+                        canCopy = true;
                     }
                     break;
                 }
                 default:
                     break;
+                }
+                if (canCopy) //需要此数据
+                {
+                    char *memory = (char *)malloc(len); //一次分配整个文件长度的内存
+                    memcpy(memory, buff, len);
+                    cur += len;
+                    mallocedMemory.push_back(make_pair(memory, len));
+                    selectedNum++;
                 }
                 if (selectedNum == params->queryNums)
                     break;
@@ -623,9 +627,9 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
             for (int i = 0; i < params->queryNums; i++)
             {
                 long len;
-                EDVDB_GetFileLengthByPath(const_cast<char *>(selectedFiles[i].first.c_str()), &len);
+                EDVDB_GetFileLengthByPath(const_cast<char *>(filesWithTime[i].first.c_str()), &len);
                 char buff[len];
-                EDVDB_OpenAndRead(const_cast<char *>(selectedFiles[i].first.c_str()), buff);
+                EDVDB_OpenAndRead(const_cast<char *>(filesWithTime[i].first.c_str()), buff);
                 char *memory = (char *)malloc(len);
                 memcpy(memory, buff, len);
                 mallocedMemory.push_back(make_pair(memory, len));
@@ -645,33 +649,58 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                 buffer->buffer = data;
                 buffer->length = cur;
             }
-            else buffer->bufferMalloced = 0;
+            else
+                buffer->bufferMalloced = 0;
         }
 
         break;
     }
     case FILEID: //指定文件ID
     {
-        for (string &file : files)
+        for (auto &file : filesWithTime)
         {
-            if (file.find(params->fileID) != string::npos)
+            if (file.first.find(params->fileID) != string::npos)
             {
                 long len;
-                EDVDB_GetFileLengthByPath(const_cast<char *>(file.c_str()), &len);
+                EDVDB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
                 char buff[len];
-                EDVDB_OpenAndRead(const_cast<char *>(file.c_str()), buff);
+                EDVDB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 
-                char *data = (char *)malloc(len);
+                long pos = 0;
+                long bytes = 0;
+                int err;
+                DataType type;
+                if (params->byPath)
+                {
+                    char *pathCode = params->pathCode;
+                    err = CurrentTemplate.FindDatatypePosByCode(pathCode, buff, pos, bytes, type);
+                }
+                else
+                    err = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type);
+                if (err != 0)
+                {
+                    buffer->buffer = NULL;
+                    buffer->bufferMalloced = 0;
+                    return err;
+                }
+                if (len < pos)
+                {
+                    buffer->buffer = NULL;
+                    buffer->bufferMalloced = 0;
+                    return StatusCode::UNKNWON_DATAFILE;
+                }
+                long copyBytes = type.hasTime ? bytes + 8 : bytes;
+                char *data = (char *)malloc(copyBytes);
                 if (data == NULL)
                 {
                     buffer->buffer = NULL;
                     buffer->bufferMalloced = 0;
                     return StatusCode::BUFFER_FULL;
                 }
-                //内存分配成功，拷贝数据
+                //内存分配成功，传入数据
                 buffer->bufferMalloced = 1;
-                buffer->length = len;
-                memcpy(data, buff, len);
+                buffer->length = copyBytes;
+                memcpy(data, buff + pos, copyBytes);
                 buffer->buffer = data;
                 return 0;
 
@@ -699,37 +728,22 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
  *          others: StatusCode
  * @note
  */
-int EDVDB_QueryByTimespan2(DataBuffer *buffer, QueryParams *params)
+int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
 {
-    vector<string> files;
-    readIDBFilesList(params->pathToLine, files);
-    vector<pair<string, long>> selectedFiles;
+    vector<pair<string, long>> filesWithTime, selectedFiles;
+
+    //获取每个数据文件，并带有时间戳
+    readIDBFilesWithTimestamps(params->pathToLine, filesWithTime);
 
     //筛选落入时间区间内的文件
-    for (auto file : files)
+    for (auto &file : filesWithTime)
     {
-        auto tmp = file;
-        vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[1].c_str()), "-");
-        if (time.size() == 0)
+        if (file.second >= params->start && file.second <= params->end)
         {
-            continue;
-        }
-        time[time.size() - 1] = DataType::StringSplit(const_cast<char *>(time[time.size() - 1].c_str()), ".")[0];
-        struct tm t;
-        t.tm_year = atoi(time[0].c_str()) - 1900;
-        t.tm_mon = atoi(time[1].c_str()) - 1;
-        t.tm_mday = atoi(time[2].c_str());
-        t.tm_hour = atoi(time[3].c_str());
-        t.tm_min = atoi(time[4].c_str());
-        t.tm_sec = atoi(time[5].c_str());
-        time_t seconds = mktime(&t);
-        int ms = atoi(time[6].c_str());
-        long millis = seconds * 1000 + ms;
-        if (millis >= params->start && millis <= params->end)
-        {
-            selectedFiles.push_back(make_pair(file, millis));
+            selectedFiles.push_back(make_pair(file.first, file.second));
         }
     }
+
     //确认当前模版
     string str = params->pathToLine;
     if (CurrentTemplate.path != str || CurrentTemplate.path == "")
@@ -743,20 +757,6 @@ int EDVDB_QueryByTimespan2(DataBuffer *buffer, QueryParams *params)
             return err;
         }
     }
-
-    //获取数据的偏移量和数据类型
-    long pos = 0, bytes = 0;
-    DataType type;
-    int err;
-    if (params->byPath == 1)
-    {
-        char *pathCode = params->pathCode;
-        err = CurrentTemplate.FindDatatypePosByCode(pathCode, pos, bytes, type);
-    }
-    else
-        err = CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes, type);
-    if (err != 0)
-        return err;
 
     //根据时间升序或降序排序
     switch (params->order)
@@ -777,38 +777,58 @@ int EDVDB_QueryByTimespan2(DataBuffer *buffer, QueryParams *params)
                  return iter1.second > iter2.second;
              });
         break;
-    default:
+    default: //其他Order类型延后处理
         break;
     }
 
     //比较指定变量给定的数据值，筛选符合条件的值
-    char comparedData[bytes * selectedFiles.size()];
-    long cur = 0;
+    vector<pair<char *, long>> mallocedMemory;
+    long cur = 0; //已选择的数据总长
+    DataType type;
     if (params->compareType != CompareType::CMP_NONE)
     {
         for (auto &file : selectedFiles)
         {
             long len;
             EDVDB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
-            if (len < pos)
-            {
-                return StatusCode::UNKNWON_DATAFILE;
-            }
             char buff[len];
             EDVDB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
-            char value[bytes];
-            memcpy(value, buff + pos, bytes);
 
+            //获取数据的偏移量和数据类型
+            long pos = 0, bytes = 0;
+
+            int err;
+            if (params->byPath == 1)
+            {
+                char *pathCode = params->pathCode;
+                err = CurrentTemplate.FindDatatypePosByCode(pathCode, buff, pos, bytes, type);
+            }
+            else
+                err = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type);
+            if (err != 0)
+                return err;
+
+            if (len < pos)
+            {
+                buffer->buffer = NULL;
+                buffer->bufferMalloced = 0;
+                return StatusCode::UNKNWON_DATAFILE;
+            }
+            char value[bytes]; //数值
+            long copyBytes = type.hasTime ? bytes + 8 : bytes;
+            char copyValue[copyBytes]; //带有时间戳的数值
+            memcpy(value, buff + pos, bytes);
+            memcpy(copyValue, buff + pos, copyBytes);
             //根据比较结果决定是否加入结果集
             int compareRes = DataType::CompareValue(type, value, params->compareValue);
+            bool canCopy = false;
             switch (params->compareType)
             {
             case CompareType::GT:
             {
                 if (compareRes > 0)
                 {
-                    memcpy(comparedData + cur, value, bytes);
-                    cur += bytes;
+                    canCopy = true;
                 }
                 break;
             }
@@ -816,8 +836,7 @@ int EDVDB_QueryByTimespan2(DataBuffer *buffer, QueryParams *params)
             {
                 if (compareRes < 0)
                 {
-                    memcpy(comparedData + cur, value, bytes);
-                    cur += bytes;
+                    canCopy = true;
                 }
                 break;
             }
@@ -825,8 +844,7 @@ int EDVDB_QueryByTimespan2(DataBuffer *buffer, QueryParams *params)
             {
                 if (compareRes >= 0)
                 {
-                    memcpy(comparedData + cur, value, bytes);
-                    cur += bytes;
+                    canCopy = true;
                 }
                 break;
             }
@@ -834,8 +852,7 @@ int EDVDB_QueryByTimespan2(DataBuffer *buffer, QueryParams *params)
             {
                 if (compareRes <= 0)
                 {
-                    memcpy(comparedData + cur, value, bytes);
-                    cur += bytes;
+                    canCopy = true;
                 }
                 break;
             }
@@ -843,16 +860,25 @@ int EDVDB_QueryByTimespan2(DataBuffer *buffer, QueryParams *params)
             {
                 if (compareRes == 0)
                 {
-                    memcpy(comparedData + cur, value, bytes);
-                    cur += bytes;
+                    canCopy = true;
                 }
                 break;
             }
             default:
                 break;
             }
+            if (canCopy) //需要此数据
+            {
+                char *memory = (char *)malloc(bytes);
+                memcpy(memory + cur, copyValue, copyBytes);
+                cur += copyBytes;
+                mallocedMemory.push_back(make_pair(memory, copyBytes));
+            }
         }
     }
+
+    /*数据偏移暂定为0*/
+    sortResultByValue(mallocedMemory, 0, params, type);
 
     //动态分配内存
     char *data = (char *)malloc(cur);
@@ -864,10 +890,16 @@ int EDVDB_QueryByTimespan2(DataBuffer *buffer, QueryParams *params)
     }
 
     //拷贝数据
-    memcpy(data, comparedData, cur);
+    cur = 0;
+    for (auto &mem : mallocedMemory)
+    {
+        memcpy(data + cur, mem.first, mem.second);
+        free(mem.first);
+        cur += mem.second;
+    }
     buffer->bufferMalloced = 1;
     buffer->buffer = data;
-    buffer->length = bytes * selectedFiles.size();
+    buffer->length = cur;
     return 0;
 }
 
@@ -883,32 +915,10 @@ int EDVDB_QueryByTimespan2(DataBuffer *buffer, QueryParams *params)
  */
 int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
 {
-    vector<string> files;
-    readIDBFilesList(params->pathToLine, files);
     vector<pair<string, long>> selectedFiles;
 
-    //获取每个文件的时间戳
-    for (auto file : files)
-    {
-        auto tmp = file;
-        vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[1].c_str()), "-");
-        if (time.size() == 0)
-        {
-            continue;
-        }
-        time[time.size() - 1] = DataType::StringSplit(const_cast<char *>(time[time.size() - 1].c_str()), ".")[0];
-        struct tm t;
-        t.tm_year = atoi(time[0].c_str()) - 1900;
-        t.tm_mon = atoi(time[1].c_str()) - 1;
-        t.tm_mday = atoi(time[2].c_str());
-        t.tm_hour = atoi(time[3].c_str());
-        t.tm_min = atoi(time[4].c_str());
-        t.tm_sec = atoi(time[5].c_str());
-        time_t seconds = mktime(&t);
-        int ms = atoi(time[6].c_str());
-        long millis = seconds * 1000 + ms;
-        selectedFiles.push_back(make_pair(file, millis));
-    }
+    //获取每个数据文件，并带有时间戳
+    readIDBFilesWithTimestamps(params->pathToLine, selectedFiles);
 
     //确认当前模版
     string str = params->pathToLine;
@@ -924,32 +934,6 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
         }
     }
 
-    //获取数据的偏移量和字节数
-    long bytes = 0, pos = 0;
-    int err;
-    if (params->byPath)
-    {
-        char *pathCode = params->pathCode;
-        err = CurrentTemplate.FindDatatypePosByCode(pathCode, pos, bytes);
-    }
-    else
-        err = CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes);
-    if (err != 0)
-    {
-        buffer->buffer = NULL;
-        buffer->bufferMalloced = 0;
-        return err;
-    }
-
-    //动态分配内存
-    char *data = (char *)malloc(bytes * params->queryNums);
-    if (data == NULL)
-    {
-        buffer->buffer = NULL;
-        buffer->bufferMalloced = 0;
-        return StatusCode::BUFFER_FULL;
-    }
-
     //根据时间降序排序
     sort(selectedFiles.begin(), selectedFiles.end(),
          [](pair<string, long> iter1, pair<string, long> iter2) -> bool
@@ -957,27 +941,60 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
              return iter1.second > iter2.second;
          });
 
+    vector<pair<char *, long>> mallocedMemory;
     //取排序后的文件中前queryNums个文件的数据
     long cur = 0;
     for (int i = 0; i < params->queryNums; i++)
     {
         long len;
         EDVDB_GetFileLengthByPath(const_cast<char *>(selectedFiles[i].first.c_str()), &len);
-        if (len < pos)
-        {
-            buffer->bufferMalloced = 1;
-            buffer->buffer = data;
-            buffer->length = bytes * selectedFiles.size();
-            return StatusCode::UNKNWON_DATAFILE;
-        }
         char buff[len];
         EDVDB_OpenAndRead(const_cast<char *>(selectedFiles[i].first.c_str()), buff);
-        memcpy(data + cur, buff + pos, bytes);
-        cur += bytes;
+
+        //获取数据的偏移量和字节数
+        long bytes = 0, pos = 0;
+        int err;
+        DataType type;
+        if (params->byPath)
+        {
+            char *pathCode = params->pathCode;
+            err = CurrentTemplate.FindDatatypePosByCode(pathCode, buff, pos, bytes, type);
+        }
+        else
+            err = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type);
+        if (err != 0)
+        {
+            buffer->buffer = NULL;
+            buffer->bufferMalloced = 0;
+            return err;
+        }
+
+        long copyBytes = type.hasTime ? bytes + 8 : bytes;
+        char *memory = (char *)malloc(copyBytes);
+
+        memcpy(memory, buff + pos, copyBytes);
+        mallocedMemory.push_back(make_pair(memory, copyBytes));
+        cur += copyBytes;
     }
+    //动态分配内存
+    char *data = (char *)malloc(cur);
+    if (data == NULL)
+    {
+        buffer->buffer = NULL;
+        buffer->bufferMalloced = 0;
+        return StatusCode::BUFFER_FULL;
+    }
+    cur = 0;
+    for (auto &mem : mallocedMemory)
+    {
+        memcpy(data + cur, mem.first, mem.second);
+        free(mem.first);
+        cur += mem.second;
+    }
+
     buffer->buffer = data;
     buffer->bufferMalloced = 1;
-    buffer->length = bytes * params->queryNums;
+    buffer->length = cur;
     return 0;
 }
 
@@ -1008,13 +1025,14 @@ int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
             long pos = 0;
             long bytes = 0;
             int err;
+            DataType type;
             if (params->byPath)
             {
                 char *pathCode = params->pathCode;
-                err = CurrentTemplate.FindDatatypePosByCode(pathCode, pos, bytes);
+                err = CurrentTemplate.FindDatatypePosByCode(pathCode, buff, pos, bytes, type);
             }
             else
-                err = CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes);
+                err = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type);
             if (err != 0)
             {
                 buffer->buffer = NULL;
@@ -1027,7 +1045,8 @@ int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
                 buffer->bufferMalloced = 0;
                 return StatusCode::UNKNWON_DATAFILE;
             }
-            char *data = (char *)malloc(bytes);
+            long copyBytes = type.hasTime ? bytes + 8 : bytes;
+            char *data = (char *)malloc(copyBytes);
             if (data == NULL)
             {
                 buffer->buffer = NULL;
@@ -1036,8 +1055,8 @@ int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
             }
             //内存分配成功，传入数据
             buffer->bufferMalloced = 1;
-            buffer->length = bytes;
-            memcpy(data, buff + pos, bytes);
+            buffer->length = copyBytes;
+            memcpy(data, buff + pos, copyBytes);
             buffer->buffer = data;
             return 0;
 
@@ -1249,7 +1268,7 @@ int main()
 
     long length;
     converter.CheckBigEndian();
-    // cout << EDVDB_LoadSchema("./");
+    cout << EDVDB_LoadSchema("/");
     QueryParams params;
     params.pathToLine = "";
     params.fileID = "XinFeng8";
@@ -1260,7 +1279,7 @@ int main()
     code[2] = (char)0;
     code[3] = (char)1;
     code[4] = 'R';
-    code[5] = (char)3;
+    code[5] = (char)1;
     code[6] = 0;
     code[7] = (char)0;
     code[8] = (char)0;
@@ -1273,9 +1292,14 @@ int main()
     params.compareType = GT;
     params.compareValue = "67";
     params.byPath = 0;
+    params.queryNums = 3;
     DataBuffer buffer;
     buffer.length = 0;
-    EDVDB_QueryByTimespan2(&buffer, &params);
+    vector<long> bytes, positions;
+    vector<DataType> types;
+    // CurrentTemplate.FindMultiDatatypePosByCode(code, positions, bytes, types);
+    //  EDVDB_QueryLastRecords(&buffer, &params);
+    EDVDB_QueryByTimespan(&buffer, &params);
 
     // EDVDB_QueryByFileID(&buffer, &params);
 
