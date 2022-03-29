@@ -90,14 +90,18 @@ int EDVDB_ZipFile(const char *ZipTemPath,string filepath)
     if(err)
     {
         cout<<"未加载模板"<<endl;
-        return err;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     long len;
     EDVDB_GetFileLengthByPath(const_cast<char *>(filepath.c_str()),&len);
     char readbuff[len];//文件内容
     char writebuff[len];//写入没有被压缩的数据
     if(EDVDB_OpenAndRead(const_cast<char *>(filepath.c_str()),readbuff))//将文件内容读取到readbuff
-        return errno;
+    {
+        cout<<"未找到文件"<<endl;
+        return StatusCode::DATAFILE_NOT_FOUND;
+    }
+        
 
     DataTypeConverter converter;
     long readbuff_pos=0;
@@ -287,7 +291,7 @@ int EDVDB_ZipRecvBuff(const char *ZipTemPath,string filepath,const char *buff,lo
     if(err)
     {
         cout<<"未加载模板"<<endl;
-        return err;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     long len=buffLength;
 
@@ -485,6 +489,171 @@ int EDVDB_ZipRecvBuff(const char *ZipTemPath,string filepath,const char *buff,lo
     return err;
 }
 
+//压缩只有开关量的文件
+int EDVDB_ZipSwitchFile(const char *ZipTemPath,string filepath)
+{
+    int err;
+    err=EDVDB_LoadZipSchema(ZipTemPath);//加载压缩模板
+    if(err)
+    {
+        cout<<"未加载模板"<<endl;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
+    long len;
+    EDVDB_GetFileLengthByPath(const_cast<char *>(filepath.c_str()),&len);
+    char readbuff[len];//文件内容
+    char writebuff[len]={0};//写入没有被压缩的数据
+
+    DataTypeConverter converter;
+    long readbuff_pos=0;
+    long writebuff_pos=0;
+
+    if(EDVDB_OpenAndRead(const_cast<char *>(filepath.c_str()),readbuff))//将文件内容读取到readbuff
+    {
+        cout<<"未找到文件"<<endl;
+        return StatusCode::DATAFILE_NOT_FOUND;
+    }     
+
+    for(int i=0;i<CurrentZipTemplate.schemas[i].first.size();i++)
+    {
+        if(CurrentZipTemplate.schemas[i].second.valueType==ValueType::BOOL)//BOOL变量
+        {
+            
+            uint32 standardBoolTime=converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+            uint32 maxBoolTime=converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
+            uint32 minBoolTime=converter.ToUInt32_m(CurrentTemplate.schemas[i].second.minValue);
+
+            //1个字节的布尔值和4个字节的持续时长,暂定，根据后续情况可能进行更改
+            readbuff_pos+=1;
+            char value[4]={0};
+            memcpy(value,readbuff+readbuff_pos,4);
+            uint32 currentBoolTime=converter.ToUInt32(value);
+            if(currentBoolTime!=standardBoolTime && (currentBoolTime<minBoolTime || currentBoolTime>maxBoolTime))
+            {
+                //添加变量名方便知道未压缩的变量是哪个
+                memcpy(writebuff+writebuff_pos,const_cast<char *>(CurrentZipTemplate.schemas[i].first.c_str()),CurrentZipTemplate.schemas[i].first.length());
+                writebuff_pos+=CurrentZipTemplate.schemas[i].first.length();
+
+                memcpy(writebuff+writebuff_pos,readbuff+readbuff_pos-1,5);
+                writebuff_pos+=5;
+            }
+            readbuff_pos+=4;
+        }
+        else
+        {
+            cout<<"存在开关量以外的类型，请检查模板或者更换功能块"<<endl;
+            return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+        }
+    }
+
+    if(writebuff_pos>readbuff_pos)//表明数据没有被压缩
+    {
+        cout<<"数据没有被压缩!"<<endl;
+        return 1;//1表示数据没有被压缩
+    }
+
+    EDVDB_DeleteFile(const_cast<char *>(filepath.c_str()));//删除原文件
+    long fp;
+    string finalpath=filepath.append("zip");//给压缩文件后缀添加zip，暂定，根据后续要求更改
+    //创建新文件并写入
+    err = EDVDB_Open(const_cast<char *>(finalpath.c_str()),"wb",&fp);
+    if (err == 0)
+    {
+        err = EDVDB_Write(fp, writebuff, writebuff_pos);
+        
+        if (err == 0)
+        {
+            return EDVDB_Close(fp);
+        }
+    }
+    return err;
+}
+
+//压缩接收到的只有开关量类型的整条数据
+int EDVDB_ZipRecvSwitchBuff(const char *ZipTemPath,string filepath,const char *buff,long buffLength)
+{
+    int err=0;
+    err=EDVDB_LoadZipSchema(ZipTemPath);//加载压缩模板
+    if(err)
+    {
+        cout<<"未加载模板"<<endl;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
+    long len=buffLength;
+
+    char writebuff[len]={0};//写入没有被压缩的数据
+    
+    DataTypeConverter converter;
+    long buff_pos=0;
+    long writebuff_pos=0;
+
+    for(int i=0;i<CurrentZipTemplate.schemas[i].first.size();i++)
+    {
+        if(CurrentZipTemplate.schemas[i].second.valueType==ValueType::BOOL)//BOOL变量
+        {
+            
+            uint32 standardBoolTime=converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+            uint32 maxBoolTime=converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
+            uint32 minBoolTime=converter.ToUInt32_m(CurrentTemplate.schemas[i].second.minValue);
+
+            //1个字节的布尔值和4个字节的持续时长,暂定，根据后续情况可能进行更改
+            buff_pos+=1;
+            char value[4]={0};
+            memcpy(value,buff+buff_pos,4);
+            uint32 currentBoolTime=converter.ToUInt32(value);
+            if(currentBoolTime!=standardBoolTime && (currentBoolTime<minBoolTime || currentBoolTime>maxBoolTime))
+            {
+                //添加变量名方便知道未压缩的变量是哪个
+                memcpy(writebuff+writebuff_pos,const_cast<char *>(CurrentZipTemplate.schemas[i].first.c_str()),CurrentZipTemplate.schemas[i].first.length());
+                writebuff_pos+=CurrentZipTemplate.schemas[i].first.length();
+
+                memcpy(writebuff+writebuff_pos,buff+buff_pos-1,5);
+                writebuff_pos+=5;
+            }
+            buff_pos+=4;
+        }
+        else
+        {
+            cout<<"存在开关量以外的类型，请检查模板或者更换功能块"<<endl;
+            return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+        }
+    }
+
+    if(writebuff_pos>buff_pos)//表明数据没有被压缩
+    {
+        cout<<"数据未压缩"<<endl;
+        
+        long fp;
+        //创建新文件并写入
+        err = EDVDB_Open(const_cast<char *>(filepath.c_str()),"wb",&fp);
+        if (err == 0)
+        {
+            err = EDVDB_Write(fp,const_cast<char *>(buff), buff_pos);
+        
+            if (err == 0)
+            {
+                EDVDB_Close(fp);
+            }
+        }
+        return 1;
+    }
+
+    long fp;
+    string finalpath=filepath.append("zip");//给压缩文件后缀添加zip，暂定，根据后续要求更改
+    //创建新文件并写入
+    err = EDVDB_Open(const_cast<char *>(finalpath.c_str()),"wb",&fp);
+    if (err == 0)
+    {
+        err = EDVDB_Write(fp, writebuff, writebuff_pos);
+        
+        if (err == 0)
+        {
+            return EDVDB_Close(fp);
+        }
+    }
+    return err;
+}
+
 // int main()
 // {
 //    // EDVDB_LoadZipSchema("./");
@@ -493,7 +662,7 @@ int EDVDB_ZipRecvBuff(const char *ZipTemPath,string filepath,const char *buff,lo
 //     char readbuf[len];
 //     EDVDB_OpenAndRead("XinFeng_0100.dat",readbuf);
 
-//     EDVDB_ZipRecvBuff("/","XinFeng_0100.dat",readbuf,len);
-//     //EDVDB_ZipFile("/","XinFeng_0100.dat");
-//     return 0;
+// //     EDVDB_ZipRecvBuff("/","XinFeng_0100.dat",readbuf,len);
+// //     //EDVDB_ZipFile("/","XinFeng_0100.dat");
+// //     return 0;
 // }

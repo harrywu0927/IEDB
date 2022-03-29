@@ -38,3 +38,8 @@ int EDVDB_ZipFile(const char* ZipTemPath,string filepath);
 //压缩接收到的整条数据
 int EDVDB_ZipRecvBuff(const char *ZipTemPath,string filepath,const char *buff,long buffLength);
 
+//压缩只有开关量的文件
+int EDVDB_ZipSwitchFile(const char *ZipTemPath,string filepath);
+
+//压缩接收到的只有开关量类型的整条数据
+int EDVDB_ZipRecvSwitchBuff(const char *ZipTemPath,string filepath,const char *buff,long buffLength);
