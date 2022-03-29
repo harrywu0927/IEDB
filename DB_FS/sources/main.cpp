@@ -18,7 +18,8 @@
 #include "CJsonObject.hpp"
 using namespace std;
 //extern int errno;
-static neb::CJsonObject config;
+neb::CJsonObject ReadConfig();
+static neb::CJsonObject config = ReadConfig();
 long availableSpace = 1024 * 1024 * 10;
 size_t totalSpace = 0;
 char labelPath[100] = "./";
@@ -27,15 +28,15 @@ void SetBasePath(char path[])
 {
     strcpy(labelPath, path);
 }
-void ReadConfig()
+neb::CJsonObject ReadConfig()
 {
     ifstream t("./settings.json");
     stringstream buffer;
     buffer << t.rdbuf();
     string contents(buffer.str());
     neb::CJsonObject tmp(contents);
-    config = tmp;
     strcpy(labelPath, config("Filename_Label").c_str());
+    return tmp;
 }
 int get_file_size_time(const char *filename, pair<long, long> *s_t)
 {
@@ -101,7 +102,7 @@ FILE *ConvertToFilePtr(uint fp1, uint fp2)
 }
 int EDVDB_GetFileLengthByPath(char path[], long *length)
 {
-    ReadConfig();
+    //ReadConfig();
     char finalPath[100];
     strcpy(finalPath, labelPath);
     strcat(finalPath, "/");
@@ -230,7 +231,7 @@ int EDVDB_Write(long fp, char *buf, long length)
     totalSpace = diskInfo.f_frsize * diskInfo.f_blocks; //总空间
     //cout<<"available:"<<availableSpace/1024<<"KB\ntotal:"<<totalSpace/1024<<"KB"<<endl;
     bool allowWrite = true;
-    ReadConfig();   //读取配置
+    //ReadConfig();   //读取配置
 
     if (config("FileOverFlowMode") == "loop")
     {
@@ -258,7 +259,7 @@ int EDVDB_Write(long fp, char *buf, long length)
 
 int EDVDB_Open(char path[], char mode[], long *fptr)
 {
-    ReadConfig();
+    //ReadConfig();
     char finalPath[100];
     strcpy(finalPath, labelPath);
     strcat(finalPath, "/");
@@ -306,7 +307,7 @@ bool Flush(uint fp1, uint fp2)
 
 int EDVDB_DeleteFile(char path[])
 {
-    ReadConfig();
+    //ReadConfig();
     char finalPath[100];
     strcpy(finalPath, labelPath);
     strcat(finalPath, "/");
@@ -441,8 +442,5 @@ int EDVDB_DeleteDirectory(char path[])
 
 int main()
 {
-    ReadConfig();
-    cout<<config("Filename_Label")<<endl;
-    EDVDB_CreateDirectory("../testIEDB/.//XinFeng14_2022-3-24-22-4-58-210.idb");
     return 0;
 }

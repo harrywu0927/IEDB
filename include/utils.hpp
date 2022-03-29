@@ -532,6 +532,7 @@ public:
             vector<string> paths;
             PathCode pathCode(pathEncode, sizeof(pathEncode) / 2, variable);
             DataType type;
+            type.hasTime = true;
             if (DataType::GetDataTypeFromStr(dataType, type) == 0)
             {
                 dataTypes.push_back(type);
@@ -563,7 +564,9 @@ public:
     }
 };
 
-//负责数据文件的打包
+//负责数据文件的打包，打包后的数据将存为一个文件，文件名为文件ID+时间段.pak，
+//格式为每8字节时间戳，接20字节文件ID，接8字节文件长度，接文件内容；
+//为方便查询，需要定义读取pak文件的辅助函数，将其转化为若干个独立文件列表暂存在内存中。
 static int packMode;          //定时打包或存储一定数量后打包
 static int packNum;           //一次打包的文件数量
 static long packTimeInterval; //定时打包时间间隔

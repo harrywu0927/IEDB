@@ -168,10 +168,8 @@ int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position
             int num = 1;
             if (schema.second.isArray)
             {
-                num = schema.second.arrayLen;
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
-
                     char imgLen[2];
                     imgLen[0] = buff[pos];
                     imgLen[1] = buff[pos + 1];
@@ -189,10 +187,8 @@ int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position
             int num = 1;
             if (schema.second.isArray)
             {
-                num = schema.second.arrayLen;
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
-
                     char imgLen[2];
                     imgLen[0] = buff[pos];
                     imgLen[1] = buff[pos + 1];
@@ -239,10 +235,8 @@ int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position
             int num = 1;
             if (schema.second.isArray)
             {
-                num = schema.second.arrayLen;
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
-
                     char imgLen[2];
                     imgLen[0] = buff[pos];
                     imgLen[1] = buff[pos + 1];
@@ -261,7 +255,6 @@ int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position
             int num = 1;
             if (schema.second.isArray)
             {
-                num = schema.second.arrayLen;
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
 
@@ -316,7 +309,6 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
             int num = 1;
             if (schema.second.isArray)
             {
-                num = schema.second.arrayLen;
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
 
@@ -339,7 +331,6 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
             int num = 1;
             if (schema.second.isArray)
             {
-                num = schema.second.arrayLen;
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
 
@@ -386,7 +377,6 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
             int num = 1;
             if (schema.second.isArray)
             {
-                num = schema.second.arrayLen;
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
 
@@ -407,7 +397,6 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
             int num = 1;
             if (schema.second.isArray)
             {
-                num = schema.second.arrayLen;
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
 
@@ -455,7 +444,6 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
             int num = 1;
             if (schema.second.isArray)
             {
-                num = schema.second.arrayLen;
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
 
@@ -477,7 +465,6 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
             int num = 1;
             if (schema.second.isArray)
             {
-                num = schema.second.arrayLen;
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
 
