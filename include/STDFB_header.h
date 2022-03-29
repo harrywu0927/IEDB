@@ -3,11 +3,20 @@
 extern "C"
 {
 #endif
-    //数据交换缓冲区
+    /*
+     *  数据交换缓冲区
+     *  查询时，buffer中的数据存放方式：第1个字节为查询到的数据类型总数(N)，
+     *  随后的N*11字节依次为：数据类型代号1字节、路径编码10字节
+     *  数据类型代号如下：
+     *  1:UINT, 2:USINT, 3:UDINT, 4:INT, 5:BOOL, 6:SINT, 7:DINT, 8:REAL, 9:TIME, 10:IMAGE
+     *  如果变量携带时间，则此变量的代号值+10
+     *  随后为数据区
+     *  查询整个文件时，只有数据区
+    */
     struct DataBuffer
     {
         char *buffer;   //缓冲区地址
-        long length;    //长度
+        long length;    //缓冲区总长度
         const char *savePath; //存储路径
         int bufferMalloced; //是否查询到数据
     };

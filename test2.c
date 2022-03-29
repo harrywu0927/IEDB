@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include "include/STDFB_header.h"
-#include "FS_header.h"
 #include <stdlib.h>
 #include <sys/sysctl.h>
 #include <string.h>
@@ -31,6 +30,8 @@ int main()
     //start 1648516212100
     //end 1648516221100
     struct QueryParams params;
+    params.pathToLine = "";
+    params.fileID = "XinFeng2";
     char code[10];
     code[0] = (char)0;
     code[1] = (char)1;
@@ -43,6 +44,15 @@ int main()
     code[8] = (char)0;
     code[9] = (char)0;
     params.pathCode = code;
+    params.valueName = "S1R2";
+    params.start = 1648516212100;
+    params.end = 1648516221100;
+    params.order = ASCEND;
+    params.compareType = GT;
+    params.compareValue = "6";
+    params.queryType = FILEID;
+    params.byPath = 0;
+    params.queryNums = 3;
     struct DataBuffer buffer;
 
     EDVDB_MAX(&buffer, &params);

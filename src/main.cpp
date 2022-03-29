@@ -357,9 +357,10 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
         //比较指定变量给定的数据值，筛选符合条件的值
         vector<pair<char *, long>> mallocedMemory; //已在堆区分配的进入筛选范围数据的内存地址和长度集
         long cur = 0;                              //记录已选中的文件总长度
+        /*<-----!!!警惕内存泄露!!!----->*/
         if (params->compareType != CompareType::CMP_NONE)
         {
-            /*!!!警惕内存泄露!!!*/
+
             for (auto &file : selectedFiles)
             {
                 long len; //文件长度
@@ -480,6 +481,7 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
             buffer->buffer = data;
             buffer->length = cur;
         }
+        /*<-----!!!!!!----->*/
         else
         {
             buffer->bufferMalloced = 0;
@@ -866,25 +868,30 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
     sortResultByValue(mallocedMemory, 0, params, type);
 
     //动态分配内存
-    char *data = (char *)malloc(cur);
+    char typeNum = 1;      //数据类型总数
+    char *data = (char *)malloc(cur + (int)typeNum + 1);
+    int startPos;//数据区起始位置
+    if (!params->byPath)
+        startPos = CurrentTemplate.writeBufferHead(params->valueName, type, data); //写入缓冲区头，获取数据区起始位置
+    else
+        startPos = CurrentTemplate.writeBufferHead(params->pathCode, type, data);
     if (data == NULL)
     {
         buffer->buffer = NULL;
         buffer->bufferMalloced = 0;
         return StatusCode::BUFFER_FULL;
     }
-
     //拷贝数据
     cur = 0;
     for (auto &mem : mallocedMemory)
     {
-        memcpy(data + cur, mem.first, mem.second);
+        memcpy(data + cur + startPos, mem.first, mem.second);
         free(mem.first);
         cur += mem.second;
     }
     buffer->bufferMalloced = 1;
     buffer->buffer = data;
-    buffer->length = cur;
+    buffer->length = cur + startPos;
     return 0;
 }
 
@@ -930,10 +937,11 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
     vector<pair<char *, long>> mallocedMemory; //已在堆区分配的进入筛选范围数据的内存地址和长度集
     long cur = 0;                              //记录已选中的文件总长度
     DataType type;
+    /*<-----!!!警惕内存泄露!!!----->*/
     if (params->compareType != CMP_NONE) //需要比较数值
     {
         int selectedNum = 0;
-        /*<-----!!!警惕内存泄露!!!----->*/
+
         for (auto &file : selectedFiles)
         {
             long len; //文件长度
@@ -1031,34 +1039,43 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
         char *data;
         if (cur != 0)
         {
-            data = (char *)malloc(cur);
+            char typeNum = 1;                //数据类型总数
+            int startPos = (int)typeNum + 1; //数据区起始位置
+            data = (char *)malloc(cur + startPos);
             if (data == NULL)
             {
                 buffer->buffer = NULL;
                 buffer->bufferMalloced = 0;
                 return StatusCode::BUFFER_FULL;
             }
+            data[0] = typeNum;
+
+            for (char i = 0; i < typeNum; i++)
+            {
+                char valType = (char)type.valueType;
+                data[1 + i] = valType;
+            }
             //拷贝数据
             cur = 0;
             for (auto &mem : mallocedMemory)
             {
-                memcpy(data + cur, mem.first, mem.second);
+                memcpy(data + cur + startPos, mem.first, mem.second);
                 free(mem.first);
                 cur += mem.second;
             }
 
             buffer->bufferMalloced = 1;
             buffer->buffer = data;
-            buffer->length = cur;
+            buffer->length = cur + startPos;
         }
         else
         {
             buffer->bufferMalloced = 0;
         }
-        /*<-----!!!!!!----->*/
     }
     else //不需要比较数值,直接拷贝前N个文件的数据
     {
+        DataType type;
         for (int i = 0; i < params->queryNums; i++)
         {
             long len;
@@ -1068,7 +1085,6 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
 
             //获取数据的偏移量和数据类型
             long pos = 0, bytes = 0;
-            DataType type;
             int err;
             if (params->byPath == 1)
             {
@@ -1096,28 +1112,34 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
         sortResultByValue(mallocedMemory, 0, params, type);
         if (cur != 0)
         {
-            char *data = (char *)malloc(cur);
+            char typeNum = 1; //数据类型总数
+            char *data = (char *)malloc(cur + (int)typeNum * 11 + 1);
             if (data == NULL)
             {
                 buffer->buffer = NULL;
                 buffer->bufferMalloced = 0;
                 return StatusCode::BUFFER_FULL;
             }
+            int startPos;
+            if (!params->byPath)
+                startPos = CurrentTemplate.writeBufferHead(params->valueName, type, data); //写入缓冲区头，获取数据区起始位置
+            else
+                startPos = CurrentTemplate.writeBufferHead(params->pathCode, type, data);
             cur = 0;
             for (auto &mem : mallocedMemory)
             {
-                memcpy(data + cur, mem.first, mem.second);
+                memcpy(data + cur + startPos, mem.first, mem.second);
                 free(mem.first);
                 cur += mem.second;
             }
             buffer->bufferMalloced = 1;
             buffer->buffer = data;
-            buffer->length = cur;
+            buffer->length = cur + startPos;
         }
         else
             buffer->bufferMalloced = 0;
     }
-    
+    /*<-----!!!!!!----->*/
     return 0;
 }
 
@@ -1149,9 +1171,10 @@ int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
             long bytes = 0;
             int err;
             DataType type;
+            char *pathCode;
             if (params->byPath)
             {
-                char *pathCode = params->pathCode;
+                pathCode = params->pathCode;
                 err = CurrentTemplate.FindDatatypePosByCode(pathCode, buff, pos, bytes, type);
             }
             else
@@ -1169,18 +1192,29 @@ int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
                 return StatusCode::UNKNWON_DATAFILE;
             }
             long copyBytes = type.hasTime ? bytes + 8 : bytes;
-            char *data = (char *)malloc(copyBytes);
+
+            //开始拷贝数据
+
+            char typeNum = 1; //数据类型总数
+
+            char *data = (char *)malloc(copyBytes + 1 + (int)typeNum * 11);
+            int startPos;
+            if (!params->byPath)
+                startPos = CurrentTemplate.writeBufferHead(params->valueName, type, data); //写入缓冲区头，获取数据区起始位置
+            else
+                startPos = CurrentTemplate.writeBufferHead(params->pathCode, type, data);
             if (data == NULL)
             {
                 buffer->buffer = NULL;
                 buffer->bufferMalloced = 0;
                 return StatusCode::BUFFER_FULL;
             }
-            //内存分配成功，传入数据
+
             buffer->bufferMalloced = 1;
-            buffer->length = copyBytes;
-            memcpy(data, buff + pos, copyBytes);
+
+            memcpy(data + startPos, buff + pos, copyBytes);
             buffer->buffer = data;
+            buffer->length = copyBytes + startPos;
             return 0;
 
             break;
@@ -1359,7 +1393,21 @@ int EDVDB_InsertRecords(DataBuffer buffer[], int recordsNum, int addTime)
         }
     }
 }
+// int EDVDB_MAX(DataBuffer *buffer, QueryParams *params)
+// {
+//     EDVDB_ExecuteQuery(buffer,params);
+//     if (buffer->bufferMalloced)
+//     {
+//         char buf[buffer->length];
+//         memcpy(buf, buffer->buffer, buffer->length);
+//         for (int i = 0; i < buffer->length; i++)
+//         {
+//             cout << (int)buf[i] << " ";
+//         }
 
+//         free(buffer->buffer);
+//     }
+// }
 int main()
 {
     DataTypeConverter converter;
@@ -1369,7 +1417,7 @@ int main()
     // cout << EDVDB_LoadSchema("/");
     QueryParams params;
     params.pathToLine = "";
-    params.fileID = "XinFeng8";
+    params.fileID = "XinFeng2";
     char code[10];
     code[0] = (char)0;
     code[1] = (char)1;
@@ -1382,12 +1430,13 @@ int main()
     code[8] = (char)0;
     code[9] = (char)0;
     params.pathCode = code;
-    params.valueName = "S1R2";
+    params.valueName = "S1R8";
     params.start = 1648516212100;
     params.end = 1648516221100;
-    params.order = DISTINCT;
+    params.order = ASCEND;
     params.compareType = GT;
     params.compareValue = "6";
+    params.queryType = FILEID;
     params.byPath = 0;
     params.queryNums = 3;
     DataBuffer buffer;
@@ -1396,12 +1445,23 @@ int main()
     vector<DataType> types;
     // CurrentTemplate.FindMultiDatatypePosByCode(code, positions, bytes, types);
     //  EDVDB_QueryLastRecords(&buffer, &params);
-    EDVDB_QueryByTimespan(&buffer, &params);
+    EDVDB_ExecuteQuery(&buffer, &params);
+    // EDVDB_MAX(&buffer, &params);
 
     // EDVDB_QueryByFileID(&buffer, &params);
 
     if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << endl;
+        }
+
         free(buffer.buffer);
+    }
+
     buffer.buffer = NULL;
     return 0;
 }

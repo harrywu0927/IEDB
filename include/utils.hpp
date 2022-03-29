@@ -32,6 +32,7 @@ namespace StatusCode
         BUFFER_FULL = 143,               //缓冲区满，还有数据
         UNKNWON_DATAFILE = 144,          //未知的数据文件或数据文件不合法
         NO_QUERY_TYPE = 145,             //未指定主查询条件
+        QUERY_TYPE_NOT_SURPPORT = 146,   //不支持的查询方式
     };
 }
 namespace ValueType
@@ -62,6 +63,7 @@ void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWi
 
 long getMilliTime();
 
+int getMemory(long size, char *mem);
 
 class PathCode
 {
@@ -403,6 +405,7 @@ public:
         }
     }
 };
+
 class Template //标准模板
 {
 public:
@@ -422,6 +425,7 @@ public:
         this->path = path;
     }
 
+    int GetAllPathsByCode(char *pachCode, vector<PathCode> &pathCodes);
 
     int FindDatatypePosByCode(char pathCode[], char buff[], long &position, long &bytes);
 
@@ -432,6 +436,12 @@ public:
     int FindDatatypePosByName(const char *name, char buff[], long &position, long &bytes);
 
     int FindDatatypePosByName(const char *name, char buff[], long &position, long &bytes, DataType &type);
+
+    int writeBufferHead(vector<PathCode> &pathCodes, vector<DataType> &typeList, char *buffer);
+
+    int writeBufferHead(char *pathCode, DataType &type, char *buffer);
+
+    int writeBufferHead(string name, DataType &type, char *buffer);
 };
 
 class ZipTemplate //压缩模板
@@ -565,7 +575,7 @@ public:
 };
 
 //负责数据文件的打包，打包后的数据将存为一个文件，文件名为文件ID+时间段.pak，
-//格式为每8字节时间戳，接20字节文件ID，接8字节文件长度，接文件内容；
+//格式为每8字节时间戳，接20字节文件ID，接8字节文件长度(0表示为压缩文件)，接文件内容；
 //为方便查询，需要定义读取pak文件的辅助函数，将其转化为若干个独立文件列表暂存在内存中。
 static int packMode;          //定时打包或存储一定数量后打包
 static int packNum;           //一次打包的文件数量
@@ -575,7 +585,6 @@ class Packer
 public:
     static int Pack(string path)
     {
-
     }
 };
 

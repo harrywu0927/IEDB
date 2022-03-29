@@ -135,7 +135,63 @@ long getMilliTime()
     return time.tv_sec * 1000 + time.tv_usec / 1000;
 }
 
+int getMemory(long size, char *mem)
+{
+    mem = (char *)malloc(size);
+    if (mem == NULL)
+    {
+        errorCode = StatusCode::BUFFER_FULL;
+    }
+}
 
+int Template::writeBufferHead(vector<PathCode> &pathCodes, vector<DataType> &typeList, char *buffer)
+{
+    return 0;
+}
+
+int Template::writeBufferHead(char *pathCode, DataType &type, char *buffer)
+{
+    
+}
+
+int Template::writeBufferHead(string name, DataType &type, char *buffer)
+{
+    for (auto &schema : this->schemas)
+    {
+        if(name == schema.first.name){
+            buffer[0] = (char)1;
+            buffer[1] = (char)type.valueType;
+            memcpy(buffer +2, schema.first.code, 10);
+            break;
+        }
+    }
+    return 12;
+}
+
+int Template::GetAllPathsByCode(char pathCode[], vector<PathCode> &pathCodes)
+{
+    int level = 5; //路径级数
+    for (int i = 10 - 1; i >= 0 && pathCode[i] == 0; i -= 2)
+    {
+        level--;
+    }
+    for (auto const &schema : this->schemas)
+    {
+        bool codeEquals = true;
+        for (size_t k = 0; k < level * 2; k++) //判断路径编码前缀是否相等
+        {
+            if (pathCode[k] != schema.first.code[k])
+            {
+                codeEquals = false;
+            }
+            if(codeEquals)
+            {
+                pathCodes.push_back(schema.first);
+            }
+        }
+    }
+    return 0;
+}
 
 /**
  * @brief 根据当前模版寻找指定路径编码的数据在数据文件中的位置
