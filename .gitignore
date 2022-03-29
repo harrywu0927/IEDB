@@ -53,6 +53,4 @@ src/main
 *.tem
 
 CMakeLists.txt
-src/Schema.cpp
-include/Schema.h
 
