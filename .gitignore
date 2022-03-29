@@ -51,6 +51,9 @@ src/main
 *.dat
 *.idb
 *.tem
+*.ziptem
+src/schema
+*.datzip
 
 CMakeLists.txt
 

@@ -95,7 +95,7 @@ int EDVDB_ZipFile(const char *ZipTemPath,string filepath)
     long len;
     EDVDB_GetFileLengthByPath(const_cast<char *>(filepath.c_str()),&len);
     char readbuff[len];//文件内容
-    char writebuff[len]={0};//写入没有被压缩的数据
+    char writebuff[len];//写入没有被压缩的数据
     if(EDVDB_OpenAndRead(const_cast<char *>(filepath.c_str()),readbuff))//将文件内容读取到readbuff
         return errno;
 
@@ -291,7 +291,7 @@ int EDVDB_ZipRecvBuff(const char *ZipTemPath,string filepath,const char *buff,lo
     }
     long len=buffLength;
 
-    char writebuff[len]={0};//写入没有被压缩的数据
+    char writebuff[len];//写入没有被压缩的数据
     
     DataTypeConverter converter;
     long buff_pos=0;
@@ -485,15 +485,15 @@ int EDVDB_ZipRecvBuff(const char *ZipTemPath,string filepath,const char *buff,lo
     return err;
 }
 
-int main()
-{
-   // EDVDB_LoadZipSchema("./");
-    long len;
-    EDVDB_GetFileLengthByPath("XinFeng_0100.dat",&len);
-    char readbuf[len];
-    EDVDB_OpenAndRead("XinFeng_0100.dat",readbuf);
+// int main()
+// {
+//    // EDVDB_LoadZipSchema("./");
+//     long len;
+//     EDVDB_GetFileLengthByPath("XinFeng_0100.dat",&len);
+//     char readbuf[len];
+//     EDVDB_OpenAndRead("XinFeng_0100.dat",readbuf);
 
-    EDVDB_ZipRecvBuff("/","XinFeng_0100.dat",readbuf,len);
-    //EDVDB_ZipFile("/","XinFeng_0100.dat");
-    return 0;
-}
+//     EDVDB_ZipRecvBuff("/","XinFeng_0100.dat",readbuf,len);
+//     //EDVDB_ZipFile("/","XinFeng_0100.dat");
+//     return 0;
+// }

@@ -182,7 +182,7 @@ bool LoopMode(char buf[])
                     filepath[j] = file[j];
                 }
                 filepath[j] = '\0';
-                if (EDVDB_DeleteFile(filepath) == 0)
+                if (remove(filepath) == 0)
                 {
                     statvfs("./", &diskInfo);
                     availableSpace = diskInfo.f_bavail * diskInfo.f_frsize;

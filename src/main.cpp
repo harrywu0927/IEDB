@@ -462,7 +462,7 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
             cur = 0;
             for (auto &mem : mallocedMemory)
             {
-                memcpy(data + cur, mem.first, mem.second);
+                memcpy(data, mem.first, mem.second);
                 free(mem.first);
                 cur += mem.second;
             }
@@ -666,31 +666,8 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                 char buff[len];
                 EDVDB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 
-                long pos = 0;
-                long bytes = 0;
-                int err;
-                DataType type;
-                if (params->byPath)
-                {
-                    char *pathCode = params->pathCode;
-                    err = CurrentTemplate.FindDatatypePosByCode(pathCode, buff, pos, bytes, type);
-                }
-                else
-                    err = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type);
-                if (err != 0)
-                {
-                    buffer->buffer = NULL;
-                    buffer->bufferMalloced = 0;
-                    return err;
-                }
-                if (len < pos)
-                {
-                    buffer->buffer = NULL;
-                    buffer->bufferMalloced = 0;
-                    return StatusCode::UNKNWON_DATAFILE;
-                }
-                long copyBytes = type.hasTime ? bytes + 8 : bytes;
-                char *data = (char *)malloc(copyBytes);
+                
+                char *data = (char *)malloc(len);
                 if (data == NULL)
                 {
                     buffer->buffer = NULL;
@@ -699,8 +676,8 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                 }
                 //内存分配成功，传入数据
                 buffer->bufferMalloced = 1;
-                buffer->length = copyBytes;
-                memcpy(data, buff + pos, copyBytes);
+                buffer->length = len;
+                memcpy(data, buff, len);
                 buffer->buffer = data;
                 return 0;
 
@@ -870,7 +847,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
             if (canCopy) //需要此数据
             {
                 char *memory = (char *)malloc(bytes);
-                memcpy(memory + cur, copyValue, copyBytes);
+                memcpy(memory, copyValue, copyBytes);
                 cur += copyBytes;
                 mallocedMemory.push_back(make_pair(memory, copyBytes));
             }
@@ -1237,164 +1214,164 @@ int EDVDB_InsertRecords(DataBuffer buffer[], int recordsNum, int addTime)
     }
 }
 
-// int main()
-// {
-// //         // char *data = "test";
-//     // struct DataBuffer buffer;
-//     // buffer.buffer = data;
-//     // buffer.length = 4;
-//     // buffer.savePath = "";
-//     // EDVDB_InsertRecord(&buffer,0);
-//     // FileIDManager::GetSettings();"\xe0\xfc"
+int main()
+{
+//         // char *data = "test";
+    // struct DataBuffer buffer;
+    // buffer.buffer = data;
+    // buffer.length = 4;
+    // buffer.savePath = "";
+    // EDVDB_InsertRecord(&buffer,0);
+    // FileIDManager::GetSettings();"\xe0\xfc"
 
-//     // float a = -800.2345;
-//     // char buf1[4] = {0}, buf2[4] = {0};
-//     // short x = -10, y = -24;
-//     // for (int i = 0; i < 2; i++)
-//     // {
-//     //     buf1[1 - i] |= x;
-//     //     x >>= 8;
-//     //     buf2[1 - i] |= y;
-//     //     y >>= 8;
-//     // }
-//     DataTypeConverter converter;
+    // float a = -800.2345;
+    // char buf1[4] = {0}, buf2[4] = {0};
+    // short x = -10, y = -24;
+    // for (int i = 0; i < 2; i++)
+    // {
+    //     buf1[1 - i] |= x;
+    //     x >>= 8;
+    //     buf2[1 - i] |= y;
+    //     y >>= 8;
+    // }
+    DataTypeConverter converter;
 
-//     // DataType type;
-//     // type.isArray = false;
-//     // type.valueType = ValueType::DINT;
-//     // int res = DataType::CompareValue(type, buf1, buf2);
+    // DataType type;
+    // type.isArray = false;
+    // type.valueType = ValueType::DINT;
+    // int res = DataType::CompareValue(type, buf1, buf2);
 
-//     // return 0;
+    // return 0;
 
-//     long length;
-//     converter.CheckBigEndian();
-//     cout << EDVDB_LoadSchema("/");
-//     QueryParams params;
-//     params.pathToLine = "";
-//     params.fileID = "XinFeng8";
-//     // char *code = (char*)malloc(10);
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)1;
-//     code[4] = 'R';
-//     code[5] = (char)1;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     params.pathCode = code;
-//     params.valueName = "S1R3";
-//     params.start = 1648084211100;
-//     params.end = 1648084218100;
-//     params.order = TIME_DSC;
-//     params.compareType = GT;
-//     params.compareValue = "67";
-//     params.byPath = 0;
-//     params.queryNums = 3;
-//     DataBuffer buffer;
-//     buffer.length = 0;
-//     vector<long> bytes, positions;
-//     vector<DataType> types;
-//     // CurrentTemplate.FindMultiDatatypePosByCode(code, positions, bytes, types);
-//     //  EDVDB_QueryLastRecords(&buffer, &params);
-//     EDVDB_QueryByTimespan(&buffer, &params);
+    long length;
+    converter.CheckBigEndian();
+    cout << EDVDB_LoadSchema("/");
+    QueryParams params;
+    params.pathToLine = "";
+    params.fileID = "XinFeng8";
+    // char *code = (char*)malloc(10);
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)1;
+    code[4] = 'R';
+    code[5] = (char)1;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueName = "S1R6";
+    params.start = 1648516212100;
+    params.end = 1648516212100;
+    params.order = ASCEND;
+    params.compareType = GT;
+    params.compareValue = "6";
+    params.byPath = 0;
+    params.queryNums = 3;
+    DataBuffer buffer;
+    buffer.length = 0;
+    vector<long> bytes, positions;
+    vector<DataType> types;
+    // CurrentTemplate.FindMultiDatatypePosByCode(code, positions, bytes, types);
+    //  EDVDB_QueryLastRecords(&buffer, &params);
+    EDVDB_QueryByTimespan(&buffer, &params);
 
-//     // EDVDB_QueryByFileID(&buffer, &params);
+    // EDVDB_QueryByFileID(&buffer, &params);
 
-//     if (buffer.bufferMalloced)
-//         free(buffer.buffer);
-//     buffer.buffer = NULL;
-//     // free(code);
-//     //  const char* path = "./";
-//     //  buffer.savePath = path;
-//     //  int len = 0;
-//     //  for (size_t i = 0; i < CurrentTemplate.schemas.size(); i++)
-//     //  {
-//     //      if(CurrentTemplate.schemas[i].second.valueBytes == 2){
-//     //          int num = 1;
-//     //          if(CurrentTemplate.schemas[i].second.isArray){
-//     //              num = CurrentTemplate.schemas[i].second.arrayLen;
-//     //          }
-//     //          len+=2*num;
+    if (buffer.bufferMalloced)
+        free(buffer.buffer);
+    buffer.buffer = NULL;
+    // free(code);
+    //  const char* path = "./";
+    //  buffer.savePath = path;
+    //  int len = 0;
+    //  for (size_t i = 0; i < CurrentTemplate.schemas.size(); i++)
+    //  {
+    //      if(CurrentTemplate.schemas[i].second.valueBytes == 2){
+    //          int num = 1;
+    //          if(CurrentTemplate.schemas[i].second.isArray){
+    //              num = CurrentTemplate.schemas[i].second.arrayLen;
+    //          }
+    //          len+=2*num;
 
-//     //     }
-//     //     else if(CurrentTemplate.schemas[i].second.valueBytes == 1){
-//     //         int num = 1;
-//     //         if(CurrentTemplate.schemas[i].second.isArray){
-//     //             num = CurrentTemplate.schemas[i].second.arrayLen;
-//     //         }
-//     //         short value = 12345;
-//     //         len+=num;
-//     //     }
-//     //     else if(CurrentTemplate.schemas[i].second.valueBytes == 4){
-//     //         int num = 1;
-//     //         if(CurrentTemplate.schemas[i].second.isArray){
-//     //             num = CurrentTemplate.schemas[i].second.arrayLen;
-//     //         }
-//     //         len += 4*num;
-//     //     }
+    //     }
+    //     else if(CurrentTemplate.schemas[i].second.valueBytes == 1){
+    //         int num = 1;
+    //         if(CurrentTemplate.schemas[i].second.isArray){
+    //             num = CurrentTemplate.schemas[i].second.arrayLen;
+    //         }
+    //         short value = 12345;
+    //         len+=num;
+    //     }
+    //     else if(CurrentTemplate.schemas[i].second.valueBytes == 4){
+    //         int num = 1;
+    //         if(CurrentTemplate.schemas[i].second.isArray){
+    //             num = CurrentTemplate.schemas[i].second.arrayLen;
+    //         }
+    //         len += 4*num;
+    //     }
 
-//     // }
-//     // char buff[len];
-//     // len=0;
+    // }
+    // char buff[len];
+    // len=0;
 
-//     // for (size_t i = 0; i < CurrentTemplate.schemas.size(); i++)
-//     // {
-//     //     if(CurrentTemplate.schemas[i].second.valueBytes == 2){
-//     //         int num = 1;
-//     //         if(CurrentTemplate.schemas[i].second.isArray){
-//     //             num = CurrentTemplate.schemas[i].second.arrayLen;
-//     //         }
-//     //         for(int j =0;j<num;j++){
-//     //             short value = 12345;
-//     //             buff[len+1] = value & 0xff;
-//     //             value <<= 8;
-//     //             buff[len] = value & 0xff;
-//     //             len+=2;
-//     //         }
+    // for (size_t i = 0; i < CurrentTemplate.schemas.size(); i++)
+    // {
+    //     if(CurrentTemplate.schemas[i].second.valueBytes == 2){
+    //         int num = 1;
+    //         if(CurrentTemplate.schemas[i].second.isArray){
+    //             num = CurrentTemplate.schemas[i].second.arrayLen;
+    //         }
+    //         for(int j =0;j<num;j++){
+    //             short value = 12345;
+    //             buff[len+1] = value & 0xff;
+    //             value <<= 8;
+    //             buff[len] = value & 0xff;
+    //             len+=2;
+    //         }
 
-//     //     }
-//     //     else if(CurrentTemplate.schemas[i].second.valueBytes == 1){
-//     //         int num = 1;
-//     //         if(CurrentTemplate.schemas[i].second.isArray){
-//     //             num = CurrentTemplate.schemas[i].second.arrayLen;
-//     //         }
-//     //         short value = 12345;
-//     //         for(int j =0;j<num;j++){
+    //     }
+    //     else if(CurrentTemplate.schemas[i].second.valueBytes == 1){
+    //         int num = 1;
+    //         if(CurrentTemplate.schemas[i].second.isArray){
+    //             num = CurrentTemplate.schemas[i].second.arrayLen;
+    //         }
+    //         short value = 12345;
+    //         for(int j =0;j<num;j++){
 
-//     //             buff[len] = value & 0xff;
-//     //             len++;
-//     //         }
-//     //     }
-//     //     else if(CurrentTemplate.schemas[i].second.valueBytes == 4){
-//     //         int num = 1;
-//     //         if(CurrentTemplate.schemas[i].second.isArray){
-//     //             num = CurrentTemplate.schemas[i].second.arrayLen;
-//     //         }
-//     //         for(int j =0;j<num;j++){
-//     //             int value = 123456;
-//     //             buff[len+3] = value & 0xff;
-//     //             value<<=8;
-//     //             buff[len+2] = value&0xff;
-//     //             value<<=8;
-//     //             buff[len+1] = value&0xff;
-//     //             value<<=8;
-//     //             buff[len] = value&0xff;
-//     //             len+=4;
-//     //         }
-//     //     }
+    //             buff[len] = value & 0xff;
+    //             len++;
+    //         }
+    //     }
+    //     else if(CurrentTemplate.schemas[i].second.valueBytes == 4){
+    //         int num = 1;
+    //         if(CurrentTemplate.schemas[i].second.isArray){
+    //             num = CurrentTemplate.schemas[i].second.arrayLen;
+    //         }
+    //         for(int j =0;j<num;j++){
+    //             int value = 123456;
+    //             buff[len+3] = value & 0xff;
+    //             value<<=8;
+    //             buff[len+2] = value&0xff;
+    //             value<<=8;
+    //             buff[len+1] = value&0xff;
+    //             value<<=8;
+    //             buff[len] = value&0xff;
+    //             len+=4;
+    //         }
+    //     }
 
-//     // }
-//     // buffer.buffer = buff;
-//     // buffer.length = len;
-//     // EDVDB_InsertRecord(&buffer,0);
-//     // FILE *fp = fopen("exldata.tem", "rb");
-//     // long len;
-//     // EDVDB_GetFileLengthByFilePtr((long)fp, &len);
-//     // char buf[len];
-//     // EDVDB_Read((long)fp, buf);
-//     // cout << sizeof(buf) << endl;
-//     return 0;
-//  }
+    // }
+    // buffer.buffer = buff;
+    // buffer.length = len;
+    // EDVDB_InsertRecord(&buffer,0);
+    // FILE *fp = fopen("exldata.tem", "rb");
+    // long len;
+    // EDVDB_GetFileLengthByFilePtr((long)fp, &len);
+    // char buf[len];
+    // EDVDB_Read((long)fp, buf);
+    // cout << sizeof(buf) << endl;
+    return 0;
+ }
