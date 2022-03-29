@@ -17,7 +17,7 @@
 #include <sstream>
 #include "CJsonObject.hpp"
 using namespace std;
-extern int errno;
+//extern int errno;
 static neb::CJsonObject config;
 long availableSpace = 1024 * 1024 * 10;
 size_t totalSpace = 0;
@@ -306,9 +306,14 @@ bool Flush(uint fp1, uint fp2)
 
 int EDVDB_DeleteFile(char path[])
 {
+    ReadConfig();
+    char finalPath[100];
+    strcpy(finalPath, labelPath);
+    strcat(finalPath, "/");
+    strcat(finalPath, path);
     // availableSpace += GetFileLengthByPath(path);
     // cout<<"Delete file "<<path<<"size:"<<GetFileLengthByPath(path)<<endl;
-    return remove(path) == 0 ? 0 : errno;
+    return remove(finalPath) == 0 ? 0 : errno;
 }
 int EDVDB_Read(long fptr, char buf[])
 {

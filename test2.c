@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <sys/sysctl.h>
 #include <string.h>
-
+#include <time.h>
 int main()
 {
     // char *data = "test";

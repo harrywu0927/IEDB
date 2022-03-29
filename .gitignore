@@ -51,4 +51,8 @@ src/main
 *.dat
 *.idb
 *.tem
+
 CMakeLists.txt
+src/Schema.cpp
+include/Schema.h
+
