@@ -1,30 +1,35 @@
-//#include "../include/Aggregate.h"
 #include "../include/STDFB_header.h"
-int EDVDB_MAX(struct DataBuffer *buffer, struct QueryParams *params)
+#include "../include/utils.hpp"
+int EDVDB_MAX(DataBuffer *buffer, QueryParams *params)
 {
 
 }
-int EDVDB_MIN(struct DataBuffer *buffer, struct QueryParams *params)
+int EDVDB_MIN(DataBuffer *buffer, QueryParams *params)
 {
     
 }
-int EDVDB_SUM(struct DataBuffer *buffer, struct QueryParams *params)
+int EDVDB_SUM(DataBuffer *buffer, QueryParams *params)
 {
     
 }
-int EDVDB_AVG(struct DataBuffer *buffer, struct QueryParams *params)
+int EDVDB_AVG(DataBuffer *buffer, QueryParams *params)
 {
     
 }
-int EDVDB_COUNT(struct DataBuffer *buffer, struct QueryParams *params)
+int EDVDB_COUNT(DataBuffer *buffer, QueryParams *params)
 {
     
 }
-int EDVDB_STD(struct DataBuffer *buffer, struct QueryParams *params)
+int EDVDB_STD(DataBuffer *buffer, QueryParams *params)
 {
     
 }
-int EDVDB_STDEV(struct DataBuffer *buffer, struct QueryParams *params)
+int EDVDB_STDEV(DataBuffer *buffer, QueryParams *params)
 {
     
 }
+// int main(){
+//     DataBuffer buffer;
+//     QueryParams params;
+//     EDVDB_MAX(&buffer, &params);
+// }
