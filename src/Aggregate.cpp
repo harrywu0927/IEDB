@@ -2,7 +2,12 @@
 #include "../include/utils.hpp"
 int EDVDB_MAX(DataBuffer *buffer, QueryParams *params)
 {
-    EDVDB_ExecuteQuery(buffer, params);
+    // EDVDB_ExecuteQuery(buffer, params);
+    // free(buffer->buffer);
+    TemplateManager::SetTemplate(params->pathToLine);
+    cout<<maxTemplates<<endl;
+    cout<<CurrentTemplate.schemas.size()<<endl;
+    return 0;
     int typeNum = buffer->buffer[0];
     DataType typeList[typeNum];
     int recordLength = 0;

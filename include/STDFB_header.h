@@ -5,12 +5,14 @@ extern "C"
 #endif
     /*
      *  数据交换缓冲区
-     *  查询时，buffer中的数据存放方式：第1个字节为查询到的数据类型总数(N)，
+     *  查询时，buffer中的数据存放方式：第1个字节为查询到的变量总数(0<N<256)，
      *  随后的N*11字节依次为：数据类型代号1字节、路径编码10字节
      *  数据类型代号如下：
      *  1:UINT, 2:USINT, 3:UDINT, 4:INT, 5:BOOL, 6:SINT, 7:DINT, 8:REAL, 9:TIME, 10:IMAGE
-     *  如果变量携带时间，则此变量的代号值+10
-     *  随后为数据区
+     *  如果变量不是数组且携带时间，则此变量的代号值+10
+     *  如果变量是数组且不带时间，则此变量的代号值+20
+     *  如果变量是数组且携带时间，则此变量的代号值+30
+     *  随后为数据区,按行依序排列
      *  查询整个文件时，只有数据区
     */
     struct DataBuffer
@@ -49,13 +51,13 @@ extern "C"
     struct QueryParams
     {
         char *pathCode; //路径编码
-        const char *valueName;  //变量名
+        const char *valueName;  //变量名,必须赋值或置为NULL！！
         int byPath;     //1表示根据路径编码查询，0表示根据变量名查询
         int isContinue; //是否继续获取数据，1表示接续上次未传输完的数据，0表示结束
         long start;     //开始时间
         long end;       //结束时间
         long queryNums; //查询记录条数
-        const char *compareValue;  //比较某个值
+        const char *compareValue;  //比较某个值,当byPath为1时，若选中多个变量，将选择变量名中指出的变量比较数值
         const char *fileID;   //文件ID
         const char *pathToLine;    //到产线层级的路径
         enum CompareType compareType;  //比较方式

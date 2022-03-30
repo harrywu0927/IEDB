@@ -144,24 +144,61 @@ int getMemory(long size, char *mem)
     }
 }
 
-int Template::writeBufferHead(vector<PathCode> &pathCodes, vector<DataType> &typeList, char *buffer)
+int getBufferValueType(DataType &type)
 {
-    return 0;
+    int baseType = (int)type.valueType;
+    if(type.hasTime && !type.isArray)
+        return baseType + 10;
+    if(!type.hasTime && type.isArray)
+        return baseType + 20;
+    if(type.isArray && type.hasTime)
+        return baseType + 30;
+    return baseType;
 }
 
-int Template::writeBufferHead(char *pathCode, DataType &type, char *buffer)
+/**
+ * @brief 在缓冲区中写入变量名的缓冲区头
+ * @param pathCode      路径编码
+ * @param typeList      数据类型列表
+ * @param buffer        缓冲区地址
+ *
+ * @return  缓冲区头的长度
+ * @note
+ */
+int Template::writeBufferHead(char *pathCode, vector<DataType> &typeList, char *buffer)
 {
-    
+    vector<PathCode> pathCodes;
+    this->GetAllPathsByCode(pathCode, pathCodes);
+    buffer[0] = (unsigned char)pathCodes.size();
+    long cur = 1; //当前数据头写位置
+    for (int i = 0; i < pathCodes.size(); i++)
+    {
+        buffer[cur] = (char)getBufferValueType(typeList[i]);
+        memcpy(buffer + cur + 1, pathCodes[i].code, 10);
+        cur += 11;
+    }
+    return cur;
+
 }
 
+/**
+ * @brief 在缓冲区中写入变量名的缓冲区头
+ * @param name          变量名
+ * @param type          数据类型
+ * @param buffer        缓冲区地址
+ *
+ * @return  缓冲区头的长度
+ * @note
+ */
 int Template::writeBufferHead(string name, DataType &type, char *buffer)
 {
     for (auto &schema : this->schemas)
     {
-        if(name == schema.first.name){
+        if (name == schema.first.name)
+        {
             buffer[0] = (char)1;
-            buffer[1] = (char)type.valueType;
-            memcpy(buffer +2, schema.first.code, 10);
+            buffer[1] = (char)getBufferValueType(type);
+            memcpy(buffer + 2, schema.first.code, 10);
             break;
         }
     }
@@ -184,10 +221,10 @@ int Template::GetAllPathsByCode(char pathCode[], vector<PathCode> &pathCodes)
             {
                 codeEquals = false;
             }
-            if(codeEquals)
-            {
-                pathCodes.push_back(schema.first);
-            }
+        }
+        if (codeEquals)
+        {
+            pathCodes.push_back(schema.first);
         }
     }
     return 0;
@@ -401,7 +438,7 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
         }
     }
-    return StatusCode::UNKNOWN_PATHCODE;
+    return positions.size() == 0 ? StatusCode::UNKNOWN_PATHCODE : 0;
 }
 
 /**

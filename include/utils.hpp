@@ -439,7 +439,7 @@ public:
 
     int writeBufferHead(vector<PathCode> &pathCodes, vector<DataType> &typeList, char *buffer);
 
-    int writeBufferHead(char *pathCode, DataType &type, char *buffer);
+    int writeBufferHead(char *pathCode, vector<DataType> &typeList, char *buffer);
 
     int writeBufferHead(string name, DataType &type, char *buffer);
 };

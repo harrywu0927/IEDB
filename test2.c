@@ -44,14 +44,14 @@ int main()
     code[8] = (char)0;
     code[9] = (char)0;
     params.pathCode = code;
-    params.valueName = "S1R2";
+    params.valueName = "S1R8";
     params.start = 1648516212100;
     params.end = 1648516221100;
     params.order = ASCEND;
     params.compareType = GT;
     params.compareValue = "6";
     params.queryType = FILEID;
-    params.byPath = 0;
+    params.byPath = 1;
     params.queryNums = 3;
     struct DataBuffer buffer;
 
