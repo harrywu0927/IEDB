@@ -54,6 +54,7 @@ src/main
 *.ziptem
 src/schema
 *.datzip
+*.idbzip
 
 CMakeLists.txt
 
