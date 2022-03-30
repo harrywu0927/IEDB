@@ -27,6 +27,7 @@ void readFileList(string path, vector<string> &files)
     closedir(dir);
 }
 
+//获取.idb文件路径
 void readIDBFilesList(string path, vector<string> &files)
 {
     // FileIDManager::GetSettings();
@@ -44,7 +45,34 @@ void readIDBFilesList(string path, vector<string> &files)
         {
             string p;
             string datafile = ptr->d_name;
-            if (datafile.find(".idb") != string::npos)
+            // if (datafile.find(".idb") != string::npos)
+            //     files.push_back(p.append(path).append("/").append(ptr->d_name));
+            if ( (datafile.find(".idb") != string::npos) && (datafile.find(".idbzip") == string::npos))
+                files.push_back(p.append(path).append("/").append(ptr->d_name));
+        }
+    }
+    closedir(dir);
+}
+
+//获取.idbzip文件路径
+void readIDBZIPFilesList(string path,vector<string> &files)
+{
+    struct dirent *ptr;
+    DIR *dir;
+    string finalPath = Label;
+    finalPath += path;
+    dir = opendir(finalPath.c_str());
+    while ((ptr = readdir(dir)) != NULL)
+    {
+        if (ptr->d_name[0] == '.')
+            continue;
+
+        if (ptr->d_type == 8)
+        {
+            string p;
+            string datafile = ptr->d_name;
+
+            if ( datafile.find(".idbzip") != string::npos)
                 files.push_back(p.append(path).append("/").append(ptr->d_name));
         }
     }

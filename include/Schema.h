@@ -32,6 +32,9 @@ int EDVDB_DeleteNodeToSchema(struct TreeNodeParams *params);
 //在指定路径下从压缩模板文件(.ziptem)加载模板
 int EDVDB_LoadZipSchema(const char *pathToSet);
 
+//卸载指定路径下的压缩模板
+int EDVDB_UnloadZipSchema(const char *pathToUnset);
+
 //压缩已有文件
 int EDVDB_ZipFile(const char* ZipTemPath,string filepath);
 
@@ -40,6 +43,9 @@ int EDVDB_ZipRecvBuff(const char *ZipTemPath,string filepath,const char *buff,lo
 
 //压缩只有开关量的文件
 int EDVDB_ZipSwitchFile(const char *ZipTemPath,string filepath);
+
+//还原被压缩的文件返回原状态
+int EDVDB_ReZipSwitchFile(const char *ZipTemPath,string filepath);
 
 //压缩接收到的只有开关量类型的整条数据
 int EDVDB_ZipRecvSwitchBuff(const char *ZipTemPath,string filepath,const char *buff,long buffLength);

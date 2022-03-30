@@ -59,6 +59,8 @@ void readFileList(string path, vector<string> &files);
 
 void readIDBFilesList(string path, vector<string> &files);
 
+void readIDBZIPFilesList(string path,vector<string> &files); 
+
 void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWithTime);
 
 long getMilliTime();
@@ -605,6 +607,21 @@ public:
     static int SetTemplate(ZipTemplate &tem)
     {
         CurrentZipTemplate = tem;
+        return 0;
+    }
+    //卸载指定路径下的模版
+    static int UnsetZipTemplate(string path)
+    {
+        for (int i = 0; i < ZipTemplates.size(); i++)
+        {
+            if (ZipTemplates[i].path == path)
+            {
+                ZipTemplates.erase(ZipTemplates.begin() + i);
+            }
+        }
+        CurrentZipTemplate.path = "";
+        CurrentZipTemplate.schemas.clear();
+        CurrentZipTemplate.temFileBuffer = NULL;
         return 0;
     }
 };

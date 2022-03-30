@@ -1605,9 +1605,9 @@ int main()
                 cout << endl;
         }
 
-        free(buffer.buffer);
-    }
+//         free(buffer.buffer);
+//     }
 
-    buffer.buffer = NULL;
-    return 0;
-}
+//     buffer.buffer = NULL;
+//     return 0;
+ }
