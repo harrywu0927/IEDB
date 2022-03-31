@@ -510,14 +510,14 @@ int EDVDB_ZipRecvBuff(const char *ZipTemPath,string filepath,const char *buff,lo
         err = EDVDB_Open(const_cast<char *>(filepath.c_str()),"wb",&fp);
         if (err == 0)
         {
-            err = EDVDB_Write(fp, writebuff, writebuff_pos);
+            err = EDVDB_Write(fp,const_cast<char *>(buff) , buffLength);
         
             if (err == 0)
             {
                 EDVDB_Close(fp);
             }
         }
-        return 1;
+        return 1;//表示数据未压缩
     }
 
     long fp;
@@ -530,7 +530,7 @@ int EDVDB_ZipRecvBuff(const char *ZipTemPath,string filepath,const char *buff,lo
         
         if (err == 0)
         {
-            return EDVDB_Close(fp);
+            EDVDB_Close(fp);
         }
     }
     return err;
@@ -557,7 +557,7 @@ int EDVDB_ZipSwitchFile(const char *ZipTemPath,string filepath)
     vector<string> files;
     readIDBFilesList(filepath,files);
     if(files.size()==0)
-    {
+    { 
         cout<<"没有文件！"<<endl;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
@@ -688,18 +688,59 @@ int EDVDB_ReZipSwitchFile(const char *ZipTemPath,string filepath)
                         standardBoolTime>>=8;
                     }
                     memcpy(writebuff+writebuff_pos,boolValue,1);//布尔值
-                    memcpy(writebuff+writebuff_pos,boolTime,4);//持续时长
+                    memcpy(writebuff+writebuff_pos+1,boolTime,4);//持续时长
                     writebuff_pos+=5;
                 }
-                else
+                else//文件未完全压缩
                 {
-                    
+                    if(readbuff_pos<len)//还有未压缩的数据
+                    {
+                        char valueName[CurrentZipTemplate.schemas[i].first.length()];
+                        memcpy(valueName,readbuff+readbuff_pos,CurrentZipTemplate.schemas[i].first.length());
+                        if(valueName==CurrentZipTemplate.schemas[i].first)//是未压缩数据的变量名
+                        {
+                            readbuff_pos+=CurrentZipTemplate.schemas[i].first.length();
+                            memcpy(writebuff+writebuff_pos,readbuff+readbuff_pos,5);
+                            writebuff_pos+=5;
+                            readbuff_pos+=5;
+                        }
+                    }
+                    else//没有未压缩的数据了
+                    {
+                        uint32 standardBoolTime=converter.ToInt32_m(CurrentTemplate.schemas[i].second.standardValue);
+                        char boolValue[1];
+                        char boolTime[4]={0};
+                        for(int j=0;j<4;j++)
+                        {
+                            boolTime[3-i]|=standardBoolTime;
+                            standardBoolTime>>=8;
+                        }
+                        memcpy(writebuff+writebuff_pos,boolValue,1);//布尔值
+                        memcpy(writebuff+writebuff_pos+1,boolTime,4);//持续时长
+                        writebuff_pos+=5;
+                    }
+
                 }
             }
             else
             {
                 cout<<"存在开关量以外的类型，请检查模板或者更换功能块"<<endl;
                 return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+            }
+        }
+
+        //EDVDB_DeleteFile(const_cast<char *>(files[fileNum].c_str()));//删除原文件
+        long fp;
+        string finalpath=files[fileNum].substr(0,files[fileNum].length()-3);//去掉后缀的zip
+        //创建新文件并写入
+        err = EDVDB_Open(const_cast<char *>(finalpath.c_str()),"wb",&fp);
+        if (err == 0)
+        {
+            err = EDVDB_Write(fp, writebuff, writebuff_pos);
+                    
+            if (err == 0)
+            {
+                EDVDB_Close(fp);
             }
         }
     }
@@ -774,7 +815,7 @@ int EDVDB_ZipRecvSwitchBuff(const char *ZipTemPath,string filepath,const char *b
         err = EDVDB_Open(const_cast<char *>(filepath.c_str()),"wb",&fp);
         if (err == 0)
         {
-            err = EDVDB_Write(fp,const_cast<char *>(buff), buff_pos);
+            err = EDVDB_Write(fp,const_cast<char *>(buff), buffLength);
         
             if (err == 0)
             {
@@ -800,15 +841,15 @@ int EDVDB_ZipRecvSwitchBuff(const char *ZipTemPath,string filepath,const char *b
     return err;
 }
 
-// int main()
-// {
-//     //EDVDB_LoadZipSchema("./");
-//     // long len;
-//     // EDVDB_GetFileLengthByPath("XinFeng_0100.dat",&len);
-//     // char readbuf[len];
-//     // EDVDB_OpenAndRead("XinFeng_0100.dat",readbuf);
+int main()
+{
+    //EDVDB_LoadZipSchema("./");
+    // long len;
+    // EDVDB_GetFileLengthByPath("XinFeng_0100.dat",&len);
+    // char readbuf[len];
+    // EDVDB_OpenAndRead("XinFeng_0100.dat",readbuf);
 
-//     //EDVDB_ZipRecvBuff("/","XinFeng_0100.dat",readbuf,len);
-//     EDVDB_ZipFile("/","/");
-//     return 0;
-// }
+    //EDVDB_ZipRecvBuff("/","XinFeng_0100.dat",readbuf,len);
+    EDVDB_ZipFile("/","/");
+    return 0;
+}
