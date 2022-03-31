@@ -38,14 +38,26 @@ int EDVDB_UnloadZipSchema(const char *pathToUnset);
 //压缩已有文件
 int EDVDB_ZipFile(const char* ZipTemPath,string filepath);
 
+//还原压缩后的文件
+int EDVDB_ReZipFile(const char *ZipTemPath,string filepath);
+
 //压缩接收到的整条数据
 int EDVDB_ZipRecvBuff(const char *ZipTemPath,string filepath,const char *buff,long buffLength);
 
 //压缩只有开关量的文件
 int EDVDB_ZipSwitchFile(const char *ZipTemPath,string filepath);
 
-//还原被压缩的文件返回原状态
+//还原被压缩的开关量文件返回原状态
 int EDVDB_ReZipSwitchFile(const char *ZipTemPath,string filepath);
 
 //压缩接收到的只有开关量类型的整条数据
 int EDVDB_ZipRecvSwitchBuff(const char *ZipTemPath,string filepath,const char *buff,long buffLength);
+
+//压缩只有模拟量的文件
+int EDVDB_ZipAnalogFile(const char *ZipTemPath,string filepath);
+
+//还原被压缩的模拟量文件返回原状态
+int EDVDB_ReZipAnalogFile(const char *ZipTemPath,string filepath);
+
+//压缩接收到的只有模拟量的文件
+int EDVDB_ZipRecvAnalogFile(const char *ZipTempPath,string filepath,const char *buff,long buffLength);
