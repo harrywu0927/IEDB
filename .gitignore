@@ -46,13 +46,14 @@ test2
 Makefile
 CMakeCache.txt
 src/main
+src/utils
 /.vscode/*
 *.json
 *.dat
 *.idb
 *.tem
 *.ziptem
-src/schema
+src/Schema
 *.datzip
 *.idbzip
 

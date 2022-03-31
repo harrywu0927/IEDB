@@ -68,6 +68,7 @@ long getMilliTime();
 int getMemory(long size, char *mem);
 
 
+
 class PathCode
 {
 public:
@@ -430,6 +431,8 @@ public:
 
     int GetAllPathsByCode(char *pachCode, vector<PathCode> &pathCodes);
 
+    bool checkHasArray(char *pathCode);
+
     int FindDatatypePosByCode(char pathCode[], char buff[], long &position, long &bytes);
 
     int FindDatatypePosByCode(char pathCode[], char buff[], long &position, long &bytes, DataType &type);
@@ -448,6 +451,10 @@ public:
 
     long FindSortPosFromSelectedData(vector<long> &bytesList, string name, char *pathCode, vector<DataType> &typeList);
 };
+
+bool checkHasArray(char *pathCode);
+
+int getBufferDataPos(vector<DataType> &typeList, int num);
 
 class ZipTemplate //压缩模板
 {
@@ -511,6 +518,7 @@ public:
     //将模版设为当前模版
     static int SetTemplate(const char *path)
     {
+        UnsetTemplate(path);
         vector<string> files;
         readFileList(path, files);
         string temPath = "";

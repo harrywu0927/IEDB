@@ -47,7 +47,7 @@ void readIDBFilesList(string path, vector<string> &files)
             string datafile = ptr->d_name;
             // if (datafile.find(".idb") != string::npos)
             //     files.push_back(p.append(path).append("/").append(ptr->d_name));
-            if ( (datafile.find(".idb") != string::npos) && (datafile.find(".idbzip") == string::npos))
+            if ((datafile.find(".idb") != string::npos) && (datafile.find(".idbzip") == string::npos))
                 files.push_back(p.append(path).append("/").append(ptr->d_name));
         }
     }
@@ -55,7 +55,7 @@ void readIDBFilesList(string path, vector<string> &files)
 }
 
 //获取.idbzip文件路径
-void readIDBZIPFilesList(string path,vector<string> &files)
+void readIDBZIPFilesList(string path, vector<string> &files)
 {
     struct dirent *ptr;
     DIR *dir;
@@ -72,7 +72,7 @@ void readIDBZIPFilesList(string path,vector<string> &files)
             string p;
             string datafile = ptr->d_name;
 
-            if ( datafile.find(".idbzip") != string::npos)
+            if (datafile.find(".idbzip") != string::npos)
                 files.push_back(p.append(path).append("/").append(ptr->d_name));
         }
     }
@@ -175,13 +175,32 @@ int getMemory(long size, char *mem)
 int getBufferValueType(DataType &type)
 {
     int baseType = (int)type.valueType;
-    if(type.hasTime && !type.isArray)
+    if (type.hasTime && !type.isArray)
         return baseType + 10;
-    if(!type.hasTime && type.isArray)
+    if (!type.hasTime && type.isArray)
         return baseType + 20;
-    if(type.isArray && type.hasTime)
+    if (type.isArray && type.hasTime)
         return baseType + 30;
     return baseType;
+}
+
+/**
+ * @brief 获取数据区中第N个变量在每行中的偏移量
+ * @param typeList      数据类型列表
+ * @param num           第num个
+ *
+ * @return  偏移量
+ * @note
+ */
+int getBufferDataPos(vector<DataType> &typeList, int num)
+{
+    long pos = 0;
+    for (int i = 0; i < num; i++)
+    {
+        pos += typeList[i].hasTime ? typeList[i].valueBytes + 8 : typeList[i].valueBytes;
+    }
+
+    return pos;
 }
 
 /**
@@ -206,7 +225,6 @@ int Template::writeBufferHead(char *pathCode, vector<DataType> &typeList, char *
         cur += 11;
     }
     return cur;
-
 }
 
 /**
@@ -258,6 +276,42 @@ int Template::GetAllPathsByCode(char pathCode[], vector<PathCode> &pathCodes)
     return 0;
 }
 
+bool Template::checkHasArray(char *pathCode)
+{
+    long pos = 0;
+    int level = 5; //路径级数
+    for (int i = 10 - 1; i >= 0 && pathCode[i] == 0; i -= 2)
+    {
+        level--;
+    }
+    for (auto const &schema : this->schemas)
+    {
+        bool codeEquals = true;
+        for (size_t k = 0; k < level * 2; k++) //判断路径编码前缀是否相等
+        {
+            if (pathCode[k] != schema.first.code[k])
+            {
+                codeEquals = false;
+            }
+        }
+        if (codeEquals)
+        {
+            int num = 1;
+            if (schema.second.isArray)
+            {
+                return true;
+            }
+            pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
+        }
+        else
+        {
+            int num = 1;
+            pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
+        }
+    }
+    return false;
+}
+
 long Template::FindSortPosFromSelectedData(vector<long> &bytesList, string name, char *pathCode, vector<DataType> &typeList)
 {
     vector<PathCode> pathCodes;
@@ -265,9 +319,9 @@ long Template::FindSortPosFromSelectedData(vector<long> &bytesList, string name,
     long cur = 0;
     for (int i = 0; i < pathCodes.size(); i++)
     {
-        if(name == pathCodes[i].name)
+        if (name == pathCodes[i].name)
         {
-            return cur;   
+            return cur;
         }
         cur += typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i];
     }
@@ -442,7 +496,6 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
         }
         if (codeEquals)
         {
-
             int num = 1;
             if (schema.second.isArray)
             {

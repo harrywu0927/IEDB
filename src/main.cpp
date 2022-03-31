@@ -60,18 +60,18 @@ int EDVDB_UnloadSchema(const char *pathToUnset)
  */
 int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, vector<long> &poses, QueryParams *params, DataType &type)
 {
-    vector<pair<pair<char*, long>,long>> memAndPos; //使数据偏移与内存-长度对建立关联
+    vector<pair<pair<char *, long>, long>> memAndPos; //使数据偏移与内存-长度对建立关联
     for (int i = 0; i < poses.size(); i++)
     {
-        memAndPos.push_back(make_pair(mallocedMemory[i],poses[i]));
+        memAndPos.push_back(make_pair(mallocedMemory[i], poses[i]));
     }
-    
+
     switch (params->order)
     {
     case ASCEND: //升序
     {
         sort(memAndPos.begin(), memAndPos.end(),
-             [&type](pair<pair<char *, long>,long> iter1, pair<pair<char *, long>,long> iter2) -> bool
+             [&type](pair<pair<char *, long>, long> iter1, pair<pair<char *, long>, long> iter2) -> bool
              {
                  char value1[type.valueBytes], value2[type.valueBytes];
                  memcpy(value1, iter1.first.first + iter1.second, type.valueBytes);
@@ -82,14 +82,14 @@ int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, vector<long> &
         {
             mallocedMemory[i] = memAndPos[i].first;
         }
-        
+
         break;
     }
 
     case DESCEND: //降序
     {
         sort(memAndPos.begin(), memAndPos.end(),
-             [&type](pair<pair<char *, long>,long> iter1, pair<pair<char *, long>,long> iter2) -> bool
+             [&type](pair<pair<char *, long>, long> iter1, pair<pair<char *, long>, long> iter2) -> bool
              {
                  char value1[type.valueBytes], value2[type.valueBytes];
                  memcpy(value1, iter1.first.first + iter1.second, type.valueBytes);
@@ -105,7 +105,7 @@ int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, vector<long> &
     case DISTINCT: //去除重复
     {
         vector<pair<char *, long>> existedValues;
-        for (int i = 0; i<mallocedMemory.size(); i++)
+        for (int i = 0; i < mallocedMemory.size(); i++)
         {
             char value[type.valueBytes];
             memcpy(value, mallocedMemory[i].first + poses[i], type.valueBytes);
@@ -120,7 +120,7 @@ int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, vector<long> &
                 }
                 if (equals)
                 {
-                    free(mallocedMemory[i].first);          //重复值，释放此内存
+                    free(mallocedMemory[i].first);                    //重复值，释放此内存
                     mallocedMemory.erase(mallocedMemory.begin() + i); //注：此操作在查询量大时效率可能很低
                     isRepeat = true;
                 }
@@ -138,7 +138,7 @@ int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, vector<long> &
         break;
     }
     DataTypeConverter converter;
-    int a=0;
+    int a = 0;
     for (auto it = mallocedMemory.begin(); it != mallocedMemory.end(); it++)
     {
         char val[type.valueBytes];
@@ -832,8 +832,8 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
                 }
                 if (params->valueName != NULL)
                     sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, params->pathCode, typeList);
-                //else
-                    //sortDataPoses.push_back(-1); //没有指定变量名，不可按值排序
+                // else
+                // sortDataPoses.push_back(-1); //没有指定变量名，不可按值排序
             }
             else
                 memcpy(copyValue, buff + pos, copyBytes);
@@ -913,7 +913,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
         memcpy(val, mallocedMemory[i].first + sortDataPoses[i], type.valueBytes);
         cout << converter.ToInt16(val) << endl;
     }
-    
+
     if (sortDataPoses.size() > 0) //尚有问题
         sortResultByValue(mallocedMemory, sortDataPoses, params, type);
 
@@ -1118,7 +1118,7 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
                 break;
         }
         //查询最新数据时仅按时间排序，不可按值排序,仅可去除重复
-        //if (sortDataPos >= 0 && params->order == DISTINCT)
+        // if (sortDataPos >= 0 && params->order == DISTINCT)
         //    sortResultByValue(mallocedMemory, sortDataPos, params, type);
 
         //已获取指定数量的数据，开始拷贝内存
@@ -1223,8 +1223,8 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
             cur += copyBytes;
         }
         //查询最新数据时仅按时间排序，不可按值排序,仅可去除重复
-        //if (sortDataPos >= 0 && params->order == DISTINCT)
-            //sortResultByValue(mallocedMemory, sortDataPos, params, type);
+        // if (sortDataPos >= 0 && params->order == DISTINCT)
+        // sortResultByValue(mallocedMemory, sortDataPos, params, type);
         if (cur != 0)
         {
             char typeNum = typeList.size() == 0 ? 1 : typeList.size(); //数据类型总数
@@ -1529,13 +1529,20 @@ int EDVDB_InsertRecords(DataBuffer buffer[], int recordsNum, int addTime)
     return 0;
 }
 
+//暂不支持带有图片或数组的多变量聚合
 int TEST_MAX(DataBuffer *buffer, QueryParams *params)
 {
+    //检查是否有图片或数组
+    if (CurrentTemplate.checkHasArray(params->pathCode))
+        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+
     EDVDB_ExecuteQuery(buffer, params);
-    cout << CurrentTemplate.schemas.size() << endl;
+    // cout << CurrentTemplate.schemas.size() << endl;
     int typeNum = buffer->buffer[0];
-    DataType typeList[typeNum];
-    int recordLength = 0;
+    vector<DataType> typeList;
+    int recordLength = 0; //每行的长度
+    // vector<long> curs;
+    long bufPos = 0;
     for (int i = 0; i < typeNum; i++)
     {
         DataType type;
@@ -1571,15 +1578,1600 @@ int TEST_MAX(DataBuffer *buffer, QueryParams *params)
         }
         type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
         type.valueBytes = DataType::GetValueBytes(type.valueType);
-        typeList[i] = type;
+        typeList.push_back(type);
+        // if (type.valueType == ValueType::IMAGE)
+        // {
+        //     int num;
+        //     char imgLen[2];
+        //     imgLen[0] = buffer->buffer[recordLength];
+        //     imgLen[1] = buffer->buffer[recordLength + 1];
+        //     num = (int)converter.ToUInt16(imgLen);
+
+        // }
+        // curs.push_back(recordLength);
+        // bufPos += type.valueBytes + (type.hasTime ? 8 : 0);
         recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
     }
-    long startPos = typeNum * 11 + 1;
-    long cur = startPos;
-    while(cur < buffer->length)
+    long startPos = typeNum * 11 + 1;                       //数据区起始位置
+    long rows = (buffer->length - startPos) / recordLength; //获取行数
+    long cur = startPos;                                    //在buffer中的偏移量
+    char *newBuffer = (char *)malloc(recordLength + startPos);
+    buffer->length = startPos + recordLength;
+    memcpy(newBuffer, buffer->buffer, startPos);
+    long newBufCur = startPos; //在新缓冲区中的偏移量
+    for (int i = 0; i < typeNum; i++)
     {
-
+        // cur = curs[i];
+        cur = startPos + getBufferDataPos(typeList, i);
+        int bytes = typeList[i].valueBytes; //此类型的值字节数
+        char column[bytes * rows];          //每列的所有值缓存
+        long colPos = 0;                    //在column中的偏移量
+        for (int j = 0; j < rows; j++)
+        {
+            memcpy(column + colPos, buffer->buffer + cur, bytes);
+            colPos += bytes;
+            cur += recordLength;
+        }
+        DataTypeConverter converter;
+        switch (typeList[i].valueType)
+        {
+        case ValueType::INT:
+        {
+            short max = INT16_MIN;
+            char val[2];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                short value = converter.ToInt16(val);
+                if (max < value)
+                    max = value;
+            }
+            cout << "max:" << max << endl;
+            memcpy(newBuffer + newBufCur, &max, 2);
+            newBufCur += 2;
+            break;
+        }
+        case ValueType::UINT:
+        {
+            uint16_t max = 0;
+            char val[2];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                short value = converter.ToUInt16(val);
+                if (max < value)
+                    max = value;
+            }
+            cout << "max:" << max << endl;
+            memcpy(newBuffer + newBufCur, val, 2);
+            newBufCur += 2;
+            break;
+        }
+        case ValueType::DINT:
+        {
+            int max = INT_MIN;
+            char val[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                short value = converter.ToInt32(val);
+                if (max < value)
+                    max = value;
+            }
+            cout << "max:" << max << endl;
+            memcpy(newBuffer + newBufCur, val, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::UDINT:
+        {
+            uint max = 0;
+            char val[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                short value = converter.ToUInt32(val);
+                if (max < value)
+                    max = value;
+            }
+            cout << "max:" << max << endl;
+            memcpy(newBuffer + newBufCur, val, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::REAL:
+        {
+            float max = __FLT_MIN__;
+            char val[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                short value = converter.ToFloat(val);
+                if (max < value)
+                    max = value;
+            }
+            cout << "max:" << max << endl;
+            memcpy(newBuffer + newBufCur, val, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::TIME:
+        {
+            int max = INT_MIN;
+            char val[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                short value = converter.ToInt32(val);
+                if (max < value)
+                    max = value;
+            }
+            cout << "max:" << max << endl;
+            memcpy(newBuffer + newBufCur, val, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::SINT:
+        {
+            char max = INT8_MIN;
+            char value;
+            for (int k = 0; k < rows; k++)
+            {
+                value = column[k];
+                if (max < value)
+                    max = value;
+            }
+            cout << "max:" << (int)max << endl;
+            newBuffer[newBufCur++] = value;
+            break;
+        }
+        default:
+            break;
+        }
     }
+    free(buffer->buffer);
+    buffer->buffer = NULL;
+    buffer->buffer = newBuffer;
+    return 0;
+}
+
+/**
+ * @brief 根据自定义查询请求参数，获取单个或多个非数组变量各自的最大值
+ * @param buffer    数据缓冲区
+ * @param params    查询请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note  暂不支持带有图片或数组的多变量聚合
+ */
+int EDVDB_MAX(DataBuffer *buffer, QueryParams *params)
+{
+    //检查是否有图片或数组
+    if (CurrentTemplate.checkHasArray(params->pathCode))
+        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+    EDVDB_ExecuteQuery(buffer, params);
+    int typeNum = buffer->buffer[0];
+    vector<DataType> typeList;
+    int recordLength = 0; //每行的长度
+    long bufPos = 0;
+    for (int i = 0; i < typeNum; i++)
+    {
+        DataType type;
+        int typeVal = buffer->buffer[i * 11 + 1];
+        switch ((typeVal - 1) / 10)
+        {
+        case 0:
+        {
+            type.isArray = false;
+            type.hasTime = false;
+            break;
+        }
+        case 1:
+        {
+            type.isArray = false;
+            type.hasTime = true;
+            break;
+        }
+        case 2:
+        {
+            type.isArray = true;
+            type.hasTime = false;
+            break;
+        }
+        case 3:
+        {
+            type.isArray = true;
+            type.hasTime = true;
+            break;
+        }
+        default:
+            break;
+        }
+        type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
+        type.valueBytes = DataType::GetValueBytes(type.valueType);
+        typeList.push_back(type);
+        recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
+    }
+    long startPos = typeNum * 11 + 1;                       //数据区起始位置
+    long rows = (buffer->length - startPos) / recordLength; //获取行数
+    long cur = startPos;                                    //在buffer中的偏移量
+    char *newBuffer = (char *)malloc(recordLength + startPos);
+    buffer->length = startPos + recordLength;
+    memcpy(newBuffer, buffer->buffer, startPos);
+    long newBufCur = startPos; //在新缓冲区中的偏移量
+    for (int i = 0; i < typeNum; i++)
+    {
+        cur = startPos + getBufferDataPos(typeList, i);
+        int bytes = typeList[i].valueBytes; //此类型的值字节数
+        char column[bytes * rows];          //每列的所有值缓存
+        long colPos = 0;                    //在column中的偏移量
+        for (int j = 0; j < rows; j++)
+        {
+            memcpy(column + colPos, buffer->buffer + cur, bytes);
+            colPos += bytes;
+            cur += recordLength;
+        }
+        DataTypeConverter converter;
+        switch (typeList[i].valueType)
+        {
+        case ValueType::INT:
+        {
+            short max = INT16_MIN;
+            char res[2];
+            char val[2];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                short value = converter.ToInt16(val);
+                if (max < value)
+                {
+                    max = value;
+                    memcpy(res, val, 2);
+                }
+            }
+            cout << "max:" << max << endl;
+            memcpy(newBuffer + newBufCur, res, 2);
+            newBufCur += 2;
+            break;
+        }
+        case ValueType::UINT:
+        {
+            uint16_t max = 0;
+            char val[2];
+            char res[2];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                short value = converter.ToUInt16(val);
+                if (max < value)
+                {
+                    max = value;
+                    memcpy(res, val, 2);
+                }
+            }
+            cout << "max:" << max << endl;
+            memcpy(newBuffer + newBufCur, val, 2);
+            newBufCur += 2;
+            break;
+        }
+        case ValueType::DINT:
+        {
+            int max = INT_MIN;
+            char val[4];
+            char res[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                short value = converter.ToInt32(val);
+                if (max < value)
+                {
+                    max = value;
+                    memcpy(res, val, 4);
+                }
+            }
+            cout << "max:" << max << endl;
+            memcpy(newBuffer + newBufCur, val, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::UDINT:
+        {
+            uint max = 0;
+            char val[4];
+            char res[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                short value = converter.ToUInt32(val);
+                if (max < value)
+                {
+                    max = value;
+                    memcpy(res, val, 4);
+                }
+            }
+            cout << "max:" << max << endl;
+            memcpy(newBuffer + newBufCur, val, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::REAL:
+        {
+            float max = __FLT_MIN__;
+            char val[4];
+            char res[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                short value = converter.ToFloat(val);
+                if (max < value)
+                {
+                    max = value;
+                    memcpy(res, val, 4);
+                }
+            }
+            cout << "max:" << max << endl;
+            memcpy(newBuffer + newBufCur, val, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::TIME:
+        {
+            int max = INT_MIN;
+            char val[4];
+            char res[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                short value = converter.ToInt32(val);
+                if (max < value)
+                {
+                    max = value;
+                    memcpy(res, val, 4);
+                }
+            }
+            cout << "max:" << max << endl;
+            memcpy(newBuffer + newBufCur, val, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::SINT:
+        {
+            char max = INT8_MIN;
+            char value;
+            for (int k = 0; k < rows; k++)
+            {
+                value = column[k];
+                if (max < value)
+                    max = value;
+            }
+            cout << "max:" << (int)max << endl;
+            newBuffer[newBufCur++] = value;
+            break;
+        }
+        default:
+            break;
+        }
+    }
+    free(buffer->buffer);
+    buffer->buffer = NULL;
+    buffer->buffer = newBuffer;
+    return 0;
+}
+
+/**
+ * @brief 根据自定义查询请求参数，获取单个或多个非数组变量各自的最小值
+ * @param buffer    数据缓冲区
+ * @param params    查询请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note  暂不支持带有图片或数组的多变量聚合
+ */
+int EDVDB_MIN(DataBuffer *buffer, QueryParams *params)
+{
+    //检查是否有图片或数组
+    if (CurrentTemplate.checkHasArray(params->pathCode))
+        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+    EDVDB_ExecuteQuery(buffer, params);
+    int typeNum = buffer->buffer[0];
+    vector<DataType> typeList;
+    int recordLength = 0; //每行的长度
+    long bufPos = 0;
+    for (int i = 0; i < typeNum; i++)
+    {
+        DataType type;
+        int typeVal = buffer->buffer[i * 11 + 1];
+        switch ((typeVal - 1) / 10)
+        {
+        case 0:
+        {
+            type.isArray = false;
+            type.hasTime = false;
+            break;
+        }
+        case 1:
+        {
+            type.isArray = false;
+            type.hasTime = true;
+            break;
+        }
+        case 2:
+        {
+            type.isArray = true;
+            type.hasTime = false;
+            break;
+        }
+        case 3:
+        {
+            type.isArray = true;
+            type.hasTime = true;
+            break;
+        }
+        default:
+            break;
+        }
+        type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
+        type.valueBytes = DataType::GetValueBytes(type.valueType);
+        typeList.push_back(type);
+        recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
+    }
+    long startPos = typeNum * 11 + 1;                       //数据区起始位置
+    long rows = (buffer->length - startPos) / recordLength; //获取行数
+    long cur = startPos;                                    //在buffer中的偏移量
+    char *newBuffer = (char *)malloc(recordLength + startPos);
+    buffer->length = startPos + recordLength;
+    memcpy(newBuffer, buffer->buffer, startPos);
+    long newBufCur = startPos; //在新缓冲区中的偏移量
+    for (int i = 0; i < typeNum; i++)
+    {
+        cur = startPos + getBufferDataPos(typeList, i);
+        int bytes = typeList[i].valueBytes; //此类型的值字节数
+        char column[bytes * rows];          //每列的所有值缓存
+        long colPos = 0;                    //在column中的偏移量
+        for (int j = 0; j < rows; j++)
+        {
+            memcpy(column + colPos, buffer->buffer + cur, bytes);
+            colPos += bytes;
+            cur += recordLength;
+        }
+        DataTypeConverter converter;
+        switch (typeList[i].valueType)
+        {
+        case ValueType::INT:
+        {
+            short min = INT16_MAX;
+            char res[2];
+            char val[2];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                short value = converter.ToInt16(val);
+                if (min > value)
+                {
+                    min = value;
+                    memcpy(res, val, 2);
+                }
+            }
+            cout << "min:" << min << endl;
+            memcpy(newBuffer + newBufCur, res, 2);
+            newBufCur += 2;
+            break;
+        }
+        case ValueType::UINT:
+        {
+            uint16_t min = UINT16_MAX;
+            char val[2];
+            char res[2];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                short value = converter.ToUInt16(val);
+                if (min > value)
+                {
+                    min = value;
+                    memcpy(res, val, 2);
+                }
+            }
+            cout << "min:" << min << endl;
+            memcpy(newBuffer + newBufCur, val, 2);
+            newBufCur += 2;
+            break;
+        }
+        case ValueType::DINT:
+        {
+            int min = INT_MIN;
+            char val[4];
+            char res[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                short value = converter.ToInt32(val);
+                if (min > value)
+                {
+                    min = value;
+                    memcpy(res, val, 4);
+                }
+            }
+            cout << "min:" << min << endl;
+            memcpy(newBuffer + newBufCur, val, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::UDINT:
+        {
+            uint min = 0;
+            char val[4];
+            char res[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                short value = converter.ToUInt32(val);
+                if (min > value)
+                {
+                    min = value;
+                    memcpy(res, val, 4);
+                }
+            }
+            cout << "min:" << min << endl;
+            memcpy(newBuffer + newBufCur, val, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::REAL:
+        {
+            float min = __FLT_MIN__;
+            char val[4];
+            char res[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                short value = converter.ToFloat(val);
+                if (min > value)
+                {
+                    min = value;
+                    memcpy(res, val, 4);
+                }
+            }
+            cout << "min:" << min << endl;
+            memcpy(newBuffer + newBufCur, val, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::TIME:
+        {
+            int min = INT_MIN;
+            char val[4];
+            char res[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                short value = converter.ToInt32(val);
+                if (min > value)
+                {
+                    min = value;
+                    memcpy(res, val, 4);
+                }
+            }
+            cout << "min:" << min << endl;
+            memcpy(newBuffer + newBufCur, val, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::SINT:
+        {
+            char min = INT8_MIN;
+            char value;
+            for (int k = 0; k < rows; k++)
+            {
+                value = column[k];
+                if (min > value)
+                    min = value;
+            }
+            cout << "min:" << (int)min << endl;
+            newBuffer[newBufCur++] = value;
+            break;
+        }
+        default:
+            break;
+        }
+    }
+    free(buffer->buffer);
+    buffer->buffer = NULL;
+    buffer->buffer = newBuffer;
+    return 0;
+}
+
+/**
+ * @brief 根据自定义查询请求参数，对单个或多个非数组变量各自求和
+ * @param buffer    数据缓冲区
+ * @param params    查询请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note  暂不支持带有图片或数组的多变量聚合
+ */
+int EDVDB_SUM(DataBuffer *buffer, QueryParams *params)
+{
+    //检查是否有图片或数组
+    if (CurrentTemplate.checkHasArray(params->pathCode))
+        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+    EDVDB_ExecuteQuery(buffer, params);
+    int typeNum = buffer->buffer[0];
+    vector<DataType> typeList;
+    int recordLength = 0; //每行的长度
+    long bufPos = 0;
+    for (int i = 0; i < typeNum; i++)
+    {
+        DataType type;
+        int typeVal = buffer->buffer[i * 11 + 1];
+        switch ((typeVal - 1) / 10)
+        {
+        case 0:
+        {
+            type.isArray = false;
+            type.hasTime = false;
+            break;
+        }
+        case 1:
+        {
+            type.isArray = false;
+            type.hasTime = true;
+            break;
+        }
+        case 2:
+        {
+            type.isArray = true;
+            type.hasTime = false;
+            break;
+        }
+        case 3:
+        {
+            type.isArray = true;
+            type.hasTime = true;
+            break;
+        }
+        default:
+            break;
+        }
+        type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
+        type.valueBytes = DataType::GetValueBytes(type.valueType);
+        typeList.push_back(type);
+        recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
+    }
+    long startPos = typeNum * 11 + 1;                       //数据区起始位置
+    long rows = (buffer->length - startPos) / recordLength; //获取行数
+    long cur = startPos;                                    //在buffer中的偏移量
+    char *newBuffer = (char *)malloc(recordLength + startPos);
+    // buffer->length = startPos + recordLength;
+    // memcpy(newBuffer, buffer->buffer, startPos);
+    long newBufCur = startPos; //在新缓冲区中的偏移量
+    for (int i = 0; i < typeNum; i++)
+    {
+        cur = startPos + getBufferDataPos(typeList, i);
+        int bytes = typeList[i].valueBytes; //此类型的值字节数
+        char column[bytes * rows];          //每列的所有值缓存
+        long colPos = 0;                    //在column中的偏移量
+        for (int j = 0; j < rows; j++)
+        {
+            memcpy(column + colPos, buffer->buffer + cur, bytes);
+            colPos += bytes;
+            cur += recordLength;
+        }
+        DataTypeConverter converter;
+        int sum = 0;
+        switch (typeList[i].valueType)
+        {
+        case ValueType::INT:
+        {
+            char res[4] = {0};
+            char val[2];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                sum += converter.ToInt16(val);
+            }
+            for (int k = 0; k < 4; k++)
+            {
+                res[3 - k] |= sum;
+                sum >>= 8;
+            }
+            memcpy(newBuffer + newBufCur, res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::UINT:
+        {
+            char res[4] = {0};
+            char val[2];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                sum += converter.ToUInt16(val);
+            }
+            for (int k = 0; k < 4; k++)
+            {
+                res[3 - k] |= sum;
+                sum >>= 8;
+            }
+            memcpy(newBuffer + newBufCur, res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::DINT:
+        {
+            char res[4] = {0};
+            char val[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                sum += converter.ToInt32(val);
+            }
+            for (int k = 0; k < 4; k++)
+            {
+                res[3 - k] |= sum;
+                sum >>= 8;
+            }
+            memcpy(newBuffer + newBufCur, res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::UDINT:
+        {
+            char res[4] = {0};
+            char val[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                sum += converter.ToUInt32(val);
+            }
+            for (int k = 0; k < 4; k++)
+            {
+                res[3 - k] |= sum;
+                sum >>= 8;
+            }
+            memcpy(newBuffer + newBufCur, res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::REAL:
+        {
+            float floatSum = 0;
+            char res[4] = {0};
+            char val[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                floatSum += converter.ToFloat(val);
+            }
+            memcpy(newBuffer + newBufCur, &floatSum, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::TIME:
+        {
+            char res[4] = {0};
+            char val[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                sum += converter.ToUInt32(val);
+            }
+            for (int k = 0; k < 4; k++)
+            {
+                res[3 - k] |= sum;
+                sum >>= 8;
+            }
+            memcpy(newBuffer + newBufCur, res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::SINT:
+        {
+            char res[4] = {0};
+            char value;
+            for (int k = 0; k < rows; k++)
+            {
+                value = column[k];
+                sum += value;
+            }
+            for (int k = 0; k < 4; k++)
+            {
+                res[3 - k] |= sum;
+                sum >>= 8;
+            }
+            memcpy(newBuffer + newBufCur, res, 4);
+            newBufCur += 4;
+            break;
+        }
+        default:
+            break;
+        }
+    }
+    free(buffer->buffer);
+    buffer->buffer = NULL;
+    for (int i = 0; i < typeList.size(); i++)
+    {
+        if (typeList[i].valueType != ValueType::REAL)
+            typeList[i].valueType = ValueType::DINT; //可能超出32位数字表示范围，不是浮点数暂时统一用DINT表示
+    }
+    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    buffer->buffer = newBuffer;
+    return 0;
+}
+
+/**
+ * @brief 根据自定义查询请求参数，对单个或多个非数组变量各自求平均值
+ * @param buffer    数据缓冲区
+ * @param params    查询请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note  暂不支持带有图片或数组的多变量聚合
+ */
+int EDVDB_AVG(DataBuffer *buffer, QueryParams *params)
+{
+    //检查是否有图片或数组
+    if (CurrentTemplate.checkHasArray(params->pathCode))
+        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+    EDVDB_ExecuteQuery(buffer, params);
+    int typeNum = buffer->buffer[0];
+    vector<DataType> typeList;
+    int recordLength = 0; //每行的长度
+    long bufPos = 0;
+    for (int i = 0; i < typeNum; i++)
+    {
+        DataType type;
+        int typeVal = buffer->buffer[i * 11 + 1];
+        switch ((typeVal - 1) / 10)
+        {
+        case 0:
+        {
+            type.isArray = false;
+            type.hasTime = false;
+            break;
+        }
+        case 1:
+        {
+            type.isArray = false;
+            type.hasTime = true;
+            break;
+        }
+        case 2:
+        {
+            type.isArray = true;
+            type.hasTime = false;
+            break;
+        }
+        case 3:
+        {
+            type.isArray = true;
+            type.hasTime = true;
+            break;
+        }
+        default:
+            break;
+        }
+        type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
+        type.valueBytes = DataType::GetValueBytes(type.valueType);
+        typeList.push_back(type);
+        recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
+    }
+    long startPos = typeNum * 11 + 1;                       //数据区起始位置
+    long rows = (buffer->length - startPos) / recordLength; //获取行数
+    long cur = startPos;                                    //在buffer中的偏移量
+    char *newBuffer = (char *)malloc(recordLength + startPos);
+    // buffer->length = startPos + recordLength;
+    // memcpy(newBuffer, buffer->buffer, startPos);
+    long newBufCur = startPos; //在新缓冲区中的偏移量
+    for (int i = 0; i < typeNum; i++)
+    {
+        cur = startPos + getBufferDataPos(typeList, i);
+        int bytes = typeList[i].valueBytes; //此类型的值字节数
+        char column[bytes * rows];          //每列的所有值缓存
+        long colPos = 0;                    //在column中的偏移量
+        for (int j = 0; j < rows; j++)
+        {
+            memcpy(column + colPos, buffer->buffer + cur, bytes);
+            colPos += bytes;
+            cur += recordLength;
+        }
+        DataTypeConverter converter;
+        float sum = 0;
+        switch (typeList[i].valueType)
+        {
+        case ValueType::INT:
+        {
+            char val[2];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                sum += converter.ToInt16(val);
+            }
+            float res = sum / (float)rows;
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::UINT:
+        {
+            char val[2];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                sum += converter.ToUInt16(val);
+            }
+            float res = sum / (float)rows;
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::DINT:
+        {
+            char val[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                sum += converter.ToInt32(val);
+            }
+            float res = sum / (float)rows;
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::UDINT:
+        {
+            char val[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                sum += converter.ToUInt32(val);
+            }
+            float res = sum / (float)rows;
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::REAL:
+        {
+            float floatSum = 0;
+            char val[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                floatSum += converter.ToFloat(val);
+            }
+            float res = floatSum / (float)rows;
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::TIME:
+        {
+            char val[4];
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 4, 4);
+                sum += converter.ToUInt32(val);
+            }
+            float res = sum / (float)rows;
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::SINT:
+        {
+            char value;
+            for (int k = 0; k < rows; k++)
+            {
+                value = column[k];
+                sum += value;
+            }
+            float res = sum / (float)rows;
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        default:
+            break;
+        }
+    }
+    free(buffer->buffer);
+    buffer->buffer = NULL;
+    for (int i = 0; i < typeList.size(); i++)
+    {
+        if (typeList[i].valueType != ValueType::REAL)
+            typeList[i].valueType = ValueType::REAL; //均值统一用浮点数表示
+    }
+    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    buffer->buffer = newBuffer;
+    return 0;
+}
+
+/**
+ * @brief 根据自定义查询请求参数，对单个或多个非数组变量各自求计数
+ * @param buffer    数据缓冲区
+ * @param params    查询请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note  暂不支持带有图片或数组的多变量聚合
+ */
+int EDVDB_COUNT(DataBuffer *buffer, QueryParams *params)
+{
+    //检查是否有图片或数组
+    if (CurrentTemplate.checkHasArray(params->pathCode))
+        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+    EDVDB_ExecuteQuery(buffer, params);
+    int typeNum = buffer->buffer[0];
+    vector<DataType> typeList;
+    int recordLength = 0; //每行的长度
+    long bufPos = 0;
+    for (int i = 0; i < typeNum; i++)
+    {
+        DataType type;
+        int typeVal = buffer->buffer[i * 11 + 1];
+        switch ((typeVal - 1) / 10)
+        {
+        case 0:
+        {
+            type.isArray = false;
+            type.hasTime = false;
+            break;
+        }
+        case 1:
+        {
+            type.isArray = false;
+            type.hasTime = true;
+            break;
+        }
+        case 2:
+        {
+            type.isArray = true;
+            type.hasTime = false;
+            break;
+        }
+        case 3:
+        {
+            type.isArray = true;
+            type.hasTime = true;
+            break;
+        }
+        default:
+            break;
+        }
+        type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
+        type.valueBytes = DataType::GetValueBytes(type.valueType);
+        typeList.push_back(type);
+        recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
+    }
+    long startPos = typeNum * 11 + 1;                       //数据区起始位置
+    long rows = (buffer->length - startPos) / recordLength; //获取行数
+    long cur = startPos;                                    //在buffer中的偏移量
+    char *newBuffer = (char *)malloc(recordLength + startPos);
+    // buffer->length = startPos + recordLength;
+    // memcpy(newBuffer, buffer->buffer, startPos);
+    long newBufCur = startPos; //在新缓冲区中的偏移量
+    char res[4] = {0};
+    for (int k = 0; k < 4; k++)
+    {
+        res[3 - k] |= rows;
+        rows >>= 8;
+    }
+    memcpy(newBuffer + newBufCur, res, 4);
+    DataTypeConverter converter;
+    cout<<"count:"<<converter.ToUInt32(res)<<endl;
+    free(buffer->buffer);
+    buffer->buffer = NULL;
+    for (int i = 0; i < typeList.size(); i++)
+    {
+        if (typeList[i].valueType != ValueType::UDINT)
+            typeList[i].valueType = ValueType::UDINT; //计数统一用32位无符号数表示
+    }
+    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    buffer->buffer = newBuffer;
+    return 0;
+}
+
+/**
+ * @brief 根据自定义查询请求参数，对单个或多个非数组变量各自求标准差
+ * @param buffer    数据缓冲区
+ * @param params    查询请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note  暂不支持带有图片或数组的多变量聚合
+ */
+int EDVDB_STD(DataBuffer *buffer, QueryParams *params)
+{
+    //检查是否有图片或数组
+    if (CurrentTemplate.checkHasArray(params->pathCode))
+        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+    EDVDB_ExecuteQuery(buffer, params);
+    int typeNum = buffer->buffer[0];
+    vector<DataType> typeList;
+    int recordLength = 0; //每行的长度
+    long bufPos = 0;
+    for (int i = 0; i < typeNum; i++)
+    {
+        DataType type;
+        int typeVal = buffer->buffer[i * 11 + 1];
+        switch ((typeVal - 1) / 10)
+        {
+        case 0:
+        {
+            type.isArray = false;
+            type.hasTime = false;
+            break;
+        }
+        case 1:
+        {
+            type.isArray = false;
+            type.hasTime = true;
+            break;
+        }
+        case 2:
+        {
+            type.isArray = true;
+            type.hasTime = false;
+            break;
+        }
+        case 3:
+        {
+            type.isArray = true;
+            type.hasTime = true;
+            break;
+        }
+        default:
+            break;
+        }
+        type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
+        type.valueBytes = DataType::GetValueBytes(type.valueType);
+        typeList.push_back(type);
+        recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
+    }
+    long startPos = typeNum * 11 + 1;                       //数据区起始位置
+    long rows = (buffer->length - startPos) / recordLength; //获取行数
+    long cur = startPos;                                    //在buffer中的偏移量
+    char *newBuffer = (char *)malloc(recordLength + startPos);
+    // buffer->length = startPos + recordLength;
+    // memcpy(newBuffer, buffer->buffer, startPos);
+    long newBufCur = startPos; //在新缓冲区中的偏移量
+    for (int i = 0; i < typeNum; i++)
+    {
+        cur = startPos + getBufferDataPos(typeList, i);
+        int bytes = typeList[i].valueBytes; //此类型的值字节数
+        char column[bytes * rows];          //每列的所有值缓存
+        long colPos = 0;                    //在column中的偏移量
+        for (int j = 0; j < rows; j++)
+        {
+            memcpy(column + colPos, buffer->buffer + cur, bytes);
+            colPos += bytes;
+            cur += recordLength;
+        }
+        DataTypeConverter converter;
+        float sum = 0;
+        switch (typeList[i].valueType)
+        {
+        case ValueType::INT:
+        {
+            char val[2];
+            vector<float> vals;
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                float value = (float)converter.ToInt16(val);
+                sum += value;
+                vals.push_back(value);
+            }
+            float avg = sum / (float)rows;
+            float sqrSum = 0;
+            for (auto &v : vals)
+            {
+                sqrSum += powf(v - avg, 2);
+            }
+            float res = sqrtf(sqrSum / (float)rows);
+            cout << "std:" << res << endl;
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::UINT:
+        {
+            char val[2];
+            vector<float> vals;
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                float value = (float)converter.ToUInt16(val);
+                sum += value;
+                vals.push_back(value);
+            }
+            float avg = sum / (float)rows;
+            float sqrSum = 0;
+            for (auto &v : vals)
+            {
+                sqrSum += powf(v - avg, 2);
+            }
+            float res = sqrtf(sqrSum / (float)rows);
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::DINT:
+        {
+            char val[4];
+            vector<float> vals;
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                float value = (float)converter.ToInt32(val);
+                sum += value;
+                vals.push_back(value);
+            }
+            float avg = sum / (float)rows;
+            float sqrSum = 0;
+            for (auto &v : vals)
+            {
+                sqrSum += powf(v - avg, 2);
+            }
+            float res = sqrtf(sqrSum / (float)rows);
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::UDINT:
+        {
+            char val[4];
+            vector<float> vals;
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                float value = (float)converter.ToUInt32(val);
+                sum += value;
+                vals.push_back(value);
+            }
+            float avg = sum / (float)rows;
+            float sqrSum = 0;
+            for (auto &v : vals)
+            {
+                sqrSum += powf(v - avg, 2);
+            }
+            float res = sqrtf(sqrSum / (float)rows);
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::REAL:
+        {
+            float floatSum = 0;
+            char val[4];
+            vector<float> vals;
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                float value = (float)converter.ToUInt16(val);
+                floatSum += value;
+                vals.push_back(value);
+            }
+            float avg = floatSum / (float)rows;
+            float sqrSum = 0;
+            for (auto &v : vals)
+            {
+                sqrSum += powf(v - avg, 2);
+            }
+            float res = sqrtf(sqrSum / (float)rows);
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::TIME:
+        {
+            char val[4];
+            vector<float> vals;
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                float value = (float)converter.ToUInt32(val);
+                sum += value;
+                vals.push_back(value);
+            }
+            float avg = sum / (float)rows;
+            float sqrSum = 0;
+            for (auto &v : vals)
+            {
+                sqrSum += powf(v - avg, 2);
+            }
+            float res = sqrtf(sqrSum / (float)rows);
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::SINT:
+        {
+            char value;
+            vector<float> vals;
+            for (int k = 0; k < rows; k++)
+            {
+                value = column[k];
+                sum += value;
+                vals.push_back(value);
+            }
+            float avg = sum / (float)rows;
+            float sqrSum = 0;
+            for (auto &v : vals)
+            {
+                sqrSum += powf(v - avg, 2);
+            }
+            float res = sqrtf(sqrSum / (float)rows);
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        default:
+            break;
+        }
+    }
+    free(buffer->buffer);
+    buffer->buffer = NULL;
+    for (int i = 0; i < typeList.size(); i++)
+    {
+        if (typeList[i].valueType != ValueType::REAL)
+            typeList[i].valueType = ValueType::REAL; //标准差统一用浮点数表示
+    }
+    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    buffer->buffer = newBuffer;
+    return 0;
+}
+
+/**
+ * @brief 根据自定义查询请求参数，对单个或多个非数组变量各自求方差
+ * @param buffer    数据缓冲区
+ * @param params    查询请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note  暂不支持带有图片或数组的多变量聚合
+ */
+int EDVDB_STDEV(DataBuffer *buffer, QueryParams *params)
+{
+    //检查是否有图片或数组
+    if (CurrentTemplate.checkHasArray(params->pathCode))
+        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+    EDVDB_ExecuteQuery(buffer, params);
+    int typeNum = buffer->buffer[0];
+    vector<DataType> typeList;
+    int recordLength = 0; //每行的长度
+    long bufPos = 0;
+    for (int i = 0; i < typeNum; i++)
+    {
+        DataType type;
+        int typeVal = buffer->buffer[i * 11 + 1];
+        switch ((typeVal - 1) / 10)
+        {
+        case 0:
+        {
+            type.isArray = false;
+            type.hasTime = false;
+            break;
+        }
+        case 1:
+        {
+            type.isArray = false;
+            type.hasTime = true;
+            break;
+        }
+        case 2:
+        {
+            type.isArray = true;
+            type.hasTime = false;
+            break;
+        }
+        case 3:
+        {
+            type.isArray = true;
+            type.hasTime = true;
+            break;
+        }
+        default:
+            break;
+        }
+        type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
+        type.valueBytes = DataType::GetValueBytes(type.valueType);
+        typeList.push_back(type);
+        recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
+    }
+    long startPos = typeNum * 11 + 1;                       //数据区起始位置
+    long rows = (buffer->length - startPos) / recordLength; //获取行数
+    long cur = startPos;                                    //在buffer中的偏移量
+    char *newBuffer = (char *)malloc(recordLength + startPos);
+    // buffer->length = startPos + recordLength;
+    // memcpy(newBuffer, buffer->buffer, startPos);
+    long newBufCur = startPos; //在新缓冲区中的偏移量
+    for (int i = 0; i < typeNum; i++)
+    {
+        cur = startPos + getBufferDataPos(typeList, i);
+        int bytes = typeList[i].valueBytes; //此类型的值字节数
+        char column[bytes * rows];          //每列的所有值缓存
+        long colPos = 0;                    //在column中的偏移量
+        for (int j = 0; j < rows; j++)
+        {
+            memcpy(column + colPos, buffer->buffer + cur, bytes);
+            colPos += bytes;
+            cur += recordLength;
+        }
+        DataTypeConverter converter;
+        float sum = 0;
+        switch (typeList[i].valueType)
+        {
+        case ValueType::INT:
+        {
+            char val[2];
+            vector<float> vals;
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                float value = (float)converter.ToInt16(val);
+                sum += value;
+                vals.push_back(value);
+            }
+            float avg = sum / (float)rows;
+            float sqrSum = 0;
+            for (auto &v : vals)
+            {
+                sqrSum += powf(v - avg, 2);
+            }
+            float res = sqrSum / (float)rows;
+            cout << "stdev:" << res << endl;
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::UINT:
+        {
+            char val[2];
+            vector<float> vals;
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                float value = (float)converter.ToUInt16(val);
+                sum += value;
+                vals.push_back(value);
+            }
+            float avg = sum / (float)rows;
+            float sqrSum = 0;
+            for (auto &v : vals)
+            {
+                sqrSum += powf(v - avg, 2);
+            }
+            float res = sqrSum / (float)rows;
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::DINT:
+        {
+            char val[4];
+            vector<float> vals;
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                float value = (float)converter.ToInt32(val);
+                sum += value;
+                vals.push_back(value);
+            }
+            float avg = sum / (float)rows;
+            float sqrSum = 0;
+            for (auto &v : vals)
+            {
+                sqrSum += powf(v - avg, 2);
+            }
+            float res = sqrSum / (float)rows;
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::UDINT:
+        {
+            char val[4];
+            vector<float> vals;
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                float value = (float)converter.ToUInt32(val);
+                sum += value;
+                vals.push_back(value);
+            }
+            float avg = sum / (float)rows;
+            float sqrSum = 0;
+            for (auto &v : vals)
+            {
+                sqrSum += powf(v - avg, 2);
+            }
+            float res = sqrSum / (float)rows;
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::REAL:
+        {
+            float floatSum = 0;
+            char val[4];
+            vector<float> vals;
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                float value = (float)converter.ToUInt16(val);
+                floatSum += value;
+                vals.push_back(value);
+            }
+            float avg = floatSum / (float)rows;
+            float sqrSum = 0;
+            for (auto &v : vals)
+            {
+                sqrSum += powf(v - avg, 2);
+            }
+            float res = sqrSum / (float)rows;
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::TIME:
+        {
+            char val[4];
+            vector<float> vals;
+            for (int k = 0; k < rows; k++)
+            {
+                memcpy(val, column + k * 2, 2);
+                float value = (float)converter.ToUInt32(val);
+                sum += value;
+                vals.push_back(value);
+            }
+            float avg = sum / (float)rows;
+            float sqrSum = 0;
+            for (auto &v : vals)
+            {
+                sqrSum += powf(v - avg, 2);
+            }
+            float res = sqrSum / (float)rows;
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::SINT:
+        {
+            char value;
+            vector<float> vals;
+            for (int k = 0; k < rows; k++)
+            {
+                value = column[k];
+                sum += value;
+                vals.push_back(value);
+            }
+            float avg = sum / (float)rows;
+            float sqrSum = 0;
+            for (auto &v : vals)
+            {
+                sqrSum += powf(v - avg, 2);
+            }
+            float res = sqrSum / (float)rows;
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        default:
+            break;
+        }
+    }
+    free(buffer->buffer);
+    buffer->buffer = NULL;
+    for (int i = 0; i < typeList.size(); i++)
+    {
+        if (typeList[i].valueType != ValueType::REAL)
+            typeList[i].valueType = ValueType::REAL; //方差统一用浮点数表示
+    }
+    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    buffer->buffer = newBuffer;
+    return 0;
 }
 int main()
 {
@@ -1598,8 +3190,8 @@ int main()
     code[3] = (char)1;
     code[4] = 'R';
     code[5] = (char)1;
-    code[6] = 0;
-    code[7] = (char)0;
+    code[6] = 'G';
+    code[7] = (char)4;
     code[8] = (char)0;
     code[9] = (char)0;
     params.pathCode = code;
@@ -1610,7 +3202,7 @@ int main()
     params.order = DESCEND;
     params.compareType = GT;
     params.compareValue = "6";
-    params.queryType = FILEID;
+    params.queryType = TIMESPAN;
     params.byPath = 1;
     params.queryNums = 3;
     DataBuffer buffer;
@@ -1619,11 +3211,11 @@ int main()
     vector<DataType> types;
     // CurrentTemplate.FindMultiDatatypePosByCode(code, positions, bytes, types);
     //  EDVDB_QueryLastRecords(&buffer, &params);
-    EDVDB_QueryByTimespan(&buffer, &params);
-    // EDVDB_MAX(&buffer, &params);
-    //EDVDB_MAX(&buffer, &params);
-    //TEST_MAX(&buffer, &params);
     // EDVDB_QueryByTimespan(&buffer, &params);
+    // EDVDB_MAX(&buffer, &params);
+    EDVDB_COUNT(&buffer, &params);
+    // TEST_MAX(&buffer, &params);
+    //  EDVDB_QueryByTimespan(&buffer, &params);
 
     if (buffer.bufferMalloced)
     {
