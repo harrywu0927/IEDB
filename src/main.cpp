@@ -2079,7 +2079,7 @@ int EDVDB_MIN(DataBuffer *buffer, QueryParams *params)
         }
         case ValueType::DINT:
         {
-            int min = INT_MIN;
+            int min = INT_MAX;
             char val[4];
             char res[4];
             for (int k = 0; k < rows; k++)
@@ -2099,7 +2099,7 @@ int EDVDB_MIN(DataBuffer *buffer, QueryParams *params)
         }
         case ValueType::UDINT:
         {
-            uint min = 0;
+            uint min = UINT32_MAX;
             char val[4];
             char res[4];
             for (int k = 0; k < rows; k++)
@@ -2119,7 +2119,7 @@ int EDVDB_MIN(DataBuffer *buffer, QueryParams *params)
         }
         case ValueType::REAL:
         {
-            float min = __FLT_MIN__;
+            float min = __FLT_MAX__;
             char val[4];
             char res[4];
             for (int k = 0; k < rows; k++)
@@ -2139,7 +2139,7 @@ int EDVDB_MIN(DataBuffer *buffer, QueryParams *params)
         }
         case ValueType::TIME:
         {
-            int min = INT_MIN;
+            int min = INT_MAX;
             char val[4];
             char res[4];
             for (int k = 0; k < rows; k++)
@@ -2159,7 +2159,7 @@ int EDVDB_MIN(DataBuffer *buffer, QueryParams *params)
         }
         case ValueType::SINT:
         {
-            char min = INT8_MIN;
+            char min = INT8_MAX;
             char value;
             for (int k = 0; k < rows; k++)
             {
@@ -3173,6 +3173,7 @@ int EDVDB_STDEV(DataBuffer *buffer, QueryParams *params)
     buffer->buffer = newBuffer;
     return 0;
 }
+
 int main()
 {
     DataTypeConverter converter;
@@ -3190,8 +3191,8 @@ int main()
     code[3] = (char)1;
     code[4] = 'R';
     code[5] = (char)1;
-    code[6] = 'G';
-    code[7] = (char)4;
+    code[6] = 0;
+    code[7] = (char)0;
     code[8] = (char)0;
     code[9] = (char)0;
     params.pathCode = code;
@@ -3210,10 +3211,10 @@ int main()
     vector<long> bytes, positions;
     vector<DataType> types;
     // CurrentTemplate.FindMultiDatatypePosByCode(code, positions, bytes, types);
-    //  EDVDB_QueryLastRecords(&buffer, &params);
+    EDVDB_QueryLastRecords(&buffer, &params);
     // EDVDB_QueryByTimespan(&buffer, &params);
     // EDVDB_MAX(&buffer, &params);
-    EDVDB_COUNT(&buffer, &params);
+    //EDVDB_COUNT(&buffer, &params);
     // TEST_MAX(&buffer, &params);
     //  EDVDB_QueryByTimespan(&buffer, &params);
 
