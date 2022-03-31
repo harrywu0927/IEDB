@@ -567,7 +567,7 @@ int EDVDB_ZipSwitchFile(const char *ZipTemPath,string filepath)
         long len;
         EDVDB_GetFileLengthByPath(const_cast<char *>(files[fileNum].c_str()),&len);
         char readbuff[len];//文件内容
-        char writebuff[len]={0};//写入没有被压缩的数据
+        char writebuff[len];//写入没有被压缩的数据
         long readbuff_pos=0;
         long writebuff_pos=0;
 
@@ -664,7 +664,7 @@ int EDVDB_ReZipSwitchFile(const char *ZipTemPath,string filepath)
         long len;
         EDVDB_GetFileLengthByPath(const_cast<char *>(files[fileNum].c_str()),&len);
         char readbuff[len];//文件内容
-        char writebuff[CurrentZipTemplate.schemas.size()*5]={0};//写入没有被压缩的数据
+        char writebuff[CurrentZipTemplate.schemas.size()*5];//写入没有被压缩的数据
         long readbuff_pos=0;
         long writebuff_pos=0;
 

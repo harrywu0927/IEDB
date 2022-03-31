@@ -58,42 +58,57 @@ int EDVDB_UnloadSchema(const char *pathToUnset)
  *          others: StatusCode
  * @note
  */
-int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, long pos, QueryParams *params, DataType &type)
+int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, vector<long> &poses, QueryParams *params, DataType &type)
 {
+    vector<pair<pair<char*, long>,long>> memAndPos; //使数据偏移与内存-长度对建立关联
+    for (int i = 0; i < poses.size(); i++)
+    {
+        memAndPos.push_back(make_pair(mallocedMemory[i],poses[i]));
+    }
+    
     switch (params->order)
     {
     case ASCEND: //升序
     {
-        sort(mallocedMemory.begin(), mallocedMemory.end(),
-             [&type, &pos](pair<char *, long> iter1, pair<char *, long> iter2) -> bool
+        sort(memAndPos.begin(), memAndPos.end(),
+             [&type](pair<pair<char *, long>,long> iter1, pair<pair<char *, long>,long> iter2) -> bool
              {
                  char value1[type.valueBytes], value2[type.valueBytes];
-                 memcpy(value1, iter1.first + pos, type.valueBytes);
-                 memcpy(value2, iter2.first + pos, type.valueBytes);
+                 memcpy(value1, iter1.first.first + iter1.second, type.valueBytes);
+                 memcpy(value2, iter2.first.first + iter2.second, type.valueBytes);
                  return DataType::CompareValueInBytes(type, value1, value2) < 0;
              });
+        for (int i = 0; i < mallocedMemory.size(); i++)
+        {
+            mallocedMemory[i] = memAndPos[i].first;
+        }
+        
         break;
     }
 
     case DESCEND: //降序
     {
-        sort(mallocedMemory.begin(), mallocedMemory.end(),
-             [&type, &pos](pair<char *, long> iter1, pair<char *, long> iter2) -> bool
+        sort(memAndPos.begin(), memAndPos.end(),
+             [&type](pair<pair<char *, long>,long> iter1, pair<pair<char *, long>,long> iter2) -> bool
              {
                  char value1[type.valueBytes], value2[type.valueBytes];
-                 memcpy(value1, iter1.first + pos, type.valueBytes);
-                 memcpy(value2, iter2.first + pos, type.valueBytes);
+                 memcpy(value1, iter1.first.first + iter1.second, type.valueBytes);
+                 memcpy(value2, iter2.first.first + iter2.second, type.valueBytes);
                  return DataType::CompareValueInBytes(type, value1, value2) > 0;
              });
+        for (int i = 0; i < mallocedMemory.size(); i++)
+        {
+            mallocedMemory[i] = memAndPos[i].first;
+        }
         break;
     }
     case DISTINCT: //去除重复
     {
         vector<pair<char *, long>> existedValues;
-        for (auto mem = mallocedMemory.begin(); mem != mallocedMemory.end(); mem++)
+        for (int i = 0; i<mallocedMemory.size(); i++)
         {
             char value[type.valueBytes];
-            memcpy(value, mem->first + pos, type.valueBytes);
+            memcpy(value, mallocedMemory[i].first + poses[i], type.valueBytes);
             bool isRepeat = false;
             for (auto &&added : existedValues)
             {
@@ -105,8 +120,8 @@ int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, long pos, Quer
                 }
                 if (equals)
                 {
-                    free(mem->first);          //重复值，释放此内存
-                    mallocedMemory.erase(mem); //注：此操作在查询量大时效率可能很低
+                    free(mallocedMemory[i].first);          //重复值，释放此内存
+                    mallocedMemory.erase(mallocedMemory.begin() + i); //注：此操作在查询量大时效率可能很低
                     isRepeat = true;
                 }
             }
@@ -123,11 +138,13 @@ int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, long pos, Quer
         break;
     }
     DataTypeConverter converter;
+    int a=0;
     for (auto it = mallocedMemory.begin(); it != mallocedMemory.end(); it++)
     {
         char val[type.valueBytes];
-        memcpy(val, it->first + pos, type.valueBytes);
+        memcpy(val, it->first + memAndPos[a].second, type.valueBytes);
         cout << converter.ToInt16(val) << endl;
+        a++;
     }
 
     return 0;
@@ -758,7 +775,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
     long cur = 0; //已选择的数据总长
     DataType type;
     vector<DataType> typeList;
-    long sortDataPos = 0; //按值排序时要比较的数据的偏移量
+    vector<long> sortDataPoses; //按值排序时要比较的数据的偏移量
     if (params->compareType != CompareType::CMP_NONE)
     {
         for (auto &file : selectedFiles)
@@ -803,7 +820,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
             // }
 
             char copyValue[copyBytes]; //将要拷贝的数值
-
+            long sortPos = 0;
             if (params->byPath)
             {
                 long lineCur = 0; //记录此行当前写位置
@@ -814,9 +831,9 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
                     lineCur += curBytes;
                 }
                 if (params->valueName != NULL)
-                    CurrentTemplate.FindDatatypePosByName(params->valueName, buff, sortDataPos, bytes, type);
-                else
-                    sortDataPos = -1; //没有指定变量名，不可按值排序
+                    sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, params->pathCode, typeList);
+                //else
+                    //sortDataPoses.push_back(-1); //没有指定变量名，不可按值排序
             }
             else
                 memcpy(copyValue, buff + pos, copyBytes);
@@ -881,6 +898,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
                 canCopy = true;
             if (canCopy) //需要此数据
             {
+                sortDataPoses.push_back(sortPos);
                 char *memory = (char *)malloc(copyBytes);
                 memcpy(memory, copyValue, copyBytes);
                 cur += copyBytes;
@@ -888,9 +906,16 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
             }
         }
     }
-
-    if (sortDataPos >= 0)
-        sortResultByValue(mallocedMemory, sortDataPos, params, type);
+    DataTypeConverter converter;
+    for (int i = 0; i < sortDataPoses.size(); i++)
+    {
+        char val[type.valueBytes];
+        memcpy(val, mallocedMemory[i].first + sortDataPoses[i], type.valueBytes);
+        cout << converter.ToInt16(val) << endl;
+    }
+    
+    if (sortDataPoses.size() > 0) //尚有问题
+        sortResultByValue(mallocedMemory, sortDataPoses, params, type);
 
     //动态分配内存
     char typeNum = params->byPath ? typeList.size() : 1; //数据类型总数
@@ -1093,8 +1118,8 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
                 break;
         }
         //查询最新数据时仅按时间排序，不可按值排序,仅可去除重复
-        if (sortDataPos >= 0 && params->order == DISTINCT)
-            sortResultByValue(mallocedMemory, sortDataPos, params, type);
+        //if (sortDataPos >= 0 && params->order == DISTINCT)
+        //    sortResultByValue(mallocedMemory, sortDataPos, params, type);
 
         //已获取指定数量的数据，开始拷贝内存
         char *data;
@@ -1198,8 +1223,8 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
             cur += copyBytes;
         }
         //查询最新数据时仅按时间排序，不可按值排序,仅可去除重复
-        if (sortDataPos >= 0 && params->order == DISTINCT)
-            sortResultByValue(mallocedMemory, sortDataPos, params, type);
+        //if (sortDataPos >= 0 && params->order == DISTINCT)
+            //sortResultByValue(mallocedMemory, sortDataPos, params, type);
         if (cur != 0)
         {
             char typeNum = typeList.size() == 0 ? 1 : typeList.size(); //数据类型总数
@@ -1507,7 +1532,7 @@ int EDVDB_InsertRecords(DataBuffer buffer[], int recordsNum, int addTime)
 int TEST_MAX(DataBuffer *buffer, QueryParams *params)
 {
     EDVDB_ExecuteQuery(buffer, params);
-    cout<<CurrentTemplate.schemas.size()<<endl;
+    cout << CurrentTemplate.schemas.size() << endl;
     int typeNum = buffer->buffer[0];
     DataType typeList[typeNum];
     int recordLength = 0;
@@ -1549,6 +1574,12 @@ int TEST_MAX(DataBuffer *buffer, QueryParams *params)
         typeList[i] = type;
         recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
     }
+    long startPos = typeNum * 11 + 1;
+    long cur = startPos;
+    while(cur < buffer->length)
+    {
+
+    }
 }
 int main()
 {
@@ -1572,11 +1603,11 @@ int main()
     code[8] = (char)0;
     code[9] = (char)0;
     params.pathCode = code;
-    params.valueName = "S1R8";
+    params.valueName = "S2R4";
     // params.valueName = NULL;
     params.start = 1648516212100;
     params.end = 1648516221100;
-    params.order = TIME_ASC;
+    params.order = DESCEND;
     params.compareType = GT;
     params.compareValue = "6";
     params.queryType = FILEID;
@@ -1588,11 +1619,11 @@ int main()
     vector<DataType> types;
     // CurrentTemplate.FindMultiDatatypePosByCode(code, positions, bytes, types);
     //  EDVDB_QueryLastRecords(&buffer, &params);
-    // EDVDB_QueryLastRecords(&buffer, &params);
+    EDVDB_QueryByTimespan(&buffer, &params);
     // EDVDB_MAX(&buffer, &params);
-    EDVDB_MAX(&buffer, &params);
-    TEST_MAX(&buffer, &params);
-    //EDVDB_QueryByTimespan(&buffer, &params);
+    //EDVDB_MAX(&buffer, &params);
+    //TEST_MAX(&buffer, &params);
+    // EDVDB_QueryByTimespan(&buffer, &params);
 
     if (buffer.bufferMalloced)
     {
@@ -1605,9 +1636,9 @@ int main()
                 cout << endl;
         }
 
-//         free(buffer.buffer);
-//     }
+        free(buffer.buffer);
+    }
 
-//     buffer.buffer = NULL;
-//     return 0;
- }
+    buffer.buffer = NULL;
+    return 0;
+}

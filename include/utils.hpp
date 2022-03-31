@@ -67,6 +67,7 @@ long getMilliTime();
 
 int getMemory(long size, char *mem);
 
+
 class PathCode
 {
 public:
@@ -444,6 +445,8 @@ public:
     int writeBufferHead(char *pathCode, vector<DataType> &typeList, char *buffer);
 
     int writeBufferHead(string name, DataType &type, char *buffer);
+
+    long FindSortPosFromSelectedData(vector<long> &bytesList, string name, char *pathCode, vector<DataType> &typeList);
 };
 
 class ZipTemplate //压缩模板

@@ -258,6 +258,22 @@ int Template::GetAllPathsByCode(char pathCode[], vector<PathCode> &pathCodes)
     return 0;
 }
 
+long Template::FindSortPosFromSelectedData(vector<long> &bytesList, string name, char *pathCode, vector<DataType> &typeList)
+{
+    vector<PathCode> pathCodes;
+    this->GetAllPathsByCode(pathCode, pathCodes);
+    long cur = 0;
+    for (int i = 0; i < pathCodes.size(); i++)
+    {
+        if(name == pathCodes[i].name)
+        {
+            return cur;   
+        }
+        cur += typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i];
+    }
+    return 0;
+}
+
 /**
  * @brief 根据当前模版寻找指定路径编码的数据在数据文件中的位置
  * @param pathCode        路径编码
