@@ -841,15 +841,15 @@ int EDVDB_ZipRecvSwitchBuff(const char *ZipTemPath,string filepath,const char *b
     return err;
 }
 
-int main()
-{
-    //EDVDB_LoadZipSchema("./");
-    // long len;
-    // EDVDB_GetFileLengthByPath("XinFeng_0100.dat",&len);
-    // char readbuf[len];
-    // EDVDB_OpenAndRead("XinFeng_0100.dat",readbuf);
+// int main()
+// {
+//     //EDVDB_LoadZipSchema("./");
+//     // long len;
+//     // EDVDB_GetFileLengthByPath("XinFeng_0100.dat",&len);
+//     // char readbuf[len];
+//     // EDVDB_OpenAndRead("XinFeng_0100.dat",readbuf);
 
-    //EDVDB_ZipRecvBuff("/","XinFeng_0100.dat",readbuf,len);
-    EDVDB_ZipFile("/","/");
-    return 0;
-}
+//     //EDVDB_ZipRecvBuff("/","XinFeng_0100.dat",readbuf,len);
+//     EDVDB_ZipFile("/","/");
+//     return 0;
+// }
