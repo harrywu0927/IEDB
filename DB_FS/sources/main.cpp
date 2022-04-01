@@ -375,8 +375,11 @@ int EDVDB_CreateDirectory(char path[])
         else{
             dirs += res[i] + "/";
             if(mkdir(dirs.c_str(),0777)!=0){
-                perror("Error while Creating directory");
-                return errno;
+                if(errno != 17){
+                    perror("Error while Creating directory");
+                    return errno;
+                }
+                
             }
         }
     }

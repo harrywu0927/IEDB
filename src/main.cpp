@@ -20,6 +20,7 @@
 #include <sstream>
 #include <errno.h>
 using namespace std;
+Template CurrentTemplate;
 /**
  * @brief 从指定路径加载模版文件
  * @param path    路径
@@ -755,6 +756,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
 
     //确认当前模版
     string str = params->pathToLine;
+    
     if (CurrentTemplate.path != str || CurrentTemplate.path == "")
     {
         int err = 0;
@@ -774,7 +776,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
     vector<pair<char *, long>> mallocedMemory;
     long cur = 0; //已选择的数据总长
     DataType type;
-    vector<DataType> typeList;
+    vector<DataType> typeList, selectedTypes;
     vector<long> sortDataPoses; //按值排序时要比较的数据的偏移量
     if (params->compareType != CompareType::CMP_NONE)
     {
@@ -1468,6 +1470,8 @@ int EDVDB_QueryByFileID_Old(DataBuffer *buffer, QueryParams *params)
  */
 int EDVDB_InsertRecord(DataBuffer *buffer, int addTime)
 {
+    string savepath = buffer->savePath;
+    if(savepath == "") return StatusCode::EMPTY_SAVE_PATH;
     long fp;
     long curtime = getMilliTime();
     time_t time = curtime / 1000;
@@ -1475,6 +1479,7 @@ int EDVDB_InsertRecord(DataBuffer *buffer, int addTime)
     string fileID = FileIDManager::GetFileID(buffer->savePath);
     string finalPath = "";
     finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000)).append(".idb");
+    //cout<<finalPath<<endl;
     int err = EDVDB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
     if (err == 0)
     {
@@ -1499,6 +1504,8 @@ int EDVDB_InsertRecord(DataBuffer *buffer, int addTime)
  */
 int EDVDB_InsertRecords(DataBuffer buffer[], int recordsNum, int addTime)
 {
+    string savepath = buffer->savePath;
+    if(savepath == "") return StatusCode::EMPTY_SAVE_PATH;
     long curtime = getMilliTime();
     time_t time = curtime / 1000;
     struct tm *dateTime = localtime(&time);
@@ -1747,7 +1754,8 @@ int TEST_MAX(DataBuffer *buffer, QueryParams *params)
 int EDVDB_MAX(DataBuffer *buffer, QueryParams *params)
 {
     //检查是否有图片或数组
-    if (CurrentTemplate.checkHasArray(params->pathCode))
+    TemplateManager::SetTemplate(params->pathToLine);
+    if (CurrentTemplate.checkHasArray(params->pathCode) && params->byPath == 1)
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     EDVDB_ExecuteQuery(buffer, params);
     int typeNum = buffer->buffer[0];
@@ -1970,7 +1978,8 @@ int EDVDB_MAX(DataBuffer *buffer, QueryParams *params)
 int EDVDB_MIN(DataBuffer *buffer, QueryParams *params)
 {
     //检查是否有图片或数组
-    if (CurrentTemplate.checkHasArray(params->pathCode))
+    TemplateManager::SetTemplate(params->pathToLine);
+    if (CurrentTemplate.checkHasArray(params->pathCode) && params->byPath == 1)
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     EDVDB_ExecuteQuery(buffer, params);
     int typeNum = buffer->buffer[0];
@@ -2193,7 +2202,8 @@ int EDVDB_MIN(DataBuffer *buffer, QueryParams *params)
 int EDVDB_SUM(DataBuffer *buffer, QueryParams *params)
 {
     //检查是否有图片或数组
-    if (CurrentTemplate.checkHasArray(params->pathCode))
+    TemplateManager::SetTemplate(params->pathToLine);
+    if (CurrentTemplate.checkHasArray(params->pathCode) && params->byPath == 1)
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     EDVDB_ExecuteQuery(buffer, params);
     int typeNum = buffer->buffer[0];
@@ -2411,7 +2421,8 @@ int EDVDB_SUM(DataBuffer *buffer, QueryParams *params)
 int EDVDB_AVG(DataBuffer *buffer, QueryParams *params)
 {
     //检查是否有图片或数组
-    if (CurrentTemplate.checkHasArray(params->pathCode))
+    TemplateManager::SetTemplate(params->pathToLine);
+    if (CurrentTemplate.checkHasArray(params->pathCode) && params->byPath == 1)
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     EDVDB_ExecuteQuery(buffer, params);
     int typeNum = buffer->buffer[0];
@@ -2599,7 +2610,8 @@ int EDVDB_AVG(DataBuffer *buffer, QueryParams *params)
 int EDVDB_COUNT(DataBuffer *buffer, QueryParams *params)
 {
     //检查是否有图片或数组
-    if (CurrentTemplate.checkHasArray(params->pathCode))
+    TemplateManager::SetTemplate(params->pathToLine);
+    if (CurrentTemplate.checkHasArray(params->pathCode) && params->byPath == 1)
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     EDVDB_ExecuteQuery(buffer, params);
     int typeNum = buffer->buffer[0];
@@ -2684,7 +2696,8 @@ int EDVDB_COUNT(DataBuffer *buffer, QueryParams *params)
 int EDVDB_STD(DataBuffer *buffer, QueryParams *params)
 {
     //检查是否有图片或数组
-    if (CurrentTemplate.checkHasArray(params->pathCode))
+    TemplateManager::SetTemplate(params->pathToLine);
+    if (CurrentTemplate.checkHasArray(params->pathCode) && params->byPath == 1)
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     EDVDB_ExecuteQuery(buffer, params);
     int typeNum = buffer->buffer[0];
@@ -2935,7 +2948,8 @@ int EDVDB_STD(DataBuffer *buffer, QueryParams *params)
 int EDVDB_STDEV(DataBuffer *buffer, QueryParams *params)
 {
     //检查是否有图片或数组
-    if (CurrentTemplate.checkHasArray(params->pathCode))
+    TemplateManager::SetTemplate(params->pathToLine);
+    if (CurrentTemplate.checkHasArray(params->pathCode) && params->byPath == 1)
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     EDVDB_ExecuteQuery(buffer, params);
     int typeNum = buffer->buffer[0];
@@ -3182,7 +3196,7 @@ int main()
     converter.CheckBigEndian();
     // cout << EDVDB_LoadSchema("/");
     QueryParams params;
-    params.pathToLine = "";
+    params.pathToLine = "/";
     params.fileID = "XinFeng2";
     char code[10];
     code[0] = (char)0;
@@ -3196,24 +3210,26 @@ int main()
     code[8] = (char)0;
     code[9] = (char)0;
     params.pathCode = code;
-    params.valueName = "S2R4";
+    params.valueName = "S2R5";
     // params.valueName = NULL;
     params.start = 1648516212100;
     params.end = 1648516221100;
     params.order = DESCEND;
-    params.compareType = GT;
-    params.compareValue = "6";
+    params.compareType = LT;
+    params.compareValue = "666";
     params.queryType = TIMESPAN;
-    params.byPath = 1;
+    params.byPath = 0;
     params.queryNums = 3;
     DataBuffer buffer;
+    buffer.savePath = "jinfei/line1/";
     buffer.length = 0;
     vector<long> bytes, positions;
     vector<DataType> types;
     // CurrentTemplate.FindMultiDatatypePosByCode(code, positions, bytes, types);
-    EDVDB_QueryLastRecords(&buffer, &params);
-    // EDVDB_QueryByTimespan(&buffer, &params);
-    // EDVDB_MAX(&buffer, &params);
+    //EDVDB_ExecuteQuery(&buffer, &params);
+    EDVDB_QueryByTimespan(&buffer, &params);
+    //EDVDB_InsertRecord(&buffer,0);
+    //EDVDB_MAX(&buffer, &params);
     //EDVDB_COUNT(&buffer, &params);
     // TEST_MAX(&buffer, &params);
     //  EDVDB_QueryByTimespan(&buffer, &params);

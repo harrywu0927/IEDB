@@ -8,9 +8,13 @@ void readFileList(string path, vector<string> &files)
     struct dirent *ptr;
     DIR *dir;
     string finalPath = Label;
-    finalPath += path;
-    // cout<<Label<<endl;
-    cout << finalPath.c_str() << endl;
+    
+    finalPath += "/"+path;
+    if(EDVDB_CreateDirectory(const_cast<char*>(finalPath.c_str())))
+    {
+        errorCode = errno;
+        return;
+    }
     dir = opendir(finalPath.c_str());
     // cout<<finalPath<<endl;
     while ((ptr = readdir(dir)) != NULL)
@@ -34,7 +38,12 @@ void readIDBFilesList(string path, vector<string> &files)
     struct dirent *ptr;
     DIR *dir;
     string finalPath = Label;
-    finalPath += path;
+    finalPath += "/"+path;
+    if(EDVDB_CreateDirectory(const_cast<char*>(finalPath.c_str())))
+    {
+        errorCode = errno;
+        return;
+    }
     dir = opendir(finalPath.c_str());
     while ((ptr = readdir(dir)) != NULL)
     {

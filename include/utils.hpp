@@ -33,6 +33,8 @@ namespace StatusCode
         UNKNWON_DATAFILE = 144,          //未知的数据文件或数据文件不合法
         NO_QUERY_TYPE = 145,             //未指定主查询条件
         QUERY_TYPE_NOT_SURPPORT = 146,   //不支持的查询方式
+        EMPTY_PATH_TO_LINE = 147,        //到产线的路径为空
+        EMPTY_SAVE_PATH = 148,           //空的存储路径
     };
 }
 namespace ValueType
@@ -452,8 +454,6 @@ public:
     long FindSortPosFromSelectedData(vector<long> &bytesList, string name, char *pathCode, vector<DataType> &typeList);
 };
 
-bool checkHasArray(char *pathCode);
-
 int getBufferDataPos(vector<DataType> &typeList, int num);
 
 class ZipTemplate //压缩模板
@@ -490,9 +490,13 @@ public:
             临时使用，今后需修改
             获取此路径下文件数量，以文件数量+1作为ID
         */
+        string tmp = path;
+        vector<string> paths = DataType::StringSplit(const_cast<char*>(tmp.c_str()),"/");
+        string prefix = paths[paths.size()-1];
+        cout<<prefix<<endl;
         vector<string> files;
         readFileList(path, files);
-        return "XinFeng" + to_string(files.size() + 1) + "_";
+        return prefix + to_string(files.size() + 1) + "_";
     }
     static void GetSettings();
     static neb::CJsonObject GetSetting();
@@ -501,7 +505,7 @@ static neb::CJsonObject settings = FileIDManager::GetSetting();
 
 static int maxTemplates = 20;
 static vector<Template> templates;
-static Template CurrentTemplate;
+extern Template CurrentTemplate;
 //模版的管理
 //内存中可同时存在若干数量的模版以提升存取效率，可按照LRU策略管理模版
 class TemplateManager
@@ -550,12 +554,16 @@ public:
             i += 30;
             memcpy(dataType, buf + i, 30);
             i += 30;
+            //char timeFlag = buf[++i];
             memcpy(pathEncode, buf + i, 10);
             i += 10;
             vector<string> paths;
             PathCode pathCode(pathEncode, sizeof(pathEncode) / 2, variable);
             DataType type;
-            type.hasTime = true;
+            //if((int)timeFlag == 1)
+                type.hasTime = true;
+            //else
+            //    type.hasTime = false;
             if (DataType::GetDataTypeFromStr(dataType, type) == 0)
             {
                 dataTypes.push_back(type);
@@ -585,6 +593,11 @@ public:
         CurrentTemplate.temFileBuffer = NULL;
         return 0;
     }
+
+    static void CheckTemplate(string path)
+    {
+
+    }
 };
 
 //负责数据文件的打包，打包后的数据将存为一个文件，文件名为文件ID+时间段.pak，
@@ -598,6 +611,7 @@ class Packer
 public:
     static int Pack(string path)
     {
+        return 0;
     }
 };
 
