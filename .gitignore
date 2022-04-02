@@ -56,6 +56,7 @@ src/utils
 src/Schema
 *.datzip
 *.idbzip
+Schema
 
 CMakeLists.txt
 
