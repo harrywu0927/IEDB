@@ -144,7 +144,7 @@ int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, vector<long> &
     {
         char val[type.valueBytes];
         memcpy(val, it->first + memAndPos[a].second, type.valueBytes);
-        cout << converter.ToInt16(val) << endl;
+        cout << converter.ToUInt32(val) << endl;
         a++;
     }
 
@@ -204,131 +204,6 @@ int EDVDB_ExecuteQuery(DataBuffer *buffer, QueryParams *params)
     return StatusCode::NO_QUERY_TYPE;
 }
 
-/**
- * @brief 根据给定的时间段和路径编码或变量名在某一产线文件夹下的数据文件中查询数据，
- *          数据存放在新开辟的缓冲区buffer中
- * @param buffer    数据缓冲区
- * @param params    查询请求参数
- *
- * @return  0:success,
- *          others: StatusCode
- * @note    deprecated
- */
-
-/*int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
-{
-    vector<string> files;
-    readIDBFilesList(params->pathToLine, files);
-    vector<pair<string, long>> selectedFiles;
-
-    //筛选落入时间区间内的文件
-    for (auto file : files)
-    {
-        auto tmp = file;
-        vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[1].c_str()), "-");
-        if (time.size() == 0)
-        {
-            continue;
-        }
-        time[time.size() - 1] = DataType::StringSplit(const_cast<char *>(time[time.size() - 1].c_str()), ".")[0];
-        struct tm t;
-        t.tm_year = atoi(time[0].c_str()) - 1900;
-        t.tm_mon = atoi(time[1].c_str()) - 1;
-        t.tm_mday = atoi(time[2].c_str());
-        t.tm_hour = atoi(time[3].c_str());
-        t.tm_min = atoi(time[4].c_str());
-        t.tm_sec = atoi(time[5].c_str());
-        time_t seconds = mktime(&t);
-        int ms = atoi(time[6].c_str());
-        long millis = seconds * 1000 + ms;
-        if (millis >= params->start && millis <= params->end)
-        {
-            selectedFiles.push_back(make_pair(file, millis));
-        }
-    }
-    //确认当前模版
-    string str = params->pathToLine;
-    if (CurrentTemplate.path != str || CurrentTemplate.path == "")
-    {
-        int err = 0;
-        err = EDVDB_LoadSchema(params->pathToLine);
-        if (err != 0)
-        {
-            buffer->buffer = NULL;
-            buffer->bufferMalloced = 0;
-            return err;
-        }
-    }
-
-    //获取数据的偏移量和字节数
-    long bytes = 0, pos = 0;
-    int err;
-    if (params->byPath)
-    {
-        char *pathCode = params->pathCode;
-        err = CurrentTemplate.FindDatatypePosByCode(pathCode, pos, bytes);
-    }
-    else
-        err = CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes);
-    if (err != 0)
-        return err;
-
-    //根据时间升序或降序排序
-    switch (params->order)
-    {
-    case ODR_NONE:
-        break;
-    case TIME_ASC:
-        sort(selectedFiles.begin(), selectedFiles.end(),
-             [](pair<string, long> iter1, pair<string, long> iter2) -> bool
-             {
-                 return iter1.second < iter2.second;
-             });
-        break;
-    case TIME_DSC:
-        sort(selectedFiles.begin(), selectedFiles.end(),
-             [](pair<string, long> iter1, pair<string, long> iter2) -> bool
-             {
-                 return iter1.second > iter2.second;
-             });
-        break;
-    default:
-        break;
-    }
-
-    //动态分配内存
-    char *data = (char *)malloc(bytes * selectedFiles.size());
-    if (data == NULL)
-    {
-        buffer->buffer = NULL;
-        buffer->bufferMalloced = 0;
-        return StatusCode::BUFFER_FULL;
-    }
-
-    //拷贝数据
-    long cur = 0;
-    for (auto &file : selectedFiles)
-    {
-        long len;
-        EDVDB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
-        if (len < pos)
-        {
-            buffer->bufferMalloced = 1;
-            buffer->buffer = data;
-            buffer->length = bytes * selectedFiles.size();
-            return StatusCode::UNKNWON_DATAFILE;
-        }
-        char buff[len];
-        EDVDB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
-        memcpy(data + cur, buff + pos, bytes);
-        cur += bytes;
-    }
-    buffer->bufferMalloced = 1;
-    buffer->buffer = data;
-    buffer->length = bytes * selectedFiles.size();
-    return 0;
-}
-*/
 
 /**
  * @brief 根据给定的查询条件在某一产线文件夹下的数据文件中获取符合条件的整个文件的数据，可比较数据大小筛选，可按照时间
@@ -778,8 +653,8 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
     DataType type;
     vector<DataType> typeList, selectedTypes;
     vector<long> sortDataPoses; //按值排序时要比较的数据的偏移量
-    if (params->compareType != CompareType::CMP_NONE)
-    {
+    // if (params->compareType != CompareType::CMP_NONE)
+    // {
         for (auto &file : selectedFiles)
         {
             typeList.clear();
@@ -844,7 +719,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
             if (params->valueName != NULL)
                 compareBytes = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type) == 0 ? bytes : 0;
             bool canCopy = false;
-            if (compareBytes != 0) //可比较
+            if (params->compareType != CMP_NONE && compareBytes != 0) //可比较
             {
                 char value[compareBytes]; //数值
                 memcpy(value, buff + pos, compareBytes);
@@ -893,6 +768,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
                     break;
                 }
                 default:
+                    canCopy = true;
                     break;
                 }
             }
@@ -907,13 +783,13 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
                 mallocedMemory.push_back(make_pair(memory, copyBytes));
             }
         }
-    }
+    //}
     DataTypeConverter converter;
     for (int i = 0; i < sortDataPoses.size(); i++)
     {
         char val[type.valueBytes];
         memcpy(val, mallocedMemory[i].first + sortDataPoses[i], type.valueBytes);
-        cout << converter.ToInt16(val) << endl;
+        cout << converter.ToUInt32(val) << endl;
     }
 
     if (sortDataPoses.size() > 0) //尚有问题
@@ -921,7 +797,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
 
     //动态分配内存
     char typeNum = params->byPath ? typeList.size() : 1; //数据类型总数
-    char *data = (char *)malloc(cur + (int)typeNum + 1);
+    char *data = (char *)malloc(cur + (int)typeNum*11 + 1);
     int startPos;                                                                  //数据区起始位置
     if (!params->byPath)                                                           //根据变量名查询，仅单个变量
         startPos = CurrentTemplate.writeBufferHead(params->valueName, type, data); //写入缓冲区头，获取数据区起始位置
@@ -938,6 +814,9 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
     for (auto &mem : mallocedMemory)
     {
         memcpy(data + cur + startPos, mem.first, mem.second);
+        char val[mem.second];
+        memcpy(val,mem.first,mem.second);
+        cout<<converter.ToUInt32(val)<<endl;
         free(mem.first);
         cur += mem.second;
     }
@@ -1042,8 +921,8 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
                 }
                 if (params->valueName != NULL)
                     CurrentTemplate.FindDatatypePosByName(params->valueName, buff, sortDataPos, bytes, type);
-                else
-                    sortDataPos = -1; //没有指定变量名，不可按值排序
+                //else
+                //    sortDataPos = -1; //没有指定变量名，不可按值排序
             }
             else
                 memcpy(copyValue, buff + pos, copyBytes);
@@ -1755,9 +1634,10 @@ int EDVDB_MAX(DataBuffer *buffer, QueryParams *params)
 {
     //检查是否有图片或数组
     TemplateManager::SetTemplate(params->pathToLine);
-    if (CurrentTemplate.checkHasArray(params->pathCode) && params->byPath == 1)
+    if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     EDVDB_ExecuteQuery(buffer, params);
+    if(!buffer->bufferMalloced) return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
     int recordLength = 0; //每行的长度
@@ -1891,6 +1771,7 @@ int EDVDB_MAX(DataBuffer *buffer, QueryParams *params)
             {
                 memcpy(val, column + k * 4, 4);
                 short value = converter.ToUInt32(val);
+                cout<<value<<endl;
                 if (max < value)
                 {
                     max = value;
@@ -1979,9 +1860,10 @@ int EDVDB_MIN(DataBuffer *buffer, QueryParams *params)
 {
     //检查是否有图片或数组
     TemplateManager::SetTemplate(params->pathToLine);
-    if (CurrentTemplate.checkHasArray(params->pathCode) && params->byPath == 1)
+    if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     EDVDB_ExecuteQuery(buffer, params);
+    if(!buffer->bufferMalloced) return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
     int recordLength = 0; //每行的长度
@@ -2203,9 +2085,10 @@ int EDVDB_SUM(DataBuffer *buffer, QueryParams *params)
 {
     //检查是否有图片或数组
     TemplateManager::SetTemplate(params->pathToLine);
-    if (CurrentTemplate.checkHasArray(params->pathCode) && params->byPath == 1)
+    if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     EDVDB_ExecuteQuery(buffer, params);
+    if(!buffer->bufferMalloced) return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
     int recordLength = 0; //每行的长度
@@ -2252,8 +2135,8 @@ int EDVDB_SUM(DataBuffer *buffer, QueryParams *params)
     long rows = (buffer->length - startPos) / recordLength; //获取行数
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
-    // buffer->length = startPos + recordLength;
-    // memcpy(newBuffer, buffer->buffer, startPos);
+    buffer->length = startPos + recordLength;
+    memcpy(newBuffer, buffer->buffer, startPos);
     long newBufCur = startPos; //在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
@@ -2404,7 +2287,7 @@ int EDVDB_SUM(DataBuffer *buffer, QueryParams *params)
         if (typeList[i].valueType != ValueType::REAL)
             typeList[i].valueType = ValueType::DINT; //可能超出32位数字表示范围，不是浮点数暂时统一用DINT表示
     }
-    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    //CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
     buffer->buffer = newBuffer;
     return 0;
 }
@@ -2422,8 +2305,10 @@ int EDVDB_AVG(DataBuffer *buffer, QueryParams *params)
 {
     //检查是否有图片或数组
     TemplateManager::SetTemplate(params->pathToLine);
-    if (CurrentTemplate.checkHasArray(params->pathCode) && params->byPath == 1)
+    if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+    EDVDB_ExecuteQuery(buffer, params);
+    if(!buffer->bufferMalloced) return StatusCode::NO_DATA_QUERIED;
     EDVDB_ExecuteQuery(buffer, params);
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
@@ -2471,8 +2356,8 @@ int EDVDB_AVG(DataBuffer *buffer, QueryParams *params)
     long rows = (buffer->length - startPos) / recordLength; //获取行数
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
-    // buffer->length = startPos + recordLength;
-    // memcpy(newBuffer, buffer->buffer, startPos);
+    buffer->length = startPos + recordLength;
+    memcpy(newBuffer, buffer->buffer, startPos);
     long newBufCur = startPos; //在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
@@ -2593,7 +2478,7 @@ int EDVDB_AVG(DataBuffer *buffer, QueryParams *params)
         if (typeList[i].valueType != ValueType::REAL)
             typeList[i].valueType = ValueType::REAL; //均值统一用浮点数表示
     }
-    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    //CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
     buffer->buffer = newBuffer;
     return 0;
 }
@@ -2611,9 +2496,10 @@ int EDVDB_COUNT(DataBuffer *buffer, QueryParams *params)
 {
     //检查是否有图片或数组
     TemplateManager::SetTemplate(params->pathToLine);
-    if (CurrentTemplate.checkHasArray(params->pathCode) && params->byPath == 1)
+    if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     EDVDB_ExecuteQuery(buffer, params);
+    if(!buffer->bufferMalloced) return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
     int recordLength = 0; //每行的长度
@@ -2660,8 +2546,8 @@ int EDVDB_COUNT(DataBuffer *buffer, QueryParams *params)
     long rows = (buffer->length - startPos) / recordLength; //获取行数
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
-    // buffer->length = startPos + recordLength;
-    // memcpy(newBuffer, buffer->buffer, startPos);
+    buffer->length = startPos + recordLength;
+    memcpy(newBuffer, buffer->buffer, startPos);
     long newBufCur = startPos; //在新缓冲区中的偏移量
     char res[4] = {0};
     for (int k = 0; k < 4; k++)
@@ -2679,7 +2565,7 @@ int EDVDB_COUNT(DataBuffer *buffer, QueryParams *params)
         if (typeList[i].valueType != ValueType::UDINT)
             typeList[i].valueType = ValueType::UDINT; //计数统一用32位无符号数表示
     }
-    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    //CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
     buffer->buffer = newBuffer;
     return 0;
 }
@@ -2697,9 +2583,10 @@ int EDVDB_STD(DataBuffer *buffer, QueryParams *params)
 {
     //检查是否有图片或数组
     TemplateManager::SetTemplate(params->pathToLine);
-    if (CurrentTemplate.checkHasArray(params->pathCode) && params->byPath == 1)
+    if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     EDVDB_ExecuteQuery(buffer, params);
+    if(!buffer->bufferMalloced) return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
     int recordLength = 0; //每行的长度
@@ -2746,8 +2633,8 @@ int EDVDB_STD(DataBuffer *buffer, QueryParams *params)
     long rows = (buffer->length - startPos) / recordLength; //获取行数
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
-    // buffer->length = startPos + recordLength;
-    // memcpy(newBuffer, buffer->buffer, startPos);
+    buffer->length = startPos + recordLength;
+    memcpy(newBuffer, buffer->buffer, startPos);
     long newBufCur = startPos; //在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
@@ -2783,7 +2670,7 @@ int EDVDB_STD(DataBuffer *buffer, QueryParams *params)
                 sqrSum += powf(v - avg, 2);
             }
             float res = sqrtf(sqrSum / (float)rows);
-            cout << "std:" << res << endl;
+            
             memcpy(newBuffer + newBufCur, &res, 4);
             newBufCur += 4;
             break;
@@ -2850,6 +2737,7 @@ int EDVDB_STD(DataBuffer *buffer, QueryParams *params)
                 sqrSum += powf(v - avg, 2);
             }
             float res = sqrtf(sqrSum / (float)rows);
+            cout << "std:" << res << endl;
             memcpy(newBuffer + newBufCur, &res, 4);
             newBufCur += 4;
             break;
@@ -2931,7 +2819,7 @@ int EDVDB_STD(DataBuffer *buffer, QueryParams *params)
         if (typeList[i].valueType != ValueType::REAL)
             typeList[i].valueType = ValueType::REAL; //标准差统一用浮点数表示
     }
-    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    //CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
     buffer->buffer = newBuffer;
     return 0;
 }
@@ -2948,10 +2836,11 @@ int EDVDB_STD(DataBuffer *buffer, QueryParams *params)
 int EDVDB_STDEV(DataBuffer *buffer, QueryParams *params)
 {
     //检查是否有图片或数组
-    TemplateManager::SetTemplate(params->pathToLine);
-    if (CurrentTemplate.checkHasArray(params->pathCode) && params->byPath == 1)
+    TemplateManager::CheckTemplate(params->pathToLine);
+    if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     EDVDB_ExecuteQuery(buffer, params);
+    if(!buffer->bufferMalloced) return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
     int recordLength = 0; //每行的长度
@@ -2998,8 +2887,8 @@ int EDVDB_STDEV(DataBuffer *buffer, QueryParams *params)
     long rows = (buffer->length - startPos) / recordLength; //获取行数
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
-    // buffer->length = startPos + recordLength;
-    // memcpy(newBuffer, buffer->buffer, startPos);
+    buffer->length = startPos + recordLength;
+    memcpy(newBuffer, buffer->buffer, startPos);
     long newBufCur = startPos; //在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
@@ -3183,7 +3072,7 @@ int EDVDB_STDEV(DataBuffer *buffer, QueryParams *params)
         if (typeList[i].valueType != ValueType::REAL)
             typeList[i].valueType = ValueType::REAL; //方差统一用浮点数表示
     }
-    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    //CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
     buffer->buffer = newBuffer;
     return 0;
 }
@@ -3191,7 +3080,7 @@ int EDVDB_STDEV(DataBuffer *buffer, QueryParams *params)
 int main()
 {
     DataTypeConverter converter;
-
+    
     long length;
     converter.CheckBigEndian();
     // cout << EDVDB_LoadSchema("/");
@@ -3209,38 +3098,41 @@ int main()
     code[7] = (char)0;
     code[8] = (char)0;
     code[9] = (char)0;
-    params.pathCode = code;
-    params.valueName = "S2R5";
+    //params.pathCode = code;
+    params.valueName = "S1";
     // params.valueName = NULL;
-    params.start = 1648516212100;
-    params.end = 1648516221100;
-    params.order = DESCEND;
+    params.start = 1648812610100;
+    params.end = 1648812630100;
+    params.order = TIME_DSC;
     params.compareType = LT;
     params.compareValue = "666";
-    params.queryType = TIMESPAN;
+    params.queryType = LAST;
     params.byPath = 0;
     params.queryNums = 3;
     DataBuffer buffer;
-    buffer.savePath = "jinfei/line1/";
-    buffer.length = 0;
+    buffer.savePath = "/";
+    //buffer.length = 4;
+    //buffer.buffer = "test";
     vector<long> bytes, positions;
     vector<DataType> types;
+    //TemplateManager::CheckTemplate(params.pathToLine);
     // CurrentTemplate.FindMultiDatatypePosByCode(code, positions, bytes, types);
     //EDVDB_ExecuteQuery(&buffer, &params);
-    EDVDB_QueryByTimespan(&buffer, &params);
+    //EDVDB_QueryLastRecords(&buffer, &params);
     //EDVDB_InsertRecord(&buffer,0);
-    //EDVDB_MAX(&buffer, &params);
+    cout<<EDVDB_MAX(&buffer, &params)<<endl;
     //EDVDB_COUNT(&buffer, &params);
     // TEST_MAX(&buffer, &params);
-    //  EDVDB_QueryByTimespan(&buffer, &params);
+    //EDVDB_QueryByTimespan(&buffer, &params);
 
     if (buffer.bufferMalloced)
     {
         char buf[buffer.length];
         memcpy(buf, buffer.buffer, buffer.length);
-        for (int i = 0; i < 300; i++)
+        cout<<buffer.length<<endl;
+        for (int i = 0; i < buffer.length; i++)
         {
-            cout << (int)buf[i];
+            cout << (int)buf[i]<<" ";
             if (i % 11 == 0)
                 cout << endl;
         }

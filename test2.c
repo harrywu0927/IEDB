@@ -18,17 +18,18 @@ int main()
 
     struct tm t;
     t.tm_year = 122;
-    t.tm_mon = 2;
-    t.tm_mday = 29;
-    t.tm_hour = 9;
-    t.tm_min = 10;
-    t.tm_sec = 21;
+    t.tm_mon = 3;
+    t.tm_mday = 1;
+    t.tm_hour = 19;
+    t.tm_min = 30;
+    t.tm_sec = 30;
+    t.tm_isdst = -1;
     time_t seconds = mktime(&t);
     int ms = 100;
     long millis = seconds * 1000 + ms;
     //return 0;
-    //start 1648516212100
-    //end 1648516221100
+    //start 1648812610100
+    //end 1648812630100
     struct QueryParams params;
     params.pathToLine = "";
     params.fileID = "XinFeng2";

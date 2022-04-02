@@ -35,6 +35,7 @@ namespace StatusCode
         QUERY_TYPE_NOT_SURPPORT = 146,   //不支持的查询方式
         EMPTY_PATH_TO_LINE = 147,        //到产线的路径为空
         EMPTY_SAVE_PATH = 148,           //空的存储路径
+        NO_DATA_QUERIED = 149,           //未找到数据
     };
 }
 namespace ValueType
@@ -492,7 +493,9 @@ public:
         */
         string tmp = path;
         vector<string> paths = DataType::StringSplit(const_cast<char*>(tmp.c_str()),"/");
-        string prefix = paths[paths.size()-1];
+        string prefix="Default";
+        if(paths.size()>0)
+            prefix = paths[paths.size()-1];
         cout<<prefix<<endl;
         vector<string> files;
         readFileList(path, files);
@@ -554,16 +557,16 @@ public:
             i += 30;
             memcpy(dataType, buf + i, 30);
             i += 30;
-            //char timeFlag = buf[++i];
+            char timeFlag = buf[++i];
             memcpy(pathEncode, buf + i, 10);
             i += 10;
             vector<string> paths;
             PathCode pathCode(pathEncode, sizeof(pathEncode) / 2, variable);
             DataType type;
-            //if((int)timeFlag == 1)
+            if((int)timeFlag == 1)
                 type.hasTime = true;
-            //else
-            //    type.hasTime = false;
+            else
+                type.hasTime = false;
             if (DataType::GetDataTypeFromStr(dataType, type) == 0)
             {
                 dataTypes.push_back(type);
@@ -596,7 +599,10 @@ public:
 
     static void CheckTemplate(string path)
     {
-
+        if((path != CurrentTemplate.path && path != "")|| CurrentTemplate.path == "")
+        {
+            SetTemplate(path.c_str());
+        }
     }
 };
 
