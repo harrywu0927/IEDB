@@ -11,7 +11,7 @@ ADD_LIBRARY(std_fb SHARED ${SOURCES})
 ADD_EXECUTABLE(main src/main.cpp)
 
 ADD_EXECUTABLE(test test.cpp)
-ADD_EXECUTABLE(test2 test2.c)
+ADD_EXECUTABLE(test2 test2.cpp)
 
 TARGET_LINK_LIBRARIES(main std_fb)
 TARGET_LINK_LIBRARIES(test std_fb)
