@@ -2,6 +2,7 @@
 #include "../include/STDFB_header.h"
 #include "../include/QueryRequest.hpp"
 #include "../include/Schema.h"
+#include "../include/utils.hpp"
 #include <vector>
 #include <string>
 #include <iostream>
