@@ -1,8 +1,8 @@
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
     /*
      *  数据交换缓冲区
      *  查询时，buffer中的数据存放方式：第1个字节为查询到的变量总数(0<N<256)，

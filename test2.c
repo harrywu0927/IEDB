@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "include/CassFactoryDB.h"
+#include "include/CassIEDB.h"
 #include <stdlib.h>
 #include <sys/sysctl.h>
 #include <string.h>
