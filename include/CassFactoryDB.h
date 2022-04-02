@@ -210,16 +210,16 @@ extern "C"
     int DB_UnloadZipSchema(const char *pathToUnset);
 
     //压缩已有文件
-    int DB_ZipFile(const char *ZipTemPath, const char *filepath);
+    int DB_ZipFile(const char *ZipTemPath, const char *pathToLine);
 
     //还原压缩后的文件
-    int DB_ReZipFile(const char *ZipTemPath, const char *filepath);
+    int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine);
 
     //压缩接收到的整条数据
     int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, long *buffLength);
 
     //压缩只有开关量的文件
-    int DB_ZipSwitchFile(const char *ZipTemPath, const char *filepath);
+    int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine);
 
     //还原被压缩的开关量文件返回原状态
     int DB_ReZipSwitchFile(const char *ZipTemPath, const char *filepath);
@@ -228,10 +228,10 @@ extern "C"
     int DB_ZipRecvSwitchBuff(const char *ZipTemPath, const char *filepath, char *buff, long *buffLength);
 
     //压缩只有模拟量的文件
-    int DB_ZipAnalogFile(const char *ZipTemPath, const char *filepath);
+    int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine);
 
     //还原被压缩的模拟量文件返回原状态
-    int DB_ReZipAnalogFile(const char *ZipTemPath, const char *filepath);
+    int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine);
 
     //压缩接收到的只有模拟量类型的整条数据
     int DB_ZipRecvAnalogFile(const char *ZipTempPath, const char *filepath, char *buff, long *buffLength);

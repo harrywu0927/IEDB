@@ -105,11 +105,11 @@ int DB_UnloadZipSchema(const char *pathToUnset)
  * @brief 压缩已有的.idb文件
  * 
  * @param ZipTemPath 压缩模板路径
- * @param filepath .idb文件路径
+ * @param pathToLine .idb文件路径
  * @return  0:success,
  *          other:StatusCode
  */
-int DB_ZipFile(const char *ZipTemPath,const char *filepath)
+int DB_ZipFile(const char *ZipTemPath,const char *pathToLine)
 {
     int err=0;
     err=DB_LoadZipSchema(ZipTemPath);//加载压缩模板
@@ -120,7 +120,7 @@ int DB_ZipFile(const char *ZipTemPath,const char *filepath)
     }
     DataTypeConverter converter;
     vector<string> files;
-    readIDBFilesList(filepath,files);
+    readIDBFilesList(pathToLine,files);
     if(files.size()==0)
     {
         cout<<"没有文件！"<<endl;
@@ -541,11 +541,11 @@ int DB_ZipRecvBuff(const char *ZipTemPath,const char *filepath,char *buff,long *
  * @brief 压缩只有开关量类型的已有.idb文件
  * 
  * @param ZipTemPath 压缩模板路径
- * @param filepath .idb文件路径
+ * @param pathToLine .idb文件路径
  * @return  0:success,
  *          others:StatusCode
  */
-int DB_ZipSwitchFile(const char *ZipTemPath,const char *filepath)
+int DB_ZipSwitchFile(const char *ZipTemPath,const char *pathToLine)
 {
     int err;
     err=DB_LoadZipSchema(ZipTemPath);//加载压缩模板
@@ -556,7 +556,7 @@ int DB_ZipSwitchFile(const char *ZipTemPath,const char *filepath)
     }
     DataTypeConverter converter;
     vector<string> files;
-    readIDBFilesList(filepath,files);
+    readIDBFilesList(pathToLine,files);
     if(files.size()==0)
     { 
         cout<<"没有文件！"<<endl;
@@ -638,11 +638,11 @@ int DB_ZipSwitchFile(const char *ZipTemPath,const char *filepath)
  * @brief 还原压缩后的开关量文件为原状态
  * 
  * @param ZipTemPath 压缩模板路径
- * @param filepath .idbzip压缩文件路径
+ * @param pathToLine .idbzip压缩文件路径
  * @return  0:success,
  *          others:StatusCode 
  */
-int DB_ReZipSwitchFile(const char *ZipTemPath,const char *filepath)
+int DB_ReZipSwitchFile(const char *ZipTemPath,const char *pathToLine)
 {
     int err=0;
     err=DB_LoadZipSchema(ZipTemPath);//加载压缩模板
@@ -654,7 +654,7 @@ int DB_ReZipSwitchFile(const char *ZipTemPath,const char *filepath)
     DataTypeConverter converter;
     vector<string> files;
 
-    readIDBZIPFilesList(filepath,files);
+    readIDBZIPFilesList(pathToLine,files);
     if(files.size()==0)
     {
         cout<<"没有.idbzip文件!"<<endl;
@@ -839,16 +839,16 @@ int DB_ZipRecvSwitchBuff(const char *ZipTemPath,const char *filepath,char *buff,
     return err;
 }
 
-// int main()
-// {
-//     //EDVDB_LoadZipSchema("/");
-//     // long len;
-//     // DB_GetFileLengthByPath("XinFeng_0100.dat",&len);
-//     // char readbuf[len];
-//     // EDVDB_OpenAndRead("XinFeng_0100.dat",readbuf);
-//     EDVDB_ZipSwitchFile("/jinfei/","/jinfei/");
-//     //EDVDB_ReZipSwitchFile("/jinfei/","/jinfei/");
-//     //EDVDB_ZipRecvBuff("/","XinFeng_0100.dat",readbuf,len);
-//     //EDVDB_ZipFile("/","/");
-//     return 0;
-// }
+int main()
+{
+    //EDVDB_LoadZipSchema("/");
+    // long len;
+    // DB_GetFileLengthByPath("XinFeng_0100.dat",&len);
+    // char readbuf[len];
+    // EDVDB_OpenAndRead("XinFeng_0100.dat",readbuf);
+    //DB_ZipSwitchFile("/jinfei/","/jinfei/");
+    DB_ReZipSwitchFile("/jinfei/","/jinfei");
+    //EDVDB_ZipRecvBuff("/","XinFeng_0100.dat",readbuf,len);
+    //EDVDB_ZipFile("/","/");
+    return 0;
+}
