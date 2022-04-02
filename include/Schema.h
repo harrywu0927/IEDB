@@ -8,6 +8,7 @@ struct TreeNodeParams
 
     long startTime;//开始时间
     long endTime;//结束时间
+    bool hasTime;//带８字节时间戳
 };
 
 //压缩模板的数据信息
@@ -18,6 +19,7 @@ struct ZipNodeParams
     char *standardValue;//标准值
     char *maxValue;//最大值
     char *minValue;//最小值
+    bool hasTime;//带八字节时间戳
 };
 
 //往模板里添加新的树节点

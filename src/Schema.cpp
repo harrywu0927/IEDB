@@ -578,15 +578,14 @@ int EDVDB_ZipSwitchFile(const char *ZipTemPath,string filepath)
         }  
         for(int i=0;i<CurrentZipTemplate.schemas[i].first.size();i++)
         {
-            if(CurrentZipTemplate.schemas[i].second.valueType==ValueType::BOOL)//BOOL变量
+            if(CurrentZipTemplate.schemas[i].second.valueType==ValueType::UDINT)//开关量的持续时长
             {
                 
                 uint32 standardBoolTime=converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 uint32 maxBoolTime=converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
-                uint32 minBoolTime=converter.ToUInt32_m(CurrentTemplate.schemas[i].second.minValue);
+                uint32 minBoolTime=converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
 
-                //1个字节的布尔值和4个字节的持续时长,暂定，根据后续情况可能进行更改
-                readbuff_pos+=1;
+                //4个字节的持续时长,暂定，根据后续情况可能进行更改
                 char value[4]={0};
                 memcpy(value,readbuff+readbuff_pos,4);
                 uint32 currentBoolTime=converter.ToUInt32(value);
@@ -596,8 +595,8 @@ int EDVDB_ZipSwitchFile(const char *ZipTemPath,string filepath)
                     memcpy(writebuff+writebuff_pos,const_cast<char *>(CurrentZipTemplate.schemas[i].first.c_str()),CurrentZipTemplate.schemas[i].first.length());
                     writebuff_pos+=CurrentZipTemplate.schemas[i].first.length();
 
-                    memcpy(writebuff+writebuff_pos,readbuff+readbuff_pos-1,5);
-                    writebuff_pos+=5;
+                    memcpy(writebuff+writebuff_pos,readbuff+readbuff_pos,4);
+                    writebuff_pos+=4;
                 }
                 readbuff_pos+=4;
             }
@@ -664,7 +663,7 @@ int EDVDB_ReZipSwitchFile(const char *ZipTemPath,string filepath)
         long len;
         EDVDB_GetFileLengthByPath(const_cast<char *>(files[fileNum].c_str()),&len);
         char readbuff[len];//文件内容
-        char writebuff[CurrentZipTemplate.schemas.size()*5];//写入没有被压缩的数据
+        char writebuff[CurrentZipTemplate.schemas.size()*4];//写入没有被压缩的数据
         long readbuff_pos=0;
         long writebuff_pos=0;
 
@@ -675,21 +674,19 @@ int EDVDB_ReZipSwitchFile(const char *ZipTemPath,string filepath)
         }
         for(size_t i=0;i<CurrentZipTemplate.schemas.size();i++)
         {
-            if(CurrentZipTemplate.schemas[i].second.valueType==ValueType::BOOL)
+            if(CurrentZipTemplate.schemas[i].second.valueType==ValueType::UDINT)//开关量持续时长
             {
                 if(len==0)//表示文件完全压缩
                 {
-                    uint32 standardBoolTime=converter.ToInt32_m(CurrentTemplate.schemas[i].second.standardValue);
-                    char boolValue[1];
+                    uint32 standardBoolTime=converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char boolTime[4]={0};
                     for(int j=0;j<4;j++)
                     {
-                        boolTime[3-i]|=standardBoolTime;
+                        boolTime[3-j]|=standardBoolTime;
                         standardBoolTime>>=8;
                     }
-                    memcpy(writebuff+writebuff_pos,boolValue,1);//布尔值
-                    memcpy(writebuff+writebuff_pos+1,boolTime,4);//持续时长
-                    writebuff_pos+=5;
+                    memcpy(writebuff+writebuff_pos,boolTime,4);//持续时长
+                    writebuff_pos+=4;
                 }
                 else//文件未完全压缩
                 {
@@ -700,24 +697,22 @@ int EDVDB_ReZipSwitchFile(const char *ZipTemPath,string filepath)
                         if(valueName==CurrentZipTemplate.schemas[i].first)//是未压缩数据的变量名
                         {
                             readbuff_pos+=CurrentZipTemplate.schemas[i].first.length();
-                            memcpy(writebuff+writebuff_pos,readbuff+readbuff_pos,5);
-                            writebuff_pos+=5;
-                            readbuff_pos+=5;
+                            memcpy(writebuff+writebuff_pos,readbuff+readbuff_pos,4);
+                            writebuff_pos+=4;
+                            readbuff_pos+=4;
                         }
                     }
                     else//没有未压缩的数据了
                     {
                         uint32 standardBoolTime=converter.ToInt32_m(CurrentTemplate.schemas[i].second.standardValue);
-                        char boolValue[1];
                         char boolTime[4]={0};
                         for(int j=0;j<4;j++)
                         {
                             boolTime[3-i]|=standardBoolTime;
                             standardBoolTime>>=8;
                         }
-                        memcpy(writebuff+writebuff_pos,boolValue,1);//布尔值
                         memcpy(writebuff+writebuff_pos+1,boolTime,4);//持续时长
-                        writebuff_pos+=5;
+                        writebuff_pos+=4;
                     }
 
                 }
@@ -843,13 +838,14 @@ int EDVDB_ZipRecvSwitchBuff(const char *ZipTemPath,string filepath,const char *b
 
 // int main()
 // {
-//     //EDVDB_LoadZipSchema("./");
+//     //EDVDB_LoadZipSchema("/");
 //     // long len;
 //     // EDVDB_GetFileLengthByPath("XinFeng_0100.dat",&len);
 //     // char readbuf[len];
 //     // EDVDB_OpenAndRead("XinFeng_0100.dat",readbuf);
-
+//     //EDVDB_ZipSwitchFile("/","/");
+//     EDVDB_ReZipSwitchFile("/","/");
 //     //EDVDB_ZipRecvBuff("/","XinFeng_0100.dat",readbuf,len);
-//     EDVDB_ZipFile("/","/");
+//     //EDVDB_ZipFile("/","/");
 //     return 0;
 // }

@@ -3187,6 +3187,7 @@ int EDVDB_STDEV(DataBuffer *buffer, QueryParams *params)
     buffer->buffer = newBuffer;
     return 0;
 }
+<<<<<<< Updated upstream
 
 int main()
 {
@@ -3251,3 +3252,66 @@ int main()
     buffer.buffer = NULL;
     return 0;
 }
+=======
+// int main()
+// {
+//     DataTypeConverter converter;
+
+//     long length;
+//     converter.CheckBigEndian();
+//     // cout << EDVDB_LoadSchema("/");
+//     QueryParams params;
+//     params.pathToLine = "";
+//     params.fileID = "XinFeng2";
+//     char code[10];
+//     code[0] = (char)0;
+//     code[1] = (char)1;
+//     code[2] = (char)0;
+//     code[3] = (char)1;
+//     code[4] = 'R';
+//     code[5] = (char)1;
+//     code[6] = 'G';
+//     code[7] = (char)4;
+//     code[8] = (char)0;
+//     code[9] = (char)0;
+//     params.pathCode = code;
+//     params.valueName = "S2R4";
+//     // params.valueName = NULL;
+//     params.start = 1648516212100;
+//     params.end = 1648516221100;
+//     params.order = DESCEND;
+//     params.compareType = GT;
+//     params.compareValue = "6";
+//     params.queryType = TIMESPAN;
+//     params.byPath = 1;
+//     params.queryNums = 3;
+//     DataBuffer buffer;
+//     buffer.length = 0;
+//     vector<long> bytes, positions;
+//     vector<DataType> types;
+//     // CurrentTemplate.FindMultiDatatypePosByCode(code, positions, bytes, types);
+//     //  EDVDB_QueryLastRecords(&buffer, &params);
+//     // EDVDB_QueryByTimespan(&buffer, &params);
+//     // EDVDB_MAX(&buffer, &params);
+//     EDVDB_COUNT(&buffer, &params);
+//     // TEST_MAX(&buffer, &params);
+//     //  EDVDB_QueryByTimespan(&buffer, &params);
+
+//     if (buffer.bufferMalloced)
+//     {
+//         char buf[buffer.length];
+//         memcpy(buf, buffer.buffer, buffer.length);
+//         for (int i = 0; i < 300; i++)
+//         {
+//             cout << (int)buf[i];
+//             if (i % 11 == 0)
+//                 cout << endl;
+//         }
+
+//         free(buffer.buffer);
+//     }
+
+//     buffer.buffer = NULL;
+//     return 0;
+// }
+>>>>>>> Stashed changes
