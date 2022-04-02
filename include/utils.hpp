@@ -13,9 +13,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "DataTypeConvert.hpp"
+#include "CassFactoryDB.h"
 #include <sstream>
-#include "../DB_FS/sources/CJsonObject.hpp"
-#include "FS_header.h"
+#include "CJsonObject.hpp"
 using namespace std;
 namespace StatusCode
 {
@@ -533,7 +533,7 @@ public:
         {
             string s = file;
             vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
-            if (vec[vec.size() - 1].find("tem") != string::npos)
+            if (vec[vec.size() - 1].find("tem") != string::npos && vec[vec.size() - 1].find("ziptem") == string::npos)
             {
                 temPath = file;
                 break;
@@ -542,9 +542,9 @@ public:
         if (temPath == "")
             return StatusCode::SCHEMA_FILE_NOT_FOUND;
         long length;
-        EDVDB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &length);
+        DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &length);
         char buf[length];
-        int err = EDVDB_OpenAndRead(const_cast<char *>(temPath.c_str()), buf);
+        int err = DB_OpenAndRead(const_cast<char *>(temPath.c_str()), buf);
         if (err != 0)
             return err;
         int i = 0;

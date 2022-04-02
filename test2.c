@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "include/STDFB_header.h"
+#include "include/CassFactoryDB.h"
 #include <stdlib.h>
 #include <sys/sysctl.h>
 #include <string.h>
@@ -7,13 +7,14 @@
 int main()
 {
     // char *data = "test";
-    // struct DataBuffer buffer;
+    // struct DB_DataBuffer buffer;
     // buffer.buffer = data;
     // buffer.length = 4;
     // buffer.savePath = "";
-    // EDVDB_InsertRecord(&buffer,0);
+    // DB_InsertRecord(&buffer,0);
     // return 0;
-    
+    printf("%d",DB_LoadZipSchema("/"));
+    return 0;
     
 
     struct tm t;
@@ -30,7 +31,7 @@ int main()
     //return 0;
     //start 1648812610100
     //end 1648812630100
-    struct QueryParams params;
+    struct DB_QueryParams params;
     params.pathToLine = "";
     params.fileID = "XinFeng2";
     char code[10];
@@ -54,9 +55,9 @@ int main()
     params.queryType = FILEID;
     params.byPath = 1;
     params.queryNums = 3;
-    struct DataBuffer buffer;
+    struct DB_DataBuffer buffer;
 
-    EDVDB_MAX(&buffer, &params);
+    DB_MAX(&buffer, &params);
     return 0;
     if (buffer.buffer == NULL)
     {
@@ -65,10 +66,10 @@ int main()
     params.pathToLine = "./";
     params.fileID = "XinFeng1";
     buffer.length = 0;
-    EDVDB_QueryByFileID(&buffer, &params);
+    DB_QueryByFileID(&buffer, &params);
     if (buffer.bufferMalloced)
         free(buffer.buffer);
-    // EDVDB_QueryByFileID(buffer,params);
+    // DB_QueryByFileID(buffer,params);
     // for (size_t i = 0; i < buffer.length; i++)
     // {
     //     printf("%d ",buffer.buffer[i]);

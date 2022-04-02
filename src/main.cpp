@@ -1,7 +1,6 @@
-#include "../include/FS_header.h"
-#include "../include/STDFB_header.h"
+
+
 #include "../include/QueryRequest.hpp"
-#include "../include/Schema.h"
 #include "../include/utils.hpp"
 #include <vector>
 #include <string>
@@ -31,7 +30,7 @@ Template CurrentTemplate;
  * @note    在文件夹中找到模版文件，找到后读取，每个变量的前30字节为变量名，接下来30字节为数据类型，最后10字节为
  *          路径编码，分别解析之，构造、生成模版结构并将其设置为当前模版
  */
-int EDVDB_LoadSchema(const char *path)
+int DB_LoadSchema(const char *path)
 {
     return TemplateManager::SetTemplate(path);
 }
@@ -44,7 +43,7 @@ int EDVDB_LoadSchema(const char *path)
  *          others: StatusCode
  * @note
  */
-int EDVDB_UnloadSchema(const char *pathToUnset)
+int DB_UnloadSchema(const char *pathToUnset)
 {
     return TemplateManager::UnsetTemplate(pathToUnset);
 }
@@ -60,7 +59,7 @@ int EDVDB_UnloadSchema(const char *pathToUnset)
  *          others: StatusCode
  * @note
  */
-int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, vector<long> &poses, QueryParams *params, DataType &type)
+int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, vector<long> &poses, DB_QueryParams *params, DataType &type)
 {
     vector<pair<pair<char *, long>, long>> memAndPos; //使数据偏移与内存-长度对建立关联
     for (int i = 0; i < poses.size(); i++)
@@ -153,7 +152,7 @@ int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, vector<long> &
 }
 
 //根据时间升序或降序排序
-void sortByTime(vector<pair<string, long>> &selectedFiles, Order order)
+void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order)
 {
     switch (order)
     {
@@ -186,18 +185,18 @@ void sortByTime(vector<pair<string, long>> &selectedFiles, Order order)
  *          others: StatusCode
  * @note
  */
-int EDVDB_ExecuteQuery(DataBuffer *buffer, QueryParams *params)
+int DB_ExecuteQuery(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     switch (params->queryType)
     {
     case TIMESPAN:
-        return EDVDB_QueryByTimespan(buffer, params);
+        return DB_QueryByTimespan(buffer, params);
         break;
     case LAST:
-        return EDVDB_QueryLastRecords(buffer, params);
+        return DB_QueryLastRecords(buffer, params);
         break;
     case FILEID:
-        return EDVDB_QueryByFileID(buffer, params);
+        return DB_QueryByFileID(buffer, params);
         break;
     default:
         break;
@@ -216,7 +215,7 @@ int EDVDB_ExecuteQuery(DataBuffer *buffer, QueryParams *params)
  *          others: StatusCode
  * @note
  */
-int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
+int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     vector<pair<string, long>> filesWithTime, selectedFiles;
 
@@ -241,7 +240,7 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
         if (CurrentTemplate.path != str || CurrentTemplate.path == "")
         {
             int err = 0;
-            err = EDVDB_LoadSchema(params->pathToLine);
+            err = DB_LoadSchema(params->pathToLine);
             if (err != 0)
             {
                 buffer->buffer = NULL;
@@ -257,15 +256,15 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
         vector<pair<char *, long>> mallocedMemory; //已在堆区分配的进入筛选范围数据的内存地址和长度集
         long cur = 0;                              //记录已选中的文件总长度
         /*<-----!!!警惕内存泄露!!!----->*/
-        if (params->compareType != CompareType::CMP_NONE)
+        if (params->compareType != DB_CompareType::CMP_NONE)
         {
 
             for (auto &file : selectedFiles)
             {
                 long len; //文件长度
-                EDVDB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+                DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
                 char buff[len]; //文件内容缓存
-                EDVDB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+                DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 
                 //获取数据的偏移量和数据类型
                 long pos = 0, bytes = 0;
@@ -288,7 +287,7 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                 bool canCopy = false;
                 switch (params->compareType)
                 {
-                case CompareType::GT:
+                case DB_CompareType::GT:
                 {
                     if (compareRes == 1)
                     {
@@ -296,7 +295,7 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                     }
                     break;
                 }
-                case CompareType::LT:
+                case DB_CompareType::LT:
                 {
                     if (compareRes == -1)
                     {
@@ -304,7 +303,7 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                     }
                     break;
                 }
-                case CompareType::GE:
+                case DB_CompareType::GE:
                 {
                     if (compareRes == 0 || compareRes == 1)
                     {
@@ -312,7 +311,7 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                     }
                     break;
                 }
-                case CompareType::LE:
+                case DB_CompareType::LE:
                 {
                     if (compareRes == 0 || compareRes == 1)
                     {
@@ -320,7 +319,7 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                     }
                     break;
                 }
-                case CompareType::EQ:
+                case DB_CompareType::EQ:
                 {
                     if (compareRes == 0)
                     {
@@ -345,9 +344,9 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
             for (auto &file : selectedFiles)
             {
                 long len; //文件长度
-                EDVDB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+                DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
                 char buff[len]; //文件内容缓存
-                EDVDB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+                DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 
                 char *memory = (char *)malloc(len); //一次分配整个文件长度的内存
                 memcpy(memory, buff, len);
@@ -395,7 +394,7 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
         if (CurrentTemplate.path != str || CurrentTemplate.path == "")
         {
             int err = 0;
-            err = EDVDB_LoadSchema(params->pathToLine);
+            err = DB_LoadSchema(params->pathToLine);
             if (err != 0)
             {
                 buffer->buffer = NULL;
@@ -419,9 +418,9 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
             for (auto &file : filesWithTime)
             {
                 long len; //文件长度
-                EDVDB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+                DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
                 char buff[len]; //文件内容缓存
-                EDVDB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+                DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 
                 //获取数据的偏移量和字节数
                 long bytes = 0, pos = 0;
@@ -448,7 +447,7 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                 bool canCopy = false; //根据比较结果决定是否允许拷贝
                 switch (params->compareType)
                 {
-                case CompareType::GT:
+                case DB_CompareType::GT:
                 {
                     if (compareRes == 1)
                     {
@@ -456,7 +455,7 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                     }
                     break;
                 }
-                case CompareType::LT:
+                case DB_CompareType::LT:
                 {
                     if (compareRes == -1)
                     {
@@ -464,7 +463,7 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                     }
                     break;
                 }
-                case CompareType::GE:
+                case DB_CompareType::GE:
                 {
                     if (compareRes == 0 || compareRes == 1)
                     {
@@ -472,7 +471,7 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                     }
                     break;
                 }
-                case CompareType::LE:
+                case DB_CompareType::LE:
                 {
                     if (compareRes == 0 || compareRes == -1)
                     {
@@ -480,7 +479,7 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
                     }
                     break;
                 }
-                case CompareType::EQ:
+                case DB_CompareType::EQ:
                 {
                     if (compareRes == 0)
                     {
@@ -537,9 +536,9 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
             for (int i = 0; i < params->queryNums; i++)
             {
                 long len;
-                EDVDB_GetFileLengthByPath(const_cast<char *>(filesWithTime[i].first.c_str()), &len);
+                DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[i].first.c_str()), &len);
                 char buff[len];
-                EDVDB_OpenAndRead(const_cast<char *>(filesWithTime[i].first.c_str()), buff);
+                DB_OpenAndRead(const_cast<char *>(filesWithTime[i].first.c_str()), buff);
                 char *memory = (char *)malloc(len);
                 memcpy(memory, buff, len);
                 mallocedMemory.push_back(make_pair(memory, len));
@@ -572,9 +571,9 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
             if (file.first.find(params->fileID) != string::npos)
             {
                 long len;
-                EDVDB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+                DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
                 char buff[len];
-                EDVDB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+                DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 
                 char *data = (char *)malloc(len);
                 if (data == NULL)
@@ -614,7 +613,7 @@ int EDVDB_QueryWholeFile(DataBuffer *buffer, QueryParams *params)
  *          others: StatusCode
  * @note
  */
-int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
+int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     vector<pair<string, long>> filesWithTime, selectedFiles;
 
@@ -636,7 +635,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
     if (CurrentTemplate.path != str || CurrentTemplate.path == "")
     {
         int err = 0;
-        err = EDVDB_LoadSchema(params->pathToLine);
+        err = DB_LoadSchema(params->pathToLine);
         if (err != 0)
         {
             buffer->buffer = NULL;
@@ -654,15 +653,15 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
     DataType type;
     vector<DataType> typeList, selectedTypes;
     vector<long> sortDataPoses; //按值排序时要比较的数据的偏移量
-    // if (params->compareType != CompareType::CMP_NONE)
+    // if (params->compareType != DB_CompareType::CMP_NONE)
     // {
         for (auto &file : selectedFiles)
         {
             typeList.clear();
             long len;
-            EDVDB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+            DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
             char buff[len];
-            EDVDB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+            DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 
             //获取数据的偏移量和数据类型
             long pos = 0, bytes = 0;
@@ -728,7 +727,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
                 int compareRes = DataType::CompareValue(type, value, params->compareValue);
                 switch (params->compareType)
                 {
-                case CompareType::GT:
+                case DB_CompareType::GT:
                 {
                     if (compareRes > 0)
                     {
@@ -736,7 +735,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
                     }
                     break;
                 }
-                case CompareType::LT:
+                case DB_CompareType::LT:
                 {
                     if (compareRes < 0)
                     {
@@ -744,7 +743,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
                     }
                     break;
                 }
-                case CompareType::GE:
+                case DB_CompareType::GE:
                 {
                     if (compareRes >= 0)
                     {
@@ -752,7 +751,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
                     }
                     break;
                 }
-                case CompareType::LE:
+                case DB_CompareType::LE:
                 {
                     if (compareRes <= 0)
                     {
@@ -760,7 +759,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
                     }
                     break;
                 }
-                case CompareType::EQ:
+                case DB_CompareType::EQ:
                 {
                     if (compareRes == 0)
                     {
@@ -837,7 +836,7 @@ int EDVDB_QueryByTimespan(DataBuffer *buffer, QueryParams *params)
  *          others: StatusCode
  * @note
  */
-int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
+int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     vector<pair<string, long>> selectedFiles;
 
@@ -849,7 +848,7 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
     if (CurrentTemplate.path != str || CurrentTemplate.path == "")
     {
         int err = 0;
-        err = EDVDB_LoadSchema(params->pathToLine);
+        err = DB_LoadSchema(params->pathToLine);
         if (err != 0)
         {
             buffer->buffer = NULL;
@@ -879,9 +878,9 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
         {
             typeList.clear();
             long len; //文件长度
-            EDVDB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+            DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
             char buff[len]; //文件内容缓存
-            EDVDB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+            DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 
             //获取数据的偏移量和字节数
             long bytes = 0, pos = 0;         //单个变量
@@ -941,7 +940,7 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
                 int compareRes = DataType::CompareValue(type, value, params->compareValue);
                 switch (params->compareType)
                 {
-                case CompareType::GT:
+                case DB_CompareType::GT:
                 {
                     if (compareRes == 1)
                     {
@@ -949,7 +948,7 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
                     }
                     break;
                 }
-                case CompareType::LT:
+                case DB_CompareType::LT:
                 {
                     if (compareRes == -1)
                     {
@@ -957,7 +956,7 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
                     }
                     break;
                 }
-                case CompareType::GE:
+                case DB_CompareType::GE:
                 {
                     if (compareRes == 0 || compareRes == 1)
                     {
@@ -965,7 +964,7 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
                     }
                     break;
                 }
-                case CompareType::LE:
+                case DB_CompareType::LE:
                 {
                     if (compareRes == 0 || compareRes == -1)
                     {
@@ -973,7 +972,7 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
                     }
                     break;
                 }
-                case CompareType::EQ:
+                case DB_CompareType::EQ:
                 {
                     if (compareRes == 0)
                     {
@@ -1047,9 +1046,9 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
         {
             typeList.clear();
             long len;
-            EDVDB_GetFileLengthByPath(const_cast<char *>(selectedFiles[i].first.c_str()), &len);
+            DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[i].first.c_str()), &len);
             char buff[len];
-            EDVDB_OpenAndRead(const_cast<char *>(selectedFiles[i].first.c_str()), buff);
+            DB_OpenAndRead(const_cast<char *>(selectedFiles[i].first.c_str()), buff);
 
             //获取数据的偏移量和数据类型
             long bytes = 0, pos = 0;         //单个变量
@@ -1150,7 +1149,7 @@ int EDVDB_QueryLastRecords(DataBuffer *buffer, QueryParams *params)
  * @note 获取产线文件夹下的所有数据文件，找到带有指定ID的文件后读取，加载模版，根据模版找到变量在数据中的位置
  *          找到后开辟内存空间，将数据放入，将缓冲区首地址赋值给buffer
  */
-int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
+int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     vector<string> files;
     readIDBFilesList(params->pathToLine, files);
@@ -1159,10 +1158,10 @@ int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
         if (file.find(params->fileID) != string::npos)
         {
             long len;
-            EDVDB_GetFileLengthByPath(const_cast<char *>(file.c_str()), &len);
+            DB_GetFileLengthByPath(const_cast<char *>(file.c_str()), &len);
             char buff[len];
-            EDVDB_OpenAndRead(const_cast<char *>(file.c_str()), buff);
-            EDVDB_LoadSchema(params->pathToLine);
+            DB_OpenAndRead(const_cast<char *>(file.c_str()), buff);
+            DB_LoadSchema(params->pathToLine);
 
             //获取数据的偏移量和字节数
             long bytes = 0, pos = 0;         //单个变量
@@ -1237,106 +1236,7 @@ int EDVDB_QueryByFileID(DataBuffer *buffer, QueryParams *params)
         }
     }
     return StatusCode::DATAFILE_NOT_FOUND;
-}
-
-// deprecated
-int EDVDB_QueryByFileID_Old(DataBuffer *buffer, QueryParams *params)
-{
-    // vector<string> arr = DataType::StringSplit(params->fileID,"_");
-    vector<string> files;
-    readIDBFilesList(params->pathToLine, files);
-    for (string file : files)
-    {
-        if (file.find(params->fileID) != string::npos)
-        {
-            long len;
-            EDVDB_GetFileLengthByPath(const_cast<char *>(file.c_str()), &len);
-            char buff[len];
-            EDVDB_OpenAndRead(const_cast<char *>(file.c_str()), buff);
-            EDVDB_LoadSchema(params->pathToLine);
-            DataTypeConverter converter;
-            char *pathCode = params->pathCode;
-            long pos = 0;
-            for (size_t i = 0; i < CurrentTemplate.schemas.size(); i++)
-            {
-                bool codeEquals = true;
-                for (size_t k = 0; k < 10; k++) //判断路径编码是否相等
-                {
-                    if (pathCode[k] != CurrentTemplate.schemas[i].first.code[k])
-                        codeEquals = false;
-                }
-                if (codeEquals)
-                {
-                    int num = 1;
-                    if (CurrentTemplate.schemas[i].second.isArray)
-                    {
-                        /*
-                            图片数据中前2个字节为长度，长度不包括这2个字节
-                            格式改变时，此处需要更改，下面else同理
-                            请注意！
-                        */
-
-                        if (CurrentTemplate.schemas[i].second.valueType == ValueType::IMAGE)
-                        {
-
-                            char imgLen[2];
-                            imgLen[0] = buff[pos];
-                            imgLen[1] = buff[pos + 1];
-                            num = (int)converter.ToUInt16(imgLen) + 2;
-                        }
-                        else
-                            num = CurrentTemplate.schemas[i].second.arrayLen;
-                    }
-                    buffer->length = (long)(num * CurrentTemplate.schemas[i].second.valueBytes);
-                    int j = 0;
-                    if (CurrentTemplate.schemas[i].second.valueType == ValueType::IMAGE)
-                    {
-                        buffer->length -= 2;
-                        j = 2;
-                    }
-                    char *data = (char *)malloc(buffer->length);
-                    if (data == NULL)
-                    {
-                        //内存分配失败，需要作处理
-                        //方案1:直接返回错误
-                        //方案2:尝试分配更小的内存
-                        buffer->buffer = NULL;
-                        buffer->bufferMalloced = 0;
-                    }
-                    //内存分配成功，传入数据
-                    buffer->bufferMalloced = 1;
-                    for (; j < buffer->length; j++)
-                    {
-                        data[j] = buff[pos + j];
-                    }
-                    buffer->buffer = data;
-                    return 0;
-                }
-                else
-                {
-                    int num = 1;
-                    if (CurrentTemplate.schemas[i].second.isArray)
-                    {
-                        if (CurrentTemplate.schemas[i].second.valueType == ValueType::IMAGE)
-                        {
-
-                            char imgLen[2];
-                            imgLen[0] = buff[pos];
-                            imgLen[1] = buff[pos + 1];
-                            num = (int)converter.ToUInt16(imgLen) + 2;
-                        }
-                        else
-                            num = CurrentTemplate.schemas[i].second.arrayLen;
-                    }
-                    pos += num * CurrentTemplate.schemas[i].second.valueBytes;
-                }
-            }
-
-            break;
-        }
-    }
-    return StatusCode::DATAFILE_NOT_FOUND;
-}
+}           
 
 /**
  * @brief 将一个缓冲区中的一条数据(文件)存放在指定路径下，以文件ID+时间的方式命名
@@ -1348,7 +1248,7 @@ int EDVDB_QueryByFileID_Old(DataBuffer *buffer, QueryParams *params)
  * @note 文件ID的暂定的命名方式为当前文件夹下的文件数量+1，
  *  时间戳格式为yyyy-mm-dd-hh-min-ss-ms
  */
-int EDVDB_InsertRecord(DataBuffer *buffer, int addTime)
+int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
 {
     string savepath = buffer->savePath;
     if(savepath == "") return StatusCode::EMPTY_SAVE_PATH;
@@ -1360,13 +1260,13 @@ int EDVDB_InsertRecord(DataBuffer *buffer, int addTime)
     string finalPath = "";
     finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000)).append(".idb");
     //cout<<finalPath<<endl;
-    int err = EDVDB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
+    int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
     if (err == 0)
     {
-        err = EDVDB_Write(fp, buffer->buffer, buffer->length);
+        err = DB_Write(fp, buffer->buffer, buffer->length);
         if (err == 0)
         {
-            return EDVDB_Close(fp);
+            return DB_Close(fp);
         }
     }
     return err;
@@ -1382,7 +1282,7 @@ int EDVDB_InsertRecord(DataBuffer *buffer, int addTime)
  * @note  文件ID的暂定的命名方式为当前文件夹下的文件数量+1，
  *  时间戳格式为yyyy-mm-dd-hh-min-ss-ms
  */
-int EDVDB_InsertRecords(DataBuffer buffer[], int recordsNum, int addTime)
+int DB_InsertRecords(DB_DataBuffer buffer[], int recordsNum, int addTime)
 {
     string savepath = buffer->savePath;
     if(savepath == "") return StatusCode::EMPTY_SAVE_PATH;
@@ -1398,15 +1298,15 @@ int EDVDB_InsertRecords(DataBuffer buffer[], int recordsNum, int addTime)
         string fileID = FileIDManager::GetFileID(buffer->savePath);
         string finalPath = "";
         finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(timestr);
-        int err = EDVDB_Open(const_cast<char *>(buffer[i].savePath), "ab", &fp);
+        int err = DB_Open(const_cast<char *>(buffer[i].savePath), "ab", &fp);
         if (err == 0)
         {
-            err = EDVDB_Write(fp, buffer[i].buffer, buffer[i].length);
+            err = DB_Write(fp, buffer[i].buffer, buffer[i].length);
             if (err != 0)
             {
                 return err;
             }
-            EDVDB_Close(fp);
+            DB_Close(fp);
         }
         else
         {
@@ -1417,13 +1317,13 @@ int EDVDB_InsertRecords(DataBuffer buffer[], int recordsNum, int addTime)
 }
 
 //暂不支持带有图片或数组的多变量聚合
-int TEST_MAX(DataBuffer *buffer, QueryParams *params)
+int TEST_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
     if (CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
 
-    EDVDB_ExecuteQuery(buffer, params);
+    DB_ExecuteQuery(buffer, params);
     // cout << CurrentTemplate.schemas.size() << endl;
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
@@ -1631,13 +1531,13 @@ int TEST_MAX(DataBuffer *buffer, QueryParams *params)
  *          others: StatusCode
  * @note  暂不支持带有图片或数组的多变量聚合
  */
-int EDVDB_MAX(DataBuffer *buffer, QueryParams *params)
+int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
     TemplateManager::SetTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    EDVDB_ExecuteQuery(buffer, params);
+    DB_ExecuteQuery(buffer, params);
     if(!buffer->bufferMalloced) return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
@@ -1857,13 +1757,13 @@ int EDVDB_MAX(DataBuffer *buffer, QueryParams *params)
  *          others: StatusCode
  * @note  暂不支持带有图片或数组的多变量聚合
  */
-int EDVDB_MIN(DataBuffer *buffer, QueryParams *params)
+int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
     TemplateManager::SetTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    EDVDB_ExecuteQuery(buffer, params);
+    DB_ExecuteQuery(buffer, params);
     if(!buffer->bufferMalloced) return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
@@ -2082,13 +1982,13 @@ int EDVDB_MIN(DataBuffer *buffer, QueryParams *params)
  *          others: StatusCode
  * @note  暂不支持带有图片或数组的多变量聚合
  */
-int EDVDB_SUM(DataBuffer *buffer, QueryParams *params)
+int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
     TemplateManager::SetTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    EDVDB_ExecuteQuery(buffer, params);
+    DB_ExecuteQuery(buffer, params);
     if(!buffer->bufferMalloced) return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
@@ -2302,15 +2202,15 @@ int EDVDB_SUM(DataBuffer *buffer, QueryParams *params)
  *          others: StatusCode
  * @note  暂不支持带有图片或数组的多变量聚合
  */
-int EDVDB_AVG(DataBuffer *buffer, QueryParams *params)
+int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
     TemplateManager::SetTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    EDVDB_ExecuteQuery(buffer, params);
+    DB_ExecuteQuery(buffer, params);
     if(!buffer->bufferMalloced) return StatusCode::NO_DATA_QUERIED;
-    EDVDB_ExecuteQuery(buffer, params);
+    DB_ExecuteQuery(buffer, params);
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
     int recordLength = 0; //每行的长度
@@ -2493,13 +2393,13 @@ int EDVDB_AVG(DataBuffer *buffer, QueryParams *params)
  *          others: StatusCode
  * @note  暂不支持带有图片或数组的多变量聚合
  */
-int EDVDB_COUNT(DataBuffer *buffer, QueryParams *params)
+int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
     TemplateManager::SetTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    EDVDB_ExecuteQuery(buffer, params);
+    DB_ExecuteQuery(buffer, params);
     if(!buffer->bufferMalloced) return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
@@ -2580,13 +2480,13 @@ int EDVDB_COUNT(DataBuffer *buffer, QueryParams *params)
  *          others: StatusCode
  * @note  暂不支持带有图片或数组的多变量聚合
  */
-int EDVDB_STD(DataBuffer *buffer, QueryParams *params)
+int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
     TemplateManager::SetTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    EDVDB_ExecuteQuery(buffer, params);
+    DB_ExecuteQuery(buffer, params);
     if(!buffer->bufferMalloced) return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
@@ -2834,13 +2734,13 @@ int EDVDB_STD(DataBuffer *buffer, QueryParams *params)
  *          others: StatusCode
  * @note  暂不支持带有图片或数组的多变量聚合
  */
-int EDVDB_STDEV(DataBuffer *buffer, QueryParams *params)
+int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
     TemplateManager::CheckTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    EDVDB_ExecuteQuery(buffer, params);
+    DB_ExecuteQuery(buffer, params);
     if(!buffer->bufferMalloced) return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
@@ -3085,7 +2985,7 @@ int main()
     long length;
     converter.CheckBigEndian();
     // cout << EDVDB_LoadSchema("/");
-    QueryParams params;
+    DB_QueryParams params;
     params.pathToLine = "/";
     params.fileID = "XinFeng2";
     char code[10];
@@ -3110,18 +3010,18 @@ int main()
     params.queryType = LAST;
     params.byPath = 0;
     params.queryNums = 3;
-    DataBuffer buffer;
+    DB_DataBuffer buffer;
     buffer.savePath = "/";
     //buffer.length = 4;
     //buffer.buffer = "test";
     vector<long> bytes, positions;
     vector<DataType> types;
-    //TemplateManager::CheckTemplate(params.pathToLine);
+    TemplateManager::CheckTemplate(params.pathToLine);
     // CurrentTemplate.FindMultiDatatypePosByCode(code, positions, bytes, types);
     //EDVDB_ExecuteQuery(&buffer, &params);
     //EDVDB_QueryLastRecords(&buffer, &params);
     //EDVDB_InsertRecord(&buffer,0);
-    cout<<EDVDB_MAX(&buffer, &params)<<endl;
+    //cout<<DB_MAX(&buffer, &params)<<endl;
     //EDVDB_COUNT(&buffer, &params);
     // TEST_MAX(&buffer, &params);
     //EDVDB_QueryByTimespan(&buffer, &params);

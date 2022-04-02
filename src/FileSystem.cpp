@@ -1,4 +1,4 @@
-#include "header.h"
+#include "CassFactoryDB.h"
 #include <vector>
 #include <string>
 #include <iostream>
@@ -100,7 +100,7 @@ FILE *ConvertToFilePtr(uint fp1, uint fp2)
     fp |= fp2;
     return (FILE *)fp;
 }
-int EDVDB_GetFileLengthByPath(char path[], long *length)
+int DB_GetFileLengthByPath(char path[], long *length)
 {
     //ReadConfig();
     char finalPath[100];
@@ -125,7 +125,7 @@ int EDVDB_GetFileLengthByPath(char path[], long *length)
     *length = len;
     return fclose(fp) == 0? 0 : errno;
 }
-int EDVDB_GetFileLengthByFilePtr(long fileptr, long *length)
+int DB_GetFileLengthByFilePtr(long fileptr, long *length)
 {
     FILE *fp = (FILE *)fileptr;
     if (fseek(fp, 0, SEEK_END) != 0)
@@ -221,7 +221,7 @@ bool LimitMode(char buf[])
     return true;
 }
 
-int EDVDB_Write(long fp, char *buf, long length)
+int DB_Write(long fp, char *buf, long length)
 {
     FILE *file = (FILE *)fp;
     struct statvfs diskInfo;
@@ -257,7 +257,7 @@ int EDVDB_Write(long fp, char *buf, long length)
     }
 }
 
-int EDVDB_Open(char path[], char mode[], long *fptr)
+int DB_Open(char path[], char mode[], long *fptr)
 {
     //ReadConfig();
     char finalPath[100];
@@ -270,7 +270,7 @@ int EDVDB_Open(char path[], char mode[], long *fptr)
     {
         if (errno == 2 && (mode[0] == 'w' || mode[0] == 'a'))
         {
-            if (EDVDB_CreateDirectory(finalPath) == 0)
+            if (DB_CreateDirectory(finalPath) == 0)
             {
                 fp = fopen(finalPath, mode);
                 if(fp == NULL)
@@ -294,7 +294,7 @@ int EDVDB_Open(char path[], char mode[], long *fptr)
     return 0;
 }
 
-int EDVDB_Close(long fp)
+int DB_Close(long fp)
 {
     FILE *file = (FILE *)fp;
     return fclose(file) == 0 ? 0 : errno;
@@ -305,7 +305,7 @@ bool Flush(uint fp1, uint fp2)
     return fflush(ConvertToFilePtr(fp1, fp2)) == 0 ? true : false;
 }
 
-int EDVDB_DeleteFile(char path[])
+int DB_DeleteFile(char path[])
 {
     //ReadConfig();
     char finalPath[100];
@@ -316,7 +316,7 @@ int EDVDB_DeleteFile(char path[])
     // cout<<"Delete file "<<path<<"size:"<<GetFileLengthByPath(path)<<endl;
     return remove(finalPath) == 0 ? 0 : errno;
 }
-int EDVDB_Read(long fptr, char buf[])
+int DB_Read(long fptr, char buf[])
 {
     FILE *fp = (FILE *)fptr;
     fseek(fp, 0, SEEK_END);
@@ -330,7 +330,7 @@ int EDVDB_Read(long fptr, char buf[])
     }
     return 0;
 }
-int EDVDB_OpenAndRead(char path[], char buf[])
+int DB_OpenAndRead(char path[], char buf[])
 {
     char finalPath[100];
     strcpy(finalPath, labelPath);
@@ -351,7 +351,7 @@ int EDVDB_OpenAndRead(char path[], char buf[])
     return 0;
 }
 
-int EDVDB_CreateDirectory(char path[])
+int DB_CreateDirectory(char path[])
 {
     char str[100];
     strcpy(str, path);
@@ -415,7 +415,7 @@ int EDVDB_CreateDirectory(char path[])
 
     return 0;
 }
-int EDVDB_DeleteDirectory(char path[])
+int DB_DeleteDirectory(char path[])
 {
 /*
     ReadConfig();
@@ -440,10 +440,4 @@ int EDVDB_DeleteDirectory(char path[])
     {
         return 2;
     }
-}
-
-
-int main()
-{
-    return 0;
 }

@@ -10,7 +10,7 @@ void readFileList(string path, vector<string> &files)
     string finalPath = Label;
     
     finalPath += "/"+path;
-    if(EDVDB_CreateDirectory(const_cast<char*>(finalPath.c_str())))
+    if(DB_CreateDirectory(const_cast<char*>(finalPath.c_str())))
     {
         errorCode = errno;
         return;
@@ -39,7 +39,7 @@ void readIDBFilesList(string path, vector<string> &files)
     DIR *dir;
     string finalPath = Label;
     finalPath += "/"+path;
-    if(EDVDB_CreateDirectory(const_cast<char*>(finalPath.c_str())))
+    if(DB_CreateDirectory(const_cast<char*>(finalPath.c_str())))
     {
         errorCode = errno;
         return;

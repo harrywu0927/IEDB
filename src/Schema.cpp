@@ -1,22 +1,21 @@
-#include "../include/Schema.h"
-#include "../include/FS_header.h"
-#include "../include/STDFB_header.h"
+
+#include "../include/CassFactoryDB.h"
 #include "../include/utils.hpp"
 using namespace std;
 //往模板里添加新的树节点
-int EDVDB_AddNodeToSchema(struct TreeNodeParams *params)
+int DB_AddNodeToSchema(struct DB_TreeNodeParams *params)
 {
     return 0;
 }
 
 //修改模板里的树节点
-int EDVDB_UpdateNodeToSchema(struct TreeNodeParams *params)
+int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *params)
 {
     return 0;
 }
 
 //删除模板里的树节点
-int EDVDB_DeleteNodeToSchema(struct TreeNodeParams *params)
+int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *params)
 {
     return 0;
 }
@@ -28,7 +27,7 @@ int EDVDB_DeleteNodeToSchema(struct TreeNodeParams *params)
  * @return 0:success,
  *         others: StatusCode 
  */
-int EDVDB_LoadZipSchema(const char *path)
+int DB_LoadZipSchema(const char *path)
 {
     vector<string> files;
     readFileList(path, files);
@@ -46,9 +45,9 @@ int EDVDB_LoadZipSchema(const char *path)
     if (temPath == "")
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     long length;
-    EDVDB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &length);
+    DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &length);
     char buf[length];
-    int err = EDVDB_OpenAndRead(const_cast<char *>(temPath.c_str()), buf);
+    int err = DB_OpenAndRead(const_cast<char *>(temPath.c_str()), buf);
     if (err != 0)
         return err;
     int i = 0;
@@ -97,7 +96,7 @@ int EDVDB_LoadZipSchema(const char *path)
  * @return  0:success,
  *          other:StatusCode
  */
-int EDVDB_UnloadZipSchema(const char *pathToUnset)
+int DB_UnloadZipSchema(const char *pathToUnset)
 {
     return ZipTemplateManager::UnsetZipTemplate(pathToUnset);
 }
@@ -110,10 +109,10 @@ int EDVDB_UnloadZipSchema(const char *pathToUnset)
  * @return  0:success,
  *          other:StatusCode
  */
-int EDVDB_ZipFile(const char *ZipTemPath,const char *filepath)
+int DB_ZipFile(const char *ZipTemPath,const char *filepath)
 {
     int err=0;
-    err=EDVDB_LoadZipSchema(ZipTemPath);//加载压缩模板
+    err=DB_LoadZipSchema(ZipTemPath);//加载压缩模板
     if(err)
     {
         cout<<"未加载模板"<<endl;
@@ -131,10 +130,10 @@ int EDVDB_ZipFile(const char *ZipTemPath,const char *filepath)
     for(size_t fileNum=0;fileNum<files.size();fileNum++)//循环压缩文件夹下的所有.idb文件
     {
         long len;
-        EDVDB_GetFileLengthByPath(const_cast<char *>(files[fileNum].c_str()),&len);
+        DB_GetFileLengthByPath(const_cast<char *>(files[fileNum].c_str()),&len);
         char readbuff[len];//文件内容
         char writebuff[len];//写入没有被压缩的数据
-        if(EDVDB_OpenAndRead(const_cast<char *>(files[fileNum].c_str()),readbuff))//将文件内容读取到readbuff
+        if(DB_OpenAndRead(const_cast<char *>(files[fileNum].c_str()),readbuff))//将文件内容读取到readbuff
         {
             cout<<"未找到文件"<<endl;
             return StatusCode::DATAFILE_NOT_FOUND;
@@ -303,18 +302,18 @@ int EDVDB_ZipFile(const char *ZipTemPath,const char *filepath)
         }
         else
         {
-            EDVDB_DeleteFile(const_cast<char *>(files[fileNum].c_str()));//删除原文件
+            DB_DeleteFile(const_cast<char *>(files[fileNum].c_str()));//删除原文件
             long fp;
             string finalpath=files[fileNum].append("zip");//给压缩文件后缀添加zip，暂定，根据后续要求更改
             //创建新文件并写入
-            err = EDVDB_Open(const_cast<char *>(finalpath.c_str()),"wb",&fp);
+            err = DB_Open(const_cast<char *>(finalpath.c_str()),"wb",&fp);
             if (err == 0)
             {
-                err = EDVDB_Write(fp, writebuff, writebuff_pos);
+                err = DB_Write(fp, writebuff, writebuff_pos);
                 
                 if (err == 0)
                 {
-                    EDVDB_Close(fp);
+                    DB_Close(fp);
                 }
             }
         }   
@@ -332,10 +331,10 @@ int EDVDB_ZipFile(const char *ZipTemPath,const char *filepath)
  * @return  0:success,
  *          others:StatusCode
  */
-int EDVDB_ZipRecvBuff(const char *ZipTemPath,const char *filepath,char *buff,long *buffLength)
+int DB_ZipRecvBuff(const char *ZipTemPath,const char *filepath,char *buff,long *buffLength)
 {
     int err=0;
-    err=EDVDB_LoadZipSchema(ZipTemPath);//加载压缩模板
+    err=DB_LoadZipSchema(ZipTemPath);//加载压缩模板
     if(err)
     {
         cout<<"未加载模板"<<endl;
@@ -508,14 +507,14 @@ int EDVDB_ZipRecvBuff(const char *ZipTemPath,const char *filepath,char *buff,lon
         
         long fp;
         //创建新文件并写入
-        err = EDVDB_Open(const_cast<char *>(filepath),"wb",&fp);
+        err = DB_Open(const_cast<char *>(filepath),"wb",&fp);
         if (err == 0)
         {
-            err = EDVDB_Write(fp,const_cast<char *>(buff) , *buffLength);
+            err = DB_Write(fp,const_cast<char *>(buff) , *buffLength);
         
             if (err == 0)
             {
-                EDVDB_Close(fp);
+                DB_Close(fp);
             }
         }
         return 1;//表示数据未压缩
@@ -525,14 +524,14 @@ int EDVDB_ZipRecvBuff(const char *ZipTemPath,const char *filepath,char *buff,lon
     string finalpath=filepath;
     finalpath=finalpath.append("zip");//给压缩文件后缀添加zip，暂定，根据后续要求更改
     //创建新文件并写入
-    err = EDVDB_Open(const_cast<char *>(finalpath.c_str()),"wb",&fp);
+    err = DB_Open(const_cast<char *>(finalpath.c_str()),"wb",&fp);
     if (err == 0)
     {
-        err = EDVDB_Write(fp, writebuff, writebuff_pos);
+        err = DB_Write(fp, writebuff, writebuff_pos);
         
         if (err == 0)
         {
-            EDVDB_Close(fp);
+            DB_Close(fp);
         }
     }
     return err;
@@ -546,10 +545,10 @@ int EDVDB_ZipRecvBuff(const char *ZipTemPath,const char *filepath,char *buff,lon
  * @return  0:success,
  *          others:StatusCode
  */
-int EDVDB_ZipSwitchFile(const char *ZipTemPath,const char *filepath)
+int DB_ZipSwitchFile(const char *ZipTemPath,const char *filepath)
 {
     int err;
-    err=EDVDB_LoadZipSchema(ZipTemPath);//加载压缩模板
+    err=DB_LoadZipSchema(ZipTemPath);//加载压缩模板
     if(err)
     {
         cout<<"未加载模板"<<endl;
@@ -567,13 +566,13 @@ int EDVDB_ZipSwitchFile(const char *ZipTemPath,const char *filepath)
     for(size_t fileNum=0;fileNum<files.size();fileNum++)//循环以给每个.idb文件进行压缩处理
     {
         long len;
-        EDVDB_GetFileLengthByPath(const_cast<char *>(files[fileNum].c_str()),&len);
+        DB_GetFileLengthByPath(const_cast<char *>(files[fileNum].c_str()),&len);
         char readbuff[len];//文件内容
         char writebuff[len];//写入没有被压缩的数据
         long readbuff_pos=0;
         long writebuff_pos=0;
 
-        if(EDVDB_OpenAndRead(const_cast<char *>(files[fileNum].c_str()),readbuff))//将文件内容读取到readbuff
+        if(DB_OpenAndRead(const_cast<char *>(files[fileNum].c_str()),readbuff))//将文件内容读取到readbuff
         {
             cout<<"未找到文件"<<endl;
             return StatusCode::DATAFILE_NOT_FOUND;
@@ -615,19 +614,19 @@ int EDVDB_ZipSwitchFile(const char *ZipTemPath,const char *filepath)
         }
         else
         {
-            EDVDB_DeleteFile(const_cast<char *>(files[fileNum].c_str()));//删除原文件
+            DB_DeleteFile(const_cast<char *>(files[fileNum].c_str()));//删除原文件
             long fp;
             string finalpath=files[fileNum].append("zip");//给压缩文件后缀添加zip，暂定，根据后续要求更改
             //创建新文件并写入
-            err = EDVDB_Open(const_cast<char *>(finalpath.c_str()),"wb",&fp);
+            err = DB_Open(const_cast<char *>(finalpath.c_str()),"wb",&fp);
             if (err == 0)
             {
                 if(writebuff_pos!=0)
-                    err = EDVDB_Write(fp, writebuff, writebuff_pos);
+                    err = DB_Write(fp, writebuff, writebuff_pos);
                 
                 if (err == 0)
                 {
-                    EDVDB_Close(fp);
+                    DB_Close(fp);
                 }
             }
         }
@@ -643,10 +642,10 @@ int EDVDB_ZipSwitchFile(const char *ZipTemPath,const char *filepath)
  * @return  0:success,
  *          others:StatusCode 
  */
-int EDVDB_ReZipSwitchFile(const char *ZipTemPath,const char *filepath)
+int DB_ReZipSwitchFile(const char *ZipTemPath,const char *filepath)
 {
     int err=0;
-    err=EDVDB_LoadZipSchema(ZipTemPath);//加载压缩模板
+    err=DB_LoadZipSchema(ZipTemPath);//加载压缩模板
     if(err)
     {
         cout<<"未加载模板"<<endl;
@@ -664,13 +663,13 @@ int EDVDB_ReZipSwitchFile(const char *ZipTemPath,const char *filepath)
     for(size_t fileNum=0;fileNum<files.size();fileNum++)
     {
         long len;
-        EDVDB_GetFileLengthByPath(const_cast<char *>(files[fileNum].c_str()),&len);
+        DB_GetFileLengthByPath(const_cast<char *>(files[fileNum].c_str()),&len);
         char readbuff[len];//文件内容
         char writebuff[CurrentZipTemplate.schemas.size()*4];//写入没有被压缩的数据
         long readbuff_pos=0;
         long writebuff_pos=0;
 
-        if(EDVDB_OpenAndRead(const_cast<char *>(files[fileNum].c_str()),readbuff))//将文件内容读取到readbuff
+        if(DB_OpenAndRead(const_cast<char *>(files[fileNum].c_str()),readbuff))//将文件内容读取到readbuff
         {
             cout<<"未找到文件"<<endl;
             return StatusCode::DATAFILE_NOT_FOUND;
@@ -727,18 +726,18 @@ int EDVDB_ReZipSwitchFile(const char *ZipTemPath,const char *filepath)
             }
         }
 
-        //EDVDB_DeleteFile(const_cast<char *>(files[fileNum].c_str()));//删除原文件
+        //DB_DeleteFile(const_cast<char *>(files[fileNum].c_str()));//删除原文件
         long fp;
         string finalpath=files[fileNum].substr(0,files[fileNum].length()-3);//去掉后缀的zip
         //创建新文件并写入
-        err = EDVDB_Open(const_cast<char *>(finalpath.c_str()),"wb",&fp);
+        err = DB_Open(const_cast<char *>(finalpath.c_str()),"wb",&fp);
         if (err == 0)
         {
-            err = EDVDB_Write(fp, writebuff, writebuff_pos);
+            err = DB_Write(fp, writebuff, writebuff_pos);
                     
             if (err == 0)
             {
-                EDVDB_Close(fp);
+                DB_Close(fp);
             }
         }
     }
@@ -755,10 +754,10 @@ int EDVDB_ReZipSwitchFile(const char *ZipTemPath,const char *filepath)
  * @return  0:success,
  *          others:StatusCode
  */
-int EDVDB_ZipRecvSwitchBuff(const char *ZipTemPath,const char *filepath,char *buff,long *buffLength)
+int DB_ZipRecvSwitchBuff(const char *ZipTemPath,const char *filepath,char *buff,long *buffLength)
 {
     int err=0;
-    err=EDVDB_LoadZipSchema(ZipTemPath);//加载压缩模板
+    err=DB_LoadZipSchema(ZipTemPath);//加载压缩模板
     if(err)
     {
         cout<<"未加载模板"<<endl;
@@ -810,14 +809,14 @@ int EDVDB_ZipRecvSwitchBuff(const char *ZipTemPath,const char *filepath,char *bu
         
         long fp;
         //创建新文件并写入
-        err = EDVDB_Open(const_cast<char *>(filepath),"wb",&fp);
+        err = DB_Open(const_cast<char *>(filepath),"wb",&fp);
         if (err == 0)
         {
-            err = EDVDB_Write(fp,const_cast<char *>(buff), *buffLength);
+            err = DB_Write(fp,const_cast<char *>(buff), *buffLength);
         
             if (err == 0)
             {
-                EDVDB_Close(fp);
+                DB_Close(fp);
             }
         }
         return 1;
@@ -827,29 +826,29 @@ int EDVDB_ZipRecvSwitchBuff(const char *ZipTemPath,const char *filepath,char *bu
     string finalpath=filepath;
     finalpath=finalpath.append("zip");//给压缩文件后缀添加zip，暂定，根据后续要求更改
     //创建新文件并写入
-    err = EDVDB_Open(const_cast<char *>(finalpath.c_str()),"wb",&fp);
+    err = DB_Open(const_cast<char *>(finalpath.c_str()),"wb",&fp);
     if (err == 0)
     {
-        err = EDVDB_Write(fp, writebuff, writebuff_pos);
+        err = DB_Write(fp, writebuff, writebuff_pos);
         
         if (err == 0)
         {
-            return EDVDB_Close(fp);
+            return DB_Close(fp);
         }
     }
     return err;
 }
 
-int main()
-{
-    //EDVDB_LoadZipSchema("/");
-    // long len;
-    // EDVDB_GetFileLengthByPath("XinFeng_0100.dat",&len);
-    // char readbuf[len];
-    // EDVDB_OpenAndRead("XinFeng_0100.dat",readbuf);
-    EDVDB_ZipSwitchFile("/jinfei/","/jinfei/");
-    //EDVDB_ReZipSwitchFile("/jinfei/","/jinfei/");
-    //EDVDB_ZipRecvBuff("/","XinFeng_0100.dat",readbuf,len);
-    //EDVDB_ZipFile("/","/");
-    return 0;
-}
+// int main()
+// {
+//     //EDVDB_LoadZipSchema("/");
+//     // long len;
+//     // DB_GetFileLengthByPath("XinFeng_0100.dat",&len);
+//     // char readbuf[len];
+//     // EDVDB_OpenAndRead("XinFeng_0100.dat",readbuf);
+//     EDVDB_ZipSwitchFile("/jinfei/","/jinfei/");
+//     //EDVDB_ReZipSwitchFile("/jinfei/","/jinfei/");
+//     //EDVDB_ZipRecvBuff("/","XinFeng_0100.dat",readbuf,len);
+//     //EDVDB_ZipFile("/","/");
+//     return 0;
+// }

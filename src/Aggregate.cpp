@@ -1,6 +1,6 @@
-#include "../include/STDFB_header.h"
+#include "../include/CassFactoryDB.h"
 #include "../include/utils.hpp"
-// int EDVDB_MAX(DataBuffer *buffer, QueryParams *params)
+// int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
 // {
 //     TemplateManager::SetTemplate(params->pathToLine);
 //     //检查是否有图片或数组
@@ -192,26 +192,26 @@
 //     buffer->buffer = newBuffer;
 //     return 0;
 // }
-// int EDVDB_MIN(DataBuffer *buffer, QueryParams *params)
+// int EDVDB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
 // {
 // }
-// int EDVDB_SUM(DataBuffer *buffer, QueryParams *params)
+// int EDVDB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
 // {
 // }
-// int EDVDB_AVG(DataBuffer *buffer, QueryParams *params)
+// int EDVDB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
 // {
 // }
-// int EDVDB_COUNT(DataBuffer *buffer, QueryParams *params)
+// int EDVDB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
 // {
 // }
-// int EDVDB_STD(DataBuffer *buffer, QueryParams *params)
+// int EDVDB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
 // {
 // }
-// int EDVDB_STDEV(DataBuffer *buffer, QueryParams *params)
+// int EDVDB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
 // {
 // }
 // int main(){
-//     DataBuffer buffer;
-//     QueryParams params;
-//     EDVDB_MAX(&buffer, &params);
+//     DB_DataBuffer buffer;
+//     DB_QueryParams params;
+//     DB_MAX(&buffer, &params);
 // }
