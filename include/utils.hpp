@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "DataTypeConvert.hpp"
-#include "CassIEDB.h"
+#include "CassFactoryDB.h"
 #include <sstream>
 #include "CJsonObject.hpp"
 using namespace std;
