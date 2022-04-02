@@ -11,7 +11,9 @@ ADD_EXECUTABLE(main src/main.cpp)
 
 ADD_EXECUTABLE(test test.cpp)
 ADD_EXECUTABLE(test2 test2.c)
+add_executable(Schema src/Schema.cpp)
 
-TARGET_LINK_LIBRARIES(main std_fb)
-TARGET_LINK_LIBRARIES(test std_fb)
-TARGET_LINK_LIBRARIES(test2 std_fb)
+TARGET_LINK_LIBRARIES(main CassFactoryDB)
+TARGET_LINK_LIBRARIES(test CassFactoryDB)
+TARGET_LINK_LIBRARIES(test2 CassFactoryDB)
+TARGET_LINK_LIBRARIES(Schema CassFactoryDB)
