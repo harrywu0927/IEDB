@@ -2,6 +2,7 @@
 
 #include "../include/QueryRequest.hpp"
 #include "../include/utils.hpp"
+#include "../include/Packer.hpp"
 #include <vector>
 #include <string>
 #include <iostream>
@@ -138,15 +139,15 @@ int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, vector<long> &
     default:
         break;
     }
-    DataTypeConverter converter;
-    int a = 0;
-    for (auto it = mallocedMemory.begin(); it != mallocedMemory.end(); it++)
-    {
-        char val[type.valueBytes];
-        memcpy(val, it->first + memAndPos[a].second, type.valueBytes);
-        cout << converter.ToUInt32(val) << endl;
-        a++;
-    }
+    // DataTypeConverter converter;
+    // int a = 0;
+    // for (auto it = mallocedMemory.begin(); it != mallocedMemory.end(); it++)
+    // {
+    //     char val[type.valueBytes];
+    //     memcpy(val, it->first + memAndPos[a].second, type.valueBytes);
+    //     cout << converter.ToUInt32(val) << endl;
+    //     a++;
+    // }
 
     return 0;
 }
@@ -1238,83 +1239,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
     return StatusCode::DATAFILE_NOT_FOUND;
 }           
 
-/**
- * @brief 将一个缓冲区中的一条数据(文件)存放在指定路径下，以文件ID+时间的方式命名
- * @param buffer    数据缓冲区
- * @param addTime    是否添加时间戳
- *
- * @return  0:success,
- *          others: StatusCode
- * @note 文件ID的暂定的命名方式为当前文件夹下的文件数量+1，
- *  时间戳格式为yyyy-mm-dd-hh-min-ss-ms
- */
-int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
-{
-    string savepath = buffer->savePath;
-    if(savepath == "") return StatusCode::EMPTY_SAVE_PATH;
-    long fp;
-    long curtime = getMilliTime();
-    time_t time = curtime / 1000;
-    struct tm *dateTime = localtime(&time);
-    string fileID = FileIDManager::GetFileID(buffer->savePath);
-    string finalPath = "";
-    finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000)).append(".idb");
-    //cout<<finalPath<<endl;
-    int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
-    if (err == 0)
-    {
-        err = DB_Write(fp, buffer->buffer, buffer->length);
-        if (err == 0)
-        {
-            return DB_Close(fp);
-        }
-    }
-    return err;
-}
-/**
- * @brief 将多条数据(文件)存放在指定路径下，以文件ID+时间的方式命名
- * @param buffer[]    数据缓冲区
- * @param recordsNum  数据(文件)条数
- * @param addTime    是否添加时间戳
- *
- * @return  0:success,
- *          others: StatusCode
- * @note  文件ID的暂定的命名方式为当前文件夹下的文件数量+1，
- *  时间戳格式为yyyy-mm-dd-hh-min-ss-ms
- */
-int DB_InsertRecords(DB_DataBuffer buffer[], int recordsNum, int addTime)
-{
-    string savepath = buffer->savePath;
-    if(savepath == "") return StatusCode::EMPTY_SAVE_PATH;
-    long curtime = getMilliTime();
-    time_t time = curtime / 1000;
-    struct tm *dateTime = localtime(&time);
-    string timestr = "";
-    timestr.append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000)).append(".idb");
-    for (int i = 0; i < recordsNum; i++)
-    {
-        long fp;
 
-        string fileID = FileIDManager::GetFileID(buffer->savePath);
-        string finalPath = "";
-        finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(timestr);
-        int err = DB_Open(const_cast<char *>(buffer[i].savePath), "ab", &fp);
-        if (err == 0)
-        {
-            err = DB_Write(fp, buffer[i].buffer, buffer[i].length);
-            if (err != 0)
-            {
-                return err;
-            }
-            DB_Close(fp);
-        }
-        else
-        {
-            return err;
-        }
-    }
-    return 0;
-}
 
 //暂不支持带有图片或数组的多变量聚合
 int TEST_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
@@ -2978,69 +2903,71 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
     return 0;
 }
 
-// int main()
-// {
-//     DataTypeConverter converter;
-    
-//     long length;
-//     converter.CheckBigEndian();
-//     // cout << EDVDB_LoadSchema("/");
-//     DB_QueryParams params;
-//     params.pathToLine = "/";
-//     params.fileID = "XinFeng2";
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)1;
-//     code[4] = 'R';
-//     code[5] = (char)1;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     //params.pathCode = code;
-//     params.valueName = "S1";
-//     // params.valueName = NULL;
-//     params.start = 1648812610100;
-//     params.end = 1648812630100;
-//     params.order = TIME_DSC;
-//     params.compareType = LT;
-//     params.compareValue = "666";
-//     params.queryType = LAST;
-//     params.byPath = 0;
-//     params.queryNums = 3;
-//     DB_DataBuffer buffer;
-//     buffer.savePath = "/";
-//     //buffer.length = 4;
-//     //buffer.buffer = "test";
-//     vector<long> bytes, positions;
-//     vector<DataType> types;
-//     TemplateManager::CheckTemplate(params.pathToLine);
-//     // CurrentTemplate.FindMultiDatatypePosByCode(code, positions, bytes, types);
-//     //EDVDB_ExecuteQuery(&buffer, &params);
-//     //EDVDB_QueryLastRecords(&buffer, &params);
-//     //EDVDB_InsertRecord(&buffer,0);
-//     //cout<<DB_MAX(&buffer, &params)<<endl;
-//     //EDVDB_COUNT(&buffer, &params);
-//     // TEST_MAX(&buffer, &params);
-//     //EDVDB_QueryByTimespan(&buffer, &params);
+int main()
+{
+    DataTypeConverter converter;
+    //PackFileReader reader;
+    //return 0;
+    long length;
+    converter.CheckBigEndian();
+    // cout << EDVDB_LoadSchema("/");
+    DB_QueryParams params;
+    params.pathToLine = "/";
+    params.fileID = "Jinfei9111";
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)1;
+    code[4] = 'R';
+    code[5] = (char)1;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    //params.pathCode = code;
+    params.valueName = "S1ON";
+    // params.valueName = NULL;
+    params.start = 1648812610100;
+    params.end = 1648812630100;
+    params.order = TIME_DSC;
+    params.compareType = LT;
+    params.compareValue = "666";
+    params.queryType = LAST;
+    params.byPath = 0;
+    params.queryNums = 3;
+    DB_DataBuffer buffer;
+    buffer.savePath = "/";
+    //buffer.length = 4;
+    //buffer.buffer = "test";
+    vector<long> bytes, positions;
+    vector<DataType> types;
+    DB_QueryByFileID(&buffer, &params);
+    //TemplateManager::CheckTemplate(params.pathToLine);
+    // CurrentTemplate.FindMultiDatatypePosByCode(code, positions, bytes, types);
+    //EDVDB_ExecuteQuery(&buffer, &params);
+    //EDVDB_QueryLastRecords(&buffer, &params);
+    //EDVDB_InsertRecord(&buffer,0);
+    //cout<<DB_MAX(&buffer, &params)<<endl;
+    //EDVDB_COUNT(&buffer, &params);
+    // TEST_MAX(&buffer, &params);
+    //EDVDB_QueryByTimespan(&buffer, &params);
 
-//     if (buffer.bufferMalloced)
-//     {
-//         char buf[buffer.length];
-//         memcpy(buf, buffer.buffer, buffer.length);
-//         cout<<buffer.length<<endl;
-//         for (int i = 0; i < buffer.length; i++)
-//         {
-//             cout << (int)buf[i]<<" ";
-//             if (i % 11 == 0)
-//                 cout << endl;
-//         }
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout<<buffer.length<<endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i]<<" ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
 
-//         free(buffer.buffer);
-//     }
+        free(buffer.buffer);
+    }
 
-//     buffer.buffer = NULL;
-//     return 0;
-// }
+    buffer.buffer = NULL;
+    return 0;
+}

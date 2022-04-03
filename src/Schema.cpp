@@ -837,16 +837,16 @@ int DB_ZipRecvSwitchBuff(const char *ZipTemPath,const char *filepath,char *buff,
     return err;
 }
 
-int main()
-{
-    //EDVDB_LoadZipSchema("/");
-    // long len;
-    // DB_GetFileLengthByPath("XinFeng_0100.dat",&len);
-    // char readbuf[len];
-    // EDVDB_OpenAndRead("XinFeng_0100.dat",readbuf);
-    //DB_ZipSwitchFile("/jinfei/","/jinfei/");
-    DB_ReZipSwitchFile("/jinfei/","/jinfei");
-    //EDVDB_ZipRecvBuff("/","XinFeng_0100.dat",readbuf,len);
-    //EDVDB_ZipFile("/","/");
-    return 0;
-}
+// int main()
+// {
+//     //EDVDB_LoadZipSchema("/");
+//     // long len;
+//     // DB_GetFileLengthByPath("XinFeng_0100.dat",&len);
+//     // char readbuf[len];
+//     // EDVDB_OpenAndRead("XinFeng_0100.dat",readbuf);
+//     //DB_ZipSwitchFile("/jinfei/","/jinfei/");
+//     DB_ReZipSwitchFile("/jinfei/","/jinfei");
+//     //EDVDB_ZipRecvBuff("/","XinFeng_0100.dat",readbuf,len);
+//     //EDVDB_ZipFile("/","/");
+//     return 0;
+// }

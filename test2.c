@@ -13,7 +13,11 @@ int main()
     // buffer.savePath = "";
     // DB_InsertRecord(&buffer,0);
     // return 0;
-    printf("%d",DB_LoadZipSchema("/"));
+    struct DB_DataBuffer buffer;
+    buffer.buffer = "test";
+    buffer.length = 4;
+    buffer.savePath = "/";
+    printf("%d",DB_InsertRecord(&buffer,0));
     return 0;
     
 
@@ -55,7 +59,7 @@ int main()
     params.queryType = FILEID;
     params.byPath = 1;
     params.queryNums = 3;
-    struct DB_DataBuffer buffer;
+    //struct DB_DataBuffer buffer;
 
     DB_MAX(&buffer, &params);
     return 0;
