@@ -8,9 +8,11 @@ void readFileList(string path, vector<string> &files)
     struct dirent *ptr;
     DIR *dir;
     string finalPath = Label;
-    
-    finalPath += "/"+path;
-    if(DB_CreateDirectory(const_cast<char*>(finalPath.c_str())))
+    if(path[0] != '/')
+        finalPath += "/" + path;
+    else
+        finalPath += path;
+    if (DB_CreateDirectory(const_cast<char *>(finalPath.c_str())))
     {
         errorCode = errno;
         return;
@@ -38,8 +40,11 @@ void readIDBFilesList(string path, vector<string> &files)
     struct dirent *ptr;
     DIR *dir;
     string finalPath = Label;
-    finalPath += "/"+path;
-    if(DB_CreateDirectory(const_cast<char*>(finalPath.c_str())))
+    if(path[0] != '/')
+        finalPath += "/" + path;
+    else
+        finalPath += path;
+    if (DB_CreateDirectory(const_cast<char *>(finalPath.c_str())))
     {
         errorCode = errno;
         return;
@@ -101,7 +106,10 @@ void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWi
     struct dirent *ptr;
     DIR *dir;
     string finalPath = Label;
-    finalPath += path;
+    if(path[0] != '/')
+        finalPath += "/" + path;
+    else
+        finalPath += path;
     dir = opendir(finalPath.c_str());
     while ((ptr = readdir(dir)) != NULL)
     {
@@ -112,7 +120,7 @@ void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWi
         {
             string p;
             string datafile = ptr->d_name;
-            if (datafile.find(".idb") != string::npos)
+            if (datafile.find(".idbzip") == string::npos && datafile.find(".idb") != string::npos)
             {
                 string tmp = datafile;
                 vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[1].c_str()), "-");
@@ -178,7 +186,9 @@ int getMemory(long size, char *mem)
     if (mem == NULL)
     {
         errorCode = StatusCode::BUFFER_FULL;
+        return errorCode;
     }
+    return 0;
 }
 
 int getBufferValueType(DataType &type)
@@ -211,6 +221,8 @@ int getBufferDataPos(vector<DataType> &typeList, int num)
 
     return pos;
 }
+
+
 
 /**
  * @brief 在缓冲区中写入变量名的缓冲区头
@@ -680,3 +692,15 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
     }
     return StatusCode::UNKNOWN_VARIABLE_NAME;
 }
+
+
+// int main(){
+//     FileIDManager::GetFileID("Jinfei2");
+//     FileIDManager::GetFileID("Jinfei2");
+//     FileIDManager::GetFileID("/Jinfei3");
+//     FileIDManager::GetFileID("/Jinfei3");
+//     FileIDManager::GetFileID("/Jinfei4/line1");
+//     FileIDManager::GetFileID("/Jinfei4/line1/");
+
+//     return 0;
+// }

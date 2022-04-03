@@ -1,4 +1,5 @@
-//负责数据文件的打包，打包后的数据将存为一个文件，文件名为文件ID+时间段.pak，
+#include "utils.hpp"
+//负责数据文件的打包，打包后的数据将存为一个文件，文件名为时间段.pak，
 //格式为每8字节时间戳，接20字节文件ID，接8字节文件长度(0表示为压缩文件)，接文件内容；
 
 class Packer
@@ -7,8 +8,23 @@ public:
     static int packMode;          //定时打包或存储一定数量后打包
     static int packNum;           //一次打包的文件数量
     static long packTimeInterval; //定时打包时间间隔
-    static int Pack(string path)
+    static int Pack(string pathToLine)
     {
+        vector<pair<string, long>> filesWithTime;
+        readIDBFilesWithTimestamps(pathToLine, filesWithTime);
+        //升序排序
+        sort(filesWithTime.begin(), filesWithTime.end(),
+             [](pair<string, long> iter1, pair<string, long> iter2) -> bool
+             {
+                 return iter1.second < iter2.second;
+             });
+        long start = filesWithTime[0].second;
+        long end = filesWithTime[filesWithTime.size()-1].second;
+        string packageName = to_string(start) + "-" = to_string(end) + ".pak";
+        long fp;
+        char mode[2] = {'w','b'};
+        DB_Open(const_cast<char *>(packageName.c_str()),mode,&fp);
+
         return 0;
     }
 };

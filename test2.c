@@ -18,6 +18,11 @@ int main()
     buffer.length = 4;
     buffer.savePath = "/";
     printf("%d",DB_InsertRecord(&buffer,0));
+    printf("%d",DB_InsertRecord(&buffer,0));
+    buffer.savePath = "/Jinfei/";
+    printf("%d",DB_InsertRecord(&buffer,0));
+    buffer.savePath = "/jfei";
+    DB_InsertRecord(&buffer,0);
     return 0;
     
 

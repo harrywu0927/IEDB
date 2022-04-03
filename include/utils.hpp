@@ -17,6 +17,7 @@
 #include <sstream>
 #include "CJsonObject.hpp"
 using namespace std;
+#pragma once
 namespace StatusCode
 {
     enum StatusCode
@@ -478,12 +479,16 @@ public:
 
 static char Label[100] = "./";
 
+//产线文件夹命名规范统一为 xxxx/yyy
+static unordered_map<string,int> curNum; //记录每个产线文件夹当前已有idb文件数
+static unordered_map<string,bool> filesListRead; //记录每个产线文件夹是否已读取过文件列表
 //文件ID管理
 //根据总体目录结构发放文件ID
 class FileIDManager
 {
 private:
 public:
+    
     //派发文件ID
     static string GetFileID(string path)
     {
@@ -497,9 +502,20 @@ public:
         if(paths.size()>0)
             prefix = paths[paths.size()-1];
         cout<<prefix<<endl;
-        vector<string> files;
-        readFileList(path, files);
-        return prefix + to_string(files.size() + 1) + "_";
+        //去除首尾的‘/’，使其符合命名规范
+        if(path[0] == '/') path.erase(path.begin());
+        if(path[path.size()-1] == '/') path.pop_back();
+        
+        if(!filesListRead[path]){
+            cout<<"file list not read"<<endl;
+            vector<string> files;
+            readFileList(path, files);
+            filesListRead[path] = true;
+            curNum[path] = files.size();
+            cout<<"now file num :"<<curNum[path]<<endl;
+        }
+        curNum[path]++;
+        return prefix + to_string(curNum[path] + 1) + "_";
     }
     static void GetSettings();
     static neb::CJsonObject GetSetting();
