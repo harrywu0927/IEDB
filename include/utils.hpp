@@ -57,6 +57,7 @@ namespace ValueType
         UNKNOWN = 0
     };
 }
+
 static int errorCode; //错误码
 //获取某一目录下的所有文件
 //不递归子文件夹
@@ -67,6 +68,8 @@ void readIDBFilesList(string path, vector<string> &files);
 void readIDBZIPFilesList(string path, vector<string> &files);
 
 void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWithTime);
+
+void readPakFilesList(string path, vector<string> &files);
 
 long getMilliTime();
 
@@ -417,7 +420,6 @@ class Template //标准模板
 {
 public:
     vector<pair<PathCode, DataType>> schemas;
-    // unordered_map<vector<int>, string> pathNames;
     string path;         //挂载路径
     char *temFileBuffer; //模版文件缓存
     long fileLength;
@@ -427,7 +429,6 @@ public:
         for (int i = 0; i < pathEncodes.size(); i++)
         {
             this->schemas.push_back(make_pair(pathEncodes[i], dataTypes[i]));
-            // this->pathNames[pathEncodes[i].paths] = pathName[i];
         }
         this->path = path;
     }
@@ -456,7 +457,7 @@ public:
 };
 
 int getBufferDataPos(vector<DataType> &typeList, int num);
-
+extern Template CurrentTemplate;
 class ZipTemplate //压缩模板
 {
 public:
@@ -477,6 +478,10 @@ public:
 };
 
 static char Label[100] = "./";
+
+//负责数据文件的打包，打包后的数据将存为一个文件，文件名为时间段.pak，
+//格式为数据包头 + 每8字节时间戳，接20字节文件ID，接1字节表示是否为压缩文件(1:完全压缩，2:不完全压缩，0:非压缩），如果长度不为0，则接4字节文件长度，接文件内容；
+//数据包头的格式暂定为：包中文件总数4字节 + 模版文件名20字节
 static string packMode;       //定时打包或存储一定数量后打包
 static int packNum;           //一次打包的文件数量
 static long packTimeInterval; //定时打包时间间隔
@@ -498,10 +503,47 @@ public:
         string packageName = to_string(start) + "-" = to_string(end) + ".pak";
         long fp;
         char mode[2] = {'w', 'b'};
-        cout << packMode << endl;
-        return 0;
         DB_Open(const_cast<char *>(packageName.c_str()), mode, &fp);
-
+        int filesNum = filesWithTime.size();
+        int MAXSIZE = 2048 * 1024; //2MB
+        char *packBuffer = (char *)malloc(MAXSIZE);
+        DB_DataBuffer buffer;
+        //写入包头
+        memcpy(packBuffer, &filesNum, 4);
+        memcpy(packBuffer + 4, CurrentTemplate.path.c_str(), CurrentTemplate.path.size() <= 20 ? CurrentTemplate.path.size() : 20);
+        long cur = 24;
+        for (auto &file : filesWithTime)
+        {
+            memcpy(packBuffer + cur, &file.second, 8);
+            cur += 8;
+            char fileID[20] = {0};
+            string str = DataType::StringSplit(const_cast<char *>(file.first.c_str()), "_")[0];
+            memcpy(fileID, str.c_str(), str.size() <= 20 ? str.size() : 20);
+            memcpy(packBuffer + cur, fileID, 20);
+            cur += 20;
+            if (DB_ReadFile(&buffer) == 0)
+            {
+                if (buffer.length != 0)
+                {
+                    packBuffer[++cur] = file.first.find("idbzip") == string::npos ? 0 : 2;
+                    memcpy(packBuffer + cur, &(int)buffer.length, 4);
+                    cur += 4;
+                    memcpy(packBuffer + cur, buffer.buffer, buffer.length);
+                    cur += buffer.length;
+                    free(buffer.buffer);
+                    buffer.buffer = NULL;
+                }
+                else
+                {
+                    packBuffer[++cur] = 1; //完全压缩
+                }
+            }
+            else{
+                return errno;
+            }
+        }
+        fwrite(packBuffer, cur, 1, (FILE *)fp);
+        free(packBuffer);
         return 0;
     }
 };
@@ -542,7 +584,7 @@ static neb::CJsonObject settings = FileIDManager::GetSetting();
 
 static int maxTemplates = 20;
 static vector<Template> templates;
-extern Template CurrentTemplate;
+
 //模版的管理
 //内存中可同时存在若干数量的模版以提升存取效率，可按照LRU策略管理模版
 class TemplateManager

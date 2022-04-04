@@ -13,6 +13,11 @@ int main()
     // buffer.savePath = "";
     // DB_InsertRecord(&buffer,0);
     // return 0;
+    long time = 12345678;
+    char b[8];
+    memcpy(b,&time,8);
+    
+    return 0;
     struct DB_DataBuffer buffer;
     buffer.buffer = "test";
     buffer.length = 4;

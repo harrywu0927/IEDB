@@ -351,6 +351,31 @@ int DB_OpenAndRead(char path[], char buf[])
     return 0;
 }
 
+int DB_ReadFile(DB_DataBuffer *buffer)
+{
+    FILE *fp = fopen(buffer->savePath, "rb");
+    fseek(fp, 0, SEEK_END);
+    long len = ftell(fp);
+    if(len == 0){
+        buffer->length = 0;
+        return 0;
+    }
+    fseek(fp, 0, SEEK_SET);
+    char *buf = (char*)malloc(len);
+    int readnum = fread(buf, len, 1, fp);
+    fclose(fp); //读完后关闭文件
+    if (readnum < 0)
+    {
+        free(buf);
+        buffer->bufferMalloced = 0;
+        return errno;
+    }
+    buffer->buffer = buf;
+    buffer->length = len;
+    buffer->bufferMalloced = 1;
+    return 0;
+}
+
 int DB_CreateDirectory(char path[])
 {
     char str[100];
