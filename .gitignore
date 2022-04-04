@@ -47,6 +47,7 @@ Makefile
 CMakeCache.txt
 src/main
 src/utils
+src/Query
 /.vscode/*
 *.json
 *.dat

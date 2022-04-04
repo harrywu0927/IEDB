@@ -16,6 +16,7 @@
 #include "CassFactoryDB.h"
 #include <sstream>
 #include "CJsonObject.hpp"
+#include "Packer.hpp"
 using namespace std;
 #pragma once
 namespace StatusCode
@@ -63,15 +64,13 @@ void readFileList(string path, vector<string> &files);
 
 void readIDBFilesList(string path, vector<string> &files);
 
-void readIDBZIPFilesList(string path,vector<string> &files); 
+void readIDBZIPFilesList(string path, vector<string> &files);
 
 void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWithTime);
 
 long getMilliTime();
 
 int getMemory(long size, char *mem);
-
-
 
 class PathCode
 {
@@ -478,45 +477,64 @@ public:
 };
 
 static char Label[100] = "./";
+static string packMode;       //定时打包或存储一定数量后打包
+static int packNum;           //一次打包的文件数量
+static long packTimeInterval; //定时打包时间间隔
+class Packer
+{
+public:
+    static int Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
+    {
+        if (filesWithTime.size() < 1)
+            return -1;
+        //升序排序
+        sort(filesWithTime.begin(), filesWithTime.end(),
+             [](pair<string, long> iter1, pair<string, long> iter2) -> bool
+             {
+                 return iter1.second < iter2.second;
+             });
+        long start = filesWithTime[0].second;
+        long end = filesWithTime[filesWithTime.size() - 1].second;
+        string packageName = to_string(start) + "-" = to_string(end) + ".pak";
+        long fp;
+        char mode[2] = {'w', 'b'};
+        cout << packMode << endl;
+        return 0;
+        DB_Open(const_cast<char *>(packageName.c_str()), mode, &fp);
+
+        return 0;
+    }
+};
+
+class PackFileReader
+{
+private:
+    long curPos;
+    char *packBuffer;
+
+public:
+    PackFileReader() {}
+    PackFileReader(const char *packFilePath)
+    {
+    }
+    ~PackFileReader()
+    {
+        free(packBuffer);
+    }
+    int Read(char *buffer);
+};
 
 //产线文件夹命名规范统一为 xxxx/yyy
-static unordered_map<string,int> curNum; //记录每个产线文件夹当前已有idb文件数
-static unordered_map<string,bool> filesListRead; //记录每个产线文件夹是否已读取过文件列表
+static unordered_map<string, int> curNum;         //记录每个产线文件夹当前已有idb文件数
+static unordered_map<string, bool> filesListRead; //记录每个产线文件夹是否已读取过文件列表
 //文件ID管理
 //根据总体目录结构发放文件ID
 class FileIDManager
 {
 private:
 public:
-    
     //派发文件ID
-    static string GetFileID(string path)
-    {
-        /*
-            临时使用，今后需修改
-            获取此路径下文件数量，以文件数量+1作为ID
-        */
-        string tmp = path;
-        vector<string> paths = DataType::StringSplit(const_cast<char*>(tmp.c_str()),"/");
-        string prefix="Default";
-        if(paths.size()>0)
-            prefix = paths[paths.size()-1];
-        cout<<prefix<<endl;
-        //去除首尾的‘/’，使其符合命名规范
-        if(path[0] == '/') path.erase(path.begin());
-        if(path[path.size()-1] == '/') path.pop_back();
-        
-        if(!filesListRead[path]){
-            cout<<"file list not read"<<endl;
-            vector<string> files;
-            readFileList(path, files);
-            filesListRead[path] = true;
-            curNum[path] = files.size();
-            cout<<"now file num :"<<curNum[path]<<endl;
-        }
-        curNum[path]++;
-        return prefix + to_string(curNum[path] + 1) + "_";
-    }
+    static string GetFileID(string path);
     static void GetSettings();
     static neb::CJsonObject GetSetting();
 };
@@ -579,7 +597,7 @@ public:
             vector<string> paths;
             PathCode pathCode(pathEncode, sizeof(pathEncode) / 2, variable);
             DataType type;
-            if((int)timeFlag == 1)
+            if ((int)timeFlag == 1)
                 type.hasTime = true;
             else
                 type.hasTime = false;
@@ -615,13 +633,12 @@ public:
 
     static void CheckTemplate(string path)
     {
-        if((path != CurrentTemplate.path && path != "")|| CurrentTemplate.path == "")
+        if ((path != CurrentTemplate.path && path != "") || CurrentTemplate.path == "")
         {
             SetTemplate(path.c_str());
         }
     }
 };
-
 
 static vector<ZipTemplate> ZipTemplates;
 static ZipTemplate CurrentZipTemplate;

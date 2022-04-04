@@ -8,7 +8,7 @@ void readFileList(string path, vector<string> &files)
     struct dirent *ptr;
     DIR *dir;
     string finalPath = Label;
-    if(path[0] != '/')
+    if (path[0] != '/')
         finalPath += "/" + path;
     else
         finalPath += path;
@@ -40,7 +40,7 @@ void readIDBFilesList(string path, vector<string> &files)
     struct dirent *ptr;
     DIR *dir;
     string finalPath = Label;
-    if(path[0] != '/')
+    if (path[0] != '/')
         finalPath += "/" + path;
     else
         finalPath += path;
@@ -106,7 +106,7 @@ void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWi
     struct dirent *ptr;
     DIR *dir;
     string finalPath = Label;
-    if(path[0] != '/')
+    if (path[0] != '/')
         finalPath += "/" + path;
     else
         finalPath += path;
@@ -146,6 +146,7 @@ void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWi
     }
     closedir(dir);
 }
+
 void FileIDManager::GetSettings()
 {
     ifstream t("./settings.json");
@@ -164,7 +165,48 @@ neb::CJsonObject FileIDManager::GetSetting()
     string contents(buffer.str());
     neb::CJsonObject tmp(contents);
     strcpy(Label, settings("Filename_Label").c_str());
+    packMode = settings("Pack_Mode");
+    packNum = atoi(settings("Pack_Num").c_str());
+    packTimeInterval = atol(settings("Pack_Interval").c_str());
     return tmp;
+}
+
+string FileIDManager::GetFileID(string path)
+{
+    /*
+        临时使用，今后需修改
+        获取此路径下文件数量，以文件数量+1作为ID
+    */
+    string tmp = path;
+    vector<string> paths = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
+    string prefix = "Default";
+    if (paths.size() > 0)
+        prefix = paths[paths.size() - 1];
+    cout << prefix << endl;
+    //去除首尾的‘/’，使其符合命名规范
+    if (path[0] == '/')
+        path.erase(path.begin());
+    if (path[path.size() - 1] == '/')
+        path.pop_back();
+
+    if (!filesListRead[path])
+    {
+        cout << "file list not read" << endl;
+        vector<string> files;
+        readFileList(path, files);
+        filesListRead[path] = true;
+        curNum[path] = files.size();
+        cout << "now file num :" << curNum[path] << endl;
+    }
+    curNum[path]++;
+    if (curNum[path] % 1 == 0)
+    {
+        Packer packer;
+        vector<pair<string, long>> filesWithTime;
+        readIDBFilesWithTimestamps(path, filesWithTime);
+        packer.Pack("/",filesWithTime);
+    }
+    return prefix + to_string(curNum[path] + 1) + "_";
 }
 
 /**
@@ -221,8 +263,6 @@ int getBufferDataPos(vector<DataType> &typeList, int num)
 
     return pos;
 }
-
-
 
 /**
  * @brief 在缓冲区中写入变量名的缓冲区头
@@ -693,14 +733,13 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
     return StatusCode::UNKNOWN_VARIABLE_NAME;
 }
 
+int main(){
+    FileIDManager::GetFileID("/");
+    FileIDManager::GetFileID("/");
+    FileIDManager::GetFileID("/Jinfei3");
+    FileIDManager::GetFileID("/Jinfei3");
+    FileIDManager::GetFileID("/Jinfei4/line1");
+    FileIDManager::GetFileID("/Jinfei4/line1/");
 
-// int main(){
-//     FileIDManager::GetFileID("Jinfei2");
-//     FileIDManager::GetFileID("Jinfei2");
-//     FileIDManager::GetFileID("/Jinfei3");
-//     FileIDManager::GetFileID("/Jinfei3");
-//     FileIDManager::GetFileID("/Jinfei4/line1");
-//     FileIDManager::GetFileID("/Jinfei4/line1/");
-
-//     return 0;
-// }
+    return 0;
+}

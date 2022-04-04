@@ -1,4 +1,7 @@
 {
     "Filename_Label":"testIEDB",
-    "FileOverFlowMode":"loop"
+    "FileOverFlowMode":"loop",
+    "Pack_Mode":"quantitative",  //"timed"
+    "Pack_Num":10,
+    "Pack_Interval":1000
 }
