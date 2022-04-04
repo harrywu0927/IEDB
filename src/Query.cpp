@@ -1660,7 +1660,7 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
                     max = value;
             }
             cout << "max:" << (int)max << endl;
-            newBuffer[newBufCur++] = value;
+            memcpy(newBuffer + newBufCur++, &value, 1);
             break;
         }
         default:
@@ -1885,7 +1885,7 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
                     min = value;
             }
             cout << "min:" << (int)min << endl;
-            newBuffer[newBufCur++] = value;
+            memcpy(newBuffer + newBufCur++, &value, 1);
             break;
         }
         default:

@@ -1,4 +1,4 @@
-#include "CassFactoryDB.h"
+#include "../include/CassFactoryDB.h"
 #include <vector>
 #include <string>
 #include <iostream>
@@ -15,7 +15,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <sstream>
-#include "CJsonObject.hpp"
+#include "../include/CJsonObject.hpp"
 using namespace std;
 //extern int errno;
 neb::CJsonObject ReadConfig();
@@ -353,7 +353,14 @@ int DB_OpenAndRead(char path[], char buf[])
 
 int DB_ReadFile(DB_DataBuffer *buffer)
 {
-    FILE *fp = fopen(buffer->savePath, "rb");
+    string finalPath = labelPath;
+    
+    string savepath = buffer->savePath;
+    if(savepath[0] != '/')
+        finalPath += "/";
+    finalPath += savepath;
+    cout<<finalPath<<endl;
+    FILE *fp = fopen(finalPath.c_str(), "rb");
     fseek(fp, 0, SEEK_END);
     long len = ftell(fp);
     if(len == 0){
@@ -466,3 +473,11 @@ int DB_DeleteDirectory(char path[])
         return 2;
     }
 }
+// int main()
+// {
+//     DB_DataBuffer buffer;
+//     buffer.savePath = "/Jinfei91_2022-4-1-19-28-49-807.idb";
+//     DB_ReadFile(&buffer);
+//     free(buffer.buffer);
+//     return 0;
+// }

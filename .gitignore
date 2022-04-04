@@ -57,6 +57,7 @@ src/Query
 src/Schema
 *.datzip
 *.idbzip
+*.pak
 Schema
 
 CMakeLists.txt
