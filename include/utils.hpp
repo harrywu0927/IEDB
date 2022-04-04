@@ -12,6 +12,7 @@
 #include <sys/statvfs.h>
 #include <stdio.h>
 #include <string.h>
+#include <algorithm>
 #include "DataTypeConvert.hpp"
 #include "CassFactoryDB.h"
 #include <sstream>

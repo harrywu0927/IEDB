@@ -733,13 +733,13 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
     return StatusCode::UNKNOWN_VARIABLE_NAME;
 }
 
-int main(){
-    FileIDManager::GetFileID("/");
-    FileIDManager::GetFileID("/");
-    FileIDManager::GetFileID("/Jinfei3");
-    FileIDManager::GetFileID("/Jinfei3");
-    FileIDManager::GetFileID("/Jinfei4/line1");
-    FileIDManager::GetFileID("/Jinfei4/line1/");
+// int main(){
+//     FileIDManager::GetFileID("/");
+//     FileIDManager::GetFileID("/");
+//     FileIDManager::GetFileID("/Jinfei3");
+//     FileIDManager::GetFileID("/Jinfei3");
+//     FileIDManager::GetFileID("/Jinfei4/line1");
+//     FileIDManager::GetFileID("/Jinfei4/line1/");
 
-    return 0;
-}
+//     return 0;
+// }

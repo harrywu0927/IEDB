@@ -575,7 +575,7 @@ int DB_ZipSwitchFile(const char *ZipTemPath,const char *pathToLine)
             cout<<"未找到文件"<<endl;
             return StatusCode::DATAFILE_NOT_FOUND;
         }  
-        for(int i=0;i<CurrentZipTemplate.schemas[i].first.size();i++)
+        for(int i=0;i<CurrentZipTemplate.schemas.size();i++)
         {
             if(CurrentZipTemplate.schemas[i].second.valueType==ValueType::UDINT)//开关量的持续时长
             {
@@ -591,7 +591,7 @@ int DB_ZipSwitchFile(const char *ZipTemPath,const char *pathToLine)
                 if(currentBoolTime!=standardBoolTime && (currentBoolTime<minBoolTime || currentBoolTime>maxBoolTime))
                 {
                     //添加变量名方便知道未压缩的变量是哪个
-                    memcpy(writebuff+writebuff_pos,const_cast<char *>(CurrentZipTemplate.schemas[i].first.c_str()),CurrentZipTemplate.schemas[i].first.length());
+                    memcpy(writebuff+writebuff_pos,const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()),CurrentZipTemplate.schemas[i].first.length());
                     writebuff_pos+=CurrentZipTemplate.schemas[i].first.length();
 
                     memcpy(writebuff+writebuff_pos,readbuff+readbuff_pos,4);
@@ -694,12 +694,28 @@ int DB_ReZipSwitchFile(const char *ZipTemPath,const char *pathToLine)
                     {
                         char valueName[CurrentZipTemplate.schemas[i].first.length()];
                         memcpy(valueName,readbuff+readbuff_pos,CurrentZipTemplate.schemas[i].first.length());
-                        if(valueName==CurrentZipTemplate.schemas[i].first)//是未压缩数据的变量名
+                        string valueNameStr=valueName;       
+                        // char schemaValueName[CurrentZipTemplate.schemas[i].first.length()];
+                        // memcpy(schemaValueName,const_cast<const char*>(CurrentZipTemplate.schemas[i].first.c_str()),CurrentZipTemplate.schemas[i].first.length());
+                        //int nameCmp=strcmp(valueName,schemaValueName);
+                        if( valueNameStr==CurrentZipTemplate.schemas[i].first)//是未压缩数据的变量名
                         {
                             readbuff_pos+=CurrentZipTemplate.schemas[i].first.length();
                             memcpy(writebuff+writebuff_pos,readbuff+readbuff_pos,4);
                             writebuff_pos+=4;
                             readbuff_pos+=4;
+                        }
+                        else//不是未压缩的变量名
+                        {
+                            uint32 standardBoolTime=converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                            char boolTime[4]={0};
+                            for(int j=0;j<4;j++)
+                            {
+                                boolTime[3-j]|=standardBoolTime;
+                                standardBoolTime>>=8;
+                            }
+                            memcpy(writebuff+writebuff_pos,boolTime,4);//持续时长
+                            writebuff_pos+=4;
                         }
                     }
                     else//没有未压缩的数据了
@@ -708,10 +724,10 @@ int DB_ReZipSwitchFile(const char *ZipTemPath,const char *pathToLine)
                         char boolTime[4]={0};
                         for(int j=0;j<4;j++)
                         {
-                            boolTime[3-i]|=standardBoolTime;
+                            boolTime[3-j]|=standardBoolTime;
                             standardBoolTime>>=8;
                         }
-                        memcpy(writebuff+writebuff_pos+1,boolTime,4);//持续时长
+                        memcpy(writebuff+writebuff_pos,boolTime,4);//持续时长
                         writebuff_pos+=4;
                     }
 
@@ -769,17 +785,16 @@ int DB_ZipRecvSwitchBuff(const char *ZipTemPath,const char *filepath,char *buff,
     long buff_pos=0;
     long writebuff_pos=0;
 
-    for(int i=0;i<CurrentZipTemplate.schemas[i].first.size();i++)
+    for(int i=0;i<CurrentZipTemplate.schemas.size();i++)
     {
-        if(CurrentZipTemplate.schemas[i].second.valueType==ValueType::BOOL)//BOOL变量
+        if(CurrentZipTemplate.schemas[i].second.valueType==ValueType::UDINT)//BOOL变量
         {
             
             uint32 standardBoolTime=converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
             uint32 maxBoolTime=converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
             uint32 minBoolTime=converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
 
-            //1个字节的布尔值和4个字节的持续时长,暂定，根据后续情况可能进行更改
-            buff_pos+=1;
+            //4个字节的持续时长,暂定，根据后续情况可能进行更改
             char value[4]={0};
             memcpy(value,buff+buff_pos,4);
             uint32 currentBoolTime=converter.ToUInt32(value);
@@ -789,8 +804,8 @@ int DB_ZipRecvSwitchBuff(const char *ZipTemPath,const char *filepath,char *buff,
                 memcpy(writebuff+writebuff_pos,const_cast<char *>(CurrentZipTemplate.schemas[i].first.c_str()),CurrentZipTemplate.schemas[i].first.length());
                 writebuff_pos+=CurrentZipTemplate.schemas[i].first.length();
 
-                memcpy(writebuff+writebuff_pos,buff+buff_pos-1,5);
-                writebuff_pos+=5;
+                memcpy(writebuff+writebuff_pos,buff+buff_pos,4);
+                writebuff_pos+=4;
             }
             buff_pos+=4;
         }
@@ -803,50 +818,59 @@ int DB_ZipRecvSwitchBuff(const char *ZipTemPath,const char *filepath,char *buff,
 
     if(writebuff_pos>buff_pos)//表明数据没有被压缩
     {
-        cout<<"数据未压缩"<<endl;
+        char isZip[1]={0};
+        char finnalBuf[len+1];
         
-        long fp;
-        //创建新文件并写入
-        err = DB_Open(const_cast<char *>(filepath),"wb",&fp);
-        if (err == 0)
-        {
-            err = DB_Write(fp,const_cast<char *>(buff), *buffLength);
-        
-            if (err == 0)
-            {
-                DB_Close(fp);
-            }
-        }
+        memcpy(finnalBuf,isZip,1);
+        memcpy(finnalBuf+1,buff,*buffLength);
+        memcpy(buff,finnalBuf,len+1);
+        *buffLength+=1;
         return 1;
     }
-
-    long fp;
-    string finalpath=filepath;
-    finalpath=finalpath.append("zip");//给压缩文件后缀添加zip，暂定，根据后续要求更改
-    //创建新文件并写入
-    err = DB_Open(const_cast<char *>(finalpath.c_str()),"wb",&fp);
-    if (err == 0)
+    else
     {
-        err = DB_Write(fp, writebuff, writebuff_pos);
-        
-        if (err == 0)
-        {
-            return DB_Close(fp);
-        }
+        char isZip[1]={1};
+        char finnalBuf[writebuff_pos+1];
+
+        memcpy(finnalBuf,isZip,1);
+        memcpy(finnalBuf+1,writebuff,writebuff_pos);
+        memcpy(buff,finnalBuf,writebuff_pos+1);
+        *buffLength=writebuff_pos+1;
     }
     return err;
 }
 
-// int main()
-// {
-//     //EDVDB_LoadZipSchema("/");
-//     // long len;
-//     // DB_GetFileLengthByPath("XinFeng_0100.dat",&len);
-//     // char readbuf[len];
-//     // EDVDB_OpenAndRead("XinFeng_0100.dat",readbuf);
-//     //DB_ZipSwitchFile("/jinfei/","/jinfei/");
-//     DB_ReZipSwitchFile("/jinfei/","/jinfei");
-//     //EDVDB_ZipRecvBuff("/","XinFeng_0100.dat",readbuf,len);
-//     //EDVDB_ZipFile("/","/");
-//     return 0;
-// }
+/**
+ * @brief 压缩接收到只有开关量类型的整条数据
+ * 
+ * @param ZipTemPath 压缩模板路径
+ * @param filepath 存储文件路径
+ * @param buff 接收到的数据
+ * @param buffLength 接收的数据长度
+ * @return  0:success,
+ *          others:StatusCode
+ */
+int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
+{
+
+}
+
+int main()
+{
+    //EDVDB_LoadZipSchema("/");
+    // long len;
+
+    // DB_GetFileLengthByPath("jinfei/Jinfei91_2022-4-1-19-28-49-807.idb",&len);
+    // cout<<len<<endl;
+    // char readbuf[len];
+    // DB_OpenAndRead("jinfei/Jinfei91_2022-4-1-19-28-49-807.idb",readbuf);
+    
+    //DB_ZipSwitchFile("/jinfei/","/jinfei/");
+    DB_ReZipSwitchFile("/jinfei/","/jinfei");
+    // DB_ZipRecvSwitchBuff("jinfei/","jinfei/",readbuf,&len);
+    // cout<<len<<endl;
+    // char test[len];
+    // memcpy(test,readbuf,len);
+    // cout<<test<<endl;
+    return 0;
+}
