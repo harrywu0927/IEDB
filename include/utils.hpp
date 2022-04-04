@@ -39,6 +39,8 @@ namespace StatusCode
         EMPTY_PATH_TO_LINE = 147,        //到产线的路径为空
         EMPTY_SAVE_PATH = 148,           //空的存储路径
         NO_DATA_QUERIED = 149,           //未找到数据
+        VARIABLE_NAME_EXIST = 150,       //变量名已存在
+        PATHCODE_EXIST = 151,            //编码已存在
     };
 }
 namespace ValueType
@@ -165,6 +167,31 @@ public:
         else if (vType == "IMAGE")
             return ValueType::IMAGE;
         return ValueType::UNKNOWN;
+    }
+    //判断值类型
+    static string JudgeValueTypeByNum(int vType)
+    {
+        if (vType == 1)
+            return "UINT";
+        else if (vType == 2)
+            return "USINT";
+        else if (vType == 3)
+            return "UDINT";
+        else if (vType == 4)
+            return "INT";
+        else if (vType == 5)
+            return "BOOL";
+        else if (vType == 6)
+            return "SINT";
+        else if (vType == 7)
+            return "DINT";
+        else if (vType == 8)
+            return "REAL";
+        else if (vType == 9)
+            return "TIME";
+        else if (vType == 10)
+            return "IMAGE";
+        return "UNKNOWN";
     }
     //获取值类型所占字节数
     static int GetValueBytes(ValueType::ValueType &type)

@@ -924,20 +924,20 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
     return 0;
 }
 
-int main()
-{
-    // FileIDManager::GetFileID("/");
-    // FileIDManager::GetFileID("/");
-    // FileIDManager::GetFileID("/Jinfei3");
-    // FileIDManager::GetFileID("/Jinfei3");
-    // FileIDManager::GetFileID("/Jinfei4/line1");
-    // FileIDManager::GetFileID("/Jinfei4/line1/");
-    char buf[4];
-    char a = 2;
-    buf[2] = a;
-    Packer packer;
-    vector<pair<string, long>> files;
-    readDataFilesWithTimestamps("", files);
-    packer.Pack("", files);
-    return 0;
-}
+// int main()
+// {
+//     // FileIDManager::GetFileID("/");
+//     // FileIDManager::GetFileID("/");
+//     // FileIDManager::GetFileID("/Jinfei3");
+//     // FileIDManager::GetFileID("/Jinfei3");
+//     // FileIDManager::GetFileID("/Jinfei4/line1");
+//     // FileIDManager::GetFileID("/Jinfei4/line1/");
+//     char buf[4];
+//     char a = 2;
+//     buf[2] = a;
+//     Packer packer;
+//     vector<pair<string, long>> files;
+//     readDataFilesWithTimestamps("", files);
+//     packer.Pack("", files);
+//     return 0;
+// }
