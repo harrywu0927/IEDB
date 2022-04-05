@@ -633,7 +633,7 @@ public:
     {
         DB_DataBuffer buffer;
         buffer.savePath = pathFilePath.c_str();
-        int err = DB_ReadFile(buffer);
+        int err = DB_ReadFile(&buffer);
         if(buffer.bufferMalloced)
         {
             packBuffer = buffer.buffer;
