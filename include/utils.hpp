@@ -598,17 +598,31 @@ public:
 class PackFileReader
 {
 private:
-    long curPos;
-    char *packBuffer;
-
+    long curPos; //当前读到的位置
+    char *packBuffer; //pak缓存
+    long packLength; //pak长度
 public:
-    PackFileReader() {}
-    PackFileReader(const char *packFilePath)
+    PackFileReader(string pathFilePath)
     {
+        DB_DataBuffer buffer;
+        buffer.savePath = pathFilePath.c_str();
+        int err = DB_ReadFile(buffer);
+        if(buffer.bufferMalloced)
+        {
+            packBuffer = buffer.buffer;
+            buffer.buffer = NULL;
+            packLength = buffer.length;
+            curPos = 24;
+        }
+        else{
+            packBuffer = NULL;
+        }
+        if(err != 0) errorCode = err;
     }
     ~PackFileReader()
     {
-        free(packBuffer);
+        if(packBuffer != NULL)
+            free(packBuffer);
     }
     int Read(char *buffer);
 };

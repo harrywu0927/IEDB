@@ -924,6 +924,19 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
     return 0;
 }
 
+/**
+ * @brief 读取缓存中的pak文件，curPos记录当前已读到的位置
+ * @param buffer      本次读取到的单个文件数据
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note
+ */
+int PackFileReader::Read(char *buffer)
+{
+    
+}
+
 int main()
 {
     // FileIDManager::GetFileID("/");
