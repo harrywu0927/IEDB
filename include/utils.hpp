@@ -72,6 +72,8 @@ void readIDBZIPFilesList(string path, vector<string> &files);
 
 void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWithTime);
 
+void readDataFilesWithTimestamps(string path, vector<pair<string, long>> &filesWithTime);
+
 void readPakFilesList(string path, vector<string> &files);
 
 long getMilliTime();

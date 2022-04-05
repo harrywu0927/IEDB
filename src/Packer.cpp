@@ -1,5 +1,11 @@
 #include "../include/utils.hpp"
 
+int DB_Pack(const char *pathToLine, int num, int packAll)
+{
+    vector<pair<string, long>> filesWithTime;
+    readDataFilesWithTimestamps(pathToLine, filesWithTime);
+    return Packer::Pack(pathToLine, filesWithTime);
+}
 
 /**
  * @brief 将一个文件夹下的压缩或未压缩的数据文件打包为一个文件(.pak)，pak文件内的数据均为时间升序型
