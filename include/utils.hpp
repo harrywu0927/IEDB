@@ -444,6 +444,8 @@ public:
     }
 };
 
+int getBufferValueType(DataType &type);
+
 class Template //标准模板
 {
 public:
@@ -610,7 +612,8 @@ public:
 static char Label[100] = "./";
 
 //负责数据文件的打包，打包后的数据将存为一个文件，文件名为时间段.pak，
-//格式为数据包头 + 每8字节时间戳，接20字节文件ID，接1字节表示是否为压缩文件(1:完全压缩，2:不完全压缩，0:非压缩），如果长度不为0，则接4字节文件长度，接文件内容；
+//格式为数据包头 + 每8字节时间戳，接20字节文件ID，接1字节表示是否为压缩文件(1:完全压缩，2:不完全压缩，0:非压缩），
+//如果长度不为0，则接4字节文件长度，接文件内容；
 //数据包头的格式暂定为：包中文件总数4字节 + 模版文件名20字节
 static string packMode;       //定时打包或存储一定数量后打包
 static int packNum;           //一次打包的文件数量
@@ -633,7 +636,7 @@ public:
     {
         DB_DataBuffer buffer;
         buffer.savePath = pathFilePath.c_str();
-        int err = DB_ReadFile(buffer);
+        int err = DB_ReadFile(&buffer);
         if(buffer.bufferMalloced)
         {
             packBuffer = buffer.buffer;
@@ -650,8 +653,11 @@ public:
     {
         if(packBuffer != NULL)
             free(packBuffer);
+        cout<<"buffer freed"<<endl;
     }
-    int Read(char *buffer);
+    long Next(int &readLength, long &timestamp, string &fileID);
+
+    void ReadPackHead(int &fileNum, string &templateName);
 };
 
 //产线文件夹命名规范统一为 xxxx/yyy

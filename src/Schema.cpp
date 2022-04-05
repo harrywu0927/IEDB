@@ -1211,22 +1211,22 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
     return err;
 }
 
-int main()
-{
-    // EDVDB_LoadZipSchema("/");
-    //  long len;
+// int main()
+// {
+//     // EDVDB_LoadZipSchema("/");
+//     //  long len;
 
-    // DB_GetFileLengthByPath("jinfei/Jinfei91_2022-4-1-19-28-49-807.idb",&len);
-    // cout<<len<<endl;
-    // char readbuf[len];
-    // DB_OpenAndRead("jinfei/Jinfei91_2022-4-1-19-28-49-807.idb",readbuf);
+//     // DB_GetFileLengthByPath("jinfei/Jinfei91_2022-4-1-19-28-49-807.idb",&len);
+//     // cout<<len<<endl;
+//     // char readbuf[len];
+//     // DB_OpenAndRead("jinfei/Jinfei91_2022-4-1-19-28-49-807.idb",readbuf);
 
-    // DB_ZipSwitchFile("/jinfei/","/jinfei/");
-    DB_ReZipSwitchFile("/jinfei/","/jinfei");
-    // DB_ZipRecvSwitchBuff("jinfei/","jinfei/",readbuf,&len);
-    // cout<<len<<endl;
-    // char test[len];
-    // memcpy(test,readbuf,len);
-    // cout<<test<<endl;
-    return 0;
-}
+//     // DB_ZipSwitchFile("/jinfei/","/jinfei/");
+//     DB_ReZipSwitchFile("/jinfei/","/jinfei");
+//     // DB_ZipRecvSwitchBuff("jinfei/","jinfei/",readbuf,&len);
+//     // cout<<len<<endl;
+//     // char test[len];
+//     // memcpy(test,readbuf,len);
+//     // cout<<test<<endl;
+//     return 0;
+// }
