@@ -256,6 +256,11 @@ neb::CJsonObject FileIDManager::GetSetting()
     string contents(buffer.str());
     neb::CJsonObject tmp(contents);
     strcpy(Label, settings("Filename_Label").c_str());
+    // packMode = settings("Pack_Mode");
+    // packNum = atoi(settings("Pack_Num").c_str());
+    // cout<<packNum<<endl;
+    // packTimeInterval = atol(settings("Pack_Interval").c_str());
+    // cout<<packTimeInterval<<endl;
     return tmp;
 }
 
