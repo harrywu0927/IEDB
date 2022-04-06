@@ -1,5 +1,14 @@
 #include "../include/utils.hpp"
-//#include "STDFB_header.h"
+
+unordered_map<string, int> curNum;
+unordered_map<string, bool> filesListRead;
+int maxTemplates = 20;
+vector<Template> templates;
+int errorCode;
+//  string packMode;       //定时打包或存储一定数量后打包
+//  int packNum;           //一次打包的文件数量
+//  long packTimeInterval; //定时打包时间间隔
+
 //获取某一目录下的所有文件
 //不递归子文件夹
 void readFileList(string path, vector<string> &files)
@@ -247,9 +256,6 @@ neb::CJsonObject FileIDManager::GetSetting()
     string contents(buffer.str());
     neb::CJsonObject tmp(contents);
     strcpy(Label, settings("Filename_Label").c_str());
-    packMode = settings("Pack_Mode");
-    packNum = atoi(settings("Pack_Num").c_str());
-    packTimeInterval = atol(settings("Pack_Interval").c_str());
     return tmp;
 }
 
@@ -346,32 +352,80 @@ int getBufferDataPos(vector<DataType> &typeList, int num)
     return pos;
 }
 
-int main()
+/**
+ * @brief 在进行所有的查询操作前，检查输入的查询参数是否合法，若可能引发严重错误，则不允许进入查询
+ * @param params        查询请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note
+ */
+int CheckQueryParams(DB_QueryParams *params)
 {
-    // FileIDManager::GetFileID("/");
-    // FileIDManager::GetFileID("/");
-    // FileIDManager::GetFileID("/Jinfei3");
-    // FileIDManager::GetFileID("/Jinfei3");
-    // FileIDManager::GetFileID("/Jinfei4/line1");
-    // FileIDManager::GetFileID("/Jinfei4/line1/");
-    PackFileReader packReader("1648812529807-1648812625883.pak");
-    int fileNum;
-    string templateName;
-    packReader.ReadPackHead(fileNum, templateName);
-    // TemplateManager::CheckTemplate(temp)
-    for (size_t i = 0; i < fileNum; i++)
+    if (params->pathToLine == NULL)
     {
-        long timestamp;
-        int readLength;
-        string fileID;
-        long datapos = packReader.Next(readLength, timestamp, fileID);
+        return StatusCode::EMPTY_PATH_TO_LINE;
     }
-
-    return 0;
-
-    Packer packer;
-    vector<pair<string, long>> files;
-    readDataFilesWithTimestamps("", files);
-    packer.Pack("", files);
+    if (params->pathCode == NULL && params->valueName == NULL)
+    {
+        return StatusCode::NO_PATHCODE_OR_NAME;
+    }
+    if (params->compareType != CMP_NONE && params->valueName == NULL)
+    {
+        return StatusCode::VARIABLE_NOT_ASSIGNED;
+    }
+    if(params->compareType != CMP_NONE && params->compareValue == NULL)
+    {
+        return StatusCode::NO_COMPARE_VALUE;
+    }
+    switch (params->queryType)
+    {
+    case TIMESPAN:
+    {
+        if (params->start == 0 || params->end == 0)
+        {
+            return StatusCode::INVALID_TIMESPAN;
+        }
+        break;
+    }
+    case LAST:
+    {
+        if (params->queryNums == 0)
+        {
+            return StatusCode::NO_QUERY_NUM;
+        }
+        break;
+    }
+    case FILEID:
+    {
+        if (params->fileID == NULL)
+        {
+            return StatusCode::NO_FILEID;
+        }
+        break;
+    }
+    default:
+        return StatusCode::NO_QUERY_TYPE;
+        break;
+    }
     return 0;
 }
+
+// int main()
+// {
+//     // FileIDManager::GetFileID("/");
+//     // FileIDManager::GetFileID("/");
+//     // FileIDManager::GetFileID("/Jinfei3");
+//     // FileIDManager::GetFileID("/Jinfei3");
+//     // FileIDManager::GetFileID("/Jinfei4/line1");
+//     // FileIDManager::GetFileID("/Jinfei4/line1/");
+//     cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
+
+//     return 0;
+
+//     Packer packer;
+//     vector<pair<string, long>> files;
+//     readDataFilesWithTimestamps("", files);
+//     packer.Pack("", files);
+//     return 0;
+// }

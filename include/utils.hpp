@@ -41,6 +41,13 @@ namespace StatusCode
         NO_DATA_QUERIED = 149,           //未找到数据
         VARIABLE_NAME_EXIST = 150,       //变量名已存在
         PATHCODE_EXIST = 151,            //编码已存在
+        FILENAME_MODIFIED = 152,         //文件名被篡改
+        INVALID_TIMESPAN = 153,          //按时间段查询时时间段设置错误或未指定
+        NO_PATHCODE_OR_NAME = 154,       //查询参数中路径编码和变量名均未找到
+        NO_QUERY_NUM = 155,              //查询最新记录时未指定查询条数
+        NO_FILEID = 156,                 //按文件ID查询时未指定文件ID
+        VARIABLE_NOT_ASSIGNED = 157,     //比较某个值时未指定变量名
+        NO_COMPARE_VALUE = 158,          //指定了比较类型却没有赋值
     };
 }
 namespace ValueType
@@ -61,7 +68,7 @@ namespace ValueType
     };
 }
 
-static int errorCode; //错误码
+extern int errorCode; //错误码
 //获取某一目录下的所有文件
 //不递归子文件夹
 void readFileList(string path, vector<string> &files);
@@ -79,6 +86,8 @@ void readPakFilesList(string path, vector<string> &files);
 long getMilliTime();
 
 int getMemory(long size, char *mem);
+
+int CheckQueryParams(DB_QueryParams *params);
 
 class PathCode
 {
@@ -309,7 +318,7 @@ public:
         }
         case ValueType::DINT:
         {
-            int value1 = converter.ToInt32(bufferV1);
+            int value1 = converter.ToInt32(compared);
             int value2 = 0;
             ss >> value2;
             return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
@@ -398,7 +407,7 @@ public:
         }
         case ValueType::DINT:
         {
-            int value1 = converter.ToInt32(bufferV1);
+            int value1 = converter.ToInt32(compared);
             int value2 = converter.ToInt32(toCompare);
             return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
             break;
@@ -491,9 +500,10 @@ public:
 };
 
 int getBufferDataPos(vector<DataType> &typeList, int num);
+
 extern Template CurrentTemplate;
-static int maxTemplates = 20;
-static vector<Template> templates;
+extern int maxTemplates;
+extern vector<Template> templates;
 
 //模版的管理
 //内存中可同时存在若干数量的模版以提升存取效率，可按照LRU策略管理模版
@@ -617,54 +627,56 @@ static char Label[100] = "./";
 //格式为数据包头 + 每8字节时间戳，接20字节文件ID，接1字节表示是否为压缩文件(1:完全压缩，2:不完全压缩，0:非压缩），
 //如果长度不为0，则接4字节文件长度，接文件内容；
 //数据包头的格式暂定为：包中文件总数4字节 + 模版文件名20字节
-static string packMode;       //定时打包或存储一定数量后打包
-static int packNum;           //一次打包的文件数量
-static long packTimeInterval; //定时打包时间间隔
 class Packer
 {
 public:
     static int Pack(string pathToLine, vector<pair<string, long>> &filesWithTime);
-    
 };
 
 class PackFileReader
 {
 private:
-    long curPos; //当前读到的位置
-    char *packBuffer; //pak缓存
-    long packLength; //pak长度
+    long curPos;     //当前读到的位置
+    long packLength; // pak长度
 public:
+    char *packBuffer = NULL; // pak缓存
     PackFileReader(string pathFilePath)
     {
         DB_DataBuffer buffer;
         buffer.savePath = pathFilePath.c_str();
         int err = DB_ReadFile(&buffer);
-        if(buffer.bufferMalloced)
+        if (buffer.bufferMalloced)
         {
             packBuffer = buffer.buffer;
             buffer.buffer = NULL;
             packLength = buffer.length;
             curPos = 24;
         }
-        else{
+        else
+        {
             packBuffer = NULL;
         }
-        if(err != 0) errorCode = err;
+        if (err != 0)
+            errorCode = err;
     }
     ~PackFileReader()
     {
-        if(packBuffer != NULL)
+        if (packBuffer != NULL)
             free(packBuffer);
-        cout<<"buffer freed"<<endl;
+        cout << "buffer freed" << endl;
     }
-    long Next(int &readLength, long &timestamp, string &fileID);
+    long Next(int &readLength, long &timestamp, string &fileID, int &zipType);
+
+    long Next(int &readLength, long &timestamp, int &zipType);
+
+    long Next(int &readLength, string &fileID, int &zipType);
 
     void ReadPackHead(int &fileNum, string &templateName);
 };
 
 //产线文件夹命名规范统一为 xxxx/yyy
-static unordered_map<string, int> curNum;         //记录每个产线文件夹当前已有idb文件数
-static unordered_map<string, bool> filesListRead; //记录每个产线文件夹是否已读取过文件列表
+extern unordered_map<string, int> curNum;         //记录每个产线文件夹当前已有idb文件数
+extern unordered_map<string, bool> filesListRead; //记录每个产线文件夹是否已读取过文件列表
 //文件ID管理
 //根据总体目录结构发放文件ID
 class FileIDManager
@@ -677,10 +689,6 @@ public:
     static neb::CJsonObject GetSetting();
 };
 static neb::CJsonObject settings = FileIDManager::GetSetting();
-
-
-
-
 
 static vector<ZipTemplate> ZipTemplates;
 static ZipTemplate CurrentZipTemplate;

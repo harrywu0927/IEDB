@@ -1,5 +1,13 @@
 #include "../include/utils.hpp"
 
+/**
+ * @brief 将一个文件夹下的压缩或未压缩的数据文件打包为一个文件(.pak)，pak文件内的数据均为时间升序型
+ * @param pathToLine        到产线的路径
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note
+ */
 int DB_Pack(const char *pathToLine, int num, int packAll)
 {
     vector<pair<string, long>> filesWithTime;
@@ -109,7 +117,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
  * @return  数据区的起始位置
  * @note    为避免频繁的动态分配和释放内存，提高性能，此处采用指定偏移量和长度的方式，调用方自行执行内存拷贝，curPos记录当前已读到的位置
  */
-long PackFileReader::Next(int &readLength, long &timestamp, string &fileID)
+long PackFileReader::Next(int &readLength, long &timestamp, string &fileID, int &zipType)
 {
     long time;
     memcpy(&timestamp, packBuffer + curPos, 8);
@@ -118,7 +126,41 @@ long PackFileReader::Next(int &readLength, long &timestamp, string &fileID)
     memcpy(fid, packBuffer + curPos, 20);
     curPos += 20;
     fileID = fid;
-    char zipType = packBuffer[curPos++]; //压缩情况
+    zipType = (int)packBuffer[curPos++]; //压缩情况
+    long dataPos = curPos;
+    switch (zipType)
+    {
+    case 0: //非压缩
+    {
+        memcpy(&readLength, packBuffer + curPos, 4);
+        dataPos = curPos + 4;
+        curPos += 4 + readLength;
+        break;
+    }
+    case 1: //完全压缩
+    {
+        readLength = 0;
+        break;
+    }
+    case 2: //不完全压缩
+    {
+        memcpy(&readLength, packBuffer + curPos, 4);
+        dataPos = curPos + 4;
+        curPos += 4 + readLength;
+        break;
+    }
+    default:
+        break;
+    }
+    return dataPos;
+}
+
+long PackFileReader::Next(int &readLength, long &timestamp, int &zipType)
+{
+    long time;
+    memcpy(&timestamp, packBuffer + curPos, 8);
+    curPos += 28;
+    zipType = (int)packBuffer[curPos++]; //压缩情况
     long dataPos = curPos;
     switch (zipType)
     {
