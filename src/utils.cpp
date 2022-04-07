@@ -429,7 +429,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
     DataTypeConverter converter;
 
     long len = buffLength;
-    char writebuff[CurrentZipTemplate.schemas.size() * 4]; //写入没有被压缩的数据
+    char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
     long readbuff_pos = 0;
     long writebuff_pos = 0;
 

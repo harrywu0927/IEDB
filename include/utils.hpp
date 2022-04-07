@@ -614,6 +614,7 @@ public:
     string path;         //挂载路径
     char *temFileBuffer; //模版文件缓存
     long fileLength;
+    long totalBytes;
     ZipTemplate() {}
     ZipTemplate(vector<string> &dataName, vector<DataType> &dataTypes, const char *path)
     {
@@ -622,7 +623,10 @@ public:
             this->schemas.push_back(make_pair(dataName[i], dataTypes[i]));
         }
         this->path = path;
+        this->totalBytes = GetTotalBytes();
     }
+
+    long GetTotalBytes();
 };
 
 static char Label[100] = "./";

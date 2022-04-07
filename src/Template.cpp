@@ -485,3 +485,20 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
     }
     return StatusCode::UNKNOWN_VARIABLE_NAME;
 }
+
+long ZipTemplate::GetTotalBytes()
+{
+    long total = 0;
+    for (auto const &schema : this->schemas)
+    {
+        if (schema.second.isArray)
+        {
+            total += schema.second.hasTime ? 8 + schema.second.valueBytes * schema.second.arrayLen : schema.second.valueBytes * schema.second.arrayLen;
+        }
+        else
+        {
+            total += schema.second.hasTime ? 8 + schema.second.valueBytes : schema.second.valueBytes;
+        }
+    }
+    return total;
+}
