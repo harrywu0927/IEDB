@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "include/CassFactoryDB.h"
+#include "include/utils.hpp"
 #include <stdlib.h>
 #include <sys/sysctl.h>
 #include <string.h>

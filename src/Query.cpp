@@ -1038,6 +1038,7 @@ int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
                 sortDataPoses.push_back(sortPos);
                 char *memory = (char *)malloc(copyBytes);
                 memcpy(memory, copyValue, copyBytes);
+                free(buff);
                 cur += copyBytes;
                 mallocedMemory.push_back(make_pair(memory, copyBytes));
             }
@@ -3347,6 +3348,7 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
 //     // buffer.buffer = "test";
 //     vector<long> bytes, positions;
 //     vector<DataType> types;
+//     cout<<settings("Pack_Mode")<<endl;
 //     DB_QueryByTimespan_New(&buffer, &params);
 //     // DB_QueryByFileID(&buffer, &params);
 //     // TemplateManager::CheckTemplate(params.pathToLine);

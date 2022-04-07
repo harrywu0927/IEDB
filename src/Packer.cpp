@@ -38,6 +38,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
     long start = filesWithTime[0].second;
     long end = filesWithTime[filesWithTime.size() - 1].second;
     string packageName = to_string(start) + "-" + to_string(end) + ".pak";
+    string pakPath = pathToLine  ;
     long fp;
     char mode[2] = {'w', 'b'};
     DB_Open(const_cast<char *>(packageName.c_str()), mode, &fp);
@@ -53,7 +54,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
     long cur = 24, packTotalSize = 0;
     for (auto &file : filesWithTime)
     {
-        if (MAXSIZE - cur < temBytes) //缓冲区不足，Flush之
+        if (MAXSIZE - cur < temBytes + 25) //缓冲区不足，Flush之
         {
             fwrite(packBuffer, cur, 1, (FILE *)fp);
             memset(packBuffer, 0, MAXSIZE);
@@ -119,7 +120,6 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
  */
 long PackFileReader::Next(int &readLength, long &timestamp, string &fileID, int &zipType)
 {
-    long time;
     memcpy(&timestamp, packBuffer + curPos, 8);
     curPos += 8;
     char fid[20] = {0};
@@ -157,9 +157,44 @@ long PackFileReader::Next(int &readLength, long &timestamp, string &fileID, int 
 
 long PackFileReader::Next(int &readLength, long &timestamp, int &zipType)
 {
-    long time;
     memcpy(&timestamp, packBuffer + curPos, 8);
     curPos += 28;
+    zipType = (int)packBuffer[curPos++]; //压缩情况
+    long dataPos = curPos;
+    switch (zipType)
+    {
+    case 0: //非压缩
+    {
+        memcpy(&readLength, packBuffer + curPos, 4);
+        dataPos = curPos + 4;
+        curPos += 4 + readLength;
+        break;
+    }
+    case 1: //完全压缩
+    {
+        readLength = 0;
+        break;
+    }
+    case 2: //不完全压缩
+    {
+        memcpy(&readLength, packBuffer + curPos, 4);
+        dataPos = curPos + 4;
+        curPos += 4 + readLength;
+        break;
+    }
+    default:
+        break;
+    }
+    return dataPos;
+}
+
+long PackFileReader::Next(int &readLength, string &fileID, int &zipType)
+{
+    curPos += 8;
+    char fid[20] = {0};
+    memcpy(fid, packBuffer + curPos, 20);
+    curPos += 20;
+    fileID = fid;
     zipType = (int)packBuffer[curPos++]; //压缩情况
     long dataPos = curPos;
     switch (zipType)

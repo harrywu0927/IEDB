@@ -16,21 +16,30 @@ using namespace std;
 int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
 {
     string savepath = buffer->savePath;
-    if(savepath == "") return StatusCode::EMPTY_SAVE_PATH;
+    if (savepath == "")
+        return StatusCode::EMPTY_SAVE_PATH;
     long fp;
     long curtime = getMilliTime();
     time_t time = curtime / 1000;
     struct tm *dateTime = localtime(&time);
     string fileID = FileIDManager::GetFileID(buffer->savePath);
     string finalPath = "";
-    if(addTime==0)
+    finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000));
+    if (addTime == 0)
     {
-        finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000)).append(".idb");
-        //cout<<finalPath<<endl;
+        finalPath.append("idb");
+    }
+    else
+    {
+        finalPath.append("idbzip");
+    }
+
+    if(buffer->buffer[0]==0)//数据未压缩
+    {
         int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
         if (err == 0)
         {
-            err = DB_Write(fp, buffer->buffer, buffer->length);
+            err = DB_Write(fp, buffer->buffer+1, buffer->length-1);
             if (err == 0)
             {
                 return DB_Close(fp);
@@ -38,48 +47,25 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
         }
         return err;
     }
-    else if(addTime==1)
+    else if(buffer->buffer[0]==1)//数据完全压缩
     {
-        if(buffer->buffer[0]==0)//数据未压缩
+
+        int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
+        err = DB_Close(fp);  
+        return err;
+    }
+    else if(buffer->buffer[0]==2)//数据未完全压缩
+    {
+        int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
+        if (err == 0)
         {
-            finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000)).append(".idb");
-            //cout<<finalPath<<endl;
-            int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
+            err = DB_Write(fp, buffer->buffer+1, buffer->length-1);
             if (err == 0)
             {
-                err = DB_Write(fp, buffer->buffer+1, buffer->length-1);
-                if (err == 0)
-                {
-                    return DB_Close(fp);
-                }
+                return DB_Close(fp);
             }
-            return err;
         }
-        else if(buffer->buffer[0]==1)//数据完全压缩
-        {
-            finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000)).append(".idbzip");
-            //cout<<finalPath<<endl;
-            int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
-            
-            err = DB_Close(fp);
-            
-            return err;
-        }
-        else if(buffer->buffer[0]==2)//数据未完全压缩
-        {
-            finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000)).append(".idbzip");
-            //cout<<finalPath<<endl;
-            int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
-            if (err == 0)
-            {
-                err = DB_Write(fp, buffer->buffer+1, buffer->length-1);
-                if (err == 0)
-                {
-                    return DB_Close(fp);
-                }
-            }
-            return err;
-        }
+        return err;
     }
 }
 
@@ -97,7 +83,8 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
 int DB_InsertRecords(DB_DataBuffer buffer[], int recordsNum, int addTime)
 {
     string savepath = buffer->savePath;
-    if(savepath == "") return StatusCode::EMPTY_SAVE_PATH;
+    if (savepath == "")
+        return StatusCode::EMPTY_SAVE_PATH;
     long curtime = getMilliTime();
     time_t time = curtime / 1000;
     struct tm *dateTime = localtime(&time);

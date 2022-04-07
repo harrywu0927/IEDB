@@ -5,6 +5,7 @@ unordered_map<string, bool> filesListRead;
 int maxTemplates = 20;
 vector<Template> templates;
 int errorCode;
+neb::CJsonObject settings = FileIDManager::GetSetting();
 //  string packMode;       //定时打包或存储一定数量后打包
 //  int packNum;           //一次打包的文件数量
 //  long packTimeInterval; //定时打包时间间隔
@@ -292,7 +293,7 @@ string FileIDManager::GetFileID(string path)
         cout << "now file num :" << curNum[path] << endl;
     }
     curNum[path]++;
-    if (curNum[path] % 100 == 0)
+    if (curNum[path] % atoi(settings("Pack_Num").c_str()) == 0)
     {
         Packer packer;
         vector<pair<string, long>> filesWithTime;
@@ -869,21 +870,19 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
     *buffLength=writebuff_pos;
     return err;
 }
-// int main()
-// {
-//     // FileIDManager::GetFileID("/");
-//     // FileIDManager::GetFileID("/");
-//     // FileIDManager::GetFileID("/Jinfei3");
-//     // FileIDManager::GetFileID("/Jinfei3");
-//     // FileIDManager::GetFileID("/Jinfei4/line1");
-//     // FileIDManager::GetFileID("/Jinfei4/line1/");
-//     cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
+//int main()
+//{
+    // FileIDManager::GetFileID("/");
+    // FileIDManager::GetFileID("/");
+    // FileIDManager::GetFileID("/Jinfei3");
+    // FileIDManager::GetFileID("/Jinfei3");
+    // FileIDManager::GetFileID("/Jinfei4/line1");
+    // FileIDManager::GetFileID("/Jinfei4/line1/");
+    // cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
 
-//     return 0;
-
-//     Packer packer;
-//     vector<pair<string, long>> files;
-//     readDataFilesWithTimestamps("", files);
-//     packer.Pack("", files);
-//     return 0;
-// }
+    // Packer packer;
+    // vector<pair<string, long>> files;
+    // readDataFilesWithTimestamps("", files);
+    // packer.Pack("", files);
+    // return 0;
+//}
