@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "include/CassFactoryDB.h"
+#include "include/utils.hpp"
 #include <stdlib.h>
 #include <sys/sysctl.h>
 #include <string.h>
@@ -14,7 +15,7 @@ int main()
     // // DB_InsertRecord(&buffer,0);
     // // return 0;
     
-    DB_ReZipSwitchFile("/jinfei/","/jinfei/");
+    cout<<settings("Pack_Mode")<<endl;
 
     struct tm t;
     t.tm_year = 122;

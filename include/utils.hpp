@@ -688,7 +688,7 @@ public:
     static void GetSettings();
     static neb::CJsonObject GetSetting();
 };
-static neb::CJsonObject settings = FileIDManager::GetSetting();
+extern neb::CJsonObject settings ;//= FileIDManager::GetSetting();
 
 static vector<ZipTemplate> ZipTemplates;
 static ZipTemplate CurrentZipTemplate;

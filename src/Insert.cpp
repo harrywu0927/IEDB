@@ -16,18 +16,28 @@ using namespace std;
 int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
 {
     string savepath = buffer->savePath;
-    if(savepath == "") return StatusCode::EMPTY_SAVE_PATH;
+    if (savepath == "")
+        return StatusCode::EMPTY_SAVE_PATH;
     long fp;
     long curtime = getMilliTime();
     time_t time = curtime / 1000;
     struct tm *dateTime = localtime(&time);
     string fileID = FileIDManager::GetFileID(buffer->savePath);
     string finalPath = "";
-    finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000)).append(".idb");
-    //cout<<finalPath<<endl;
+    finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000));
+    if (addTime == 0)
+    {
+        finalPath.append("idb");
+    }
+    else
+    {
+        finalPath.append("idbzip");
+    }
     int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
     if (err == 0)
     {
+        if (buffer->length == 0)
+            return DB_Close(fp);
         err = DB_Write(fp, buffer->buffer, buffer->length);
         if (err == 0)
         {
@@ -50,7 +60,8 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
 int DB_InsertRecords(DB_DataBuffer buffer[], int recordsNum, int addTime)
 {
     string savepath = buffer->savePath;
-    if(savepath == "") return StatusCode::EMPTY_SAVE_PATH;
+    if (savepath == "")
+        return StatusCode::EMPTY_SAVE_PATH;
     long curtime = getMilliTime();
     time_t time = curtime / 1000;
     struct tm *dateTime = localtime(&time);
