@@ -840,31 +840,34 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
             return StatusCode::UNKNOWN_TYPE;
         }
     }
-    char *newbuff = (char *)malloc(writebuff_pos);
-    free(buff);
-    memcpy(newbuff, writebuff, writebuff_pos);
-    buff = newbuff;
+    memcpy(buff, writebuff, writebuff_pos);
     buffLength = (int)writebuff_pos;
     return err;
 }
-int main()
-{
-    FileIDManager::GetFileID("/");
-    FileIDManager::GetFileID("/");
-    FileIDManager::GetFileID("/Jinfei3");
-    FileIDManager::GetFileID("/Jinfei3");
-    FileIDManager::GetFileID("/Jinfei4/line1");
-    FileIDManager::GetFileID("/Jinfei4/line1/");
-    cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
-    char *buff=NULL;
-    int length=0;
-    DB_ZipSwitchFile("/","/");
-    ReZipBuff(buff, length, "/");
-    cout<<length<<endl;
-    return 0;
-    Packer packer;
-    vector<pair<string, long>> files;
-    readDataFilesWithTimestamps("", files);
-    packer.Pack("", files);
-    return 0;
-}
+// int main()
+// {
+//     // FileIDManager::GetFileID("/");
+//     // FileIDManager::GetFileID("/");
+//     // FileIDManager::GetFileID("/Jinfei3");
+//     // FileIDManager::GetFileID("/Jinfei3");
+//     // FileIDManager::GetFileID("/Jinfei4/line1");
+//     // FileIDManager::GetFileID("/Jinfei4/line1/");
+//     // cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
+//     // char *buff=NULL;
+//     // int length=0;
+//     // DB_ZipSwitchFile("/","/");
+    
+
+//     // ReZipBuff(buff, length, "/");
+//     // cout<<length<<endl;
+//     // return 0;
+//     char *buff = (char*)malloc(24);
+//     buff[0]=0;buff[1]=0;buff[2]=0;buff[3]=0;buff[4]=0;buff[5]=103;
+//     int len=6;
+//     ReZipBuff(buff,len,"/");
+//     Packer packer;
+//     vector<pair<string, long>> files;
+//     readDataFilesWithTimestamps("", files);
+//     packer.Pack("", files);
+//     return 0;
+// }

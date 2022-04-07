@@ -466,6 +466,7 @@ public:
     string path;         //挂载路径
     char *temFileBuffer; //模版文件缓存
     long fileLength;
+    long totalBytes;
     Template() {}
     Template(vector<PathCode> &pathEncodes, vector<DataType> &dataTypes, const char *path)
     {
@@ -474,6 +475,7 @@ public:
             this->schemas.push_back(make_pair(pathEncodes[i], dataTypes[i]));
         }
         this->path = path;
+        this->totalBytes = GetTotalBytes();
     }
 
     int GetAllPathsByCode(char *pachCode, vector<PathCode> &pathCodes);

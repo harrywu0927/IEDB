@@ -912,12 +912,11 @@ int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
             long dataPos = packReader.Next(readLength, timestamp, zipType);
             if (timestamp < params->start || timestamp > params->end) //在时间区间外
                 continue;
-            char *buff = NULL;
+            char *buff = (char *)malloc(CurrentTemplate.totalBytes);
             switch (zipType)
             {
             case 0:
             {
-                buff = (char *)malloc(readLength);
                 memcpy(buff, packReader.packBuffer + dataPos, readLength);
                 break;
             }
@@ -928,9 +927,17 @@ int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
             }
             case 2:
             {
-                buff = (char *)malloc(readLength);
                 memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                for (int j = 0; j < readLength; j++)
+                {
+                    cout << (int)buff[j] << " ";
+                }
                 ReZipBuff(buff, readLength, params->pathToLine);
+                for (int j = 0; j < readLength; j++)
+                {
+                    cout << (int)buff[j] << " ";
+                }
+                cout << endl;
                 break;
             }
             default:
@@ -988,6 +995,7 @@ int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
             {
                 char value[compareBytes]; //数值
                 memcpy(value, buff + pos, compareBytes);
+
                 //根据比较结果决定是否加入结果集
                 int compareRes = DataType::CompareValue(type, value, params->compareValue);
                 switch (params->compareType)
@@ -1065,10 +1073,11 @@ int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
         {
             DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
         }
-        char *buff = (char *)malloc(len);
+        char *buff = (char *)malloc(CurrentTemplate.totalBytes);
         DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
-        if(file.first.find(".idbzip") != string::npos){
-            ReZipBuff(buff, (int&)len, params->pathToLine);
+        if (file.first.find(".idbzip") != string::npos)
+        {
+            ReZipBuff(buff, (int &)len, params->pathToLine);
         }
         //获取数据的偏移量和数据类型
         long pos = 0, bytes = 0;
@@ -1180,6 +1189,7 @@ int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
             cur += copyBytes;
             mallocedMemory.push_back(make_pair(memory, copyBytes));
         }
+        free(buff);
     }
     DataTypeConverter converter;
     for (int i = 0; i < sortDataPoses.size(); i++)
@@ -3318,72 +3328,75 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
     return 0;
 }
 
-// int main()
-// {
-//     DataTypeConverter converter;
-//     // PackFileReader reader;
-//     // return 0;
-//     long length;
-//     converter.CheckBigEndian();
-//     // cout << EDVDB_LoadSchema("/");
-//     DB_QueryParams params;
-//     params.pathToLine = "/";
-//     params.fileID = "Jinfei9111";
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)1;
-//     code[4] = 'R';
-//     code[5] = (char)1;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     // params.pathCode = code;
-//     params.valueName = "S1ON";
-//     // params.valueName = NULL;
-//     params.start = 1648812610100;
-//     params.end = 1648812630100;
-//     params.order = TIME_ASC;
-//     params.compareType = LT;
-//     params.compareValue = "666";
-//     params.queryType = LAST;
-//     params.byPath = 0;
-//     params.queryNums = 3;
-//     DB_DataBuffer buffer;
-//     buffer.savePath = "/";
-//     // buffer.length = 4;
-//     // buffer.buffer = "test";
-//     vector<long> bytes, positions;
-//     vector<DataType> types;
-//     cout<<settings("Pack_Mode")<<endl;
-//     DB_QueryByTimespan_New(&buffer, &params);
-//     // DB_QueryByFileID(&buffer, &params);
-//     // TemplateManager::CheckTemplate(params.pathToLine);
-//     // EDVDB_ExecuteQuery(&buffer, &params);
-//     // EDVDB_QueryLastRecords(&buffer, &params);
-//     // EDVDB_InsertRecord(&buffer,0);
-//     // cout<<DB_MAX(&buffer, &params)<<endl;
-//     // EDVDB_COUNT(&buffer, &params);
-//     //  TEST_MAX(&buffer, &params);
-//     // EDVDB_QueryByTimespan(&buffer, &params);
+int main()
+{
+    DataTypeConverter converter;
+    // PackFileReader reader;
+    // return 0;
+    long length;
+    converter.CheckBigEndian();
+    // cout << EDVDB_LoadSchema("/");
+    DB_QueryParams params;
+    params.pathToLine = "/";
+    params.fileID = "Jinfei9111";
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)1;
+    code[4] = 'R';
+    code[5] = (char)1;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    // params.pathCode = code;
+    params.valueName = "S1ON";
+    // params.valueName = NULL;
+    params.start = 1648812610100;
+    params.end = 1648812630100;
+    params.order = TIME_ASC;
+    params.compareType = LT;
+    params.compareValue = "666";
+    params.queryType = LAST;
+    params.byPath = 0;
+    params.queryNums = 3;
+    DB_DataBuffer buffer;
+    buffer.savePath = "/";
+    // buffer.length = 4;
+    // buffer.buffer = "test";
+    vector<long> bytes, positions;
+    vector<DataType> types;
+    cout << settings("Pack_Mode") << endl;
+    // vector<pair<string, long>> files;
+    // readDataFilesWithTimestamps("", files);
+    // Packer::Pack("/",files);
+    DB_QueryByTimespan_New(&buffer, &params);
+    // DB_QueryByFileID(&buffer, &params);
+    // TemplateManager::CheckTemplate(params.pathToLine);
+    // EDVDB_ExecuteQuery(&buffer, &params);
+    // EDVDB_QueryLastRecords(&buffer, &params);
+    // EDVDB_InsertRecord(&buffer,0);
+    // cout<<DB_MAX(&buffer, &params)<<endl;
+    // EDVDB_COUNT(&buffer, &params);
+    //  TEST_MAX(&buffer, &params);
+    // EDVDB_QueryByTimespan(&buffer, &params);
 
-//     if (buffer.bufferMalloced)
-//     {
-//         char buf[buffer.length];
-//         memcpy(buf, buffer.buffer, buffer.length);
-//         cout << buffer.length << endl;
-//         for (int i = 0; i < buffer.length; i++)
-//         {
-//             cout << (int)buf[i] << " ";
-//             if (i % 11 == 0)
-//                 cout << endl;
-//         }
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
 
-//         free(buffer.buffer);
-//     }
+        free(buffer.buffer);
+    }
 
-//     buffer.buffer = NULL;
-//     return 0;
-// }
+    buffer.buffer = NULL;
+    return 0;
+}
