@@ -1635,11 +1635,11 @@ int DB_ZipRecvSwitchBuff(const char *ZipTemPath, const char *filepath, char *buf
         *buffLength = writebuff_pos + 1;
     }
     
-    DB_DataBuffer databuff;
-    databuff.length=*buffLength;
-    databuff.buffer=buff;
-    databuff.savePath=filepath;
-    DB_InsertRecord(&databuff,1);
+    // DB_DataBuffer databuff;
+    // databuff.length=*buffLength;
+    // databuff.buffer=buff;
+    // databuff.savePath=filepath;
+    // DB_InsertRecord(&databuff,1);
     return err;
 }
 
