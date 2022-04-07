@@ -38,10 +38,10 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
     long start = filesWithTime[0].second;
     long end = filesWithTime[filesWithTime.size() - 1].second;
     string packageName = to_string(start) + "-" + to_string(end) + ".pak";
-    string pakPath = pathToLine + 
+    string pakPath = pathToLine + "/" + packageName;
     long fp;
     char mode[2] = {'w', 'b'};
-    DB_Open(const_cast<char *>(packageName.c_str()), mode, &fp);
+    DB_Open(const_cast<char *>(pakPath.c_str()), mode, &fp);
     int filesNum = filesWithTime.size();
     long temBytes = CurrentTemplate.GetTotalBytes();
     int MAXSIZE = 2048 * 1024; // 2MB
