@@ -1,5 +1,9 @@
 #include "../include/utils.hpp"
 using namespace std;
+
+vector<ZipTemplate> ZipTemplates;
+ZipTemplate CurrentZipTemplate;
+
 /**
  * @brief 向标准模板添加新节点
  *

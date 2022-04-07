@@ -454,9 +454,9 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[2]={0};
-                    memcpy(zipPosNum,buff+readbuff_pos,2);
-                    uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                    char zipPosNum[2] = {0};
+                    memcpy(zipPosNum, buff + readbuff_pos, 2);
+                    uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 2;
@@ -506,9 +506,9 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[2]={0};
-                    memcpy(zipPosNum,buff+readbuff_pos,2);
-                    uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                    char zipPosNum[2] = {0};
+                    memcpy(zipPosNum, buff + readbuff_pos, 2);
+                    uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 2;
@@ -554,9 +554,9 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[2]={0};
-                    memcpy(zipPosNum,buff+readbuff_pos,2);
-                    uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                    char zipPosNum[2] = {0};
+                    memcpy(zipPosNum, buff + readbuff_pos, 2);
+                    uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 2;
@@ -606,9 +606,9 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[2]={0};
-                    memcpy(zipPosNum,buff+readbuff_pos,2);
-                    uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                    char zipPosNum[2] = {0};
+                    memcpy(zipPosNum, buff + readbuff_pos, 2);
+                    uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 2;
@@ -654,9 +654,9 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[2]={0};
-                    memcpy(zipPosNum,buff+readbuff_pos,2);
-                    uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                    char zipPosNum[2] = {0};
+                    memcpy(zipPosNum, buff + readbuff_pos, 2);
+                    uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 2;
@@ -710,9 +710,9 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[2]={0};
-                    memcpy(zipPosNum,buff+readbuff_pos,2);
-                    uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                    char zipPosNum[2] = {0};
+                    memcpy(zipPosNum, buff + readbuff_pos, 2);
+                    uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 2;
@@ -767,9 +767,9 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[2]={0};
-                    memcpy(zipPosNum,buff+readbuff_pos,2);
-                    uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                    char zipPosNum[2] = {0};
+                    memcpy(zipPosNum, buff + readbuff_pos, 2);
+                    uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 2;
@@ -810,9 +810,9 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
         {
 
             //对比编号是否等于当前模板所在条数
-            char zipPosNum[2]={0};
-            memcpy(zipPosNum,buff+readbuff_pos,2);
-            uint16_t posCmp=converter.ToUInt16(zipPosNum);
+            char zipPosNum[2] = {0};
+            memcpy(zipPosNum, buff + readbuff_pos, 2);
+            uint16_t posCmp = converter.ToUInt16(zipPosNum);
             if (posCmp == i) //是未压缩数据的编号
             {
                 readbuff_pos += 2;
@@ -847,19 +847,24 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
     buffLength = (int)writebuff_pos;
     return err;
 }
-// int main()
-// {
-//  FileIDManager::GetFileID("/");
-//  FileIDManager::GetFileID("/");
-//  FileIDManager::GetFileID("/Jinfei3");
-//  FileIDManager::GetFileID("/Jinfei3");
-//  FileIDManager::GetFileID("/Jinfei4/line1");
-//  FileIDManager::GetFileID("/Jinfei4/line1/");
-//  cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
-
-// Packer packer;
-// vector<pair<string, long>> files;
-// readDataFilesWithTimestamps("", files);
-// packer.Pack("", files);
-// return 0;
-// }
+int main()
+{
+    FileIDManager::GetFileID("/");
+    FileIDManager::GetFileID("/");
+    FileIDManager::GetFileID("/Jinfei3");
+    FileIDManager::GetFileID("/Jinfei3");
+    FileIDManager::GetFileID("/Jinfei4/line1");
+    FileIDManager::GetFileID("/Jinfei4/line1/");
+    cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
+    char *buff=NULL;
+    int length=0;
+    DB_ZipSwitchFile("/","/");
+    ReZipBuff(buff, length, "/");
+    cout<<length<<endl;
+    return 0;
+    Packer packer;
+    vector<pair<string, long>> files;
+    readDataFilesWithTimestamps("", files);
+    packer.Pack("", files);
+    return 0;
+}

@@ -692,8 +692,8 @@ public:
 };
 extern neb::CJsonObject settings ;//= FileIDManager::GetSetting();
 
-static vector<ZipTemplate> ZipTemplates;
-static ZipTemplate CurrentZipTemplate;
+extern vector<ZipTemplate> ZipTemplates;
+extern ZipTemplate CurrentZipTemplate;
 class ZipTemplateManager
 {
 private:
