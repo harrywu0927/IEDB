@@ -453,21 +453,18 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
             {
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
-                    char valueName[CurrentZipTemplate.schemas[i].first.length() + 1];
-                    memcpy(valueName, buff + readbuff_pos, CurrentZipTemplate.schemas[i].first.length());
-                    valueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
-                    char schemaValueName[CurrentZipTemplate.schemas[i].first.length() + 1];
-                    memcpy(schemaValueName, const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()), CurrentZipTemplate.schemas[i].first.length());
-                    schemaValueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
-                    int nameCmp = strcmp(valueName, schemaValueName);
-                    if (nameCmp == 0) //是未压缩数据的变量名
+                    //对比编号是否等于当前模板所在条数
+                    char zipPosNum[2]={0};
+                    memcpy(zipPosNum,buff+readbuff_pos,2);
+                    uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                    if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += CurrentZipTemplate.schemas[i].first.length();
+                        readbuff_pos += 2;
                         memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4);
                         writebuff_pos += 4;
                         readbuff_pos += 4;
                     }
-                    else //不是未压缩的变量名
+                    else //不是未压缩的编号
                     {
                         uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char UDintValue[4] = {0};
@@ -508,21 +505,18 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
             {
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
-                    char valueName[CurrentZipTemplate.schemas[i].first.length() + 1];
-                    memcpy(valueName, buff + readbuff_pos, CurrentZipTemplate.schemas[i].first.length());
-                    valueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
-                    char schemaValueName[CurrentZipTemplate.schemas[i].first.length() + 1];
-                    memcpy(schemaValueName, const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()), CurrentZipTemplate.schemas[i].first.length());
-                    schemaValueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
-                    int nameCmp = strcmp(valueName, schemaValueName);
-                    if (nameCmp == 0) //是未压缩数据的变量名
+                    //对比编号是否等于当前模板所在条数
+                    char zipPosNum[2]={0};
+                    memcpy(zipPosNum,buff+readbuff_pos,2);
+                    uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                    if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += CurrentZipTemplate.schemas[i].first.length();
+                        readbuff_pos += 2;
                         memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 1);
                         writebuff_pos += 1;
                         readbuff_pos += 1;
                     }
-                    else //不是未压缩的变量名
+                    else //不是未压缩的编号
                     {
                         char StandardUsintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                         char UsintValue[1] = {0};
@@ -559,21 +553,18 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
             {
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
-                    char valueName[CurrentZipTemplate.schemas[i].first.length() + 1];
-                    memcpy(valueName, buff + readbuff_pos, CurrentZipTemplate.schemas[i].first.length());
-                    valueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
-                    char schemaValueName[CurrentZipTemplate.schemas[i].first.length() + 1];
-                    memcpy(schemaValueName, const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()), CurrentZipTemplate.schemas[i].first.length());
-                    schemaValueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
-                    int nameCmp = strcmp(valueName, schemaValueName);
-                    if (nameCmp == 0) //是未压缩数据的变量名
+                    //对比编号是否等于当前模板所在条数
+                    char zipPosNum[2]={0};
+                    memcpy(zipPosNum,buff+readbuff_pos,2);
+                    uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                    if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += CurrentZipTemplate.schemas[i].first.length();
+                        readbuff_pos += 2;
                         memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2);
                         writebuff_pos += 2;
                         readbuff_pos += 2;
                     }
-                    else //不是未压缩的变量名
+                    else //不是未压缩的编号
                     {
                         uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char UintValue[2] = {0};
@@ -614,21 +605,18 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
             {
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
-                    char valueName[CurrentZipTemplate.schemas[i].first.length() + 1];
-                    memcpy(valueName, buff + readbuff_pos, CurrentZipTemplate.schemas[i].first.length());
-                    valueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
-                    char schemaValueName[CurrentZipTemplate.schemas[i].first.length() + 1];
-                    memcpy(schemaValueName, const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()), CurrentZipTemplate.schemas[i].first.length());
-                    schemaValueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
-                    int nameCmp = strcmp(valueName, schemaValueName);
-                    if (nameCmp == 0) //是未压缩数据的变量名
+                    //对比编号是否等于当前模板所在条数
+                    char zipPosNum[2]={0};
+                    memcpy(zipPosNum,buff+readbuff_pos,2);
+                    uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                    if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += CurrentZipTemplate.schemas[i].first.length();
+                        readbuff_pos += 2;
                         memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 1);
                         writebuff_pos += 1;
                         readbuff_pos += 1;
                     }
-                    else //不是未压缩的变量名
+                    else //不是未压缩的编号
                     {
                         char StandardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                         char SintValue[1] = {0};
@@ -665,21 +653,18 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
             {
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
-                    char valueName[CurrentZipTemplate.schemas[i].first.length() + 1];
-                    memcpy(valueName, buff + readbuff_pos, CurrentZipTemplate.schemas[i].first.length());
-                    valueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
-                    char schemaValueName[CurrentZipTemplate.schemas[i].first.length() + 1];
-                    memcpy(schemaValueName, const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()), CurrentZipTemplate.schemas[i].first.length());
-                    schemaValueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
-                    int nameCmp = strcmp(valueName, schemaValueName);
-                    if (nameCmp == 0) //是未压缩数据的变量名
+                    //对比编号是否等于当前模板所在条数
+                    char zipPosNum[2]={0};
+                    memcpy(zipPosNum,buff+readbuff_pos,2);
+                    uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                    if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += CurrentZipTemplate.schemas[i].first.length();
+                        readbuff_pos += 2;
                         memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2);
                         writebuff_pos += 2;
                         readbuff_pos += 2;
                     }
-                    else //不是未压缩的变量名
+                    else //不是未压缩的编号
                     {
                         short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char IntValue[2] = {0};
@@ -724,21 +709,18 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
             {
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
-                    char valueName[CurrentZipTemplate.schemas[i].first.length() + 1];
-                    memcpy(valueName, buff + readbuff_pos, CurrentZipTemplate.schemas[i].first.length());
-                    valueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
-                    char schemaValueName[CurrentZipTemplate.schemas[i].first.length() + 1];
-                    memcpy(schemaValueName, const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()), CurrentZipTemplate.schemas[i].first.length());
-                    schemaValueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
-                    int nameCmp = strcmp(valueName, schemaValueName);
-                    if (nameCmp == 0) //是未压缩数据的变量名
+                    //对比编号是否等于当前模板所在条数
+                    char zipPosNum[2]={0};
+                    memcpy(zipPosNum,buff+readbuff_pos,2);
+                    uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                    if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += CurrentZipTemplate.schemas[i].first.length();
+                        readbuff_pos += 2;
                         memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4);
                         writebuff_pos += 4;
                         readbuff_pos += 4;
                     }
-                    else //不是未压缩的变量名
+                    else //不是未压缩的编号
                     {
                         int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char DintValue[4] = {0};
@@ -784,21 +766,18 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
             {
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
-                    char valueName[CurrentZipTemplate.schemas[i].first.length() + 1];
-                    memcpy(valueName, buff + readbuff_pos, CurrentZipTemplate.schemas[i].first.length());
-                    valueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
-                    char schemaValueName[CurrentZipTemplate.schemas[i].first.length() + 1];
-                    memcpy(schemaValueName, const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()), CurrentZipTemplate.schemas[i].first.length());
-                    schemaValueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
-                    int nameCmp = strcmp(valueName, schemaValueName);
-                    if (nameCmp == 0) //是未压缩数据的变量名
+                    //对比编号是否等于当前模板所在条数
+                    char zipPosNum[2]={0};
+                    memcpy(zipPosNum,buff+readbuff_pos,2);
+                    uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                    if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += CurrentZipTemplate.schemas[i].first.length();
+                        readbuff_pos += 2;
                         memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4);
                         writebuff_pos += 4;
                         readbuff_pos += 4;
                     }
-                    else //不是未压缩的变量名
+                    else //不是未压缩的编号
                     {
                         float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char RealValue[4] = {0};
@@ -830,17 +809,13 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::IMAGE) // IMAGE类型
         {
 
-            char valueName[CurrentZipTemplate.schemas[i].first.length() + 1];
-            memcpy(valueName, buff + readbuff_pos, CurrentZipTemplate.schemas[i].first.length());
-            valueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
-            char schemaValueName[CurrentZipTemplate.schemas[i].first.length() + 1];
-            memcpy(schemaValueName, const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()), CurrentZipTemplate.schemas[i].first.length());
-            schemaValueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
-            int nameCmp = strcmp(valueName, schemaValueName);
-
-            if (nameCmp == 0) //是未压缩数据的变量名
+            //对比编号是否等于当前模板所在条数
+            char zipPosNum[2]={0};
+            memcpy(zipPosNum,buff+readbuff_pos,2);
+            uint16_t posCmp=converter.ToUInt16(zipPosNum);
+            if (posCmp == i) //是未压缩数据的编号
             {
-                readbuff_pos += CurrentZipTemplate.schemas[i].first.length();
+                readbuff_pos += 2;
                 //暂定２个字节的图片长度
                 char length[2] = {0};
                 memcpy(length, buff + readbuff_pos, 2);
@@ -853,7 +828,7 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
                 writebuff_pos += imageLength;
                 readbuff_pos += imageLength;
             }
-            else //不是未压缩的变量名
+            else //不是未压缩的编号
             {
                 cout<<"图片还原出现问题！"<<endl;
                 return StatusCode::DATA_TYPE_MISMATCH_ERROR;
