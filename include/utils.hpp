@@ -89,7 +89,7 @@ int getMemory(long size, char *mem);
 
 int CheckQueryParams(DB_QueryParams *params);
 
-int ReZipBuff(char *buff,long *buffLength,const char *pathToLine);
+int ReZipBuff(char *buff,int &buffLength,const char *pathToLine);
 
 class PathCode
 {

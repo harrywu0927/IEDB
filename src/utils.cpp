@@ -233,7 +233,7 @@ void readPakFilesList(string path, vector<string> &files)
             string p;
             string datafile = ptr->d_name;
             if (datafile.find(".pak") != string::npos)
-                files.push_back(p.append(path).append("/").append(ptr->d_name));
+                files.push_back(p.append(ptr->d_name));
         }
     }
     closedir(dir);
@@ -380,7 +380,7 @@ int CheckQueryParams(DB_QueryParams *params)
     {
         return StatusCode::VARIABLE_NOT_ASSIGNED;
     }
-    if(params->compareType != CMP_NONE && params->compareValue == NULL)
+    if (params->compareType != CMP_NONE && params->compareValue == NULL)
     {
         return StatusCode::NO_COMPARE_VALUE;
     }
@@ -417,7 +417,7 @@ int CheckQueryParams(DB_QueryParams *params)
     return 0;
 }
 
-int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
+int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
 {
     int err = 0;
     err = DB_LoadZipSchema(pathToLine); //加载压缩模板
@@ -428,7 +428,7 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
     }
     DataTypeConverter converter;
 
-    long len=*buffLength;
+    long len = buffLength;
     char writebuff[CurrentZipTemplate.schemas.size() * 4]; //写入没有被压缩的数据
     long readbuff_pos = 0;
     long writebuff_pos = 0;
@@ -772,10 +772,10 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
                 float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char RealValue[4] = {0};
                 void *pf;
-                pf=&standardRealValue;
+                pf = &standardRealValue;
                 for (int j = 0; j < 4; j++)
                 {
-                    *((unsigned char*)pf+j)=RealValue[j];
+                    *((unsigned char *)pf + j) = RealValue[j];
                 }
                 memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
                 writebuff_pos += 4;
@@ -803,10 +803,10 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
                         float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char RealValue[4] = {0};
                         void *pf;
-                        pf=&standardRealValue;
+                        pf = &standardRealValue;
                         for (int j = 0; j < 4; j++)
                         {
-                            *((unsigned char*)pf+j)=RealValue[j];
+                            *((unsigned char *)pf + j) = RealValue[j];
                         }
                         memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
                         writebuff_pos += 4;
@@ -817,10 +817,10 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
                     float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char RealValue[4] = {0};
                     void *pf;
-                    pf=&standardRealValue;
+                    pf = &standardRealValue;
                     for (int j = 0; j < 4; j++)
                     {
-                        *((unsigned char*)pf+j)=RealValue[j];
+                        *((unsigned char *)pf + j) = RealValue[j];
                     }
                     memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
                     writebuff_pos += 4;
@@ -844,8 +844,8 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
                 //暂定２个字节的图片长度
                 char length[2] = {0};
                 memcpy(length, buff + readbuff_pos, 2);
-                memcpy(writebuff+writebuff_pos,buff+readbuff_pos,2);//图片长度也存
-                writebuff_pos+=2;
+                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2); //图片长度也存
+                writebuff_pos += 2;
                 uint16_t imageLength = converter.ToUInt16(length);
                 readbuff_pos += 2;
                 //存储图片
@@ -855,7 +855,7 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
             }
             else //不是未压缩的变量名
             {
-                cout<<"图片还原出现问题！"<<endl;
+                cout << "图片还原出现问题！" << endl;
                 return StatusCode::DATA_TYPE_MISMATCH_ERROR;
             }
         }
@@ -865,24 +865,26 @@ int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
             return StatusCode::UNKNOWN_TYPE;
         }
     }
-
-    memcpy(buff,writebuff,writebuff_pos);
-    *buffLength=writebuff_pos;
+    char *newbuff = (char *)malloc(writebuff_pos);
+    free(buff);
+    memcpy(newbuff, writebuff, writebuff_pos);
+    buff = newbuff;
+    buffLength = (int)writebuff_pos;
     return err;
 }
-//int main()
-//{
-    // FileIDManager::GetFileID("/");
-    // FileIDManager::GetFileID("/");
-    // FileIDManager::GetFileID("/Jinfei3");
-    // FileIDManager::GetFileID("/Jinfei3");
-    // FileIDManager::GetFileID("/Jinfei4/line1");
-    // FileIDManager::GetFileID("/Jinfei4/line1/");
-    // cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
+// int main()
+// {
+//  FileIDManager::GetFileID("/");
+//  FileIDManager::GetFileID("/");
+//  FileIDManager::GetFileID("/Jinfei3");
+//  FileIDManager::GetFileID("/Jinfei3");
+//  FileIDManager::GetFileID("/Jinfei4/line1");
+//  FileIDManager::GetFileID("/Jinfei4/line1/");
+//  cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
 
-    // Packer packer;
-    // vector<pair<string, long>> files;
-    // readDataFilesWithTimestamps("", files);
-    // packer.Pack("", files);
-    // return 0;
-//}
+// Packer packer;
+// vector<pair<string, long>> files;
+// readDataFilesWithTimestamps("", files);
+// packer.Pack("", files);
+// return 0;
+// }
