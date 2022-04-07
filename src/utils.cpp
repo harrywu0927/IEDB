@@ -292,7 +292,7 @@ string FileIDManager::GetFileID(string path)
         cout << "now file num :" << curNum[path] << endl;
     }
     curNum[path]++;
-    if (curNum[path] % 1 == 0)
+    if (curNum[path] % 100 == 0)
     {
         Packer packer;
         vector<pair<string, long>> filesWithTime;
@@ -416,6 +416,459 @@ int CheckQueryParams(DB_QueryParams *params)
     return 0;
 }
 
+int ReZipBuff(char *buff,long *buffLength,const char *pathToLine)
+{
+    int err = 0;
+    err = DB_LoadZipSchema(pathToLine); //加载压缩模板
+    if (err)
+    {
+        cout << "未加载模板" << endl;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
+    DataTypeConverter converter;
+
+    long len=*buffLength;
+    char writebuff[CurrentZipTemplate.schemas.size() * 4]; //写入没有被压缩的数据
+    long readbuff_pos = 0;
+    long writebuff_pos = 0;
+
+    for (size_t i = 0; i < CurrentZipTemplate.schemas.size(); i++)
+    {
+        if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::UDINT) // UDINT类型
+        {
+            if (len == 0) //表示文件完全压缩
+            {
+                uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                char UDintValue[4] = {0};
+                for (int j = 0; j < 4; j++)
+                {
+                    UDintValue[3 - j] |= standardUDintValue;
+                    standardUDintValue >>= 8;
+                }
+                memcpy(writebuff + writebuff_pos, UDintValue, 4); // UDINT标准值
+                writebuff_pos += 4;
+            }
+            else //文件未完全压缩
+            {
+                if (readbuff_pos < len) //还有未压缩的数据
+                {
+                    char valueName[CurrentZipTemplate.schemas[i].first.length() + 1];
+                    memcpy(valueName, buff + readbuff_pos, CurrentZipTemplate.schemas[i].first.length());
+                    valueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
+                    char schemaValueName[CurrentZipTemplate.schemas[i].first.length() + 1];
+                    memcpy(schemaValueName, const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()), CurrentZipTemplate.schemas[i].first.length());
+                    schemaValueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
+                    int nameCmp = strcmp(valueName, schemaValueName);
+                    if (nameCmp == 0) //是未压缩数据的变量名
+                    {
+                        readbuff_pos += CurrentZipTemplate.schemas[i].first.length();
+                        memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4);
+                        writebuff_pos += 4;
+                        readbuff_pos += 4;
+                    }
+                    else //不是未压缩的变量名
+                    {
+                        uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                        char UDintValue[4] = {0};
+                        for (int j = 0; j < 4; j++)
+                        {
+                            UDintValue[3 - j] |= standardUDintValue;
+                            standardUDintValue >>= 8;
+                        }
+                        memcpy(writebuff + writebuff_pos, UDintValue, 4); // UDINT标准值
+                        writebuff_pos += 4;
+                    }
+                }
+                else //没有未压缩的数据了
+                {
+                    uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                    char UDintValue[4] = {0};
+                    for (int j = 0; j < 4; j++)
+                    {
+                        UDintValue[3 - j] |= standardUDintValue;
+                        standardUDintValue >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, UDintValue, 4); // UDINT标准值
+                    writebuff_pos += 4;
+                }
+            }
+        }
+        else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::USINT) // USINT类型
+        {
+            if (len == 0) //表示文件完全压缩
+            {
+                char StandardUsintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                char UsintValue[1] = {0};
+                UsintValue[0] = StandardUsintValue;
+                memcpy(writebuff + writebuff_pos, UsintValue, 1); // USINT标准值
+                writebuff_pos += 1;
+            }
+            else //文件未完全压缩
+            {
+                if (readbuff_pos < len) //还有未压缩的数据
+                {
+                    char valueName[CurrentZipTemplate.schemas[i].first.length() + 1];
+                    memcpy(valueName, buff + readbuff_pos, CurrentZipTemplate.schemas[i].first.length());
+                    valueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
+                    char schemaValueName[CurrentZipTemplate.schemas[i].first.length() + 1];
+                    memcpy(schemaValueName, const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()), CurrentZipTemplate.schemas[i].first.length());
+                    schemaValueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
+                    int nameCmp = strcmp(valueName, schemaValueName);
+                    if (nameCmp == 0) //是未压缩数据的变量名
+                    {
+                        readbuff_pos += CurrentZipTemplate.schemas[i].first.length();
+                        memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 1);
+                        writebuff_pos += 1;
+                        readbuff_pos += 1;
+                    }
+                    else //不是未压缩的变量名
+                    {
+                        char StandardUsintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                        char UsintValue[1] = {0};
+                        UsintValue[0] = StandardUsintValue;
+                        memcpy(writebuff + writebuff_pos, UsintValue, 1); // USINT标准值
+                        writebuff_pos += 1;
+                    }
+                }
+                else //没有未压缩的数据了
+                {
+                    char StandardUsintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                    char UsintValue[1] = {0};
+                    UsintValue[0] = StandardUsintValue;
+                    memcpy(writebuff + writebuff_pos, UsintValue, 1); // USINT标准值
+                    writebuff_pos += 1;
+                }
+            }
+        }
+        else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::UINT) // UINT类型
+        {
+            if (len == 0) //表示文件完全压缩
+            {
+                uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                char UintValue[2] = {0};
+                for (int j = 0; j < 2; j++)
+                {
+                    UintValue[1 - j] |= standardUintValue;
+                    standardUintValue >>= 8;
+                }
+                memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
+                writebuff_pos += 2;
+            }
+            else //文件未完全压缩
+            {
+                if (readbuff_pos < len) //还有未压缩的数据
+                {
+                    char valueName[CurrentZipTemplate.schemas[i].first.length() + 1];
+                    memcpy(valueName, buff + readbuff_pos, CurrentZipTemplate.schemas[i].first.length());
+                    valueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
+                    char schemaValueName[CurrentZipTemplate.schemas[i].first.length() + 1];
+                    memcpy(schemaValueName, const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()), CurrentZipTemplate.schemas[i].first.length());
+                    schemaValueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
+                    int nameCmp = strcmp(valueName, schemaValueName);
+                    if (nameCmp == 0) //是未压缩数据的变量名
+                    {
+                        readbuff_pos += CurrentZipTemplate.schemas[i].first.length();
+                        memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2);
+                        writebuff_pos += 2;
+                        readbuff_pos += 2;
+                    }
+                    else //不是未压缩的变量名
+                    {
+                        uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                        char UintValue[2] = {0};
+                        for (int j = 0; j < 2; j++)
+                        {
+                            UintValue[1 - j] |= standardUintValue;
+                            standardUintValue >>= 8;
+                        }
+                        memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
+                        writebuff_pos += 2;
+                    }
+                }
+                else //没有未压缩的数据了
+                {
+                    uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                    char UintValue[2] = {0};
+                    for (int j = 0; j < 2; j++)
+                    {
+                        UintValue[1 - j] |= standardUintValue;
+                        standardUintValue >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
+                    writebuff_pos += 2;
+                }
+            }
+        }
+        else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::SINT) // SINT类型
+        {
+            if (len == 0) //表示文件完全压缩
+            {
+                char StandardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                char SintValue[1] = {0};
+                SintValue[0] = StandardSintValue;
+                memcpy(writebuff + writebuff_pos, SintValue, 1); // SINT标准值
+                writebuff_pos += 1;
+            }
+            else //文件未完全压缩
+            {
+                if (readbuff_pos < len) //还有未压缩的数据
+                {
+                    char valueName[CurrentZipTemplate.schemas[i].first.length() + 1];
+                    memcpy(valueName, buff + readbuff_pos, CurrentZipTemplate.schemas[i].first.length());
+                    valueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
+                    char schemaValueName[CurrentZipTemplate.schemas[i].first.length() + 1];
+                    memcpy(schemaValueName, const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()), CurrentZipTemplate.schemas[i].first.length());
+                    schemaValueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
+                    int nameCmp = strcmp(valueName, schemaValueName);
+                    if (nameCmp == 0) //是未压缩数据的变量名
+                    {
+                        readbuff_pos += CurrentZipTemplate.schemas[i].first.length();
+                        memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 1);
+                        writebuff_pos += 1;
+                        readbuff_pos += 1;
+                    }
+                    else //不是未压缩的变量名
+                    {
+                        char StandardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                        char SintValue[1] = {0};
+                        SintValue[0] = StandardSintValue;
+                        memcpy(writebuff + writebuff_pos, SintValue, 1); // SINT标准值
+                        writebuff_pos += 1;
+                    }
+                }
+                else //没有未压缩的数据了
+                {
+                    char StandardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                    char SintValue[1] = {0};
+                    SintValue[0] = StandardSintValue;
+                    memcpy(writebuff + writebuff_pos, SintValue, 1); // SINT标准值
+                    writebuff_pos += 1;
+                }
+            }
+        }
+        else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::INT) // INT类型
+        {
+            if (len == 0) //表示文件完全压缩
+            {
+                short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                char IntValue[2] = {0};
+                for (int j = 0; j < 2; j++)
+                {
+                    IntValue[1 - j] |= standardIntValue;
+                    standardIntValue >>= 8;
+                }
+                memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
+                writebuff_pos += 2;
+            }
+            else //文件未完全压缩
+            {
+                if (readbuff_pos < len) //还有未压缩的数据
+                {
+                    char valueName[CurrentZipTemplate.schemas[i].first.length() + 1];
+                    memcpy(valueName, buff + readbuff_pos, CurrentZipTemplate.schemas[i].first.length());
+                    valueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
+                    char schemaValueName[CurrentZipTemplate.schemas[i].first.length() + 1];
+                    memcpy(schemaValueName, const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()), CurrentZipTemplate.schemas[i].first.length());
+                    schemaValueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
+                    int nameCmp = strcmp(valueName, schemaValueName);
+                    if (nameCmp == 0) //是未压缩数据的变量名
+                    {
+                        readbuff_pos += CurrentZipTemplate.schemas[i].first.length();
+                        memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2);
+                        writebuff_pos += 2;
+                        readbuff_pos += 2;
+                    }
+                    else //不是未压缩的变量名
+                    {
+                        short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                        char IntValue[2] = {0};
+                        for (int j = 0; j < 2; j++)
+                        {
+                            IntValue[1 - j] |= standardIntValue;
+                            standardIntValue >>= 8;
+                        }
+                        memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
+                        writebuff_pos += 2;
+                    }
+                }
+                else //没有未压缩的数据了
+                {
+                    short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                    char IntValue[2] = {0};
+                    for (int j = 0; j < 2; j++)
+                    {
+                        IntValue[1 - j] |= standardIntValue;
+                        standardIntValue >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
+                    writebuff_pos += 2;
+                }
+            }
+        }
+        else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::DINT) // DINT类型
+        {
+            if (len == 0) //表示文件完全压缩
+            {
+                int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                char DintValue[4] = {0};
+                for (int j = 0; j < 4; j++)
+                {
+                    DintValue[3 - j] |= standardDintValue;
+                    standardDintValue >>= 8;
+                }
+                memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
+                writebuff_pos += 4;
+            }
+            else //文件未完全压缩
+            {
+                if (readbuff_pos < len) //还有未压缩的数据
+                {
+                    char valueName[CurrentZipTemplate.schemas[i].first.length() + 1];
+                    memcpy(valueName, buff + readbuff_pos, CurrentZipTemplate.schemas[i].first.length());
+                    valueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
+                    char schemaValueName[CurrentZipTemplate.schemas[i].first.length() + 1];
+                    memcpy(schemaValueName, const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()), CurrentZipTemplate.schemas[i].first.length());
+                    schemaValueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
+                    int nameCmp = strcmp(valueName, schemaValueName);
+                    if (nameCmp == 0) //是未压缩数据的变量名
+                    {
+                        readbuff_pos += CurrentZipTemplate.schemas[i].first.length();
+                        memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4);
+                        writebuff_pos += 4;
+                        readbuff_pos += 4;
+                    }
+                    else //不是未压缩的变量名
+                    {
+                        int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                        char DintValue[4] = {0};
+                        for (int j = 0; j < 4; j++)
+                        {
+                            DintValue[3 - j] |= standardDintValue;
+                            standardDintValue >>= 8;
+                        }
+                        memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
+                        writebuff_pos += 4;
+                    }
+                }
+                else //没有未压缩的数据了
+                {
+                    int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                    char DintValue[4] = {0};
+                    for (int j = 0; j < 4; j++)
+                    {
+                        DintValue[3 - j] |= standardDintValue;
+                        standardDintValue >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
+                    writebuff_pos += 4;
+                }
+            }
+        }
+        else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::REAL) // REAL类型
+        {
+            if (len == 0) //表示文件完全压缩
+            {
+                float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                char RealValue[4] = {0};
+                void *pf;
+                pf=&standardRealValue;
+                for (int j = 0; j < 4; j++)
+                {
+                    *((unsigned char*)pf+j)=RealValue[j];
+                }
+                memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
+                writebuff_pos += 4;
+            }
+            else //文件未完全压缩
+            {
+                if (readbuff_pos < len) //还有未压缩的数据
+                {
+                    char valueName[CurrentZipTemplate.schemas[i].first.length() + 1];
+                    memcpy(valueName, buff + readbuff_pos, CurrentZipTemplate.schemas[i].first.length());
+                    valueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
+                    char schemaValueName[CurrentZipTemplate.schemas[i].first.length() + 1];
+                    memcpy(schemaValueName, const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()), CurrentZipTemplate.schemas[i].first.length());
+                    schemaValueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
+                    int nameCmp = strcmp(valueName, schemaValueName);
+                    if (nameCmp == 0) //是未压缩数据的变量名
+                    {
+                        readbuff_pos += CurrentZipTemplate.schemas[i].first.length();
+                        memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4);
+                        writebuff_pos += 4;
+                        readbuff_pos += 4;
+                    }
+                    else //不是未压缩的变量名
+                    {
+                        float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                        char RealValue[4] = {0};
+                        void *pf;
+                        pf=&standardRealValue;
+                        for (int j = 0; j < 4; j++)
+                        {
+                            *((unsigned char*)pf+j)=RealValue[j];
+                        }
+                        memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
+                        writebuff_pos += 4;
+                    }
+                }
+                else //没有未压缩的数据了
+                {
+                    float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                    char RealValue[4] = {0};
+                    void *pf;
+                    pf=&standardRealValue;
+                    for (int j = 0; j < 4; j++)
+                    {
+                        *((unsigned char*)pf+j)=RealValue[j];
+                    }
+                    memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
+                    writebuff_pos += 4;
+                }
+            }
+        }
+        else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::IMAGE) // IMAGE类型
+        {
+
+            char valueName[CurrentZipTemplate.schemas[i].first.length() + 1];
+            memcpy(valueName, buff + readbuff_pos, CurrentZipTemplate.schemas[i].first.length());
+            valueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
+            char schemaValueName[CurrentZipTemplate.schemas[i].first.length() + 1];
+            memcpy(schemaValueName, const_cast<const char *>(CurrentZipTemplate.schemas[i].first.c_str()), CurrentZipTemplate.schemas[i].first.length());
+            schemaValueName[CurrentZipTemplate.schemas[i].first.length()] = {'\0'};
+            int nameCmp = strcmp(valueName, schemaValueName);
+
+            if (nameCmp == 0) //是未压缩数据的变量名
+            {
+                readbuff_pos += CurrentZipTemplate.schemas[i].first.length();
+                //暂定２个字节的图片长度
+                char length[2] = {0};
+                memcpy(length, buff + readbuff_pos, 2);
+                memcpy(writebuff+writebuff_pos,buff+readbuff_pos,2);//图片长度也存
+                writebuff_pos+=2;
+                uint16_t imageLength = converter.ToUInt16(length);
+                readbuff_pos += 2;
+                //存储图片
+                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, imageLength);
+                writebuff_pos += imageLength;
+                readbuff_pos += imageLength;
+            }
+            else //不是未压缩的变量名
+            {
+                cout<<"图片还原出现问题！"<<endl;
+                return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+            }
+        }
+        else
+        {
+            cout << "存在未知数据类型，请检查模板" << endl;
+            return StatusCode::UNKNOWN_TYPE;
+        }
+    }
+
+    memcpy(buff,writebuff,writebuff_pos);
+    *buffLength=writebuff_pos;
+    return err;
+}
 // int main()
 // {
 //     // FileIDManager::GetFileID("/");
