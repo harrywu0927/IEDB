@@ -81,6 +81,8 @@ void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWi
 
 void readDataFilesWithTimestamps(string path, vector<pair<string, long>> &filesWithTime);
 
+void readDataFiles(string path, vector<string> &files);
+
 void readPakFilesList(string path, vector<string> &files);
 
 long getMilliTime();

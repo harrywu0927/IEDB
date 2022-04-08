@@ -155,6 +155,42 @@ void readDataFilesWithTimestamps(string path, vector<pair<string, long>> &filesW
 }
 
 /**
+ * @brief 从指定文件夹中获取所有数据文件
+ * @param path             路径
+ * @param files            文件名列表
+ *
+ * @return
+ * @note
+ */
+void readDataFiles(string path, vector<string> &files)
+{
+    struct dirent *ptr;
+    DIR *dir;
+    string finalPath = Label;
+    if (path[0] != '/')
+        finalPath += "/" + path;
+    else
+        finalPath += path;
+    dir = opendir(finalPath.c_str());
+    while ((ptr = readdir(dir)) != NULL)
+    {
+        if (ptr->d_name[0] == '.')
+            continue;
+
+        if (ptr->d_type == 8)
+        {
+            string p;
+            string datafile = ptr->d_name;
+            if (datafile.find(".idbzip") != string::npos || datafile.find(".idb") != string::npos)
+            {
+                files.push_back(p.append(path).append("/").append(ptr->d_name));
+            }
+        }
+    }
+    closedir(dir);
+}
+
+/**
  * @brief 从指定文件夹中获取所有.idb文件，并从文件名中取得时间戳
  * @param path             路径
  * @param filesWithTime    带有时间戳的文件名列表
@@ -300,7 +336,7 @@ string FileIDManager::GetFileID(string path)
         readDataFilesWithTimestamps(path, filesWithTime);
         packer.Pack("/", filesWithTime);
     }
-    return prefix + to_string(curNum[path] + 1) + "_";
+    return prefix + to_string(curNum[path]) + "_";
 }
 
 /**
