@@ -1,12 +1,3 @@
-/*******************************************************************************
- * Project:  neb
- * @file     CJsonObject.hpp
- * @brief    Json
- * @author   bwarliao
- * @date:    2014-7-16
- * @note
- * Modify history:
- ******************************************************************************/
 
 #ifndef CJSONOBJECT_HPP_
 #define CJSONOBJECT_HPP_

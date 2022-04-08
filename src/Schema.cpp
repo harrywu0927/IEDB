@@ -2039,64 +2039,64 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
     return err;
 }
 
-int main()
-{
-    // EDVDB_LoadZipSchema("/");
-    long len;
+// int main()
+// {
+//     // EDVDB_LoadZipSchema("/");
+//     long len;
 
-    DB_GetFileLengthByPath("Jinfei91_2022-4-1-19-28-49-807.idb",&len);
-    cout<<len<<endl;
-    char readbuf[len];
-    DB_OpenAndRead("Jinfei91_2022-4-1-19-28-49-807.idb",readbuf);
+//     DB_GetFileLengthByPath("Jinfei91_2022-4-1-19-28-49-807.idb",&len);
+//     cout<<len<<endl;
+//     char readbuf[len];
+//     DB_OpenAndRead("Jinfei91_2022-4-1-19-28-49-807.idb",readbuf);
 
-    //DB_ZipSwitchFile("/jinfei/","/jinfei/");
-    //DB_ReZipSwitchFile("/jinfei/","/jinfei");
-    DB_ZipRecvSwitchBuff("/","/",readbuf,&len);
-    cout<<len<<endl;
-    char test[len];
-    memcpy(test,readbuf,len);
-    // cout<<test<<endl;
-    // DB_TreeNodeParams params;
-    // params.pathToLine = "/";
-    // char code[10];
-    // code[0] = (char)0;
-    // code[1] = (char)1;
-    // code[2] = (char)0;
-    // code[3] = (char)4;
-    // code[4] = 'R';
-    // code[5] = (char)1;
-    // code[6] = 0;
-    // code[7] = (char)0;
-    // code[8] = (char)0;
-    // code[9] = (char)0;
-    // params.pathCode = code;
-    // params.valueType = 3;
-    // params.hasTime = 0;
-    // params.isArrary = 0;
-    // params.arrayLen = 100;
-    // params.valueName = "S4ON";
+//     //DB_ZipSwitchFile("/jinfei/","/jinfei/");
+//     //DB_ReZipSwitchFile("/jinfei/","/jinfei");
+//     DB_ZipRecvSwitchBuff("/","/",readbuf,&len);
+//     cout<<len<<endl;
+//     char test[len];
+//     memcpy(test,readbuf,len);
+//     // cout<<test<<endl;
+//     // DB_TreeNodeParams params;
+//     // params.pathToLine = "/";
+//     // char code[10];
+//     // code[0] = (char)0;
+//     // code[1] = (char)1;
+//     // code[2] = (char)0;
+//     // code[3] = (char)4;
+//     // code[4] = 'R';
+//     // code[5] = (char)1;
+//     // code[6] = 0;
+//     // code[7] = (char)0;
+//     // code[8] = (char)0;
+//     // code[9] = (char)0;
+//     // params.pathCode = code;
+//     // params.valueType = 3;
+//     // params.hasTime = 0;
+//     // params.isArrary = 0;
+//     // params.arrayLen = 100;
+//     // params.valueName = "S4ON";
 
-    // DB_TreeNodeParams newTreeParams;
-    // newTreeParams.pathToLine = "/";
-    // char newcode[10];
-    // newcode[0] = (char)0;
-    // newcode[1] = (char)1;
-    // newcode[2] = (char)0;
-    // newcode[3] = (char)4;
-    // newcode[4] = 'R';
-    // newcode[5] = (char)1;
-    // newcode[6] = 0;
-    // newcode[7] = (char)0;
-    // newcode[8] = (char)0;
-    // newcode[9] = (char)0;
-    // newTreeParams.pathCode = newcode;
-    // newTreeParams.valueType = 3;
-    // newTreeParams.hasTime = 0;
-    // newTreeParams.isArrary = 0;
-    // newTreeParams.arrayLen = 100;
-    // newTreeParams.valueName = "S4ON";
-    // DB_UpdateNodeToSchema(&params,&newTreeParams);
-    //DB_AddNodeToSchema(&params);
-    // DB_DeleteNodeToSchema(&params);
-    return 0;
-}
+//     // DB_TreeNodeParams newTreeParams;
+//     // newTreeParams.pathToLine = "/";
+//     // char newcode[10];
+//     // newcode[0] = (char)0;
+//     // newcode[1] = (char)1;
+//     // newcode[2] = (char)0;
+//     // newcode[3] = (char)4;
+//     // newcode[4] = 'R';
+//     // newcode[5] = (char)1;
+//     // newcode[6] = 0;
+//     // newcode[7] = (char)0;
+//     // newcode[8] = (char)0;
+//     // newcode[9] = (char)0;
+//     // newTreeParams.pathCode = newcode;
+//     // newTreeParams.valueType = 3;
+//     // newTreeParams.hasTime = 0;
+//     // newTreeParams.isArrary = 0;
+//     // newTreeParams.arrayLen = 100;
+//     // newTreeParams.valueName = "S4ON";
+//     // DB_UpdateNodeToSchema(&params,&newTreeParams);
+//     //DB_AddNodeToSchema(&params);
+//     // DB_DeleteNodeToSchema(&params);
+//     return 0;
+// }

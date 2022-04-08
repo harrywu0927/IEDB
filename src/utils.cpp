@@ -1,14 +1,98 @@
 #include "../include/utils.hpp"
 
-unordered_map<string, int> curNum;
-unordered_map<string, bool> filesListRead;
+unordered_map<string, int> getDirCurrentFileIDIndex();
 int maxTemplates = 20;
 vector<Template> templates;
 int errorCode;
 neb::CJsonObject settings = FileIDManager::GetSetting();
+unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
+unordered_map<string, bool> filesListRead;
 //  string packMode;       //定时打包或存储一定数量后打包
 //  int packNum;           //一次打包的文件数量
 //  long packTimeInterval; //定时打包时间间隔
+
+//递归获取所有子文件夹
+void readAllDirs(vector<string> &dirs, string basePath)
+{
+    DIR *dir;
+    struct dirent *ptr;
+    if ((dir = opendir(basePath.c_str())) == NULL)
+    {
+        perror("Error while opening directory");
+    }
+
+    while ((ptr = readdir(dir)) != NULL)
+    {
+        if (strcmp(ptr->d_name, ".") == 0 || strcmp(ptr->d_name, "..") == 0) /// current dir OR parrent dir
+            continue;
+        else if (ptr->d_type == 4) /// dir
+        {
+            string base = basePath;
+            base += "/";
+            base += ptr->d_name;
+            dirs.push_back(base);
+            //readAllDirs(dirs, basePath);
+        }
+    }
+    closedir(dir);
+}
+
+//获取当前工程根目录下所有产线-已有最大文件ID键值对
+unordered_map<string, int> getDirCurrentFileIDIndex()
+{
+    struct dirent *ptr;
+    DIR *dir;
+    string finalPath = Label;
+    unordered_map<string, int> map;
+    if (DB_CreateDirectory(const_cast<char *>(finalPath.c_str())))
+    {
+        errorCode = errno;
+        return map;
+    }
+    vector<string> dirs;
+    dirs.push_back("./");
+    readAllDirs(dirs, finalPath);
+    for (auto &d : dirs)
+    {
+        dir = opendir(d.c_str());
+        long max = 0;
+        while ((ptr = readdir(dir)) != NULL)
+        {
+            if (ptr->d_name[0] == '.')
+                continue;
+            if (ptr->d_type == 8)
+            {
+                string file = ptr->d_name;
+                if (file.find(".pak") != string::npos)
+                {
+                    PackFileReader packReader(d + "/" + file);
+                    int fileNum;
+                    string templateName;
+                    packReader.ReadPackHead(fileNum, templateName);
+                    string fileID;
+                    int readLength, zipType;
+                    for (int i = 0; i < fileNum; i++)
+                    {
+                        packReader.Next(readLength, fileID, zipType);
+                    }
+                    string num;
+                    for (int i = 0; i < fileID.length(); i++)
+                    {
+                        if (isdigit(fileID[i]))
+                        {
+                            num += fileID[i];
+                        }
+                    }
+                    if (max < atol(num.c_str()))
+                        max = atol(num.c_str());
+                }
+            }
+        }
+        closedir(dir);
+        map[d] = max;
+    }
+    return map;
+}
 
 //获取某一目录下的所有文件
 //不递归子文件夹
@@ -319,22 +403,23 @@ string FileIDManager::GetFileID(string path)
     if (path[path.size() - 1] == '/')
         path.pop_back();
 
-    if (!filesListRead[path])
-    {
-        cout << "file list not read" << endl;
-        vector<string> files;
-        readFileList(path, files);
-        filesListRead[path] = true;
-        curNum[path] = files.size();
-        cout << "now file num :" << curNum[path] << endl;
-    }
+    // if (curNum[path] == 0)
+    // {
+    //     cout << "file list not read" << endl;
+    //     vector<string> files;
+    //     readFileList(path, files);
+
+    //     filesListRead[path] = true;
+    //     curNum[path] = files.size();
+    //     cout << "now file num :" << curNum[path] << endl;
+    // }
     curNum[path]++;
     if (curNum[path] % atoi(settings("Pack_Num").c_str()) == 0)
     {
         Packer packer;
         vector<pair<string, long>> filesWithTime;
         readDataFilesWithTimestamps(path, filesWithTime);
-        packer.Pack("/", filesWithTime);
+        packer.Pack(path, filesWithTime);
     }
     return prefix + to_string(curNum[path]) + "_";
 }
@@ -892,7 +977,6 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
 //     // char *buff=NULL;
 //     // int length=0;
 //     // DB_ZipSwitchFile("/","/");
-    
 
 //     // ReZipBuff(buff, length, "/");
 //     // cout<<length<<endl;

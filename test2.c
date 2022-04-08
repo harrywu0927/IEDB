@@ -15,7 +15,7 @@ int main()
     // DB_InsertRecord(&buffer,0);
     // return 0;
     long time = 12345678;
-    char b[8];
+    char b[10];
     memcpy(b,&time,8);
     
     return 0;

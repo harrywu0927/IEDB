@@ -941,6 +941,7 @@ int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
                 break;
             }
             default:
+                free(buff);
                 return StatusCode::UNKNWON_DATAFILE;
                 break;
             }
@@ -1684,20 +1685,113 @@ int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
         PackFileReader packReader(pack);
         int fileNum;
         string templateName;
-        packReader.ReadPackHead(fileNum,templateName);
+        packReader.ReadPackHead(fileNum, templateName);
         for (int i = 0; i < fileNum; i++)
         {
             string fileID;
-            int readLength,zipType;
-            packReader.Next(readLength, fileID, zipType);
-            if(fileID == params->fileID)
+            int readLength, zipType;
+            long dataPos = packReader.Next(readLength, fileID, zipType);
+            if (fileID == params->fileID)
             {
+                char *buff = (char *)malloc(CurrentTemplate.totalBytes);
+                switch (zipType)
+                {
+                case 0:
+                {
+                    memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                    break;
+                }
+                case 1:
+                {
+                    ReZipBuff(buff, readLength, params->pathToLine);
+                    break;
+                }
+                case 2:
+                {
+                    memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                    for (int j = 0; j < readLength; j++)
+                    {
+                        cout << (int)buff[j] << " ";
+                    }
+                    ReZipBuff(buff, readLength, params->pathToLine);
+                    for (int j = 0; j < readLength; j++)
+                    {
+                        cout << (int)buff[j] << " ";
+                    }
+                    cout << endl;
+                    break;
+                }
+                default:
+                    free(buff);
+                    return StatusCode::UNKNWON_DATAFILE;
+                    break;
+                }
+                //获取数据的偏移量和字节数
+                long bytes = 0, pos = 0;         //单个变量
+                vector<long> posList, bytesList; //多个变量
+                long copyBytes = 0;
+                int err;
+                DataType type;
+                vector<DataType> typeList;
+                char *pathCode;
+                if (params->byPath)
+                {
+                    pathCode = params->pathCode;
+                    err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList, typeList);
+                    for (int i = 0; i < bytesList.size(); i++)
+                    {
+                        copyBytes += typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i];
+                    }
+                }
+                else
+                {
+                    err = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type);
+                    copyBytes = type.hasTime ? bytes + 8 : bytes;
+                }
+                if (err != 0)
+                {
+                    buffer->buffer = NULL;
+                    buffer->bufferMalloced = 0;
+                    return err;
+                }
 
+                //开始拷贝数据
+
+                char typeNum = typeList.size() == 0 ? 1 : typeList.size(); //数据类型总数
+
+                char *data = (char *)malloc(copyBytes + 1 + (int)typeNum * 11);
+                int startPos;
+                if (!params->byPath)
+                    startPos = CurrentTemplate.writeBufferHead(params->valueName, type, data); //写入缓冲区头，获取数据区起始位置
+                else
+                    startPos = CurrentTemplate.writeBufferHead(params->pathCode, typeList, data);
+                if (data == NULL)
+                {
+                    buffer->buffer = NULL;
+                    buffer->bufferMalloced = 0;
+                    return StatusCode::BUFFER_FULL;
+                }
+
+                buffer->bufferMalloced = 1;
+                if (params->byPath)
+                {
+                    long lineCur = 0;
+                    for (int i = 0; i < bytesList.size(); i++)
+                    {
+                        long curBytes = typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i]; //本次写字节数
+                        memcpy(data + startPos + lineCur, buff + posList[i], curBytes);
+                        lineCur += curBytes;
+                    }
+                }
+                else
+                    memcpy(data + startPos, buff + pos, copyBytes);
+                buffer->buffer = data;
+                buffer->length = copyBytes + startPos;
+                return 0;
             }
         }
-        
     }
-    
+
     for (string &file : dataFiles)
     {
         if (file.find(params->fileID) != string::npos)
@@ -1782,8 +1876,6 @@ int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
     }
     return StatusCode::DATAFILE_NOT_FOUND;
 }
-
-
 
 //暂不支持带有图片或数组的多变量聚合
 int TEST_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
@@ -3454,75 +3546,75 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
     return 0;
 }
 
-// int main()
-// {
-//     DataTypeConverter converter;
-//     // PackFileReader reader;
-//     // return 0;
-//     long length;
-//     converter.CheckBigEndian();
-//     // cout << EDVDB_LoadSchema("/");
-//     DB_QueryParams params;
-//     params.pathToLine = "/";
-//     params.fileID = "Jinfei9111";
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)1;
-//     code[4] = 'R';
-//     code[5] = (char)1;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     // params.pathCode = code;
-//     params.valueName = "S1ON";
-//     // params.valueName = NULL;
-//     params.start = 1648812610100;
-//     params.end = 1648812630100;
-//     params.order = TIME_ASC;
-//     params.compareType = LT;
-//     params.compareValue = "666";
-//     params.queryType = LAST;
-//     params.byPath = 0;
-//     params.queryNums = 3;
-//     DB_DataBuffer buffer;
-//     buffer.savePath = "/";
-//     // buffer.length = 4;
-//     // buffer.buffer = "test";
-//     vector<long> bytes, positions;
-//     vector<DataType> types;
-//     cout << settings("Pack_Mode") << endl;
-//     // vector<pair<string, long>> files;
-//     // readDataFilesWithTimestamps("", files);
-//     // Packer::Pack("/",files);
-//     DB_QueryByTimespan_New(&buffer, &params);
-//     // DB_QueryByFileID(&buffer, &params);
-//     // TemplateManager::CheckTemplate(params.pathToLine);
-//     // EDVDB_ExecuteQuery(&buffer, &params);
-//     // EDVDB_QueryLastRecords(&buffer, &params);
-//     // EDVDB_InsertRecord(&buffer,0);
-//     // cout<<DB_MAX(&buffer, &params)<<endl;
-//     // EDVDB_COUNT(&buffer, &params);
-//     //  TEST_MAX(&buffer, &params);
-//     // EDVDB_QueryByTimespan(&buffer, &params);
+int main()
+{
+    DataTypeConverter converter;
+    // PackFileReader reader;
+    // return 0;
+    long length;
+    converter.CheckBigEndian();
+    // cout << EDVDB_LoadSchema("/");
+    DB_QueryParams params;
+    params.pathToLine = "/";
+    params.fileID = "Jinfei9111";
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)1;
+    code[4] = 'R';
+    code[5] = (char)1;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    // params.pathCode = code;
+    params.valueName = "S1ON";
+    // params.valueName = NULL;
+    params.start = 1648812610100;
+    params.end = 1648812630100;
+    params.order = TIME_ASC;
+    params.compareType = LT;
+    params.compareValue = "666";
+    params.queryType = LAST;
+    params.byPath = 0;
+    params.queryNums = 3;
+    DB_DataBuffer buffer;
+    buffer.savePath = "/";
+    // buffer.length = 4;
+    // buffer.buffer = "test";
+    vector<long> bytes, positions;
+    vector<DataType> types;
+    cout << settings("Pack_Mode") << endl;
+    // vector<pair<string, long>> files;
+    // readDataFilesWithTimestamps("", files);
+    // Packer::Pack("/",files);
+    DB_QueryByTimespan(&buffer, &params);
+    // DB_QueryByFileID(&buffer, &params);
+    // TemplateManager::CheckTemplate(params.pathToLine);
+    // EDVDB_ExecuteQuery(&buffer, &params);
+    // EDVDB_QueryLastRecords(&buffer, &params);
+    // EDVDB_InsertRecord(&buffer,0);
+    // cout<<DB_MAX(&buffer, &params)<<endl;
+    // EDVDB_COUNT(&buffer, &params);
+    //  TEST_MAX(&buffer, &params);
+    // EDVDB_QueryByTimespan(&buffer, &params);
 
-//     if (buffer.bufferMalloced)
-//     {
-//         char buf[buffer.length];
-//         memcpy(buf, buffer.buffer, buffer.length);
-//         cout << buffer.length << endl;
-//         for (int i = 0; i < buffer.length; i++)
-//         {
-//             cout << (int)buf[i] << " ";
-//             if (i % 11 == 0)
-//                 cout << endl;
-//         }
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        for (int i = 0; i <= buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
 
-//         free(buffer.buffer);
-//     }
+        free(buffer.buffer);
+    }
 
-//     buffer.buffer = NULL;
-//     return 0;
-// }
+    // buffer.buffer = NULL;
+    return 0;
+}
