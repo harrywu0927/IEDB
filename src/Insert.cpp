@@ -27,11 +27,11 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
     finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000));
     if (addTime == 0)
     {
-        finalPath.append("idb");
+        finalPath.append(".idb");
     }
     else
     {
-        finalPath.append("idbzip");
+        finalPath.append(".idbzip");
     }
 
     if(buffer->buffer[0]==0)//数据未压缩

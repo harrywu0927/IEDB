@@ -127,8 +127,8 @@ public:
 class DataType
 {
 public:
-    bool isArray;
-    bool hasTime;
+    bool isArray=false;
+    bool hasTime=false;
     int arrayLen;
     int valueBytes;
     ValueType::ValueType valueType;
