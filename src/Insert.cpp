@@ -28,44 +28,53 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
     if (addTime == 0)
     {
         finalPath.append(".idb");
+        int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
+        if (err == 0)
+        {
+            err = DB_Write(fp, buffer->buffer, buffer->length);
+            if (err == 0)
+            {
+                return DB_Close(fp);
+            }
+        }
+        return err;
     }
     else
     {
         finalPath.append(".idbzip");
-    }
-
-    if(buffer->buffer[0]==0)//数据未压缩
-    {
-        int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
-        if (err == 0)
+        if (buffer->buffer[0] == 0) //数据未压缩
         {
-            err = DB_Write(fp, buffer->buffer+1, buffer->length-1);
+            int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
             if (err == 0)
             {
-                return DB_Close(fp);
+                err = DB_Write(fp, buffer->buffer + 1, buffer->length - 1);
+                if (err == 0)
+                {
+                    return DB_Close(fp);
+                }
             }
+            return err;
         }
-        return err;
-    }
-    else if(buffer->buffer[0]==1)//数据完全压缩
-    {
-
-        int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
-        err = DB_Close(fp);  
-        return err;
-    }
-    else if(buffer->buffer[0]==2)//数据未完全压缩
-    {
-        int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
-        if (err == 0)
+        else if (buffer->buffer[0] == 1) //数据完全压缩
         {
-            err = DB_Write(fp, buffer->buffer+1, buffer->length-1);
+
+            int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
+            err = DB_Close(fp);
+            return err;
+        }
+        else if (buffer->buffer[0] == 2) //数据未完全压缩
+        {
+            int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
             if (err == 0)
             {
-                return DB_Close(fp);
+                err = DB_Write(fp, buffer->buffer + 1, buffer->length - 1);
+                if (err == 0)
+                {
+                    return DB_Close(fp);
+                }
             }
+            return err;
         }
-        return err;
     }
 }
 

@@ -31,7 +31,7 @@ void readAllDirs(vector<string> &dirs, string basePath)
             base += "/";
             base += ptr->d_name;
             dirs.push_back(base);
-            //readAllDirs(dirs, basePath);
+            // readAllDirs(dirs, basePath);
         }
     }
     closedir(dir);

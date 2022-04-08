@@ -91,7 +91,7 @@ int getMemory(long size, char *mem);
 
 int CheckQueryParams(DB_QueryParams *params);
 
-int ReZipBuff(char *buff,int &buffLength,const char *pathToLine);
+int ReZipBuff(char *buff, int &buffLength, const char *pathToLine);
 
 class PathCode
 {
@@ -127,8 +127,8 @@ public:
 class DataType
 {
 public:
-    bool isArray=false;
-    bool hasTime=false;
+    bool isArray = false;
+    bool hasTime = false;
     int arrayLen;
     int valueBytes;
     ValueType::ValueType valueType;
@@ -698,7 +698,7 @@ public:
     static void GetSettings();
     static neb::CJsonObject GetSetting();
 };
-extern neb::CJsonObject settings ;//= FileIDManager::GetSetting();
+extern neb::CJsonObject settings; //= FileIDManager::GetSetting();
 
 extern vector<ZipTemplate> ZipTemplates;
 extern ZipTemplate CurrentZipTemplate;
