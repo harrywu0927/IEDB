@@ -17,39 +17,16 @@ using namespace std;
 
 int main(){
 
-    char buf[2];
-    short x = 80;
-    memcpy(buf,&x,2);
-    float value = 0;
-    void *pf;
-    pf = &value;
-    for (char i = 0; i < 4; i++)
-    {
-        *((unsigned char *)pf + i) = buf[i];
-    }
-    DataTypeConverter converter;
-    cout<<value<<endl;
-    cout<<converter.ToFloat(buf)<<endl;
-    return 0;
+    long len;
 
+    DB_GetFileLengthByPath("Jinfei91_2022-4-1-19-28-49-807.idb",&len);
+    cout<<len<<endl;
+    char readbuf[len];
+    DB_OpenAndRead("Jinfei91_2022-4-1-19-28-49-807.idb",readbuf);
 
-    long curtime = getMilliTime();
-    time_t time = curtime/1000;
-    struct tm *dateTime = localtime(&time);
-    string fileID = "xingfeng";
-    string finalPath = "";
-    //string time = ctime(&curtime);
-    //time.pop_back();
-    finalPath = finalPath.append(".").append("/")
-                        .append(fileID).append("_")
-                        .append(to_string(1900+dateTime->tm_year)).append("-")
-                        .append(to_string(1+dateTime->tm_mon)).append("-")
-                        .append(to_string(dateTime->tm_mday)).append("-")
-                        .append(to_string(dateTime->tm_hour)).append("-")
-                        .append(to_string(dateTime->tm_min)).append("-")
-                        .append(to_string(dateTime->tm_sec)).append("-")
-                        .append(to_string(curtime % 1000))
-                        .append(".idb");
-    cout<<finalPath<<endl;
+    // DB_ZipSwitchFile("/jinfei/","/jinfei/");
+    //   DB_ReZipSwitchFile("/jinfei/","/jinfei/");
+    DB_ZipRecvSwitchBuff("/jinfei","/jinfei",readbuf,&len);
+    cout<<len<<endl;
     return 0;
 }

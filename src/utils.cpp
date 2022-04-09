@@ -31,7 +31,7 @@ void readAllDirs(vector<string> &dirs, string basePath)
             base += "/";
             base += ptr->d_name;
             dirs.push_back(base);
-            //readAllDirs(dirs, basePath);
+            // readAllDirs(dirs, basePath);
         }
     }
     closedir(dir);
@@ -165,7 +165,15 @@ void readIDBZIPFilesList(string path, vector<string> &files)
     struct dirent *ptr;
     DIR *dir;
     string finalPath = Label;
-    finalPath += path;
+    if (path[0] != '/')
+        finalPath += "/" + path;
+    else
+        finalPath += path;
+    if (DB_CreateDirectory(const_cast<char *>(finalPath.c_str())))
+    {
+        errorCode = errno;
+        return;
+    }
     dir = opendir(finalPath.c_str());
     while ((ptr = readdir(dir)) != NULL)
     {

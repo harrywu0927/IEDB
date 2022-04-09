@@ -1,5 +1,3 @@
-
-
 #include "../include/QueryRequest.hpp"
 #include "../include/utils.hpp"
 #include "../include/Packer.hpp"

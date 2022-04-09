@@ -27,45 +27,54 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
     finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000));
     if (addTime == 0)
     {
-        finalPath.append("idb");
+        finalPath.append(".idb");
+        int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
+        if (err == 0)
+        {
+            err = DB_Write(fp, buffer->buffer, buffer->length);
+            if (err == 0)
+            {
+                return DB_Close(fp);
+            }
+        }
+        return err;
     }
     else
     {
-        finalPath.append("idbzip");
-    }
-
-    if(buffer->buffer[0]==0)//数据未压缩
-    {
-        int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
-        if (err == 0)
+        finalPath.append(".idbzip");
+        if (buffer->buffer[0] == 0) //数据未压缩
         {
-            err = DB_Write(fp, buffer->buffer+1, buffer->length-1);
+            int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
             if (err == 0)
             {
-                return DB_Close(fp);
+                err = DB_Write(fp, buffer->buffer + 1, buffer->length - 1);
+                if (err == 0)
+                {
+                    return DB_Close(fp);
+                }
             }
+            return err;
         }
-        return err;
-    }
-    else if(buffer->buffer[0]==1)//数据完全压缩
-    {
-
-        int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
-        err = DB_Close(fp);  
-        return err;
-    }
-    else if(buffer->buffer[0]==2)//数据未完全压缩
-    {
-        int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
-        if (err == 0)
+        else if (buffer->buffer[0] == 1) //数据完全压缩
         {
-            err = DB_Write(fp, buffer->buffer+1, buffer->length-1);
+
+            int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
+            err = DB_Close(fp);
+            return err;
+        }
+        else if (buffer->buffer[0] == 2) //数据未完全压缩
+        {
+            int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
             if (err == 0)
             {
-                return DB_Close(fp);
+                err = DB_Write(fp, buffer->buffer + 1, buffer->length - 1);
+                if (err == 0)
+                {
+                    return DB_Close(fp);
+                }
             }
+            return err;
         }
-        return err;
     }
 }
 

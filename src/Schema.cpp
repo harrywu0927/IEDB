@@ -429,9 +429,9 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(files[fileNum].c_str()), &len);
-        char readbuff[len];                                                       //文件内容
-        char writebuff[len];                                                      //写入没有被压缩的数据
-        if (DB_OpenAndRead(const_cast<char *>(files[fileNum].c_str()), readbuff)) //将文件内容读取到readbuff
+        char readbuff[len];                                                                    //文件内容
+        char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
+        if (DB_OpenAndRead(const_cast<char *>(files[fileNum].c_str()), readbuff))              //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
             return StatusCode::DATAFILE_NOT_FOUND;
@@ -444,158 +444,410 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::BOOL) // BOOL变量
             {
-                char standardBool = CurrentZipTemplate.schemas[i].second.standardValue[0];
-
-                //８个字节的时间数据,根据实际要求后续可能需要更改
-                readbuff_pos += 8;
-                if (standardBool != readbuff[readbuff_pos])
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
                 {
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos - 8, 9);
-                    writebuff_pos += 9;
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
+                    writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
-                readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
+                else
+                {
+                    char standardBool = CurrentZipTemplate.schemas[i].second.standardValue[0];
+
+                    // 1个字节,暂定，根据后续情况可能进行更改
+                    char value[1] = {0};
+                    memcpy(value, readbuff + readbuff_pos, 1);
+                    char currentUSintValue = value[0];
+                    if (standardBool != readbuff[readbuff_pos])
+                    {
+                        //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                        uint16_t posNum = i;
+                        char zipPosNum[2] = {0};
+                        for (char j = 0; j < 2; j++)
+                        {
+                            zipPosNum[1 - j] |= posNum;
+                            posNum >>= 8;
+                        }
+                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        writebuff_pos += 2;
+
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
+                        writebuff_pos += 1;
+                    }
+                    readbuff_pos += 1;
+                }
             }
             else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::USINT) // USINT变量
             {
-                char standardUsint = CurrentZipTemplate.schemas[i].second.standardValue[0];
-                char maxUsint = CurrentZipTemplate.schemas[i].second.maxValue[0];
-                char minUsint = CurrentZipTemplate.schemas[i].second.minValue[0];
-
-                //８个字节的时间数据,根据实际要求后续可能需要更改
-                readbuff_pos += 8;
-                if (standardUsint != readbuff[readbuff_pos] && (readbuff[readbuff_pos] < minUsint || readbuff[readbuff_pos] > maxUsint))
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
                 {
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos - 8, 9);
-                    writebuff_pos += 9;
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
+                    writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
-                readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
+                else
+                {
+                    char standardUSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                    char maxUSintValue = CurrentZipTemplate.schemas[i].second.maxValue[0];
+                    char minUSintValue = CurrentZipTemplate.schemas[i].second.minValue[0];
+
+                    // 1个字节,暂定，根据后续情况可能进行更改
+                    char value[1] = {0};
+                    memcpy(value, readbuff + readbuff_pos, 1);
+                    char currentUSintValue = value[0];
+                    if (currentUSintValue != standardUSintValue && (currentUSintValue < maxUSintValue || currentUSintValue > minUSintValue))
+                    {
+                        //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                        uint16_t posNum = i;
+                        char zipPosNum[2] = {0};
+                        for (char j = 0; j < 2; j++)
+                        {
+                            zipPosNum[1 - j] |= posNum;
+                            posNum >>= 8;
+                        }
+                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        writebuff_pos += 2;
+
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
+                        writebuff_pos += 1;
+                    }
+                    readbuff_pos += 1;
+                }
             }
             else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::UINT) // UINT变量
             {
-                uint16_t standardUint = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
-                uint16_t maxUint = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
-                uint16_t minUint = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
-
-                //８个字节的时间数据,根据实际要求后续可能需要更改
-                readbuff_pos += 8;
-                char value[2] = {0};
-                memcpy(value, readbuff + readbuff_pos, 2);
-                uint16_t currentValue = converter.ToUInt16(value);
-                if (currentValue != standardUint && (currentValue < minUint || currentValue > maxUint))
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
                 {
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos - 8, 10);
-                    writebuff_pos += 10;
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
+                    writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
-                readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
+                else
+                {
+                    ushort standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                    ushort maxUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                    ushort minUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
+
+                    // 2个字节,暂定，根据后续情况可能进行更改
+                    char value[2] = {0};
+                    memcpy(value, readbuff + readbuff_pos, 2);
+                    ushort currentUintValue = converter.ToUInt16(value);
+                    if (currentUintValue != standardUintValue && (currentUintValue < maxUintValue || currentUintValue > minUintValue))
+                    {
+                        //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                        uint16_t posNum = i;
+                        char zipPosNum[2] = {0};
+                        for (char j = 0; j < 2; j++)
+                        {
+                            zipPosNum[1 - j] |= posNum;
+                            posNum >>= 8;
+                        }
+                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        writebuff_pos += 2;
+
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2);
+                        writebuff_pos += 2;
+                    }
+                    readbuff_pos += 2;
+                }
             }
             else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::UDINT) // UDINT变量
             {
-                uint32_t standardUdint = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
-                uint32_t maxUdint = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
-                uint32_t minUdint = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
-
-                //８个字节的时间数据,根据实际要求后续可能需要更改
-                readbuff_pos += 8;
-                char value[4] = {0};
-                memcpy(value, readbuff + readbuff_pos, 4);
-                uint32_t currentValue = converter.ToUInt32(value);
-                if (currentValue != standardUdint && (currentValue < minUdint || currentValue > maxUdint))
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
                 {
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos - 8, 12);
-                    writebuff_pos += 12;
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
+                    writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
-                readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
+                else
+                {
+                    uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                    uint32 maxUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                    uint32 minUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
+
+                    // 4个字节,暂定，根据后续情况可能进行更改
+                    char value[4] = {0};
+                    memcpy(value, readbuff + readbuff_pos, 4);
+                    uint32 currentUDintValue = converter.ToUInt32(value);
+                    if (currentUDintValue != standardUDintValue && (currentUDintValue < maxUDintValue || currentUDintValue > minUDintValue))
+                    {
+                        //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                        uint16_t posNum = i;
+                        char zipPosNum[2] = {0};
+                        for (char j = 0; j < 2; j++)
+                        {
+                            zipPosNum[1 - j] |= posNum;
+                            posNum >>= 8;
+                        }
+                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        writebuff_pos += 2;
+
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                        writebuff_pos += 4;
+                    }
+                    readbuff_pos += 4;
+                }
             }
             else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::SINT) // SINT变量
             {
-                char standardSint = CurrentZipTemplate.schemas[i].second.standardValue[0];
-                char maxSint = CurrentZipTemplate.schemas[i].second.maxValue[0];
-                char minSint = CurrentZipTemplate.schemas[i].second.minValue[0];
-
-                //８个字节的时间数据,根据实际要求后续可能需要更改
-                readbuff_pos += 8;
-                if (standardSint != readbuff[readbuff_pos] && (readbuff[readbuff_pos] >= maxSint || readbuff[readbuff_pos] <= minSint))
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
                 {
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos - 8, 9);
-                    writebuff_pos += 9;
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
+                    writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
-                readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
+                else
+                {
+                    char standardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                    char maxSintValue = CurrentZipTemplate.schemas[i].second.maxValue[0];
+                    char minSintValue = CurrentZipTemplate.schemas[i].second.minValue[0];
+
+                    // 2个字节,暂定，根据后续情况可能进行更改
+                    char value[1] = {0};
+                    memcpy(value, readbuff + readbuff_pos, 1);
+                    char currentSintValue = value[0];
+                    if (currentSintValue != standardSintValue && (currentSintValue < maxSintValue || currentSintValue > minSintValue))
+                    {
+                        //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                        uint16_t posNum = i;
+                        char zipPosNum[2] = {0};
+                        for (char j = 0; j < 2; j++)
+                        {
+                            zipPosNum[1 - j] |= posNum;
+                            posNum >>= 8;
+                        }
+                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        writebuff_pos += 2;
+
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
+                        writebuff_pos += 1;
+                    }
+                    readbuff_pos += 1;
+                }
             }
             else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::INT) // INT变量
             {
-                short standardInt = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
-                short maxInt = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
-                short minInt = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
-
-                //８个字节的时间数据,根据实际要求后续可能需要更改
-                readbuff_pos += 8;
-                char value[2] = {0};
-                memcpy(value, readbuff + readbuff_pos, 2);
-                short currentValue = converter.ToInt16(value);
-                if (standardInt != currentValue && (currentValue < minInt || currentValue > maxInt))
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
                 {
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos - 8, 10);
-                    writebuff_pos += 10;
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
+                    writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
-                readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
+                else
+                {
+                    short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                    short maxIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                    short minIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
+
+                    // 2个字节,暂定，根据后续情况可能进行更改
+                    char value[2] = {0};
+                    memcpy(value, readbuff + readbuff_pos, 2);
+                    short currentIntValue = converter.ToInt16(value);
+                    if (currentIntValue != standardIntValue && (currentIntValue < maxIntValue || currentIntValue > minIntValue))
+                    {
+                        //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                        uint16_t posNum = i;
+                        char zipPosNum[2] = {0};
+                        for (char j = 0; j < 2; j++)
+                        {
+                            zipPosNum[1 - j] |= posNum;
+                            posNum >>= 8;
+                        }
+                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        writebuff_pos += 2;
+
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2);
+                        writebuff_pos += 2;
+                    }
+                    readbuff_pos += 2;
+                }
             }
             else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::DINT) // DINT变量
             {
-                int standardDint = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
-                int maxDint = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
-                int minDint = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
-
-                //８个字节的时间数据,根据实际要求后续可能需要更改
-                readbuff_pos += 8;
-                char value[4] = {0};
-                memcpy(value, readbuff + readbuff_pos, 4);
-                int currentValue = converter.ToInt32(value);
-                if (standardDint != currentValue && (currentValue < minDint || currentValue > maxDint))
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
                 {
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos - 8, 12);
-                    writebuff_pos += 12;
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
+                    writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
-                readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
+                else
+                {
+                    int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                    int maxDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                    int minDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
+
+                    // 4个字节,暂定，根据后续情况可能进行更改
+                    char value[4] = {0};
+                    memcpy(value, readbuff + readbuff_pos, 4);
+                    int currentDintValue = converter.ToInt32(value);
+                    if (currentDintValue != standardDintValue && (currentDintValue < maxDintValue || currentDintValue > minDintValue))
+                    {
+                        //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                        uint16_t posNum = i;
+                        char zipPosNum[2] = {0};
+                        for (char j = 0; j < 2; j++)
+                        {
+                            zipPosNum[1 - j] |= posNum;
+                            posNum >>= 8;
+                        }
+                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        writebuff_pos += 2;
+
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                        writebuff_pos += 4;
+                    }
+                    readbuff_pos += 4;
+                }
             }
             else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::REAL) // REAL变量
             {
-                float standardFloat = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
-                float maxFloat = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.maxValue);
-                float minFloat = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.minValue);
-
-                //８个字节的时间数据,根据实际要求后续可能需要更改
-                readbuff_pos += 8;
-                char value[4] = {0};
-                memcpy(value, readbuff + readbuff_pos, 4);
-                float currentValue = converter.ToFloat(value);
-                if (currentValue != standardFloat && (currentValue < minFloat || currentValue > maxFloat))
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
                 {
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos - 8, 12);
-                    writebuff_pos += 12;
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
+                    writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
-                readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
+                else
+                {
+                    float standardFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                    float maxFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                    float minFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.minValue);
+
+                    // 4个字节,暂定，根据后续情况可能进行更改
+                    char value[4] = {0};
+                    memcpy(value, readbuff + readbuff_pos, 4);
+                    int currentRealValue = converter.ToFloat(value);
+                    if (currentRealValue != standardFloatValue && (currentRealValue < maxFloatValue || currentRealValue > minFloatValue))
+                    {
+                        //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                        uint16_t posNum = i;
+                        char zipPosNum[2] = {0};
+                        for (char j = 0; j < 2; j++)
+                        {
+                            zipPosNum[1 - j] |= posNum;
+                            posNum >>= 8;
+                        }
+                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        writebuff_pos += 2;
+
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                        writebuff_pos += 4;
+                    }
+                    readbuff_pos += 4;
+                }
             }
             else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::IMAGE)
             {
+
+                //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                uint16_t posNum = i;
+                char zipPosNum[2] = {0};
+                for (char j = 0; j < 2; j++)
+                {
+                    zipPosNum[1 - j] |= posNum;
+                    posNum >>= 8;
+                }
+                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                writebuff_pos += 2;
+
                 //暂定２个字节的图片长度
                 char length[2] = {0};
                 memcpy(length, readbuff + readbuff_pos, 2);
+                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2); //图片长度也存
+                writebuff_pos += 2;
 
-                memcpy(writebuff+writebuff_pos,readbuff+readbuff_pos,2);//图片长度也存
-                writebuff_pos+=2;
                 uint16_t imageLength = converter.ToUInt16(length);
                 readbuff_pos += 2;
-
-                //８个字节的时间数据,根据实际要求后续可能需要更改
-                readbuff_pos += 8;
-
-                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos - 8, imageLength);
+                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, imageLength);
                 writebuff_pos += imageLength;
                 readbuff_pos += imageLength;
             }
         }
 
-        if (writebuff_pos == readbuff_pos) //表明数据没有被压缩,保持原文件
+        if (writebuff_pos >= readbuff_pos) //表明数据没有被压缩,保持原文件
         {
             cout << files[fileNum] + "文件数据没有被压缩!" << endl;
             // return 1;//1表示数据没有被压缩
@@ -651,8 +903,8 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(files[fileNum].c_str()), &len);
-        char readbuff[len];                                    //文件内容
-        char writebuff[CurrentZipTemplate.schemas.size() * 4]; //写入没有被压缩的数据
+        char readbuff[len];                            //文件内容
+        char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
         long readbuff_pos = 0;
         long writebuff_pos = 0;
 
@@ -682,9 +934,9 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
                     if (readbuff_pos < len) //还有未压缩的数据
                     {
                         //对比编号是否等于当前模板所在条数
-                        char zipPosNum[2]={0};
-                        memcpy(zipPosNum,readbuff+readbuff_pos,2);
-                        uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                        char zipPosNum[2] = {0};
+                        memcpy(zipPosNum, readbuff + readbuff_pos, 2);
+                        uint16_t posCmp = converter.ToUInt16(zipPosNum);
                         if (posCmp == i) //是未压缩数据的编号
                         {
                             readbuff_pos += 2;
@@ -734,9 +986,9 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
                     if (readbuff_pos < len) //还有未压缩的数据
                     {
                         //对比编号是否等于当前模板所在条数
-                        char zipPosNum[2]={0};
-                        memcpy(zipPosNum,readbuff+readbuff_pos,2);
-                        uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                        char zipPosNum[2] = {0};
+                        memcpy(zipPosNum, readbuff + readbuff_pos, 2);
+                        uint16_t posCmp = converter.ToUInt16(zipPosNum);
                         if (posCmp == i) //是未压缩数据的编号
                         {
                             readbuff_pos += 2;
@@ -782,9 +1034,9 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
                     if (readbuff_pos < len) //还有未压缩的数据
                     {
                         //对比编号是否等于当前模板所在条数
-                        char zipPosNum[2]={0};
-                        memcpy(zipPosNum,readbuff+readbuff_pos,2);
-                        uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                        char zipPosNum[2] = {0};
+                        memcpy(zipPosNum, readbuff + readbuff_pos, 2);
+                        uint16_t posCmp = converter.ToUInt16(zipPosNum);
                         if (posCmp == i) //是未压缩数据的编号
                         {
                             readbuff_pos += 2;
@@ -834,9 +1086,9 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
                     if (readbuff_pos < len) //还有未压缩的数据
                     {
                         //对比编号是否等于当前模板所在条数
-                        char zipPosNum[2]={0};
-                        memcpy(zipPosNum,readbuff+readbuff_pos,2);
-                        uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                        char zipPosNum[2] = {0};
+                        memcpy(zipPosNum, readbuff + readbuff_pos, 2);
+                        uint16_t posCmp = converter.ToUInt16(zipPosNum);
                         if (posCmp == i) //是未压缩数据的编号
                         {
                             readbuff_pos += 2;
@@ -882,9 +1134,9 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
                     if (readbuff_pos < len) //还有未压缩的数据
                     {
                         //对比编号是否等于当前模板所在条数
-                        char zipPosNum[2]={0};
-                        memcpy(zipPosNum,readbuff+readbuff_pos,2);
-                        uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                        char zipPosNum[2] = {0};
+                        memcpy(zipPosNum, readbuff + readbuff_pos, 2);
+                        uint16_t posCmp = converter.ToUInt16(zipPosNum);
                         if (posCmp == i) //是未压缩数据的编号
                         {
                             readbuff_pos += 2;
@@ -938,9 +1190,9 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
                     if (readbuff_pos < len) //还有未压缩的数据
                     {
                         //对比编号是否等于当前模板所在条数
-                        char zipPosNum[2]={0};
-                        memcpy(zipPosNum,readbuff+readbuff_pos,2);
-                        uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                        char zipPosNum[2] = {0};
+                        memcpy(zipPosNum, readbuff + readbuff_pos, 2);
+                        uint16_t posCmp = converter.ToUInt16(zipPosNum);
                         if (posCmp == i) //是未压缩数据的编号
                         {
                             readbuff_pos += 2;
@@ -982,10 +1234,10 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
                     float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char RealValue[4] = {0};
                     void *pf;
-                    pf=&standardRealValue;
+                    pf = &standardRealValue;
                     for (int j = 0; j < 4; j++)
                     {
-                        *((unsigned char*)pf+j)=RealValue[j];
+                        *((unsigned char *)pf + j) = RealValue[j];
                     }
                     memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
                     writebuff_pos += 4;
@@ -995,9 +1247,9 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
                     if (readbuff_pos < len) //还有未压缩的数据
                     {
                         //对比编号是否等于当前模板所在条数
-                        char zipPosNum[2]={0};
-                        memcpy(zipPosNum,readbuff+readbuff_pos,2);
-                        uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                        char zipPosNum[2] = {0};
+                        memcpy(zipPosNum, readbuff + readbuff_pos, 2);
+                        uint16_t posCmp = converter.ToUInt16(zipPosNum);
                         if (posCmp == i) //是未压缩数据的编号
                         {
                             readbuff_pos += 2;
@@ -1010,10 +1262,10 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
                             float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                             char RealValue[4] = {0};
                             void *pf;
-                            pf=&standardRealValue;
+                            pf = &standardRealValue;
                             for (int j = 0; j < 4; j++)
                             {
-                                *((unsigned char*)pf+j)=RealValue[j];
+                                *((unsigned char *)pf + j) = RealValue[j];
                             }
                             memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
                             writebuff_pos += 4;
@@ -1024,10 +1276,10 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
                         float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char RealValue[4] = {0};
                         void *pf;
-                        pf=&standardRealValue;
+                        pf = &standardRealValue;
                         for (int j = 0; j < 4; j++)
                         {
-                            *((unsigned char*)pf+j)=RealValue[j];
+                            *((unsigned char *)pf + j) = RealValue[j];
                         }
                         memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
                         writebuff_pos += 4;
@@ -1037,17 +1289,17 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
             else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::IMAGE) // IMAGE类型
             {
                 //对比编号是否等于当前模板所在条数
-                char zipPosNum[2]={0};
-                memcpy(zipPosNum,readbuff+readbuff_pos,2);
-                uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                char zipPosNum[2] = {0};
+                memcpy(zipPosNum, readbuff + readbuff_pos, 2);
+                uint16_t posCmp = converter.ToUInt16(zipPosNum);
                 if (posCmp == i) //是未压缩数据的编号
                 {
                     readbuff_pos += 2;
                     //暂定２个字节的图片长度
                     char length[2] = {0};
                     memcpy(length, readbuff + readbuff_pos, 2);
-                    memcpy(writebuff+writebuff_pos,readbuff+readbuff_pos,2);//图片长度也存
-                    writebuff_pos+=2;
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2); //图片长度也存
+                    writebuff_pos += 2;
                     uint16_t imageLength = converter.ToUInt16(length);
                     readbuff_pos += 2;
                     //存储图片
@@ -1057,7 +1309,7 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
                 }
                 else //不是未压缩的编号
                 {
-                    cout<<"图片还原出现问题！"<<endl;
+                    cout << "图片还原出现问题！" << endl;
                     return StatusCode::DATA_TYPE_MISMATCH_ERROR;
                 }
             }
@@ -1107,7 +1359,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
     }
     long len = *buffLength;
 
-    char writebuff[len]; //写入没有被压缩的数据
+    char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
 
     DataTypeConverter converter;
     long buff_pos = 0;
@@ -1117,155 +1369,410 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
     {
         if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::BOOL) // BOOL变量
         {
-            char standardBool = CurrentZipTemplate.schemas[i].second.standardValue[0];
-
-            //８个字节的时间数据,根据实际要求后续可能需要更改
-            buff_pos += 8;
-            if (standardBool != buff[buff_pos])
+            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                memcpy(writebuff + writebuff_pos, buff + buff_pos - 8, 9);
-                writebuff_pos += 9;
+                //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                uint16_t posNum = i;
+                char zipPosNum[2] = {0};
+                for (char j = 0; j < 2; j++)
+                {
+                    zipPosNum[1 - j] |= posNum;
+                    posNum >>= 8;
+                }
+                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                writebuff_pos += 2;
+
+                memcpy(writebuff + writebuff_pos, buff + buff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
+                writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
+                buff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
             }
-            buff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
+            else
+            {
+                char standardBool = CurrentZipTemplate.schemas[i].second.standardValue[0];
+
+                // 1个字节,暂定，根据后续情况可能进行更改
+                char value[1] = {0};
+                memcpy(value, buff + buff_pos, 1);
+                char currentUSintValue = value[0];
+                if (standardBool != buff[buff_pos])
+                {
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+
+                    memcpy(writebuff + writebuff_pos, buff + buff_pos, 1);
+                    writebuff_pos += 1;
+                }
+                buff_pos += 1;
+            }
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::USINT) // USINT变量
         {
-            char standardUsint = CurrentZipTemplate.schemas[i].second.standardValue[0];
-            char maxUsint = CurrentZipTemplate.schemas[i].second.maxValue[0];
-            char minUsint = CurrentZipTemplate.schemas[i].second.minValue[0];
-
-            //８个字节的时间数据,根据实际要求后续可能需要更改
-            buff_pos += 8;
-            if (standardUsint != buff[buff_pos] && (buff[buff_pos] < minUsint || buff[buff_pos] > maxUsint))
+            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                memcpy(writebuff + writebuff_pos, buff + buff_pos - 8, 9);
-                writebuff_pos += 9;
+                //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                uint16_t posNum = i;
+                char zipPosNum[2] = {0};
+                for (char j = 0; j < 2; j++)
+                {
+                    zipPosNum[1 - j] |= posNum;
+                    posNum >>= 8;
+                }
+                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                writebuff_pos += 2;
+
+                memcpy(writebuff + writebuff_pos, buff + buff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
+                writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
+                buff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
             }
-            buff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
+            else
+            {
+                char standardUSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                char maxUSintValue = CurrentZipTemplate.schemas[i].second.maxValue[0];
+                char minUSintValue = CurrentZipTemplate.schemas[i].second.minValue[0];
+
+                // 1个字节,暂定，根据后续情况可能进行更改
+                char value[1] = {0};
+                memcpy(value, buff + buff_pos, 1);
+                char currentUSintValue = value[0];
+                if (currentUSintValue != standardUSintValue && (currentUSintValue < maxUSintValue || currentUSintValue > minUSintValue))
+                {
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+
+                    memcpy(writebuff + writebuff_pos, buff + buff_pos, 1);
+                    writebuff_pos += 1;
+                }
+                buff_pos += 1;
+            }
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::UINT) // UINT变量
         {
-            uint16_t standardUint = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
-            uint16_t maxUint = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
-            uint16_t minUint = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
-
-            //８个字节的时间数据,根据实际要求后续可能需要更改
-            buff_pos += 8;
-            char value[2] = {0};
-            memcpy(value, buff + buff_pos, 2);
-            uint16_t currentValue = converter.ToUInt16(value);
-            if (currentValue != standardUint && (currentValue < minUint || currentValue > maxUint))
+            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                memcpy(writebuff + writebuff_pos, buff + buff_pos - 8, 10);
-                writebuff_pos += 10;
+                //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                uint16_t posNum = i;
+                char zipPosNum[2] = {0};
+                for (char j = 0; j < 2; j++)
+                {
+                    zipPosNum[1 - j] |= posNum;
+                    posNum >>= 8;
+                }
+                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                writebuff_pos += 2;
+                memcpy(writebuff + writebuff_pos, buff + buff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
+                writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
+                buff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
             }
-            buff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
+            else
+            {
+                ushort standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                ushort maxUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                ushort minUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
+
+                // 2个字节,暂定，根据后续情况可能进行更改
+                char value[2] = {0};
+                memcpy(value, buff + buff_pos, 2);
+                ushort currentUintValue = converter.ToUInt16(value);
+                if (currentUintValue != standardUintValue && (currentUintValue < maxUintValue || currentUintValue > minUintValue))
+                {
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+
+                    memcpy(writebuff + writebuff_pos, buff + buff_pos, 2);
+                    writebuff_pos += 2;
+                }
+                buff_pos += 2;
+            }
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::UDINT) // UDINT变量
         {
-            uint32_t standardUdint = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
-            uint32_t maxUdint = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
-            uint32_t minUdint = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
-
-            //８个字节的时间数据,根据实际要求后续可能需要更改
-            buff_pos += 8;
-            char value[4] = {0};
-            memcpy(value, buff + buff_pos, 4);
-            uint32_t currentValue = converter.ToUInt32(value);
-            if (currentValue != standardUdint && (currentValue < minUdint || currentValue > maxUdint))
+            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                memcpy(writebuff + writebuff_pos, buff + buff_pos - 8, 12);
-                writebuff_pos += 12;
+                //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                uint16_t posNum = i;
+                char zipPosNum[2] = {0};
+                for (char j = 0; j < 2; j++)
+                {
+                    zipPosNum[1 - j] |= posNum;
+                    posNum >>= 8;
+                }
+                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                writebuff_pos += 2;
+
+                memcpy(writebuff + writebuff_pos, buff + buff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
+                writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
+                buff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
             }
-            buff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
+            else
+            {
+                uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                uint32 maxUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                uint32 minUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
+
+                // 4个字节,暂定，根据后续情况可能进行更改
+                char value[4] = {0};
+                memcpy(value, buff + buff_pos, 4);
+                uint32 currentUDintValue = converter.ToUInt32(value);
+                if (currentUDintValue != standardUDintValue && (currentUDintValue < maxUDintValue || currentUDintValue > minUDintValue))
+                {
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+
+                    memcpy(writebuff + writebuff_pos, buff + buff_pos, 4);
+                    writebuff_pos += 4;
+                }
+                buff_pos += 4;
+            }
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::SINT) // SINT变量
         {
-            char standardSint = CurrentZipTemplate.schemas[i].second.standardValue[0];
-            char maxSint = CurrentZipTemplate.schemas[i].second.maxValue[0];
-            char minSint = CurrentZipTemplate.schemas[i].second.minValue[0];
-
-            //８个字节的时间数据,根据实际要求后续可能需要更改
-            buff_pos += 8;
-            if (standardSint != buff[buff_pos] && (buff[buff_pos] >= maxSint || buff[buff_pos] <= minSint))
+            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                memcpy(writebuff + writebuff_pos, buff + buff_pos - 8, 9);
-                writebuff_pos += 9;
+                //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                uint16_t posNum = i;
+                char zipPosNum[2] = {0};
+                for (char j = 0; j < 2; j++)
+                {
+                    zipPosNum[1 - j] |= posNum;
+                    posNum >>= 8;
+                }
+                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                writebuff_pos += 2;
+                memcpy(writebuff + writebuff_pos, buff + buff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
+                writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
+                buff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
             }
-            buff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
+            else
+            {
+                char standardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                char maxSintValue = CurrentZipTemplate.schemas[i].second.maxValue[0];
+                char minSintValue = CurrentZipTemplate.schemas[i].second.minValue[0];
+
+                // 2个字节,暂定，根据后续情况可能进行更改
+                char value[1] = {0};
+                memcpy(value, buff + buff_pos, 1);
+                char currentSintValue = value[0];
+                if (currentSintValue != standardSintValue && (currentSintValue < maxSintValue || currentSintValue > minSintValue))
+                {
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+
+                    memcpy(writebuff + writebuff_pos, buff + buff_pos, 1);
+                    writebuff_pos += 1;
+                }
+                buff_pos += 1;
+            }
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::INT) // INT变量
         {
-            short standardInt = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
-            short maxInt = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
-            short minInt = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
-
-            //８个字节的时间数据,根据实际要求后续可能需要更改
-            buff_pos += 8;
-            char value[2] = {0};
-            memcpy(value, buff + buff_pos, 2);
-            short currentValue = converter.ToInt16(value);
-            if (standardInt != currentValue && (currentValue < minInt || currentValue > maxInt))
+            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                memcpy(writebuff + writebuff_pos, buff + buff_pos - 8, 10);
-                writebuff_pos += 10;
+                //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                uint16_t posNum = i;
+                char zipPosNum[2] = {0};
+                for (char j = 0; j < 2; j++)
+                {
+                    zipPosNum[1 - j] |= posNum;
+                    posNum >>= 8;
+                }
+                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                writebuff_pos += 2;
+                memcpy(writebuff + writebuff_pos, buff + buff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
+                writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
+                buff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
             }
-            buff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
+            else
+            {
+                short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                short maxIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                short minIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
+
+                // 2个字节,暂定，根据后续情况可能进行更改
+                char value[2] = {0};
+                memcpy(value, buff + buff_pos, 2);
+                short currentIntValue = converter.ToInt16(value);
+                if (currentIntValue != standardIntValue && (currentIntValue < maxIntValue || currentIntValue > minIntValue))
+                {
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+
+                    memcpy(writebuff + writebuff_pos, buff + buff_pos, 2);
+                    writebuff_pos += 2;
+                }
+                buff_pos += 2;
+            }
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::DINT) // DINT变量
         {
-            int standardDint = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
-            int maxDint = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
-            int minDint = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
-
-            //８个字节的时间数据,根据实际要求后续可能需要更改
-            buff_pos += 8;
-            char value[4] = {0};
-            memcpy(value, buff + buff_pos, 4);
-            int currentValue = converter.ToInt32(value);
-            if (standardDint != currentValue && (currentValue < minDint || currentValue > maxDint))
+            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                memcpy(writebuff + writebuff_pos, buff + buff_pos - 8, 12);
-                writebuff_pos += 12;
+                //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                uint16_t posNum = i;
+                char zipPosNum[2] = {0};
+                for (char j = 0; j < 2; j++)
+                {
+                    zipPosNum[1 - j] |= posNum;
+                    posNum >>= 8;
+                }
+                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                writebuff_pos += 2;
+                memcpy(writebuff + writebuff_pos, buff + buff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
+                writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
+                buff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
             }
-            buff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
+            else
+            {
+                int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                int maxDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                int minDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
+
+                // 4个字节,暂定，根据后续情况可能进行更改
+                char value[4] = {0};
+                memcpy(value, buff + buff_pos, 4);
+                int currentDintValue = converter.ToInt32(value);
+                if (currentDintValue != standardDintValue && (currentDintValue < maxDintValue || currentDintValue > minDintValue))
+                {
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+
+                    memcpy(writebuff + writebuff_pos, buff + buff_pos, 4);
+                    writebuff_pos += 4;
+                }
+                buff_pos += 4;
+            }
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::REAL) // REAL变量
         {
-            float standardFloat = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
-            float maxFloat = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.maxValue);
-            float minFloat = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.minValue);
-
-            //８个字节的时间数据,根据实际要求后续可能需要更改
-            buff_pos += 8;
-            char value[4] = {0};
-            memcpy(value, buff + buff_pos, 4);
-            float currentValue = converter.ToFloat(value);
-            if (currentValue != standardFloat && (currentValue < minFloat || currentValue > maxFloat))
+            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                memcpy(writebuff + writebuff_pos, buff + buff_pos - 8, 12);
-                writebuff_pos += 12;
+                //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                uint16_t posNum = i;
+                char zipPosNum[2] = {0};
+                for (char j = 0; j < 2; j++)
+                {
+                    zipPosNum[1 - j] |= posNum;
+                    posNum >>= 8;
+                }
+                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                writebuff_pos += 2;
+                memcpy(writebuff + writebuff_pos, buff + buff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
+                writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
+                buff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
             }
-            buff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
+            else
+            {
+                float standardFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                float maxFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                float minFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.minValue);
+
+                // 4个字节,暂定，根据后续情况可能进行更改
+                char value[4] = {0};
+                memcpy(value, buff + buff_pos, 4);
+                int currentRealValue = converter.ToFloat(value);
+                if (currentRealValue != standardFloatValue && (currentRealValue < maxFloatValue || currentRealValue > minFloatValue))
+                {
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+
+                    memcpy(writebuff + writebuff_pos, buff + buff_pos, 4);
+                    writebuff_pos += 4;
+                }
+                buff_pos += 4;
+            }
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::IMAGE)
         {
+
+            //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+            uint16_t posNum = i;
+            char zipPosNum[2] = {0};
+            for (char j = 0; j < 2; j++)
+            {
+                zipPosNum[1 - j] |= posNum;
+                posNum >>= 8;
+            }
+            memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+            writebuff_pos += 2;
+
             //暂定２个字节的图片长度
             char length[2] = {0};
             memcpy(length, buff + buff_pos, 2);
+            memcpy(writebuff + writebuff_pos, buff + buff_pos, 2); //图片长度也存
+            writebuff_pos += 2;
+
             uint16_t imageLength = converter.ToUInt16(length);
             buff_pos += 2;
-
-            //８个字节的时间数据,根据实际要求后续可能需要更改
-            buff_pos += 8;
-
-            memcpy(writebuff + writebuff_pos, buff + buff_pos - 8, imageLength);
+            memcpy(writebuff + writebuff_pos, buff + buff_pos, imageLength);
             writebuff_pos += imageLength;
             buff_pos += imageLength;
         }
     }
 
-    if (writebuff_pos == buff_pos)
+    if (writebuff_pos >= buff_pos)
     {
         cout << "数据未压缩" << endl;
 
@@ -1331,8 +1838,8 @@ int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(files[fileNum].c_str()), &len);
-        char readbuff[len];  //文件内容
-        char writebuff[len]; //写入没有被压缩的数据
+        char readbuff[len];                                                                    //文件内容
+        char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
         long readbuff_pos = 0;
         long writebuff_pos = 0;
 
@@ -1357,15 +1864,15 @@ int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
                 if (currentBoolTime != standardBoolTime && (currentBoolTime < minBoolTime || currentBoolTime > maxBoolTime))
                 {
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                    uint16_t posNum=i;
-                    char zipPosNum[2]={0};
-                    for(char j=0;j<2;j++)
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
                     {
                         zipPosNum[1 - j] |= posNum;
                         posNum >>= 8;
                     }
-                    memcpy(writebuff+writebuff_pos,zipPosNum,2);
-                    writebuff_pos+=2;
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
 
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                     writebuff_pos += 4;
@@ -1378,7 +1885,7 @@ int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
                 return StatusCode::DATA_TYPE_MISMATCH_ERROR;
             }
         }
-        if (writebuff_pos > readbuff_pos) //表明数据没有被压缩,不做处理
+        if (writebuff_pos >= readbuff_pos) //表明数据没有被压缩,不做处理
         {
             cout << files[fileNum] + "文件数据没有被压缩!" << endl;
             // return 1;//1表示数据没有被压缩
@@ -1435,8 +1942,8 @@ int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(files[fileNum].c_str()), &len);
-        char readbuff[len];                                    //文件内容
-        char writebuff[CurrentZipTemplate.schemas.size() * 4]; //写入没有被压缩的数据
+        char readbuff[len];                            //文件内容
+        char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
         long readbuff_pos = 0;
         long writebuff_pos = 0;
 
@@ -1466,13 +1973,13 @@ int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
                     if (readbuff_pos < len) //还有未压缩的数据
                     {
                         //对比编号是否等于当前模板所在条数
-                        char zipPosNum[2]={0};
-                        memcpy(zipPosNum,readbuff+readbuff_pos,2);
-                        uint16_t posCmp=converter.ToUInt16(zipPosNum);
+                        char zipPosNum[2] = {0};
+                        memcpy(zipPosNum, readbuff + readbuff_pos, 2);
+                        uint16_t posCmp = converter.ToUInt16(zipPosNum);
 
                         if (posCmp == i) //是未压缩数据的编号
                         {
-                            readbuff_pos+=2;
+                            readbuff_pos += 2;
                             memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                             writebuff_pos += 4;
                             readbuff_pos += 4;
@@ -1550,7 +2057,7 @@ int DB_ZipRecvSwitchBuff(const char *ZipTemPath, const char *filepath, char *buf
     }
     long len = *buffLength;
 
-    char writebuff[len]; //写入没有被压缩的数据
+    char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
 
     DataTypeConverter converter;
     long buff_pos = 0;
@@ -1572,15 +2079,15 @@ int DB_ZipRecvSwitchBuff(const char *ZipTemPath, const char *filepath, char *buf
             if (currentBoolTime != standardBoolTime && (currentBoolTime < minBoolTime || currentBoolTime > maxBoolTime))
             {
                 //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                uint16_t posNum=i;
-                char zipPosNum[2]={0};
-                for(char j=0;j<2;j++)
+                uint16_t posNum = i;
+                char zipPosNum[2] = {0};
+                for (char j = 0; j < 2; j++)
                 {
                     zipPosNum[1 - j] |= posNum;
                     posNum >>= 8;
                 }
-                memcpy(writebuff+writebuff_pos,zipPosNum,2);
-                writebuff_pos+=2;
+                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                writebuff_pos += 2;
 
                 memcpy(writebuff + writebuff_pos, buff + buff_pos, 4);
                 writebuff_pos += 4;
@@ -1594,7 +2101,7 @@ int DB_ZipRecvSwitchBuff(const char *ZipTemPath, const char *filepath, char *buf
         }
     }
 
-    if (writebuff_pos > buff_pos) //表明数据没有被压缩
+    if (writebuff_pos >= buff_pos) //表明数据没有被压缩
     {
         char isZip[1] = {0};
         char finnalBuf[len + 1];
@@ -1604,17 +2111,17 @@ int DB_ZipRecvSwitchBuff(const char *ZipTemPath, const char *filepath, char *buf
         memcpy(buff, finnalBuf, len + 1);
         *buffLength += 1;
     }
-    else if(writebuff_pos==0)//数据完全压缩
+    else if (writebuff_pos == 0) //数据完全压缩
     {
         char isZip[1] = {1};
-        char finnalBuf[writebuff_pos+1];
-        
+        char finnalBuf[writebuff_pos + 1];
+
         memcpy(finnalBuf, isZip, 1);
         memcpy(finnalBuf + 1, writebuff, writebuff_pos);
         memcpy(buff, finnalBuf, writebuff_pos + 1);
         *buffLength = writebuff_pos + 1;
     }
-    else//数据未完全压缩
+    else //数据未完全压缩
     {
         char isZip[1] = {2};
         char finnalBuf[writebuff_pos + 1];
@@ -1624,12 +2131,12 @@ int DB_ZipRecvSwitchBuff(const char *ZipTemPath, const char *filepath, char *buf
         memcpy(buff, finnalBuf, writebuff_pos + 1);
         *buffLength = writebuff_pos + 1;
     }
-    
+
     DB_DataBuffer databuff;
-    databuff.length=*buffLength;
-    databuff.buffer=buff;
-    databuff.savePath=filepath;
-    DB_InsertRecord(&databuff,1);
+    databuff.length = *buffLength;
+    databuff.buffer = buff;
+    databuff.savePath = filepath;
+    DB_InsertRecord(&databuff, 1);
     return err;
 }
 
@@ -1663,8 +2170,8 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(files[fileNum].c_str()), &len);
-        char readbuff[len];  //文件内容
-        char writebuff[len]; //写入没有被压缩的数据
+        char readbuff[len];                                                                    //文件内容
+        char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
         long readbuff_pos = 0;
         long writebuff_pos = 0;
 
@@ -1680,15 +2187,15 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                 if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
                 {
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                    uint16_t posNum=i;
-                    char zipPosNum[2]={0};
-                    for(char j=0;j<2;j++)
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
                     {
                         zipPosNum[1 - j] |= posNum;
                         posNum >>= 8;
                     }
-                    memcpy(writebuff+writebuff_pos,zipPosNum,2);
-                    writebuff_pos+=2;
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
 
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
                     writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
@@ -1707,15 +2214,15 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                     if (currentUDintValue != standardUDintValue && (currentUDintValue < maxUDintValue || currentUDintValue > minUDintValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                        uint16_t posNum=i;
-                        char zipPosNum[2]={0};
-                        for(char j=0;j<2;j++)
+                        uint16_t posNum = i;
+                        char zipPosNum[2] = {0};
+                        for (char j = 0; j < 2; j++)
                         {
                             zipPosNum[1 - j] |= posNum;
                             posNum >>= 8;
                         }
-                        memcpy(writebuff+writebuff_pos,zipPosNum,2);
-                        writebuff_pos+=2;
+                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        writebuff_pos += 2;
 
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                         writebuff_pos += 4;
@@ -1728,15 +2235,15 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                 if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
                 {
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                    uint16_t posNum=i;
-                    char zipPosNum[2]={0};
-                    for(char j=0;j<2;j++)
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
                     {
                         zipPosNum[1 - j] |= posNum;
                         posNum >>= 8;
                     }
-                    memcpy(writebuff+writebuff_pos,zipPosNum,2);
-                    writebuff_pos+=2;
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
 
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
                     writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
@@ -1755,15 +2262,15 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                     if (currentUSintValue != standardUSintValue && (currentUSintValue < maxUSintValue || currentUSintValue > minUSintValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                        uint16_t posNum=i;
-                        char zipPosNum[2]={0};
-                        for(char j=0;j<2;j++)
+                        uint16_t posNum = i;
+                        char zipPosNum[2] = {0};
+                        for (char j = 0; j < 2; j++)
                         {
                             zipPosNum[1 - j] |= posNum;
                             posNum >>= 8;
                         }
-                        memcpy(writebuff+writebuff_pos,zipPosNum,2);
-                        writebuff_pos+=2;
+                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        writebuff_pos += 2;
 
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
                         writebuff_pos += 1;
@@ -1776,15 +2283,15 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                 if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
                 {
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                    uint16_t posNum=i;
-                    char zipPosNum[2]={0};
-                    for(char j=0;j<2;j++)
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
                     {
                         zipPosNum[1 - j] |= posNum;
                         posNum >>= 8;
                     }
-                    memcpy(writebuff+writebuff_pos,zipPosNum,2);
-                    writebuff_pos+=2;
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
                     writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
                     readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
@@ -1802,15 +2309,15 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                     if (currentUintValue != standardUintValue && (currentUintValue < maxUintValue || currentUintValue > minUintValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                        uint16_t posNum=i;
-                        char zipPosNum[2]={0};
-                        for(char j=0;j<2;j++)
+                        uint16_t posNum = i;
+                        char zipPosNum[2] = {0};
+                        for (char j = 0; j < 2; j++)
                         {
                             zipPosNum[1 - j] |= posNum;
                             posNum >>= 8;
                         }
-                        memcpy(writebuff+writebuff_pos,zipPosNum,2);
-                        writebuff_pos+=2;
+                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        writebuff_pos += 2;
 
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2);
                         writebuff_pos += 2;
@@ -1823,15 +2330,15 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                 if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
                 {
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                    uint16_t posNum=i;
-                    char zipPosNum[2]={0};
-                    for(char j=0;j<2;j++)
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
                     {
                         zipPosNum[1 - j] |= posNum;
                         posNum >>= 8;
                     }
-                    memcpy(writebuff+writebuff_pos,zipPosNum,2);
-                    writebuff_pos+=2;
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
                     writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
                     readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
@@ -1849,15 +2356,15 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                     if (currentSintValue != standardSintValue && (currentSintValue < maxSintValue || currentSintValue > minSintValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                        uint16_t posNum=i;
-                        char zipPosNum[2]={0};
-                        for(char j=0;j<2;j++)
+                        uint16_t posNum = i;
+                        char zipPosNum[2] = {0};
+                        for (char j = 0; j < 2; j++)
                         {
                             zipPosNum[1 - j] |= posNum;
                             posNum >>= 8;
                         }
-                        memcpy(writebuff+writebuff_pos,zipPosNum,2);
-                        writebuff_pos+=2;
+                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        writebuff_pos += 2;
 
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
                         writebuff_pos += 1;
@@ -1870,15 +2377,15 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                 if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
                 {
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                    uint16_t posNum=i;
-                    char zipPosNum[2]={0};
-                    for(char j=0;j<2;j++)
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
                     {
                         zipPosNum[1 - j] |= posNum;
                         posNum >>= 8;
                     }
-                    memcpy(writebuff+writebuff_pos,zipPosNum,2);
-                    writebuff_pos+=2;
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
                     writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
                     readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
@@ -1896,15 +2403,15 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                     if (currentIntValue != standardIntValue && (currentIntValue < maxIntValue || currentIntValue > minIntValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                        uint16_t posNum=i;
-                        char zipPosNum[2]={0};
-                        for(char j=0;j<2;j++)
+                        uint16_t posNum = i;
+                        char zipPosNum[2] = {0};
+                        for (char j = 0; j < 2; j++)
                         {
                             zipPosNum[1 - j] |= posNum;
                             posNum >>= 8;
                         }
-                        memcpy(writebuff+writebuff_pos,zipPosNum,2);
-                        writebuff_pos+=2;
+                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        writebuff_pos += 2;
 
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2);
                         writebuff_pos += 2;
@@ -1917,15 +2424,15 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                 if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
                 {
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                    uint16_t posNum=i;
-                    char zipPosNum[2]={0};
-                    for(char j=0;j<2;j++)
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
                     {
                         zipPosNum[1 - j] |= posNum;
                         posNum >>= 8;
                     }
-                    memcpy(writebuff+writebuff_pos,zipPosNum,2);
-                    writebuff_pos+=2;
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
                     writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
                     readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
@@ -1943,15 +2450,15 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                     if (currentDintValue != standardDintValue && (currentDintValue < maxDintValue || currentDintValue > minDintValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                        uint16_t posNum=i;
-                        char zipPosNum[2]={0};
-                        for(char j=0;j<2;j++)
+                        uint16_t posNum = i;
+                        char zipPosNum[2] = {0};
+                        for (char j = 0; j < 2; j++)
                         {
                             zipPosNum[1 - j] |= posNum;
                             posNum >>= 8;
                         }
-                        memcpy(writebuff+writebuff_pos,zipPosNum,2);
-                        writebuff_pos+=2;
+                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        writebuff_pos += 2;
 
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                         writebuff_pos += 4;
@@ -1964,15 +2471,15 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                 if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
                 {
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                    uint16_t posNum=i;
-                    char zipPosNum[2]={0};
-                    for(char j=0;j<2;j++)
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
                     {
                         zipPosNum[1 - j] |= posNum;
                         posNum >>= 8;
                     }
-                    memcpy(writebuff+writebuff_pos,zipPosNum,2);
-                    writebuff_pos+=2;
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen);
                     writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
                     readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes * CurrentZipTemplate.schemas[i].second.arrayLen;
@@ -1990,15 +2497,15 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                     if (currentRealValue != standardFloatValue && (currentRealValue < maxFloatValue || currentRealValue > minFloatValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                        uint16_t posNum=i;
-                        char zipPosNum[2]={0};
-                        for(char j=0;j<2;j++)
+                        uint16_t posNum = i;
+                        char zipPosNum[2] = {0};
+                        for (char j = 0; j < 2; j++)
                         {
                             zipPosNum[1 - j] |= posNum;
                             posNum >>= 8;
                         }
-                        memcpy(writebuff+writebuff_pos,zipPosNum,2);
-                        writebuff_pos+=2;
+                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        writebuff_pos += 2;
 
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                         writebuff_pos += 4;
@@ -2012,7 +2519,7 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                 return StatusCode::DATA_TYPE_MISMATCH_ERROR;
             }
         }
-        if (writebuff_pos > readbuff_pos) //表明数据没有被压缩,不做处理
+        if (writebuff_pos >= readbuff_pos) //表明数据没有被压缩,不做处理
         {
             cout << files[fileNum] + "文件数据没有被压缩!" << endl;
             // return 1;//1表示数据没有被压缩
@@ -2039,6 +2546,36 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
     return err;
 }
 
+/**
+ * @brief 还原被压缩的模拟量文件返回原状态
+ *
+ * @param ZipTemPath 压缩模板所在目录
+ * @param pathToLine 压缩文件所在路径
+ * @return  0:success,
+ *          others:StatusCode
+ */
+int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
+{
+    int err = 0;
+    err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
+    if (err)
+    {
+        cout << "未加载模板" << endl;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
+    DataTypeConverter converter;
+    vector<string> files;
+
+    readIDBZIPFilesList(pathToLine, files);
+    if (files.size() == 0)
+    {
+        cout << "没有.idbzip文件!" << endl;
+        return StatusCode::DATAFILE_NOT_FOUND;
+    }
+
+    return err;
+}
+
 // int main()
 // {
 //     // EDVDB_LoadZipSchema("/");
@@ -2049,12 +2586,12 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
 //     char readbuf[len];
 //     DB_OpenAndRead("Jinfei91_2022-4-1-19-28-49-807.idb",readbuf);
 
-//     //DB_ZipSwitchFile("/jinfei/","/jinfei/");
-//     //DB_ReZipSwitchFile("/jinfei/","/jinfei");
-//     DB_ZipRecvSwitchBuff("/","/",readbuf,&len);
+//     // DB_ZipSwitchFile("/jinfei/","/jinfei/");
+//     //   DB_ReZipSwitchFile("/jinfei/","/jinfei/");
+//     DB_ZipRecvSwitchBuff("/jinfei","/jinfei",readbuf,&len);
 //     cout<<len<<endl;
-//     char test[len];
-//     memcpy(test,readbuf,len);
+//     // char test[len];
+//     // memcpy(test,readbuf,len);
 //     // cout<<test<<endl;
 //     // DB_TreeNodeParams params;
 //     // params.pathToLine = "/";
