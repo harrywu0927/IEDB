@@ -599,11 +599,11 @@ public:
         return 0;
     }
 
-    static void CheckTemplate(string path)
+    static int CheckTemplate(string path)
     {
         if ((path != CurrentTemplate.path && path != "") || CurrentTemplate.path == "")
         {
-            SetTemplate(path.c_str());
+            return SetTemplate(path.c_str());
         }
     }
 };
