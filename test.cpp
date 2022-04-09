@@ -19,13 +19,24 @@ int main(){
     // long fp;
     // DB_Open("testopen.idb","wb",&fp);
     // DB_Close(fp);
+    // for (int i = 0; i < 50; i++)
+    // {
+    //     string path = "testidb" + to_string(i) + ".idbzip";
+    //     FILE *fp = fopen(path.c_str(), "wb");
+    //     fclose(fp);
+    //     usleep(100000);
+    // }
     DB_DataBuffer buffer;
     buffer.savePath = "jinfei";
     buffer.length = 11;
-    buffer.buffer = "testsetstes";
-    for (int i = 0; i < 11; i++)
+    char buf[11] = {'3'};
+    buffer.buffer = buf;
+    for (int i = 0; i < 30; i++)
     {
-        DB_InsertRecord(&buffer, 0);
+        char type = 1;
+        memcpy(buffer.buffer,&type,1);
+        DB_InsertRecord(&buffer, 1);
+        usleep(100000);
     }
     
     
