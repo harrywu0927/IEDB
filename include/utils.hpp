@@ -605,6 +605,7 @@ public:
         {
             return SetTemplate(path.c_str());
         }
+        return -1;
     }
 };
 

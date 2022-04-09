@@ -19,6 +19,7 @@ void readAllDirs(vector<string> &dirs, string basePath)
     if ((dir = opendir(basePath.c_str())) == NULL)
     {
         perror("Error while opening directory");
+        return;
     }
 
     while ((ptr = readdir(dir)) != NULL)
@@ -31,7 +32,7 @@ void readAllDirs(vector<string> &dirs, string basePath)
             base += "/";
             base += ptr->d_name;
             dirs.push_back(base);
-            // readAllDirs(dirs, basePath);
+            readAllDirs(dirs, base);
         }
     }
     closedir(dir);
@@ -42,7 +43,7 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
 {
     struct dirent *ptr;
     DIR *dir;
-    string finalPath = Label;
+    string finalPath = settings("Filename_Label");
     unordered_map<string, int> map;
     if (DB_CreateDirectory(const_cast<char *>(finalPath.c_str())))
     {
@@ -50,7 +51,7 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
         return map;
     }
     vector<string> dirs;
-    dirs.push_back("./");
+    dirs.push_back(settings("Filename_Label"));
     readAllDirs(dirs, finalPath);
     for (auto &d : dirs)
     {
@@ -86,10 +87,34 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
                     if (max < atol(num.c_str()))
                         max = atol(num.c_str());
                 }
+                else if (file.find(".idb") != string::npos)
+                {
+                    vector<string> vec = DataType::StringSplit(const_cast<char *>(file.c_str()), "_");
+                    string num;
+                    string fileID = vec[0];
+                    for (int i = 0; i < fileID.length(); i++)
+                    {
+                        if (isdigit(fileID[i]))
+                        {
+                            num += fileID[i];
+                        }
+                    }
+                    if (max < atol(num.c_str()))
+                        max = atol(num.c_str());
+                }
             }
         }
         closedir(dir);
-        map[d] = max;
+        if (d == settings("Filename_Label"))
+            map["/"] = max;
+        else //去除前缀Label
+        {
+            for (int i = 0; i <= settings("Filename_Label").length(); i++)
+            {
+                d.erase(d.begin());
+            }
+            map[d] = max;
+        }
     }
     return map;
 }
@@ -973,29 +998,34 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
     buffLength = (int)writebuff_pos;
     return err;
 }
-// int main()
-// {
-//     // FileIDManager::GetFileID("/");
-//     // FileIDManager::GetFileID("/");
-//     // FileIDManager::GetFileID("/Jinfei3");
-//     // FileIDManager::GetFileID("/Jinfei3");
-//     // FileIDManager::GetFileID("/Jinfei4/line1");
-//     // FileIDManager::GetFileID("/Jinfei4/line1/");
-//     // cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
-//     // char *buff=NULL;
-//     // int length=0;
-//     // DB_ZipSwitchFile("/","/");
+int main()
+{
+    // FileIDManager::GetFileID("/");
+    // FileIDManager::GetFileID("/");
+    // FileIDManager::GetFileID("/Jinfei3");
+    // FileIDManager::GetFileID("/Jinfei3");
+    // FileIDManager::GetFileID("/Jinfei4/line1");
+    // FileIDManager::GetFileID("/Jinfei4/line1/");
+    // cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
+    // char *buff=NULL;
+    // int length=0;
+    // DB_ZipSwitchFile("/","/");
 
-//     // ReZipBuff(buff, length, "/");
-//     // cout<<length<<endl;
-//     // return 0;
-//     char *buff = (char*)malloc(24);
-//     buff[0]=0;buff[1]=0;buff[2]=0;buff[3]=0;buff[4]=0;buff[5]=103;
-//     int len=6;
-//     ReZipBuff(buff,len,"/");
-//     Packer packer;
-//     vector<pair<string, long>> files;
-//     readDataFilesWithTimestamps("", files);
-//     packer.Pack("", files);
-//     return 0;
-// }
+    // ReZipBuff(buff, length, "/");
+    // cout<<length<<endl;
+    // return 0;
+    char *buff = (char *)malloc(24);
+    buff[0] = 0;
+    buff[1] = 0;
+    buff[2] = 0;
+    buff[3] = 0;
+    buff[4] = 0;
+    buff[5] = 103;
+    int len = 6;
+    ReZipBuff(buff, len, "/");
+    Packer packer;
+    vector<pair<string, long>> files;
+    readDataFilesWithTimestamps("", files);
+    packer.Pack("", files);
+    return 0;
+}
