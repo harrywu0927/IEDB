@@ -674,7 +674,7 @@ public:
     {
         if (packBuffer != NULL)
             free(packBuffer);
-        //cout << "buffer freed" << endl;
+        cout << "buffer freed" << endl;
     }
     long Next(int &readLength, long &timestamp, string &fileID, int &zipType);
 

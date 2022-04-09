@@ -5,7 +5,7 @@ int maxTemplates = 20;
 vector<Template> templates;
 int errorCode;
 neb::CJsonObject settings = FileIDManager::GetSetting();
-unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
+unordered_map<string, int> curNum;// = getDirCurrentFileIDIndex();
 unordered_map<string, bool> filesListRead;
 //  string packMode;       //定时打包或存储一定数量后打包
 //  int packNum;           //一次打包的文件数量
@@ -53,9 +53,11 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
     vector<string> dirs;
     dirs.push_back(settings("Filename_Label"));
     readAllDirs(dirs, finalPath);
+    cout<<dirs.size()<<endl;
     for (auto &d : dirs)
     {
         dir = opendir(d.c_str());
+        if(dir == NULL) return map;
         long max = 0;
         while ((ptr = readdir(dir)) != NULL)
         {
@@ -63,10 +65,16 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
                 continue;
             if (ptr->d_type == 8)
             {
-                string file = ptr->d_name;
-                if (file.find(".pak") != string::npos)
+                string fileName = ptr->d_name;
+                string dirWithoutPrefix = d +"/"+ fileName;
+                for (int i = 0; i <= settings("Filename_Label").length(); i++)
                 {
-                    PackFileReader packReader(file);
+                    dirWithoutPrefix.erase(dirWithoutPrefix.begin());
+                }
+                
+                if (fileName.find(".pak") != string::npos)
+                {
+                    PackFileReader packReader( dirWithoutPrefix);
                     int fileNum;
                     string templateName;
                     packReader.ReadPackHead(fileNum, templateName);
@@ -87,9 +95,9 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
                     if (max < atol(num.c_str()))
                         max = atol(num.c_str());
                 }
-                else if (file.find(".idb") != string::npos)
+                else if (fileName.find(".idb") != string::npos)
                 {
-                    vector<string> vec = DataType::StringSplit(const_cast<char *>(file.c_str()), "_");
+                    vector<string> vec = DataType::StringSplit(const_cast<char *>(fileName.c_str()), "_");
                     string num;
                     string fileID = vec[0];
                     for (int i = 0; i < fileID.length(); i++)
@@ -1130,6 +1138,7 @@ int main()
     // ReZipBuff(buff, length, "/");
     // cout<<length<<endl;
     // return 0;
+    curNum = getDirCurrentFileIDIndex();
     return 0;
     char *buff = (char *)malloc(24);
     buff[0] = 0;

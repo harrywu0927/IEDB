@@ -65,7 +65,12 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
         cur += 8;
         char fileID[20] = {0};
         string tmp = file.first;
-        string str = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[0];
+        vector<string> vec = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
+        string str;
+        if (vec.size() > 0)
+            str = DataType::StringSplit(const_cast<char *>(vec[vec.size() - 1].c_str()), "_")[0];
+        else
+            str = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[0];
         while (str[0] == '/') //去除‘/’
             str.erase(str.begin());
         memcpy(fileID, str.c_str(), str.length() <= 20 ? str.length() : 20);
@@ -74,6 +79,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
         buffer.savePath = file.first.c_str();
         if (DB_ReadFile(&buffer) == 0)
         {
+            DB_DeleteFile(const_cast<char*>(buffer.savePath));
             if (buffer.length != 0)
             {
                 if (file.first.find(".idbzip") == string::npos) //未压缩
@@ -95,7 +101,8 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
             }
             else
             {
-                packBuffer[++cur] = (char)1; //完全压缩
+                char type = 1;
+                memcpy(packBuffer + cur++, &type, 1); //完全压缩
             }
         }
         else
