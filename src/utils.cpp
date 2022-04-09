@@ -66,7 +66,7 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
                 string file = ptr->d_name;
                 if (file.find(".pak") != string::npos)
                 {
-                    PackFileReader packReader(d + "/" + file);
+                    PackFileReader packReader(file);
                     int fileNum;
                     string templateName;
                     packReader.ReadPackHead(fileNum, templateName);
@@ -1014,6 +1014,7 @@ int main()
     // ReZipBuff(buff, length, "/");
     // cout<<length<<endl;
     // return 0;
+    return 0;
     char *buff = (char *)malloc(24);
     buff[0] = 0;
     buff[1] = 0;
