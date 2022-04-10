@@ -26,6 +26,9 @@ int main(){
     //     fclose(fp);
     //     usleep(100000);
     // }
+    DB_Pack("jinfei",0,0);
+    return 0;
+
     DB_DataBuffer buffer;
     buffer.savePath = "jinfei";
     buffer.length = 11;

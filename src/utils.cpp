@@ -394,7 +394,7 @@ void readPakFilesList(string path, vector<string> &files)
             string p;
             string datafile = ptr->d_name;
             if (datafile.find(".pak") != string::npos)
-                files.push_back(p.append(ptr->d_name));
+                files.push_back(p.append(path).append("/").append(ptr->d_name));
         }
     }
     closedir(dir);
@@ -1122,36 +1122,37 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
     buffLength = (int)writebuff_pos;
     return err;
 }
-int main()
-{
-    // FileIDManager::GetFileID("/");
-    // FileIDManager::GetFileID("/");
-    // FileIDManager::GetFileID("/Jinfei3");
-    // FileIDManager::GetFileID("/Jinfei3");
-    // FileIDManager::GetFileID("/Jinfei4/line1");
-    // FileIDManager::GetFileID("/Jinfei4/line1/");
-    // cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
-    // char *buff=NULL;
-    // int length=0;
-    // DB_ZipSwitchFile("/","/");
+// int main()
+// {
+//     // FileIDManager::GetFileID("/");
+//     // FileIDManager::GetFileID("/");
+//     // FileIDManager::GetFileID("/Jinfei3");
+//     // FileIDManager::GetFileID("/Jinfei3");
+//     // FileIDManager::GetFileID("/Jinfei4/line1");
+//     // FileIDManager::GetFileID("/Jinfei4/line1/");
+//     // cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
+//     // char *buff=NULL;
+//     // int length=0;
+//     // DB_ZipSwitchFile("/","/");
 
-    // ReZipBuff(buff, length, "/");
-    // cout<<length<<endl;
-    // return 0;
-    curNum = getDirCurrentFileIDIndex();
-    return 0;
-    char *buff = (char *)malloc(24);
-    buff[0] = 0;
-    buff[1] = 0;
-    buff[2] = 0;
-    buff[3] = 0;
-    buff[4] = 0;
-    buff[5] = 103;
-    int len = 6;
-    ReZipBuff(buff, len, "/");
-    Packer packer;
-    vector<pair<string, long>> files;
-    readDataFilesWithTimestamps("", files);
-    packer.Pack("", files);
-    return 0;
-}
+//     // ReZipBuff(buff, length, "/");
+//     // cout<<length<<endl;
+//     // return 0;
+//     vector<string> vec = DataType::splitWithStl("jinfei/","/");
+//     //curNum = getDirCurrentFileIDIndex();
+//     return 0;
+//     char *buff = (char *)malloc(24);
+//     buff[0] = 0;
+//     buff[1] = 0;
+//     buff[2] = 0;
+//     buff[3] = 0;
+//     buff[4] = 0;
+//     buff[5] = 103;
+//     int len = 6;
+//     ReZipBuff(buff, len, "/");
+//     Packer packer;
+//     vector<pair<string, long>> files;
+//     readDataFilesWithTimestamps("", files);
+//     packer.Pack("", files);
+//     return 0;
+// }

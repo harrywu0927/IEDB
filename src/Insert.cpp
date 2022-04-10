@@ -25,10 +25,11 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
     string fileID = FileIDManager::GetFileID(buffer->savePath);
     string finalPath = "";
     finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000));
+    char mode[2] = {'a','b'};
     if (addTime == 0)
     {
         finalPath.append(".idb");
-        int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
+        int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
         if (err == 0)
         {
             err = DB_Write(fp, buffer->buffer, buffer->length);
@@ -44,7 +45,7 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
         finalPath.append(".idbzip");
         if (buffer->buffer[0] == 0) //数据未压缩
         {
-            int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
+            int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
             if (err == 0)
             {
                 err = DB_Write(fp, buffer->buffer + 1, buffer->length - 1);
@@ -58,13 +59,13 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
         else if (buffer->buffer[0] == 1) //数据完全压缩
         {
 
-            int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
+            int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
             err = DB_Close(fp);
             return err;
         }
         else if (buffer->buffer[0] == 2) //数据未完全压缩
         {
-            int err = DB_Open(const_cast<char *>(finalPath.c_str()), "ab", &fp);
+            int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
             if (err == 0)
             {
                 err = DB_Write(fp, buffer->buffer + 1, buffer->length - 1);
@@ -76,6 +77,7 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
             return err;
         }
     }
+    return 0;
 }
 
 /**
@@ -99,6 +101,7 @@ int DB_InsertRecords(DB_DataBuffer buffer[], int recordsNum, int addTime)
     struct tm *dateTime = localtime(&time);
     string timestr = "";
     timestr.append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000)).append(".idb");
+    char mode[2] = {'a','b'};
     for (int i = 0; i < recordsNum; i++)
     {
         long fp;
@@ -106,7 +109,7 @@ int DB_InsertRecords(DB_DataBuffer buffer[], int recordsNum, int addTime)
         string fileID = FileIDManager::GetFileID(buffer->savePath);
         string finalPath = "";
         finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(timestr);
-        int err = DB_Open(const_cast<char *>(buffer[i].savePath), "ab", &fp);
+        int err = DB_Open(const_cast<char *>(buffer[i].savePath), mode, &fp);
         if (err == 0)
         {
             err = DB_Write(fp, buffer[i].buffer, buffer[i].length);
