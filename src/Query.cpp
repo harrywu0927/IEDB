@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unordered_map>
+#include <stack>
 #include <algorithm>
 #include <sstream>
 #include <errno.h>
@@ -615,7 +616,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note
  */
-int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByTimespan_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -828,7 +829,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note   支持idb文件和pak文件混合查询,此处默认pak文件中的时间均早于idb和idbzip文件！！
  */
-int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -1256,7 +1257,7 @@ int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note
  */
-int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryLastRecords_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -1570,7 +1571,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note
  */
-int DB_QueryLastRecords_New(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -1991,7 +1992,7 @@ int DB_QueryLastRecords_New(DB_DataBuffer *buffer, DB_QueryParams *params)
  * @note 获取产线文件夹下的所有数据文件，找到带有指定ID的文件后读取，加载模版，根据模版找到变量在数据中的位置
  *          找到后开辟内存空间，将数据放入，将缓冲区首地址赋值给buffer
  */
-int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByFileID_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -2093,7 +2094,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
  * @note 获取产线文件夹下的所有数据文件，找到带有指定ID的文件后读取，加载模版，根据模版找到变量在数据中的位置
  *          找到后开辟内存空间，将数据放入，将缓冲区首地址赋值给buffer
  */
-int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -4007,7 +4008,7 @@ int main()
     // vector<pair<string, long>> files;
     // readDataFilesWithTimestamps("", files);
     // Packer::Pack("/",files);
-    DB_QueryLastRecords_New(&buffer, &params);
+    DB_QueryLastRecords(&buffer, &params);
     // DB_QueryByFileID(&buffer, &params);
 
     if (buffer.bufferMalloced)
