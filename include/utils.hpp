@@ -21,6 +21,7 @@
 #include <CassFactoryDB.h>
 #include <sstream>
 #include <CJsonObject.hpp>
+#include <thread>
 using namespace std;
 #pragma once
 namespace StatusCode
@@ -95,6 +96,9 @@ int getMemory(long size, char *mem);
 int CheckQueryParams(DB_QueryParams *params);
 
 int ReZipBuff(char *buff, int &buffLength, const char *pathToLine);
+
+extern pthread_t pid;
+
 
 class PathCode
 {

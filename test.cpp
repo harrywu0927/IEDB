@@ -1,16 +1,19 @@
-#include<iostream>
-#include"include/CassFactoryDB.h"
-#include"include/utils.hpp"
+#include <iostream>
+#include "include/CassFactoryDB.h"
+#include "include/utils.hpp"
 #include <string>
 #include <fstream>
 #include <dirent.h>
 #ifdef WIN32
- #include <windows.h>
- #else
- #include <unistd.h>
+#include <windows.h>
+#else
+#include <unistd.h>
 #endif
 #include <sys/stat.h>
+#include <pthread.h>
+#include <tuple>
 #include <time.h>
+#include <thread>
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/statvfs.h>
@@ -18,9 +21,36 @@
 #include <string.h>
 #include <sstream>
 using namespace std;
+void *tick(void *ptr)
+{
+    int n=5;
+    while (n--)
+    {
+        cout << "Hello World!" << endl;
+        sleep(1);
+    }
+}
+void tk(int n)
+{
+    for (size_t i = 0; i < n; i++)
+    {
+        cout << "Hello World!" << endl;
+        sleep(1);
+    }
+    
+}
+int main()
+{
 
-int main(){
-    cout<<curNum["jinfeitwo"]<<endl;
+    //std::thread t1(tk,5);
+    //t1.join();
+    // pthread_t pid;
+    // int ret = pthread_create(&pid, NULL, tick, NULL);
+    // if (ret != 0)
+    // {
+    //     cout << "pthread_create error: error_code=" << ret << endl;
+    // }
+    // pthread_exit(NULL);
     // DB_QueryParams params;
     // params.pathToLine = "jinfei";
     // params.fileID = "JinfeiTen102";
@@ -71,21 +101,20 @@ int main(){
 
     //     free(buffer.buffer);
     // }
-    //return 0;
+    // return 0;
     DB_DataBuffer buffer;
     buffer.savePath = "jinfei";
     buffer.length = 11;
     char buf[11] = {'3'};
     buffer.buffer = buf;
-    for (int i = 0; i < 30; i++)
+    for (int i = 0; i < 10; i++)
     {
         char type = 1;
         memcpy(buffer.buffer,&type,1);
         DB_InsertRecord(&buffer, 1);
-        usleep(100000);
+        usleep(10000000);
     }
-    
-    
-    //DB_ReadFile(&buffer);
+
+    // DB_ReadFile(&buffer);
     return 0;
 }

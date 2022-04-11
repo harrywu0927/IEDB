@@ -1,7 +1,22 @@
 #include <utils.hpp>
 
 using namespace std;
+void *checkTime(void *ptr);
 
+pthread_t pid;
+void *checkTime(void *ptr)
+{
+    cout<<"Timer created!"<<endl;
+    while (1)
+    {
+        long curTime = getMilliTime();
+        if(curTime % 1000 * 3600 * 24 < 1000)
+            cout << "start packing" << endl;
+        
+        sleep(1);
+    }
+}
+int ret = 10;
 /**
  * @brief 将一个缓冲区中的一条数据(文件)存放在指定路径下，以文件ID+时间的方式命名
  * @param buffer    数据缓冲区
@@ -14,6 +29,11 @@ using namespace std;
  */
 int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
 {
+    if(ret == 10){
+        cout<<"ret = "<<ret<<endl;
+        ret = pthread_create(&pid, NULL, checkTime, NULL);
+    }
+        
     string savepath = buffer->savePath;
     if (savepath == "")
         return StatusCode::EMPTY_SAVE_PATH;

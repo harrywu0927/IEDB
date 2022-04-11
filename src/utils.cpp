@@ -1,12 +1,15 @@
 #include <utils.hpp>
 
 unordered_map<string, int> getDirCurrentFileIDIndex();
+long getMilliTime();
+
 int maxTemplates = 20;
 vector<Template> templates;
 int errorCode;
 neb::CJsonObject settings = FileIDManager::GetSetting();
 unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
 unordered_map<string, bool> filesListRead;
+
 //  string packMode;       //定时打包或存储一定数量后打包
 //  int packNum;           //一次打包的文件数量
 //  long packTimeInterval; //定时打包时间间隔
@@ -53,11 +56,12 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
     vector<string> dirs;
     dirs.push_back(settings("Filename_Label"));
     readAllDirs(dirs, finalPath);
-    cout<<dirs.size()<<endl;
+    // cout<<dirs.size()<<endl;
     for (auto &d : dirs)
     {
         dir = opendir(d.c_str());
-        if(dir == NULL) return map;
+        if (dir == NULL)
+            return map;
         long max = 0;
         while ((ptr = readdir(dir)) != NULL)
         {
@@ -66,15 +70,17 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
             if (ptr->d_type == 8)
             {
                 string fileName = ptr->d_name;
-                string dirWithoutPrefix = d +"/"+ fileName;
+                string dirWithoutPrefix = d + "/" + fileName;
                 for (int i = 0; i <= settings("Filename_Label").length(); i++)
                 {
                     dirWithoutPrefix.erase(dirWithoutPrefix.begin());
                 }
-                
+
                 if (fileName.find(".pak") != string::npos)
                 {
-                    PackFileReader packReader( dirWithoutPrefix);
+                    PackFileReader packReader(dirWithoutPrefix);
+                    if (packReader.packBuffer == NULL)
+                        continue;
                     int fileNum;
                     string templateName;
                     packReader.ReadPackHead(fileNum, templateName);
@@ -191,6 +197,10 @@ void readIDBFilesList(string path, vector<string> &files)
     }
     closedir(dir);
 }
+
+#ifdef WIN32
+
+#endif
 
 //获取.idbzip文件路径
 void readIDBZIPFilesList(string path, vector<string> &files)
@@ -464,6 +474,11 @@ string FileIDManager::GetFileID(string path)
     }
     return prefix + to_string(curNum[path]) + "_";
 }
+#ifdef WIN32
+long getMilliTime()
+{
+}
+#else
 
 /**
  * @brief 获取绝对时间(自1970/1/1至今),精确到毫秒
@@ -477,6 +492,7 @@ long getMilliTime()
     gettimeofday(&time, NULL);
     return time.tv_sec * 1000 + time.tv_usec / 1000;
 }
+#endif
 
 int getMemory(long size, char *mem)
 {
