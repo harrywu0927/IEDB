@@ -5,15 +5,15 @@
 #include <fstream>
 #include <dirent.h>
 #ifdef WIN32
- #include <windows.h>
- #else
- #include <unistd.h>
+#include <windows.h>
+#else
+#include <unistd.h>
+#include <sys/statvfs.h>
 #endif
 #include <sys/stat.h>
 #include <time.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <sys/statvfs.h>
 #include <queue>
 #include <stdio.h>
 #include <string.h>
@@ -22,6 +22,9 @@
 #include <sstream>
 #include <CJsonObject.hpp>
 using namespace std;
+#ifdef WIN32
+typedef long long int long;
+#endif
 // extern int errno;
 neb::CJsonObject ReadConfig();
 static neb::CJsonObject config = ReadConfig();
@@ -59,6 +62,20 @@ int get_file_size_time(const char *filename, pair<long, long> *s_t)
     }
 
     return (0);
+}
+
+void getDiskSpaces()
+{
+#ifdef WIN32
+
+#else
+    struct statvfs diskInfo;
+    statvfs("./", &diskInfo);
+    availableSpace = diskInfo.f_bavail * diskInfo.f_frsize - 1024 * 1024 * 5; //可用空间
+    if (availableSpace < 0)
+        availableSpace = 0;
+    totalSpace = diskInfo.f_frsize * diskInfo.f_blocks; //总空间
+#endif
 }
 
 int readFileList(char *basePath, vector<string> *files)
@@ -127,14 +144,6 @@ queue<string> InitFileQueue()
 
 queue<string> fileQueue = InitFileQueue();
 
-FILE *ConvertToFilePtr(uint fp1, uint fp2)
-{
-    unsigned long fp = 0;
-    fp |= fp1;
-    fp <<= 32;
-    fp |= fp2;
-    return (FILE *)fp;
-}
 int DB_GetFileLengthByPath(char path[], long *length)
 {
     // ReadConfig();
@@ -172,7 +181,7 @@ int DB_GetFileLengthByFilePtr(long fileptr, long *length)
     *length = len;
     return 0;
 }
-bool LoopMode(char buf[])
+bool LoopMode(char buf[], long length)
 {
     DIR *dir;
     struct dirent *ptr;
@@ -180,11 +189,7 @@ bool LoopMode(char buf[])
     // char *path = "./";
     if (readFileList(labelPath, &files) == 1)
     {
-        long needSpace = strlen(buf) + 1;
-        struct statvfs diskInfo;
-        // statvfs("./",&diskInfo);
-        // availableSpace = diskInfo.f_bavail * diskInfo.f_frsize;
-        // totalSpace = diskInfo.f_bsize * diskInfo.f_frsize;
+        long needSpace = length + 1;
         if (needSpace > availableSpace) //空间不足
         {
             cout << "Need space:" << needSpace / 1024 << "KB Available:" << availableSpace / 1024 << "KB" << endl;
@@ -197,10 +202,6 @@ bool LoopMode(char buf[])
                     vec.push_back(make_pair(file, make_pair(s_t.first, s_t.second)));
                 }
             }
-            // for (auto v : vec)
-            // {
-            //     cout << v.first << " " << v.second.second << endl;
-            // }
 
             //按照时间升序排序
             sort(vec.begin(), vec.end(),
@@ -220,8 +221,7 @@ bool LoopMode(char buf[])
                 filepath[j] = '\0';
                 if (remove(filepath) == 0)
                 {
-                    statvfs("./", &diskInfo);
-                    availableSpace = diskInfo.f_bavail * diskInfo.f_frsize;
+                    getDiskSpaces();
                 }
                 if (availableSpace >= needSpace)
                     return true;
@@ -234,13 +234,9 @@ bool LoopMode(char buf[])
     }
     return false;
 }
-bool LimitMode(char buf[])
+bool LimitMode(char buf[], long length)
 {
-    size_t dataSize = strlen(buf) + 1;
-    // struct statvfs diskInfo;
-    // statvfs("./", &diskInfo);
-    //  availableSpace = diskInfo.f_bavail * diskInfo.f_frsize;
-    //  totalSpace = diskInfo.f_blocks * diskInfo.f_frsize;
+    size_t dataSize = length + 1;
     size_t avail = availableSpace >> 20;
     size_t total = totalSpace >> 20;
     double usage = 1 - (double)avail / (double)total;
@@ -260,23 +256,20 @@ bool LimitMode(char buf[])
 int DB_Write(long fp, char *buf, long length)
 {
     FILE *file = (FILE *)fp;
-    struct statvfs diskInfo;
-    statvfs("./", &diskInfo);
-    availableSpace = diskInfo.f_bavail * diskInfo.f_frsize - 1024 * 1024 * 5; //可用空间
-    if (availableSpace < 0)
-        availableSpace = 0;
-    totalSpace = diskInfo.f_frsize * diskInfo.f_blocks; //总空间
+    // struct statvfs diskInfo;
+    // statvfs("./", &diskInfo);
+    getDiskSpaces();
     // cout<<"available:"<<availableSpace/1024<<"KB\ntotal:"<<totalSpace/1024<<"KB"<<endl;
     bool allowWrite = true;
     // ReadConfig();   //读取配置
 
     if (config("FileOverFlowMode") == "loop")
     {
-        allowWrite = LoopMode(buf);
+        allowWrite = LoopMode(buf, length);
     }
     else if (config("FileOverFlowMode") == "limit")
     {
-        allowWrite = LimitMode(buf);
+        allowWrite = LimitMode(buf, length);
     }
 
     if (allowWrite)
@@ -342,11 +335,6 @@ int DB_Close(long fp)
     // memset(result, 0, sizeof(result));
     // readlink(path, result, sizeof(result) - 1);
     return fclose(file) == 0 ? 0 : errno;
-}
-
-bool Flush(uint fp1, uint fp2)
-{
-    return fflush(ConvertToFilePtr(fp1, fp2)) == 0 ? true : false;
 }
 
 int DB_DeleteFile(char path[])

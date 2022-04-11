@@ -16,7 +16,6 @@
 #include <thread>
 #include <errno.h>
 #include <stdlib.h>
-#include <sys/statvfs.h>
 #include <stdio.h>
 #include <string.h>
 #include <sstream>
@@ -158,7 +157,6 @@ int main()
     //     DB_InsertRecord(&buffer, 1);
     //     usleep(100000);
     // }
-<<<<<<< HEAD
     // return 0;
     DB_DataBuffer buffer;
     buffer.savePath = "jinfei";
@@ -175,10 +173,4 @@ int main()
 
     // DB_ReadFile(&buffer);
     return 0;
-=======
-    
-    
-    // //DB_ReadFile(&buffer);
-    // return 0;
->>>>>>> refs/remotes/origin/master
 }

@@ -4,16 +4,18 @@
 #include <fstream>
 #include <dirent.h>
 #ifdef WIN32
- #include <windows.h>
- #else
- #include <unistd.h>
+#include <windows.h>
+#include <timeb.h>
+#include <winsock2.h>
+#else
+#include <unistd.h>
+#include <sys/statvfs.h>
+#include <sys/time.h>
 #endif
 #include <sys/stat.h>
 #include <time.h>
-#include <sys/time.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <sys/statvfs.h>
 #include <stdio.h>
 #include <string.h>
 #include <algorithm>
@@ -22,8 +24,15 @@
 #include <sstream>
 #include <CJsonObject.hpp>
 #include <thread>
+#include <chrono>
 using namespace std;
 #pragma once
+
+#ifdef WIN32
+typedef long long int long;
+typedef unsigned int uint;
+typedef unsigned short ushort;
+#endif
 namespace StatusCode
 {
     enum StatusCode
@@ -90,6 +99,8 @@ void readDataFiles(string path, vector<string> &files);
 
 void readPakFilesList(string path, vector<string> &files);
 
+void readAllDirs(vector<string> &dirs, string basePath);
+
 long getMilliTime();
 
 int getMemory(long size, char *mem);
@@ -97,9 +108,6 @@ int getMemory(long size, char *mem);
 int CheckQueryParams(DB_QueryParams *params);
 
 int ReZipBuff(char *buff, int &buffLength, const char *pathToLine);
-
-extern pthread_t pid;
-
 
 class PathCode
 {

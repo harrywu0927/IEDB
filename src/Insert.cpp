@@ -1,22 +1,31 @@
 #include <utils.hpp>
 
 using namespace std;
-void *checkTime(void *ptr);
+void checkTime(long interval);
 
-pthread_t pid;
-void *checkTime(void *ptr)
+thread timer; //计时器，另开一个新的线程
+void checkTime(long interval)
 {
-    cout<<"Timer created!"<<endl;
+    cout << "Timer created!" << endl;
     while (1)
     {
         long curTime = getMilliTime();
-        if(curTime % 1000 * 3600 * 24 < 1000)
+        if (curTime % interval < 1000)
+        {
+            vector<string> dirs;
+            readAllDirs(dirs, settings("Filename_Label"));
             cout << "start packing" << endl;
-        
-        sleep(1);
+            for (auto &dir : dirs)
+            {
+                DB_Pack(dir.c_str(), 0, 0);
+            }
+            cout << "Pack complete" << endl;
+        }
+
+        this_thread::sleep_for(chrono::seconds(1));
     }
 }
-int ret = 10;
+int timerStarted = false;
 /**
  * @brief 将一个缓冲区中的一条数据(文件)存放在指定路径下，以文件ID+时间的方式命名
  * @param buffer    数据缓冲区
@@ -29,11 +38,13 @@ int ret = 10;
  */
 int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
 {
-    if(ret == 10){
-        cout<<"ret = "<<ret<<endl;
-        ret = pthread_create(&pid, NULL, checkTime, NULL);
+    if (!timerStarted)
+    {
+        timer = thread(checkTime, atol(settings("Pack_Interval").c_str()));
+        timer.join();
+        timerStarted = true;
     }
-        
+
     string savepath = buffer->savePath;
     if (savepath == "")
         return StatusCode::EMPTY_SAVE_PATH;
@@ -44,7 +55,7 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
     string fileID = FileIDManager::GetFileID(buffer->savePath);
     string finalPath = "";
     finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000));
-    char mode[2] = {'a','b'};
+    char mode[2] = {'a', 'b'};
     if (addTime == 0)
     {
         finalPath.append(".idb");
@@ -120,7 +131,7 @@ int DB_InsertRecords(DB_DataBuffer buffer[], int recordsNum, int addTime)
     struct tm *dateTime = localtime(&time);
     string timestr = "";
     timestr.append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000)).append(".idb");
-    char mode[2] = {'a','b'};
+    char mode[2] = {'a', 'b'};
     for (int i = 0; i < recordsNum; i++)
     {
         long fp;

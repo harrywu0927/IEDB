@@ -198,10 +198,6 @@ void readIDBFilesList(string path, vector<string> &files)
     closedir(dir);
 }
 
-#ifdef WIN32
-
-#endif
-
 //获取.idbzip文件路径
 void readIDBZIPFilesList(string path, vector<string> &files)
 {
@@ -474,11 +470,6 @@ string FileIDManager::GetFileID(string path)
     }
     return prefix + to_string(curNum[path]) + "_";
 }
-#ifdef WIN32
-long getMilliTime()
-{
-}
-#else
 
 /**
  * @brief 获取绝对时间(自1970/1/1至今),精确到毫秒
@@ -488,11 +479,30 @@ long getMilliTime()
  */
 long getMilliTime()
 {
+#ifdef WIN32
+    struct timeval tv;
+    time_t clock;
+    struct tm tm;
+    SYSTEMTIME wtm;
+
+    GetLocalTime(&wtm);
+    tm.tm_year = wtm.wYear - 1900;
+    tm.tm_mon = wtm.wMonth - 1;
+    tm.tm_mday = wtm.wDay;
+    tm.tm_hour = wtm.wHour;
+    tm.tm_min = wtm.wMinute;
+    tm.tm_sec = wtm.wSecond;
+    tm.tm_isdst = -1;
+    clock = mktime(&tm);
+    tv.tv_sec = clock;
+    tv.tv_usec = wtm.wMilliseconds * 1000;
+    return ((unsigned long long)tv.tv_sec * 1000 + (unsigned long long)tv.tv_usec / 1000);
+#else
     struct timeval time;
     gettimeofday(&time, NULL);
     return time.tv_sec * 1000 + time.tv_usec / 1000;
-}
 #endif
+}
 
 int getMemory(long size, char *mem)
 {
