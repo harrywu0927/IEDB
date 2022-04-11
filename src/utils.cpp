@@ -437,7 +437,7 @@ string FileIDManager::GetFileID(string path)
     string prefix = "Default";
     if (paths.size() > 0)
         prefix = paths[paths.size() - 1];
-    cout << prefix << endl;
+    // cout << prefix << endl;
     //去除首尾的‘/’，使其符合命名规范
     if (path[0] == '/')
         path.erase(path.begin());

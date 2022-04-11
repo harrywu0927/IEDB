@@ -410,6 +410,7 @@ int DB_ReadFile(DB_DataBuffer *buffer)
     if (len == 0)
     {
         buffer->length = 0;
+        fclose(fp);
         return 0;
     }
     fseek(fp, 0, SEEK_SET);
