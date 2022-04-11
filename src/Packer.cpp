@@ -1,4 +1,4 @@
-#include "../include/utils.hpp"
+#include <utils.hpp>
 
 /**
  * @brief 将一个文件夹下的压缩或未压缩的数据文件打包为一个文件(.pak)，pak文件内的数据均为时间升序型
@@ -65,12 +65,12 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
         cur += 8;
         char fileID[20] = {0};
         string tmp = file.first;
-        vector<string> vec = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
+        vector<string> vec = DataType::splitWithStl(tmp, "/");
         string str;
         if (vec.size() > 0)
-            str = DataType::StringSplit(const_cast<char *>(vec[vec.size() - 1].c_str()), "_")[0];
+            str = DataType::splitWithStl(vec[vec.size() - 1], "_")[0];
         else
-            str = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[0];
+            str = DataType::splitWithStl(tmp, "_")[0];
         while (str[0] == '/') //去除‘/’
             str.erase(str.begin());
         memcpy(fileID, str.c_str(), str.length() <= 20 ? str.length() : 20);

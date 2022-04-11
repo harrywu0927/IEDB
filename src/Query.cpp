@@ -1,6 +1,4 @@
-#include "../include/QueryRequest.hpp"
-#include "../include/utils.hpp"
-#include "../include/Packer.hpp"
+#include <utils.hpp>
 #include <vector>
 #include <string>
 #include <iostream>
@@ -614,7 +612,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
  *
  * @return  0:success,
  *          others: StatusCode
- * @note
+ * @note  deprecated
  */
 int DB_QueryByTimespan_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 {

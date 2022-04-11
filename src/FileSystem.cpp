@@ -1,10 +1,14 @@
-#include "../include/CassFactoryDB.h"
+#include <CassFactoryDB.h>
 #include <vector>
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <dirent.h>
-#include <unistd.h>
+#ifdef WIN32
+ #include <windows.h>
+ #else
+ #include <unistd.h>
+#endif
 #include <sys/stat.h>
 #include <time.h>
 #include <errno.h>
@@ -16,7 +20,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <sstream>
-#include "../include/CJsonObject.hpp"
+#include <CJsonObject.hpp>
 using namespace std;
 // extern int errno;
 neb::CJsonObject ReadConfig();
@@ -520,6 +524,7 @@ int DB_DeleteDirectory(char path[])
     {
         return 2;
     }
+    return 0;
 }
 // int main()
 // {

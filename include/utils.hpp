@@ -3,7 +3,11 @@
 #include <iostream>
 #include <fstream>
 #include <dirent.h>
-#include <unistd.h>
+#ifdef WIN32
+ #include <windows.h>
+ #else
+ #include <unistd.h>
+#endif
 #include <sys/stat.h>
 #include <time.h>
 #include <sys/time.h>
@@ -13,11 +17,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <algorithm>
-#include "DataTypeConvert.hpp"
-#include "CassFactoryDB.h"
+#include <DataTypeConvert.hpp>
+#include <CassFactoryDB.h>
 #include <sstream>
-#include "CJsonObject.hpp"
-#include "Packer.hpp"
+#include <CJsonObject.hpp>
 using namespace std;
 #pragma once
 namespace StatusCode

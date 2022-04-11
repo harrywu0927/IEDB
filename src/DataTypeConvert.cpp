@@ -1,4 +1,4 @@
-#include "../include/DataTypeConvert.hpp"
+#include <DataTypeConvert.hpp>
 #include <stdlib.h>
 using namespace std;
 
