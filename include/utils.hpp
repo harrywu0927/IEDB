@@ -52,6 +52,7 @@ namespace StatusCode
         NO_FILEID = 156,                 //按文件ID查询时未指定文件ID
         VARIABLE_NOT_ASSIGNED = 157,     //比较某个值时未指定变量名
         NO_COMPARE_VALUE = 158,          //指定了比较类型却没有赋值
+        ZIPTYPE_ERROR = 159,             //压缩类型出现问题
     };
 }
 namespace ValueType
