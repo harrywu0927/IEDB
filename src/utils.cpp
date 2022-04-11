@@ -53,11 +53,12 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
     vector<string> dirs;
     dirs.push_back(settings("Filename_Label"));
     readAllDirs(dirs, finalPath);
-    cout<<dirs.size()<<endl;
+    cout << dirs.size() << endl;
     for (auto &d : dirs)
     {
         dir = opendir(d.c_str());
-        if(dir == NULL) return map;
+        if (dir == NULL)
+            return map;
         long max = 0;
         while ((ptr = readdir(dir)) != NULL)
         {
@@ -66,15 +67,15 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
             if (ptr->d_type == 8)
             {
                 string fileName = ptr->d_name;
-                string dirWithoutPrefix = d +"/"+ fileName;
+                string dirWithoutPrefix = d + "/" + fileName;
                 for (int i = 0; i <= settings("Filename_Label").length(); i++)
                 {
                     dirWithoutPrefix.erase(dirWithoutPrefix.begin());
                 }
-                
+
                 if (fileName.find(".pak") != string::npos)
                 {
-                    PackFileReader packReader( dirWithoutPrefix);
+                    PackFileReader packReader(dirWithoutPrefix);
                     int fileNum;
                     string templateName;
                     packReader.ReadPackHead(fileNum, templateName);
@@ -617,18 +618,58 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += 2;
+                        readbuff_pos += 3;
                         if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            memcpy(writebuff + writebuff_pos, buff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen);
-                            writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
-                            readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
+                            if (buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                                writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                                readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen);
+                                writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
+                                readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
                         }
                         else
                         {
-                            memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 1);
-                            writebuff_pos += 1;
-                            readbuff_pos += 1;
+                            if (buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 9);
+                                writebuff_pos += 9;
+                                readbuff_pos += 9;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)1) //只有时间
+                            {
+                                char standardBoolValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                                char BoolValue[1] = {0};
+                                BoolValue[0] = standardBoolValue;
+                                memcpy(writebuff + writebuff_pos, BoolValue, 1); // Bool标准值
+                                writebuff_pos += 1;
+
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 8);
+                                writebuff_pos += 8;
+                                readbuff_pos += 8;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 1);
+                                writebuff_pos += 1;
+                                readbuff_pos += 1;
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
                         }
                     }
                     else //不是未压缩的编号
@@ -674,18 +715,62 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += 2;
+                        readbuff_pos += 3;
                         if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen);
-                            writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
-                            readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
+                            if (buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                                writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                                readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen);
+                                writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
+                                readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
                         }
                         else
                         {
-                            memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4);
-                            writebuff_pos += 4;
-                            readbuff_pos += 4;
+                            if (buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 12);
+                                writebuff_pos += 12;
+                                readbuff_pos += 12;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)1) //只有时间
+                            {
+                                uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                                char UDintValue[4] = {0};
+                                for (int j = 0; j < 4; j++)
+                                {
+                                    UDintValue[3 - j] |= standardUDintValue;
+                                    standardUDintValue >>= 8;
+                                }
+                                memcpy(writebuff + writebuff_pos, UDintValue, 4); // UDINT标准值
+                                writebuff_pos += 4;
+
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 8);
+                                writebuff_pos += 8;
+                                readbuff_pos += 8;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4);
+                                writebuff_pos += 4;
+                                readbuff_pos += 4;
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
                         }
                     }
                     else //不是未压缩的编号
@@ -735,18 +820,58 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += 2;
+                        readbuff_pos += 3;
                         if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            memcpy(writebuff + writebuff_pos, buff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen);
-                            writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
-                            readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
+                            if (buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                                writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                                readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen);
+                                writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
+                                readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
                         }
                         else
                         {
-                            memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 1);
-                            writebuff_pos += 1;
-                            readbuff_pos += 1;
+                            if (buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 9);
+                                writebuff_pos += 9;
+                                readbuff_pos += 9;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)1) //只有时间
+                            {
+                                char StandardUsintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                                char UsintValue[1] = {0};
+                                UsintValue[0] = StandardUsintValue;
+                                memcpy(writebuff + writebuff_pos, UsintValue, 1); // USINT标准值
+                                writebuff_pos += 1;
+
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 8);
+                                writebuff_pos += 8;
+                                readbuff_pos += 8;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 1);
+                                writebuff_pos += 1;
+                                readbuff_pos += 1;
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
                         }
                     }
                     else //不是未压缩的编号
@@ -792,18 +917,62 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += 2;
+                        readbuff_pos += 3;
                         if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen);
-                            writebuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen;
-                            readbuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen;
+                            if (buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                                writebuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                                readbuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen);
+                                writebuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen;
+                                readbuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen;
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
                         }
                         else
                         {
-                            memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2);
-                            writebuff_pos += 2;
-                            readbuff_pos += 2;
+                            if (buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 10);
+                                writebuff_pos += 10;
+                                readbuff_pos += 10;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)1) //只有时间
+                            {
+                                uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                                char UintValue[2] = {0};
+                                for (int j = 0; j < 2; j++)
+                                {
+                                    UintValue[1 - j] |= standardUintValue;
+                                    standardUintValue >>= 8;
+                                }
+                                memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
+                                writebuff_pos += 2;
+
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 8);
+                                writebuff_pos += 8;
+                                readbuff_pos += 8;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2);
+                                writebuff_pos += 2;
+                                readbuff_pos += 2;
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
                         }
                     }
                     else //不是未压缩的编号
@@ -853,18 +1022,58 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += 2;
+                        readbuff_pos += 3;
                         if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            memcpy(writebuff + writebuff_pos, buff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen);
-                            writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
-                            readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
+                            if (buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                                writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                                readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen);
+                                writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
+                                readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
                         }
                         else
                         {
-                            memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 1);
-                            writebuff_pos += 1;
-                            readbuff_pos += 1;
+                            if (buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 9);
+                                writebuff_pos += 9;
+                                readbuff_pos += 9;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)1) //只有时间
+                            {
+                                char StandardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                                char SintValue[1] = {0};
+                                SintValue[0] = StandardSintValue;
+                                memcpy(writebuff + writebuff_pos, SintValue, 1); // SINT标准值
+                                writebuff_pos += 1;
+
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 8);
+                                writebuff_pos += 8;
+                                readbuff_pos += 8;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 1);
+                                writebuff_pos += 1;
+                                readbuff_pos += 1;
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
                         }
                     }
                     else //不是未压缩的编号
@@ -910,18 +1119,62 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += 2;
+                        readbuff_pos += 3;
                         if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen);
-                            writebuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen;
-                            readbuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen;
+                            if (buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                                writebuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                                readbuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen);
+                                writebuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen;
+                                readbuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen;
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
                         }
                         else
                         {
-                            memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2);
-                            writebuff_pos += 2;
-                            readbuff_pos += 2;
+                            if (buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 10);
+                                writebuff_pos += 10;
+                                readbuff_pos += 10;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)1) //只有时间
+                            {
+                                short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                                char IntValue[2] = {0};
+                                for (int j = 0; j < 2; j++)
+                                {
+                                    IntValue[1 - j] |= standardIntValue;
+                                    standardIntValue >>= 8;
+                                }
+                                memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
+                                writebuff_pos += 2;
+
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 8);
+                                writebuff_pos += 8;
+                                readbuff_pos += 8;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2);
+                                writebuff_pos += 2;
+                                readbuff_pos += 2;
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
                         }
                     }
                     else //不是未压缩的编号
@@ -975,18 +1228,62 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += 2;
+                        readbuff_pos += 3;
                         if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen);
-                            writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
-                            readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
+                            if (buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                                writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                                readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen);
+                                writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
+                                readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
                         }
                         else
                         {
-                            memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4);
-                            writebuff_pos += 4;
-                            readbuff_pos += 4;
+                            if (buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 12);
+                                writebuff_pos += 12;
+                                readbuff_pos += 12;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)1) //只有时间
+                            {
+                                int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                                char DintValue[4] = {0};
+                                for (int j = 0; j < 4; j++)
+                                {
+                                    DintValue[3 - j] |= standardDintValue;
+                                    standardDintValue >>= 8;
+                                }
+                                memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
+                                writebuff_pos += 4;
+
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 8);
+                                writebuff_pos += 8;
+                                readbuff_pos += 8;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4);
+                                writebuff_pos += 4;
+                                readbuff_pos += 4;
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
                         }
                     }
                     else //不是未压缩的编号
@@ -1041,18 +1338,63 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += 2;
+                        readbuff_pos += 3;
                         if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen);
-                            writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
-                            readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
+                            if (buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                                writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                                readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen);
+                                writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
+                                readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
                         }
                         else
                         {
-                            memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4);
-                            writebuff_pos += 4;
-                            readbuff_pos += 4;
+                            if (buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 12);
+                                writebuff_pos += 12;
+                                readbuff_pos += 12;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)1) //只有时间
+                            {
+                                float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                                char RealValue[4] = {0};
+                                void *pf;
+                                pf = &standardRealValue;
+                                for (int j = 0; j < 4; j++)
+                                {
+                                    *((unsigned char *)pf + j) = RealValue[j];
+                                }
+                                memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
+                                writebuff_pos += 4;
+
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 8);
+                                writebuff_pos += 8;
+                                readbuff_pos += 8;
+                            }
+                            else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                            {
+                                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 4);
+                                writebuff_pos += 4;
+                                readbuff_pos += 4;
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
                         }
                     }
                     else //不是未压缩的编号
@@ -1086,7 +1428,6 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::IMAGE) // IMAGE类型
         {
-
             //对比编号是否等于当前模板所在条数
             char zipPosNum[2] = {0};
             memcpy(zipPosNum, buff + readbuff_pos, 2);
@@ -1097,14 +1438,31 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                 //暂定２个字节的图片长度
                 char length[2] = {0};
                 memcpy(length, buff + readbuff_pos, 2);
+                uint16_t imageLength = converter.ToUInt16(length);
+
                 memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2); //图片长度也存
                 writebuff_pos += 2;
-                uint16_t imageLength = converter.ToUInt16(length);
-                readbuff_pos += 2;
-                //存储图片
-                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, imageLength);
-                writebuff_pos += imageLength;
-                readbuff_pos += imageLength;
+                readbuff_pos += 3;
+
+                if (buff[readbuff_pos - 1] == (char)2) //既有数据又有数据
+                {
+                    //存储图片
+                    memcpy(writebuff + writebuff_pos, buff + readbuff_pos, imageLength + 8);
+                    writebuff_pos += imageLength + 8;
+                    readbuff_pos += imageLength + 8;
+                }
+                else if (buff[readbuff_pos - 1] == (char)0) //只有数据
+                {
+                    //存储图片
+                    memcpy(writebuff + writebuff_pos, buff + readbuff_pos, imageLength);
+                    writebuff_pos += imageLength;
+                    readbuff_pos += imageLength;
+                }
+                else
+                {
+                    cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                    return StatusCode::ZIPTYPE_ERROR;
+                }
             }
             else //不是未压缩的编号
             {
