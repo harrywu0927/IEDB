@@ -2887,7 +2887,7 @@ int TEST_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
             }
             cout << "max:" << (int)max << endl;
             newBuffer[newBufCur++] = value;
-            
+
             break;
         }
         default:

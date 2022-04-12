@@ -616,6 +616,54 @@ int CheckQueryParams(DB_QueryParams *params)
     return 0;
 }
 
+/**
+ * @brief 在进行压缩操作前，检查输入的压缩参数是否合法
+ * @param params        压缩请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note
+ */
+int CheckZipParams(DB_ZipParams *params)
+{
+    if (params->pathToLine == NULL)
+    {
+        return StatusCode::EMPTY_PATH_TO_LINE;
+    }
+    switch (params->ZipType)
+    {
+    case TIME_SPAN:
+    {
+        if (params->start == 0 || params->end == 0)
+        {
+            return StatusCode::INVALID_TIMESPAN;
+        }
+        break;
+    }
+    case PATH_TO_LINE:
+    {
+        if (params->pathToLine == 0)
+        {
+            return StatusCode::EMPTY_PATH_TO_LINE;
+        }
+        break;
+    }
+    case FILE_ID:
+    {
+        if (params->fileID == NULL)
+        {
+            return StatusCode::NO_FILEID;
+        }
+        break;
+    }
+    default:
+        return StatusCode::NO_ZIP_TYPE;
+        break;
+    }
+    return 0;
+}
+
+
 int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
 {
     int err = 0;

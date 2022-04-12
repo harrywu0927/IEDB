@@ -1,6 +1,97 @@
 #include "../include/utils.hpp"
 using namespace std;
 
+int ZipSwitchBuf(char *readbuff,char *writebuff,long &writebuff_pos);
+int ZipSwitchBuf(char *readbuff,char *writebuff,long &writebuff_pos)
+{
+    long readbuff_pos=0;
+    DataTypeConverter converter;
+
+    for (int i = 0; i < CurrentZipTemplate.schemas.size(); i++)
+    {
+        if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::UDINT) //开关量的持续时长
+        {
+            uint32 standardBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+            uint32 maxBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
+            uint32 minBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
+            // 4个字节的持续时长,暂定，根据后续情况可能进行更改
+            char value[4] = {0};
+            memcpy(value, readbuff + readbuff_pos, 4);
+            uint32 currentBoolTime = converter.ToUInt32(value);
+
+            if (CurrentZipTemplate.schemas[i].second.hasTime) //带时间戳
+            {
+                //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                uint16_t posNum = i;
+                char zipPosNum[2] = {0};
+                for (char j = 0; j < 2; j++)
+                {
+                    zipPosNum[1 - j] |= posNum;
+                    posNum >>= 8;
+                }
+                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                writebuff_pos += 2;
+
+                if (currentBoolTime != standardBoolTime && (currentBoolTime < minBoolTime || currentBoolTime > maxBoolTime))
+                {
+                    //既有数据又有时间
+                    char zipType[1] = {0};
+                    zipType[0] = (char)2;
+                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    writebuff_pos += 1;
+
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
+                    writebuff_pos += 12;
+                }
+                else
+                {
+                    //只有时间
+                    char zipType[1] = {0};
+                    zipType[0] = (char)1;
+                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    writebuff_pos += 1;
+
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
+                    writebuff_pos += 8;
+                }
+                readbuff_pos += 12;
+            }
+            else //不带时间戳
+            {
+                if (currentBoolTime != standardBoolTime && (currentBoolTime < minBoolTime || currentBoolTime > maxBoolTime))
+                {
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    for (char j = 0; j < 2; j++)
+                    {
+                        zipPosNum[1 - j] |= posNum;
+                        posNum >>= 8;
+                    }
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+
+                    //只有数据
+                    char zipType[1] = {0};
+                    zipType[0] = (char)0;
+                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    writebuff_pos += 1;
+
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                    writebuff_pos += 4;
+                }
+                readbuff_pos += 4;
+            }
+        }
+        else
+        {
+            cout << "存在开关量以外的类型，请检查模板或者更换功能块" << endl;
+            return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+        }
+    }
+    return 0;
+}
+
 /**
  * @brief 压缩只有开关量类型的已有.idb文件
  *
@@ -451,4 +542,184 @@ int DB_ZipRecvSwitchBuff(const char *ZipTemPath, const char *filepath, char *buf
     databuff.savePath = filepath;
     DB_InsertRecord(&databuff, 1);
     return err;
+}
+
+/**
+ * @brief 根据时间段压缩开关量类型.idb文件
+ * 
+ * @param params 压缩请求参数
+ * @return 0:success,
+ *          others: StatusCode
+ */
+int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
+{
+    params->ZipType=TIME_SPAN;
+    int err = CheckZipParams(params);
+    if(err!=0)
+        return err;
+
+    vector<pair<string, long>> filesWithTime, selectedFiles;
+    readIDBFilesWithTimestamps(params->pathToLine,filesWithTime);//获取所有.idb文件，并带有时间戳
+    if (filesWithTime.size() == 0)
+    {
+        cout << "没有文件！" << endl;
+        return StatusCode::DATAFILE_NOT_FOUND;
+    }
+
+    //筛选落入时间区间内的文件
+    for (auto &file : filesWithTime)
+    {
+        if (file.second >= params->start && file.second <= params->end)
+        {
+            selectedFiles.push_back(make_pair(file.first, file.second));
+        }
+    }
+    if (selectedFiles.size() == 0)
+    {
+        cout << "没有这个时间段的文件！" << endl;
+        return StatusCode::DATAFILE_NOT_FOUND;
+    }
+    sortByTime(selectedFiles, TIME_ASC);
+
+    err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
+    if (err)
+    {
+        cout << "未加载模板" << endl;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
+    DataTypeConverter converter;
+
+    for(size_t fileNum=0;fileNum<selectedFiles.size();fileNum++)
+    {
+        long len;
+        DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[fileNum].first.c_str()), &len);
+        char readbuff[len];                                                                    //文件内容
+        char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
+        long readbuff_pos = 0;
+        long writebuff_pos = 0;
+
+        if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
+        {
+            cout << "未找到文件" << endl;
+            return StatusCode::DATAFILE_NOT_FOUND;
+        }
+        // for (int i = 0; i < CurrentZipTemplate.schemas.size(); i++)
+        // {
+        //     if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::UDINT) //开关量的持续时长
+        //     {
+        //         uint32 standardBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+        //         uint32 maxBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
+        //         uint32 minBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
+        //         // 4个字节的持续时长,暂定，根据后续情况可能进行更改
+        //         char value[4] = {0};
+        //         memcpy(value, readbuff + readbuff_pos, 4);
+        //         uint32 currentBoolTime = converter.ToUInt32(value);
+
+        //         if (CurrentZipTemplate.schemas[i].second.hasTime) //带时间戳
+        //         {
+        //             //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+        //             uint16_t posNum = i;
+        //             char zipPosNum[2] = {0};
+        //             for (char j = 0; j < 2; j++)
+        //             {
+        //                 zipPosNum[1 - j] |= posNum;
+        //                 posNum >>= 8;
+        //             }
+        //             memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+        //             writebuff_pos += 2;
+
+        //             if (currentBoolTime != standardBoolTime && (currentBoolTime < minBoolTime || currentBoolTime > maxBoolTime))
+        //             {
+        //                 //既有数据又有时间
+        //                 char zipType[1] = {0};
+        //                 zipType[0] = (char)2;
+        //                 memcpy(writebuff + writebuff_pos, zipType, 1);
+        //                 writebuff_pos += 1;
+
+        //                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
+        //                 writebuff_pos += 12;
+        //             }
+        //             else
+        //             {
+        //                 //只有时间
+        //                 char zipType[1] = {0};
+        //                 zipType[0] = (char)1;
+        //                 memcpy(writebuff + writebuff_pos, zipType, 1);
+        //                 writebuff_pos += 1;
+
+        //                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
+        //                 writebuff_pos += 8;
+        //             }
+        //             readbuff_pos += 12;
+        //         }
+        //         else //不带时间戳
+        //         {
+        //             if (currentBoolTime != standardBoolTime && (currentBoolTime < minBoolTime || currentBoolTime > maxBoolTime))
+        //             {
+        //                 //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+        //                 uint16_t posNum = i;
+        //                 char zipPosNum[2] = {0};
+        //                 for (char j = 0; j < 2; j++)
+        //                 {
+        //                     zipPosNum[1 - j] |= posNum;
+        //                     posNum >>= 8;
+        //                 }
+        //                 memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+        //                 writebuff_pos += 2;
+
+        //                 //只有数据
+        //                 char zipType[1] = {0};
+        //                 zipType[0] = (char)0;
+        //                 memcpy(writebuff + writebuff_pos, zipType, 1);
+        //                 writebuff_pos += 1;
+
+        //                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+        //                 writebuff_pos += 4;
+        //             }
+        //             readbuff_pos += 4;
+        //         }
+        //     }
+        //     else
+        //     {
+        //         cout << "存在开关量以外的类型，请检查模板或者更换功能块" << endl;
+        //         return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+        //     }
+        // }
+        ZipSwitchBuf(readbuff,writebuff,writebuff_pos);
+        if (writebuff_pos >= len) //表明数据没有被压缩,不做处理
+        {
+            cout << selectedFiles[fileNum].first + "文件数据没有被压缩!" << endl;
+            // return 1;//1表示数据没有被压缩
+        }
+        else
+        {
+            DB_DeleteFile(const_cast<char *>(selectedFiles[fileNum].first.c_str())); //删除原文件
+            long fp;
+            string finalpath = selectedFiles[fileNum].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
+            //创建新文件并写入
+            err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+            if (err == 0)
+            {
+                if (writebuff_pos != 0)
+                    err = DB_Write(fp, writebuff, writebuff_pos);
+
+                if (err == 0)
+                {
+                    DB_Close(fp);
+                }
+            }
+        }
+    }
+    return err;
+}
+int main()
+{
+    DB_ReZipSwitchFile("jinfei/","jinfei/");
+    DB_ZipParams zipParam;
+    zipParam.pathToLine="jinfei/";
+     zipParam.start=1648742400000;
+    // zipParam.end=1648828800000;
+    // zipParam.start=1649520000000;
+     zipParam.end=1649692800000;
+     DB_ZipSwitchFileByTimeSpan(&zipParam);
 }
