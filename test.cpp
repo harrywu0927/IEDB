@@ -40,9 +40,8 @@ void tk(int n)
 }
 int main()
 {
-
-    //std::thread t1(tk,5);
-    //t1.join();
+    // std::thread t1(tk,5);
+    // t1.join();
     // pthread_t pid;
     // int ret = pthread_create(&pid, NULL, tick, NULL);
     // if (ret != 0)
@@ -86,13 +85,34 @@ int main()
     // DB_QueryLastRecords(&buffer, &params);
     // // DB_QueryByFileID(&buffer, &params);
 
+    // struct tm t;
+    // t.tm_year = atoi("2022") - 1900;
+    // t.tm_mon = atoi("4") - 1;
+    // t.tm_mday = atoi("10");
+    // t.tm_hour = atoi("0");
+    // t.tm_min = atoi("0");
+    // t.tm_sec = atoi("0");
+    // t.tm_isdst = -1; //不设置夏令时
+    // time_t seconds = mktime(&t);
+    // int ms = atoi("0");
+    // long start = seconds * 1000 + ms;
+    // cout<<start<<endl;
+    DB_ZipParams zipParam;
+    zipParam.pathToLine="jinfei/";
+     zipParam.start=1648742400000;
+    // zipParam.end=1648828800000;
+    // zipParam.start=1649520000000;
+     zipParam.end=1649692800000;
+    // DB_ZipSwitchFileByTimeSpan(&zipParam);
+    // DB_ZipAnalogFileByTimeSpan(&zipParam);
+    // DB_ZipFileByTimeSpan(&zipParam);
+
     // DB_ZipSwitchFile("/jinfei/","/jinfei/");
     // DB_ReZipSwitchFile("/jinfei/","/jinfei/");
     // DB_ZipAnalogFile("/jinfei/","/jinfei/");
     // DB_ReZipAnalogFile("jinfei/", "jinfei/");
     // DB_ZipFile("jinfei/","jinfei/");
-    // DB_ReZipFile("jinfei/", "jinfei/");
-    //cout<<curNum["jinfeitwo"]<<endl;
+    DB_ReZipFile("jinfei/", "jinfei/");
 
     // // DB_QueryParams params;
     // // params.pathToLine = "jinfei";
@@ -158,18 +178,19 @@ int main()
     //     usleep(100000);
     // }
     // return 0;
-    DB_DataBuffer buffer;
-    buffer.savePath = "jinfei";
-    buffer.length = 11;
-    char buf[11] = {'3'};
-    buffer.buffer = buf;
-    for (int i = 0; i < 10; i++)
-    {
-        char type = 1;
-        memcpy(buffer.buffer,&type,1);
-        DB_InsertRecord(&buffer, 1);
-        usleep(10000000);
-    }
+    // DB_DataBuffer buffer;
+    // buffer.savePath = "jinfei";
+    // buffer.length = 11;
+    // char buf[11] = {'3'};
+    // buffer.buffer = buf;
+    // cout<<"test"<<endl;
+    // for (int i = 0; i < 10; i++)
+    // {
+    //     char type = 1;
+    //     memcpy(buffer.buffer,&type,1);
+    //     DB_InsertRecord(&buffer, 1);
+    //     usleep(10000000);
+    // }
 
     // DB_ReadFile(&buffer);
     return 0;

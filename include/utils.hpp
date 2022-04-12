@@ -19,10 +19,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <algorithm>
-#include <DataTypeConvert.hpp>
-#include <CassFactoryDB.h>
+#include "DataTypeConvert.hpp"
+#include "CassFactoryDB.h"
 #include <sstream>
-#include <CJsonObject.hpp>
+#include "CJsonObject.hpp"
 #include <thread>
 #include <chrono>
 using namespace std;
@@ -33,6 +33,25 @@ typedef long long int long;
 typedef unsigned int uint;
 typedef unsigned short ushort;
 #endif
+
+enum DB_ZipType
+{
+    TIME_SPAN,
+    FILE_ID,
+    PATH_TO_LINE,
+};
+struct DB_ZipParams
+{
+    const char *pathToLine;  //到产线级的路径
+    long start;              //开始时间
+    long end;                //结束时间
+    const char *fileID;      //文件ID
+    enum DB_ZipType ZipType; //压缩方式
+};
+int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params);//根据时间段压缩开关量类型.idb文件
+int DB_ZipAnalogFileByTimeSpan(struct DB_ZipParams *params);//根据时间段压缩模拟量类型.idb文件
+int DB_ZipFileByTimeSpan(struct DB_ZipParams *params);//根据时间段压缩.idb文件
+
 namespace StatusCode
 {
     enum StatusCode
@@ -55,13 +74,14 @@ namespace StatusCode
         VARIABLE_NAME_EXIST = 150,       //变量名已存在
         PATHCODE_EXIST = 151,            //编码已存在
         FILENAME_MODIFIED = 152,         //文件名被篡改
-        INVALID_TIMESPAN = 153,          //按时间段查询时时间段设置错误或未指定
+        INVALID_TIMESPAN = 153,          //时间段设置错误或未指定
         NO_PATHCODE_OR_NAME = 154,       //查询参数中路径编码和变量名均未找到
         NO_QUERY_NUM = 155,              //查询最新记录时未指定查询条数
-        NO_FILEID = 156,                 //按文件ID查询时未指定文件ID
+        NO_FILEID = 156,                 //未指定文件ID
         VARIABLE_NOT_ASSIGNED = 157,     //比较某个值时未指定变量名
         NO_COMPARE_VALUE = 158,          //指定了比较类型却没有赋值
-        ZIPTYPE_ERROR = 159,             //压缩类型出现问题
+        ZIPTYPE_ERROR = 159,             //压缩数据类型出现问题
+        NO_ZIP_TYPE = 160,               //未指定压缩/还原条件
     };
 }
 namespace ValueType
@@ -107,7 +127,12 @@ int getMemory(long size, char *mem);
 
 int CheckQueryParams(DB_QueryParams *params);
 
+int CheckZipParams(DB_ZipParams *params);
+
 int ReZipBuff(char *buff, int &buffLength, const char *pathToLine);
+
+//根据时间升序或降序排序
+void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);
 
 class PathCode
 {

@@ -48,6 +48,7 @@ CMakeCache.txt
 src/main
 src/utils
 src/Query
+src/ZipSwitchFile
 /.vscode/*
 *.json
 *.dat
