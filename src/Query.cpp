@@ -149,7 +149,7 @@ int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, vector<long> &
     return 0;
 }
 
-//根据时间升序或降序排序
+//对文件根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order)
 {
     switch (order)
@@ -333,7 +333,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                 }
                 if (canCopy) //需要此数据
                 {
-                    char *memory = (char *)malloc(len); //一次分配整个文件长度的内存
+                    char *memory = new char[len]; //一次分配整个文件长度的内存
                     memcpy(memory, buff, len);
                     cur += len;
                     mallocedMemory.push_back(make_pair(memory, len));
@@ -349,7 +349,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                 char buff[len]; //文件内容缓存
                 DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 
-                char *memory = (char *)malloc(len); //一次分配整个文件长度的内存
+                char *memory = new char[len]; //一次分配整个文件长度的内存
                 memcpy(memory, buff, len);
                 cur += len;
                 mallocedMemory.push_back(make_pair(memory, len));
@@ -372,7 +372,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
             for (auto &mem : mallocedMemory)
             {
                 memcpy(data, mem.first, mem.second);
-                free(mem.first);
+                delete [] mem.first;
                 cur += mem.second;
             }
 
@@ -493,7 +493,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                 }
                 if (canCopy) //需要此数据
                 {
-                    char *memory = (char *)malloc(len); //一次分配整个文件长度的内存
+                    char *memory = new char[len]; //一次分配整个文件长度的内存
                     memcpy(memory, buff, len);
                     cur += len;
                     mallocedMemory.push_back(make_pair(memory, len));
@@ -519,7 +519,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                 for (auto &mem : mallocedMemory)
                 {
                     memcpy(data + cur, mem.first, mem.second);
-                    free(mem.first);
+                    delete [] mem.first;
                     cur += mem.second;
                 }
 
@@ -540,7 +540,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                 DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[i].first.c_str()), &len);
                 char buff[len];
                 DB_OpenAndRead(const_cast<char *>(filesWithTime[i].first.c_str()), buff);
-                char *memory = (char *)malloc(len);
+                char *memory = new char[len];
                 memcpy(memory, buff, len);
                 mallocedMemory.push_back(make_pair(memory, len));
                 cur += len;
@@ -552,7 +552,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                 for (auto &mem : mallocedMemory)
                 {
                     memcpy(data + cur, mem.first, mem.second);
-                    free(mem.first);
+                    delete [] mem.first;
                     cur += mem.second;
                 }
                 buffer->bufferMalloced = 1;
@@ -735,7 +735,7 @@ int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
                 }
                 if (canCopy) //需要此数据
                 {
-                    char *memory = (char *)malloc(len); //一次分配整个文件长度的内存
+                    char *memory = new char[len]; //一次分配整个文件长度的内存
                     memcpy(memory, buff, len);
                     cur += len;
                     mallocedMemory.push_back(make_pair(memory, len));
@@ -751,7 +751,7 @@ int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
                 char buff[len]; //文件内容缓存
                 DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 
-                char *memory = (char *)malloc(len); //一次分配整个文件长度的内存
+                char *memory = new char[len]; //一次分配整个文件长度的内存
                 memcpy(memory, buff, len);
                 cur += len;
                 mallocedMemory.push_back(make_pair(memory, len));
@@ -774,7 +774,7 @@ int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
             for (auto &mem : mallocedMemory)
             {
                 memcpy(data, mem.first, mem.second);
-                free(mem.first);
+                delete [] mem.first;
                 cur += mem.second;
             }
 
@@ -1263,7 +1263,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
         {
             long start = atol(timespan[0].c_str());
             long end = atol(timespan[1].c_str());
-            if ((start < params->start && end >= params->start) || (end < params->end && end >= params->start) || (start <= params->start && end >= params->end)) //落入或部分落入时间区间
+            if ((start < params->start && end >= params->start) || (start < params->end && end >= params->start) || (start <= params->start && end >= params->end) || (start >= params->start && end <= params->end)) //落入或部分落入时间区间
             {
                 selectedPacks.push_back(make_pair(file, start));
             }
@@ -1317,7 +1317,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
             long dataPos = packReader.Next(readLength, timestamp, zipType);
             if (timestamp < params->start || timestamp > params->end) //在时间区间外
                 continue;
-            char *buff = (char *)malloc(CurrentTemplate.totalBytes);
+            char *buff = new char[CurrentTemplate.totalBytes];
             switch (zipType)
             {
             case 0:
@@ -1333,20 +1333,11 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
             case 2:
             {
                 memcpy(buff, packReader.packBuffer + dataPos, readLength);
-                for (int j = 0; j < readLength; j++)
-                {
-                    cout << (int)buff[j] << " ";
-                }
                 ReZipBuff(buff, readLength, params->pathToLine);
-                for (int j = 0; j < readLength; j++)
-                {
-                    cout << (int)buff[j] << " ";
-                }
-                cout << endl;
                 break;
             }
             default:
-                free(buff);
+                delete [] buff;
                 return StatusCode::UNKNWON_DATAFILE;
                 break;
             }
@@ -1461,7 +1452,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
                 cur += copyBytes;
                 mallocedMemory.push_back(make_pair(memory, copyBytes));
             }
-            free(buff);
+            delete [] buff;
         }
     }
 
@@ -2023,7 +2014,8 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
         {
             DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
         }
-        char *buff = (char *)malloc(CurrentTemplate.totalBytes);
+        //char *buff = (char *)malloc(CurrentTemplate.totalBytes);
+        char *buff = new char[CurrentTemplate.totalBytes];
         DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
         if (file.first.find(".idbzip") != string::npos)
         {
@@ -2134,13 +2126,14 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
         if (canCopy) //需要此数据
         {
             sortDataPoses.push_back(sortPos);
-            char *memory = (char *)malloc(copyBytes);
+            char *memory = new char[copyBytes];
             memcpy(memory, copyValue, copyBytes);
             cur += copyBytes;
             mallocedMemory.push_back(make_pair(memory, copyBytes));
             selectedNum++;
         }
-        free(buff);
+        //free(buff);
+        delete [] buff;
         if (selectedNum == params->queryNums)
             break;
     }
@@ -2178,8 +2171,8 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
             packReader.ReadPackHead(fileNum, templateName);
             // TemplateManager::CheckTemplate(templateName);
             //由于pak中的文件按时间升序存放，首先依次将此包中文件信息压入栈中，弹出时即为时间降序型
-            
-            stack<pair<long, tuple<int,long,int>>> filestk;
+
+            stack<pair<long, tuple<int, long, int>>> filestk;
             for (int i = 0; i < fileNum; i++)
             {
                 typeList.clear();
@@ -2198,7 +2191,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
                 long timestamp = get<1>(fileInfo.second);
                 int zipType = get<2>(fileInfo.second);
 
-                char *buff = (char *)malloc(CurrentTemplate.totalBytes);
+                char *buff = new char[CurrentTemplate.totalBytes];
                 switch (zipType)
                 {
                 case 0:
@@ -2219,7 +2212,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
                 }
                 default:
                 {
-                    free(buff);
+                    delete [] buff;
                     return StatusCode::UNKNWON_DATAFILE;
                     break;
                 }
@@ -2331,13 +2324,13 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
                 if (canCopy) //需要此数据
                 {
                     sortDataPoses.push_back(sortPos);
-                    char *memory = (char *)malloc(copyBytes);
+                    char *memory = new char[copyBytes];
                     memcpy(memory, copyValue, copyBytes);
                     cur += copyBytes;
                     mallocedMemory.push_back(make_pair(memory, copyBytes));
                     selectedNum++;
                 }
-                free(buff);
+                delete [] buff;
                 if (selectedNum == params->queryNums)
                     break;
             }
@@ -2368,7 +2361,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
         for (auto &mem : mallocedMemory)
         {
             memcpy(data + cur + startPos, mem.first, mem.second);
-            free(mem.first);
+            delete [] mem.first;
             cur += mem.second;
         }
 
@@ -2523,7 +2516,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
             {
                 if (TemplateManager::CheckTemplate(templateName) != 0)
                     return StatusCode::SCHEMA_FILE_NOT_FOUND;
-                char *buff = (char *)malloc(CurrentTemplate.totalBytes);
+                char *buff = new char[CurrentTemplate.totalBytes];
                 switch (zipType)
                 {
                 case 0:
@@ -2539,20 +2532,11 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
                 case 2:
                 {
                     memcpy(buff, packReader.packBuffer + dataPos, readLength);
-                    for (int j = 0; j < readLength; j++)
-                    {
-                        cout << (int)buff[j] << " ";
-                    }
                     ReZipBuff(buff, readLength, params->pathToLine);
-                    for (int j = 0; j < readLength; j++)
-                    {
-                        cout << (int)buff[j] << " ";
-                    }
-                    cout << endl;
                     break;
                 }
                 default:
-                    free(buff);
+                    delete [] buff;
                     return StatusCode::UNKNWON_DATAFILE;
                     break;
                 }
@@ -2616,6 +2600,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
                 }
                 else
                     memcpy(data + startPos, buff + pos, copyBytes);
+                delete [] buff;
                 buffer->buffer = data;
                 buffer->length = copyBytes + startPos;
                 return 0;
@@ -2902,6 +2887,7 @@ int TEST_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
             }
             cout << "max:" << (int)max << endl;
             newBuffer[newBufCur++] = value;
+            
             break;
         }
         default:
@@ -4380,7 +4366,7 @@ int main()
 {
     DataTypeConverter converter;
     DB_QueryParams params;
-    params.pathToLine = "jinfei";
+    params.pathToLine = "/";
     params.fileID = "JinfeiTen102";
     char code[10];
     code[0] = (char)0;

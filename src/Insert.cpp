@@ -9,20 +9,24 @@ void checkTime(long interval)
     cout << "Timer created!" << endl;
     while (1)
     {
-        long curTime = getMilliTime();
-        if (curTime % interval < 1000)
-        {
+        //long curTime = getMilliTime();
+        //if (curTime % interval < 1000)
+        //{
             vector<string> dirs;
             readAllDirs(dirs, settings("Filename_Label"));
             cout << "start packing" << endl;
             for (auto &dir : dirs)
             {
+                cout<<"packing "<<dir<<endl;
+                removeFilenameLabel(dir);
                 DB_Pack(dir.c_str(), 0, 0);
             }
             cout << "Pack complete" << endl;
-        }
+            this_thread::sleep_for(chrono::seconds(interval / 1000));
+        //}
 
-        this_thread::sleep_for(chrono::seconds(1));
+        
+        //sleep_until
     }
 }
 int timerStarted = false;

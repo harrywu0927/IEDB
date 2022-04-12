@@ -12,7 +12,7 @@ int DB_Pack(const char *pathToLine, int num, int packAll)
 {
     vector<pair<string, long>> filesWithTime;
     readDataFilesWithTimestamps(pathToLine, filesWithTime);
-    return Packer::Pack(pathToLine, filesWithTime);
+    return filesWithTime.size() == 0 ? 0 : Packer::Pack(pathToLine, filesWithTime);
 }
 
 /**
@@ -79,7 +79,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
         buffer.savePath = file.first.c_str();
         if (DB_ReadFile(&buffer) == 0)
         {
-            DB_DeleteFile(const_cast<char*>(buffer.savePath));
+            DB_DeleteFile(const_cast<char *>(buffer.savePath));
             if (buffer.length != 0)
             {
                 if (file.first.find(".idbzip") == string::npos) //未压缩
@@ -112,7 +112,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
     }
     fwrite(packBuffer, cur, 1, (FILE *)fp);
     free(packBuffer);
-    fclose((FILE *)fp);
+    DB_Close(fp);
     return 0;
 }
 

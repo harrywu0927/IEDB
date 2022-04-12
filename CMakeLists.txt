@@ -11,6 +11,6 @@ ADD_EXECUTABLE(test.o test.cpp)
 add_executable(Schema.o src/Schema.cpp)
 
 #TARGET_LINK_LIBRARIES(main CassFactoryDB)
-TARGET_LINK_LIBRARIES(test.o pthread CassFactoryDB)
+TARGET_LINK_LIBRARIES(test.o CassFactoryDB pthread)
 # TARGET_LINK_LIBRARIES(test2 CassFactoryDB)
 TARGET_LINK_LIBRARIES(Schema.o CassFactoryDB)

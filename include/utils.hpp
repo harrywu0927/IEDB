@@ -16,6 +16,7 @@
 #include <time.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <memory>
 #include <stdio.h>
 #include <string.h>
 #include <algorithm>
@@ -102,6 +103,10 @@ void readPakFilesList(string path, vector<string> &files);
 void readAllDirs(vector<string> &dirs, string basePath);
 
 long getMilliTime();
+
+void removeFilenameLabel(string &path);
+
+void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);
 
 int getMemory(long size, char *mem);
 
@@ -723,6 +728,11 @@ public:
     long Next(int &readLength, string &fileID, int &zipType);
 
     void ReadPackHead(int &fileNum, string &templateName);
+
+    long GetPackLength()
+    {
+        return packLength;
+    }
 };
 
 //产线文件夹命名规范统一为 xxxx/yyy

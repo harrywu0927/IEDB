@@ -249,6 +249,7 @@ void readDataFilesWithTimestamps(string path, vector<pair<string, long>> &filesW
     else
         finalPath += path;
     dir = opendir(finalPath.c_str());
+    if(dir == NULL) return;
     while ((ptr = readdir(dir)) != NULL)
     {
         if (ptr->d_name[0] == '.')
@@ -502,6 +503,16 @@ long getMilliTime()
     gettimeofday(&time, NULL);
     return time.tv_sec * 1000 + time.tv_usec / 1000;
 #endif
+}
+
+void removeFilenameLabel(string &path)
+{
+    for (int i = 0; i < settings("Filename_Label").length(); i++)
+    {
+        path.erase(path.begin());
+    }
+    while(path[0] == '/')
+        path.erase(path.begin());
 }
 
 int getMemory(long size, char *mem)

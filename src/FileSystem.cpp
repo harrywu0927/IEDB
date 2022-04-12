@@ -67,7 +67,11 @@ int get_file_size_time(const char *filename, pair<long, long> *s_t)
 void getDiskSpaces()
 {
 #ifdef WIN32
-
+DWORD64 qwFreeBytesToCaller;
+bool bResult = GetDiskFreeSpaceEx(TEXT("C:"), 
+         (PULARGE_INTEGER)&qwFreeBytesToCaller, 
+         (PULARGE_INTEGER)&totalSpace, 
+         (PULARGE_INTEGER)&availableSpace);
 #else
     struct statvfs diskInfo;
     statvfs("./", &diskInfo);
