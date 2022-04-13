@@ -53,6 +53,9 @@ struct DB_ZipParams
 int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params);//根据时间段压缩开关量类型.idb文件
 int DB_ZipAnalogFileByTimeSpan(struct DB_ZipParams *params);//根据时间段压缩模拟量类型.idb文件
 int DB_ZipFileByTimeSpan(struct DB_ZipParams *params);//根据时间段压缩.idb文件
+int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params);//根据时间段还原开关量类型.idbzip文件
+int DB_ReZipAnalogFileByTimeSpan(struct DB_ZipParams *params);//根据时间段还原模拟量类型.idbzip文件
+int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params);//根据时间段还原.idbzip文件
 
 namespace StatusCode
 {
