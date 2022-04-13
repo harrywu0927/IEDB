@@ -1,35 +1,37 @@
 #include <utils.hpp>
 
 using namespace std;
-void checkTime(long interval);
+void *checkTime(void *ptr);
 
-thread timer; //计时器，另开一个新的线程
-void checkTime(long interval)
+pthread_t timer; //计时器，另开一个新的线程
+int timerStarted = false;
+void *checkTime(void *ptr)
 {
     cout << "Timer created!" << endl;
+    timerStarted = true;
+    long interval = atol(settings("Pack_Interval").c_str());
     while (1)
     {
-        //long curTime = getMilliTime();
-        //if (curTime % interval < 1000)
-        //{
+        long curTime = getMilliTime();
+        if (curTime % (long)interval < interval)
+        {
             vector<string> dirs;
             readAllDirs(dirs, settings("Filename_Label"));
             cout << "start packing" << endl;
             for (auto &dir : dirs)
             {
-                cout<<"packing "<<dir<<endl;
+                cout << "packing " << dir << endl;
                 removeFilenameLabel(dir);
                 DB_Pack(dir.c_str(), 0, 0);
             }
             cout << "Pack complete" << endl;
-            this_thread::sleep_for(chrono::seconds(interval / 1000));
-        //}
-
-        
-        //sleep_until
+            
+        }
+        sleep(interval / 1000);
+        // sleep_until
     }
 }
-int timerStarted = false;
+
 /**
  * @brief 将一个缓冲区中的一条数据(文件)存放在指定路径下，以文件ID+时间的方式命名
  * @param buffer    数据缓冲区
@@ -42,11 +44,13 @@ int timerStarted = false;
  */
 int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
 {
-    if (!timerStarted)
+    if (!timerStarted && settings("Pack_Mode") == "timed")
     {
-        timer = thread(checkTime, atol(settings("Pack_Interval").c_str()));
-        timer.join();
-        timerStarted = true;
+        int ret = pthread_create(&timer, NULL, checkTime, NULL);
+        if (ret != 0)
+        {
+            cout << "pthread_create error: error_code=" << ret << endl;
+        }
     }
 
     string savepath = buffer->savePath;

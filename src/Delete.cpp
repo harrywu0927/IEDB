@@ -136,6 +136,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 {
                     ReZipBuff(buff, (int &)len, params->pathToLine);
                 }
+                TemplateManager::CheckTemplate(params->pathToLine);
                 //获取数据的偏移量和数据类型
                 long pos = 0, bytes = 0;
                 DataType type;
@@ -217,7 +218,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 int fileNum;
                 string templateName;
                 packReader.ReadPackHead(fileNum, templateName);
-                // TemplateManager::CheckTemplate(templateName);
+                TemplateManager::CheckTemplate(templateName);
                 int deleteNum = 0;
                 //一次分配一整个pak长度的空间，避免频繁分配影响性能
                 // shared_ptr<char> newPack = make_shared<char>(packReader.GetPackLength());
@@ -237,7 +238,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                          * 在此决定是否保留此数据，首先从压缩数据中还原出原始数据，进行常规比对
                          * 若满足删除条件，则直接continue
                          */
-                        char *buff = (char *)malloc(CurrentTemplate.totalBytes);
+                        char *buff = new char[CurrentTemplate.totalBytes];
                         switch (zipType)
                         {
                         case 0:
@@ -257,7 +258,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                             break;
                         }
                         default:
-                            free(buff);
+                            delete[] buff;
                             return StatusCode::UNKNWON_DATAFILE;
                             break;
                         }
@@ -326,9 +327,10 @@ int DB_DeleteRecords(DB_QueryParams *params)
                         if (canDelete)
                         {
                             deleteNum++;
-                            free(buff);
+                            delete[] buff;
                             continue;
                         }
+                        delete[] buff;
                     }
                     memcpy(newPack + cur, &timestamp, 8);
                     cur += 8;
@@ -440,27 +442,297 @@ int DB_DeleteRecords(DB_QueryParams *params)
                     dataPos = packReader.Next(readLength, timestamp, zipType);
                 }
                 memcpy(newPack, packReader.packBuffer, dataPos + readLength);
+                int newNum = fileNum - params->queryNums + selectedNum;
+                memcpy(newPack, &newNum, 4); //覆写新的文件个数
                 long fp;
-                char mode[2] = {'w','b'};
-                DB_Open(const_cast<char*>(pack.first.c_str()), mode, &fp);
-                fwrite(newPack, dataPos + readLength, 1, (FILE*)fp);
-                delete [] newPack;
+                char mode[2] = {'w', 'b'};
+                DB_Open(const_cast<char *>(pack.first.c_str()), mode, &fp);
+                fwrite(newPack, dataPos + readLength, 1, (FILE *)fp);
+                delete[] newPack;
                 DB_Close(fp);
                 return 0;
             }
         }
         else
         {
-            
+            for (auto &file : selectedFiles)
+            {
+                long len;
+                if (file.first.find(".idbzip") != string::npos)
+                {
+                    DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+                }
+                else if (file.first.find("idb") != string::npos)
+                {
+                    DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+                }
+                char *buff = new char[CurrentTemplate.totalBytes];
+                DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+                if (file.first.find(".idbzip") != string::npos)
+                {
+                    ReZipBuff(buff, (int &)len, params->pathToLine);
+                }
+
+                //获取数据的偏移量和数据类型
+                long pos = 0, bytes = 0;
+                DataType type;
+                long compareBytes = 0;
+                int err = params->byPath ? CurrentTemplate.FindDatatypePosByCode(params->pathCode, buff, pos, compareBytes, type) : CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, compareBytes, type);
+                if (err != 0)
+                {
+                    return err;
+                }
+                bool canDelete = false;
+                if (compareBytes != 0) //可比较
+                {
+                    char value[compareBytes]; //数值
+                    memcpy(value, buff + pos, compareBytes);
+                    //根据比较结果决定是否加入结果集
+                    int compareRes = DataType::CompareValue(type, value, params->compareValue);
+                    switch (params->compareType)
+                    {
+                    case DB_CompareType::GT:
+                    {
+                        if (compareRes > 0)
+                        {
+                            canDelete = true;
+                        }
+                        break;
+                    }
+                    case DB_CompareType::LT:
+                    {
+                        if (compareRes < 0)
+                        {
+                            canDelete = true;
+                        }
+                        break;
+                    }
+                    case DB_CompareType::GE:
+                    {
+                        if (compareRes >= 0)
+                        {
+                            canDelete = true;
+                        }
+                        break;
+                    }
+                    case DB_CompareType::LE:
+                    {
+                        if (compareRes <= 0)
+                        {
+                            canDelete = true;
+                        }
+                        break;
+                    }
+                    case DB_CompareType::EQ:
+                    {
+                        if (compareRes == 0)
+                        {
+                            canDelete = true;
+                        }
+                        break;
+                    }
+                    default:
+                        break;
+                    }
+                }
+                if (canDelete)
+                {
+                    DB_DeleteFile(const_cast<char *>(file.first.c_str()));
+                    selectedNum++;
+                }
+                delete[] buff;
+                if (selectedNum == params->queryNums)
+                    return 0;
+            }
+
+            readPakFilesList(params->pathToLine, packsList);
+            for (auto &pack : packsList)
+            {
+                string tmp = pack;
+                while (tmp.back() == '/')
+                    tmp.pop_back();
+                vector<string> vec = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
+                string packName = vec[vec.size() - 1];
+                vector<string> timespan = DataType::StringSplit(const_cast<char *>(packName.c_str()), "-");
+                if (timespan.size() > 0)
+                {
+                    long start = atol(timespan[0].c_str());
+                    packsWithTime.push_back(make_pair(pack, start));
+                }
+                else
+                {
+                    return StatusCode::FILENAME_MODIFIED;
+                }
+            }
+            sortByTime(packsWithTime, TIME_DSC);
+            bool deleteComplete = false;
+            for (auto &pack : packsWithTime)
+            {
+                PackFileReader packReader(pack.first);
+                if (packReader.packBuffer == NULL)
+                    continue;
+                int fileNum;
+                string templateName;
+                packReader.ReadPackHead(fileNum, templateName);
+                TemplateManager::CheckTemplate(templateName);
+                int deleteNum = 0; //此包中已删除文件
+                //一次分配一整个pak长度的空间，避免频繁分配影响性能
+                // shared_ptr<char> newPack = make_shared<char>(packReader.GetPackLength());
+                char *newPack = new char[packReader.GetPackLength()];
+                long cur = 4;
+                memcpy(newPack + cur, templateName.c_str(), templateName.length() <= 20 ? templateName.length() : 20);
+                cur += 20;
+                stack<pair<long, tuple<int, long, int>>> filestk;
+                for (int i = 0; i < fileNum; i++)
+                {
+                    typeList.clear();
+                    long timestamp; //暂时用不到时间戳
+                    int readLength, zipType;
+                    string fileID;
+                    long dataPos = packReader.Next(readLength, timestamp, fileID, zipType);
+                    auto t = make_tuple(readLength, timestamp, fileID, zipType);
+                    filestk.push(make_pair(dataPos, t));
+                }
+                while (!filestk.empty())
+                {
+                    auto fileInfo = filestk.top();
+                    filestk.pop();
+                    long dataPos = fileInfo.first;
+                    int readLength = get<0>(fileInfo.second);
+                    long timestamp = get<1>(fileInfo.second);
+                    string fileID = get<2>(fileInfo.second)
+                    int zipType = get<3>(fileInfo.second);
+
+                    char *buff = new char[CurrentTemplate.totalBytes];
+                    switch (zipType)
+                    {
+                    case 0:
+                    {
+                        memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                        break;
+                    }
+                    case 1:
+                    {
+                        ReZipBuff(buff, readLength, params->pathToLine);
+                        break;
+                    }
+                    case 2:
+                    {
+                        memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                        ReZipBuff(buff, readLength, params->pathToLine);
+                        break;
+                    }
+                    default:
+                    {
+                        delete[] buff;
+                        return StatusCode::UNKNWON_DATAFILE;
+                        break;
+                    }
+                    }
+                    //获取数据的偏移量和字节数
+                    long bytes = 0, pos = 0; //单个变量
+                    long compareBytes = 0;
+                    int err = params->byPath ? CurrentTemplate.FindDatatypePosByCode(params->pathCode, buff, pos, compareBytes, type) : CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, compareBytes, type);
+                    if (err != 0)
+                    {
+                        return err;
+                    }
+                    int err;
+                    bool canDelete = false;
+                    if (compareBytes != 0) //可比较
+                    {
+                        char value[compareBytes]; //数值
+                        memcpy(value, buff + pos, compareBytes);
+                        //根据比较结果决定是否加入结果集
+                        int compareRes = DataType::CompareValue(type, value, params->compareValue);
+                        switch (params->compareType)
+                        {
+                        case DB_CompareType::GT:
+                        {
+                            if (compareRes > 0)
+                            {
+                                canDelete = true;
+                            }
+                            break;
+                        }
+                        case DB_CompareType::LT:
+                        {
+                            if (compareRes < 0)
+                            {
+                                canDelete = true;
+                            }
+                            break;
+                        }
+                        case DB_CompareType::GE:
+                        {
+                            if (compareRes >= 0)
+                            {
+                                canDelete = true;
+                            }
+                            break;
+                        }
+                        case DB_CompareType::LE:
+                        {
+                            if (compareRes <= 0)
+                            {
+                                canDelete = true;
+                            }
+                            break;
+                        }
+                        case DB_CompareType::EQ:
+                        {
+                            if (compareRes == 0)
+                            {
+                                canDelete = true;
+                            }
+                            break;
+                        }
+                        default:
+                            break;
+                        }
+                    }
+                    if (canDelete)
+                    {
+                        deleteNum++;
+                        selectedNum++;
+                        delete[] buff;
+                        if (selectedNum == params->queryNums)
+                            deleteComplete = true;
+                        continue;
+                    }
+                    delete[] buff;
+                    memcpy(newPack + cur, &timestamp, 8);
+                    cur += 8;
+                    memcpy(newPack + cur, fileID.c_str(), 20);
+                    cur += 20;
+                    memcpy(newPack + cur++, (char *)&zipType, 1)
+                }
+                int newFileNum = fileNum - deleteNum;
+                memcpy(newPack, &newFileNum, 4);
+                char mode[2] = {'w', 'b'};
+                long fp;
+                DB_Open(const_cast<char *>(pack.first.c_str()), mode, &fp);
+                fwrite(newPack, cur, 1, (FILE *)fp);
+                delete[] newPack;
+                DB_Close(fp);
+                if (deleteComplete)
+                    return 0;
+            }
         }
         break;
     }
     case FILEID:
     {
+        vector<string> packsList, dataFiles;
+        readDataFiles(params->pathToLine, dataFiles);
+        for (auto &file : dataFiles)
+        {
+        }
 
         break;
     }
     default:
         break;
     }
+    return StatusCode::NO_QUERY_TYPE;
 }

@@ -1,7 +1,7 @@
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+// #ifdef __cplusplus
+// extern "C"
+// {
+// #endif
 
     /*
      *  数据交换缓冲区
@@ -236,6 +236,6 @@ extern "C"
     //压缩接收到的只有模拟量类型的整条数据
     int DB_ZipRecvAnalogFile(const char *ZipTempPath, const char *filepath, char *buff, long *buffLength);
 
-#ifdef __cplusplus
-}
-#endif
+// #ifdef __cplusplus
+// }
+// #endif

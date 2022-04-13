@@ -31,11 +31,12 @@ void *tick(void *ptr)
 }
 void tk(int n)
 {
-    for (size_t i = 0; i < n; i++)
-    {
+    while(1){
         cout << "Hello World!" << endl;
-        sleep(1);
+        this_thread::sleep_for(chrono::seconds(1));
     }
+        
+    
     
 }
 int main()
@@ -178,19 +179,21 @@ int main()
     //     usleep(100000);
     // }
     // return 0;
-    // DB_DataBuffer buffer;
-    // buffer.savePath = "jinfei";
-    // buffer.length = 11;
-    // char buf[11] = {'3'};
-    // buffer.buffer = buf;
-    // cout<<"test"<<endl;
-    // for (int i = 0; i < 10; i++)
-    // {
-    //     char type = 1;
-    //     memcpy(buffer.buffer,&type,1);
-    //     DB_InsertRecord(&buffer, 1);
-    //     usleep(10000000);
-    // }
+    DB_DataBuffer buffer;
+    buffer.savePath = "jinfei";
+    buffer.length = 11;
+    char buf[11] = {'3'};
+    buffer.buffer = buf;
+    cout<<"test"<<endl;
+    // thread th(tk,1);
+    // th.join();
+    for (int i = 0; i < 20; i++)
+    {
+        char type = 1;
+        memcpy(buffer.buffer,&type,1);
+        DB_InsertRecord(&buffer, 1);
+        usleep(1000000);
+    }
 
     // DB_ReadFile(&buffer);
     return 0;

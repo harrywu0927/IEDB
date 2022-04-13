@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <sys/statvfs.h>
 #include <sys/time.h>
+#include <pthread.h>
 #endif
 #include <sys/stat.h>
 #include <time.h>

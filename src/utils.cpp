@@ -462,7 +462,7 @@ string FileIDManager::GetFileID(string path)
     //     cout << "now file num :" << curNum[path] << endl;
     // }
     curNum[path]++;
-    if (curNum[path] % atoi(settings("Pack_Num").c_str()) == 0)
+    if ((settings("Pack_Mode") == "quantitative") && (curNum[path] % atoi(settings("Pack_Num").c_str()) == 0))
     {
         Packer packer;
         vector<pair<string, long>> filesWithTime;
