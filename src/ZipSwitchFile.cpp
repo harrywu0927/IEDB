@@ -712,14 +712,14 @@ int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
     }
     return err;
 }
-int main()
-{
-    DB_ReZipSwitchFile("jinfei/","jinfei/");
-    DB_ZipParams zipParam;
-    zipParam.pathToLine="jinfei/";
-     zipParam.start=1648742400000;
-    // zipParam.end=1648828800000;
-    // zipParam.start=1649520000000;
-     zipParam.end=1649692800000;
-     DB_ZipSwitchFileByTimeSpan(&zipParam);
-}
+// int main()
+// {
+//     DB_ReZipSwitchFile("jinfei/","jinfei/");
+//     DB_ZipParams zipParam;
+//     zipParam.pathToLine="jinfei/";
+//      zipParam.start=1648742400000;
+//     // zipParam.end=1648828800000;
+//     // zipParam.start=1649520000000;
+//      zipParam.end=1649692800000;
+//      DB_ZipSwitchFileByTimeSpan(&zipParam);
+// }

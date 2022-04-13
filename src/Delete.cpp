@@ -114,7 +114,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 DB_Open(const_cast<char *>(pack.first.c_str()), mode, &fp);
                 fwrite(newPack, cur, 1, (FILE *)fp);
                 delete[] newPack;
-                DB_Close(cp);
+                DB_Close(fp);
             }
         }
         else
@@ -373,9 +373,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
             err = DB_LoadSchema(params->pathToLine);
             if (err != 0)
             {
-                buffer->buffer = NULL;
-                buffer->bufferMalloced = 0;
-                return err;
+                return StatusCode::TEMPLATE_RESOLUTION_ERROR;
             }
         }
 
