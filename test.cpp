@@ -98,22 +98,30 @@ int main()
     // int ms = atoi("0");
     // long start = seconds * 1000 + ms;
     // cout<<start<<endl;
-    DB_ZipParams zipParam;
-    zipParam.pathToLine="jinfei/";
-     zipParam.start=1648742400000;
+    // DB_ZipParams zipParam;
+    // zipParam.pathToLine="jinfei/";
+    // zipParam.start=1648742400000;
     // zipParam.end=1648828800000;
     // zipParam.start=1649520000000;
-     zipParam.end=1649692800000;
+    // zipParam.end=1649692800000;
     // DB_ZipSwitchFileByTimeSpan(&zipParam);
     // DB_ZipAnalogFileByTimeSpan(&zipParam);
     // DB_ZipFileByTimeSpan(&zipParam);
 
+    long len;
+    DB_GetFileLengthByPath("/Jinfei91_2022-4-1-19-28-49-807.idb",&len);
+    cout<<len<<endl;
+    char buff[len];
+    DB_OpenAndRead("/Jinfei91_2022-4-1-19-28-49-807.idb",buff);
+    DB_ZipRecvAnalogFile("jinfei","jinfei",buff,&len);
+    cout<<len<<endl;
+    
     // DB_ZipSwitchFile("/jinfei/","/jinfei/");
     // DB_ReZipSwitchFile("/jinfei/","/jinfei/");
     // DB_ZipAnalogFile("/jinfei/","/jinfei/");
     // DB_ReZipAnalogFile("jinfei/", "jinfei/");
     // DB_ZipFile("jinfei/","jinfei/");
-    DB_ReZipFile("jinfei/", "jinfei/");
+    // DB_ReZipFile("jinfei/", "jinfei/");
 
     // // DB_QueryParams params;
     // // params.pathToLine = "jinfei";

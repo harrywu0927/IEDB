@@ -3,5 +3,5 @@
     "FileOverFlowMode":"loop",
     "Pack_Mode":"quantitative",
     "Pack_Num":100,
-    "Pack_Interval":3000
+    "Pack_Interval":3000000000
 }

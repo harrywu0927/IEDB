@@ -582,10 +582,9 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 long cur = 4;
                 memcpy(newPack + cur, templateName.c_str(), templateName.length() <= 20 ? templateName.length() : 20);
                 cur += 20;
-                stack<pair<long, tuple<int, long, int>>> filestk;
+                stack<pair<long, tuple<int, long, string, int>>> filestk;
                 for (int i = 0; i < fileNum; i++)
                 {
-                    typeList.clear();
                     long timestamp; //暂时用不到时间戳
                     int readLength, zipType;
                     string fileID;
@@ -593,6 +592,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                     auto t = make_tuple(readLength, timestamp, fileID, zipType);
                     filestk.push(make_pair(dataPos, t));
                 }
+                DataType type;
                 while (!filestk.empty())
                 {
                     auto fileInfo = filestk.top();
@@ -600,7 +600,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                     long dataPos = fileInfo.first;
                     int readLength = get<0>(fileInfo.second);
                     long timestamp = get<1>(fileInfo.second);
-                    string fileID = get<2>(fileInfo.second)
+                    string fileID = get<2>(fileInfo.second);
                     int zipType = get<3>(fileInfo.second);
 
                     char *buff = new char[CurrentTemplate.totalBytes];
@@ -632,12 +632,11 @@ int DB_DeleteRecords(DB_QueryParams *params)
                     //获取数据的偏移量和字节数
                     long bytes = 0, pos = 0; //单个变量
                     long compareBytes = 0;
-                    int err = params->byPath ? CurrentTemplate.FindDatatypePosByCode(params->pathCode, buff, pos, compareBytes, type) : CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, compareBytes, type);
-                    if (err != 0)
+                    int error = params->byPath ? CurrentTemplate.FindDatatypePosByCode(params->pathCode, buff, pos, compareBytes, type) : CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, compareBytes, type);
+                    if (error != 0)
                     {
-                        return err;
+                        return error;
                     }
-                    int err;
                     bool canDelete = false;
                     if (compareBytes != 0) //可比较
                     {
@@ -705,7 +704,14 @@ int DB_DeleteRecords(DB_QueryParams *params)
                     cur += 8;
                     memcpy(newPack + cur, fileID.c_str(), 20);
                     cur += 20;
-                    memcpy(newPack + cur++, (char *)&zipType, 1)
+                    memcpy(newPack + cur++, (char *)&zipType, 1);
+                    if (zipType != 1) //非完全压缩
+                    {
+                        memcpy(newPack + cur, &readLength, 4);
+                        cur += 4;
+                        memcpy(newPack + cur, packReader.packBuffer + dataPos, readLength);
+                        cur += readLength;
+                    }
                 }
                 int newFileNum = fileNum - deleteNum;
                 memcpy(newPack, &newFileNum, 4);
