@@ -10,7 +10,6 @@
 #include <unistd.h>
 #endif
 #include <sys/stat.h>
-#include <pthread.h>
 #include <tuple>
 #include <time.h>
 #include <thread>

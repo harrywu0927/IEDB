@@ -602,7 +602,24 @@ int DB_DeleteRecords(DB_QueryParams *params)
                     long timestamp = get<1>(fileInfo.second);
                     string fileID = get<2>(fileInfo.second);
                     int zipType = get<3>(fileInfo.second);
-
+                    if (deleteComplete) //删除已完成，直接拷贝剩余数据
+                    {
+                        memcpy(newPack + cur, &timestamp, 8);
+                        cur += 8;
+                        memcpy(newPack + cur, fileID.c_str(), 20);
+                        cur += 20;
+                        memcpy(newPack + cur++, (char *)&zipType, 1);
+                        memcpy(newPack + cur, packReader.packBuffer + dataPos, packReader.GetPackLength() - dataPos);
+                        int newFileNum = fileNum - deleteNum;
+                        memcpy(newPack, &newFileNum, 4);
+                        char mode[2] = {'w', 'b'};
+                        long fp;
+                        DB_Open(const_cast<char *>(pack.first.c_str()), mode, &fp);
+                        fwrite(newPack, cur, 1, (FILE *)fp);
+                        delete[] newPack;
+                        DB_Close(fp);
+                        return 0;
+                    }
                     char *buff = new char[CurrentTemplate.totalBytes];
                     switch (zipType)
                     {
@@ -729,10 +746,61 @@ int DB_DeleteRecords(DB_QueryParams *params)
     }
     case FILEID:
     {
+        string pathToLine = params->pathToLine;
+        string fileid = params->fileID;
+        while (pathToLine[pathToLine.length() - 1] == '/')
+        {
+            pathToLine.pop_back();
+        }
+
+        vector<string> paths = DataType::splitWithStl(pathToLine, "/");
+        if (paths.size() > 0)
+        {
+            if (fileid.find(paths[paths.size() - 1]) == string::npos)
+                fileid = paths[paths.size() - 1] + fileid;
+        }
+        else
+        {
+            if (fileid.find(paths[0]) == string::npos)
+                fileid = paths[0] + fileid;
+        }
         vector<string> packsList, dataFiles;
         readDataFiles(params->pathToLine, dataFiles);
+        readPakFilesList(params->pathToLine, packsList);
         for (auto &file : dataFiles)
         {
+            if (file.find(fileid) != string::npos)
+                return DB_DeleteFile(const_cast<char *>(file.c_str()));
+        }
+        for (auto &pack : packsList)
+        {
+            PackFileReader packReader(pack);
+            if (packReader.packBuffer == NULL)
+                continue;
+            int fileNum;
+            string templateName;
+            packReader.ReadPackHead(fileNum, templateName);
+            for (int i = 0; i < fileNum; i++)
+            {
+                string fid;
+                int readLength, zipType;
+                long timestamp;
+                long dataPos = packReader.Next(readLength, timestamp, fid, zipType);
+                if (fid == fileid) //剔除这部分数据
+                {
+                    char *newPack = new char[packReader.GetPackLength()];
+                    int newNum = fileNum - 1;
+                    memcpy(newPack, packReader.packBuffer,dataPos - 28);
+                    memcpy(newPack, &newNum, 4);
+                    memcpy(newPack + dataPos - 28, packReader.packBuffer + dataPos + readLength, packReader.GetPackLength() - (dataPos + readLength));
+                    long fp;
+                    char mode[2] = {'w', 'b'};
+                    DB_Open(const_cast<char *>(pack.c_str()), mode, &fp);
+                    fwrite(newPack, packReader.GetPackLength() - 28 - readLength, 1, (FILE *)fp);
+                    delete[] newPack;
+                    return DB_Close(fp);
+                }
+            }
         }
 
         break;
