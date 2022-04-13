@@ -371,7 +371,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
             for (auto &mem : mallocedMemory)
             {
                 memcpy(data, mem.first, mem.second);
-                delete [] mem.first;
+                delete[] mem.first;
                 cur += mem.second;
             }
 
@@ -518,7 +518,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                 for (auto &mem : mallocedMemory)
                 {
                     memcpy(data + cur, mem.first, mem.second);
-                    delete [] mem.first;
+                    delete[] mem.first;
                     cur += mem.second;
                 }
 
@@ -551,7 +551,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                 for (auto &mem : mallocedMemory)
                 {
                     memcpy(data + cur, mem.first, mem.second);
-                    delete [] mem.first;
+                    delete[] mem.first;
                     cur += mem.second;
                 }
                 buffer->bufferMalloced = 1;
@@ -773,7 +773,7 @@ int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
             for (auto &mem : mallocedMemory)
             {
                 memcpy(data, mem.first, mem.second);
-                delete [] mem.first;
+                delete[] mem.first;
                 cur += mem.second;
             }
 
@@ -1336,7 +1336,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
                 break;
             }
             default:
-                delete [] buff;
+                delete[] buff;
                 return StatusCode::UNKNWON_DATAFILE;
                 break;
             }
@@ -1451,7 +1451,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
                 cur += copyBytes;
                 mallocedMemory.push_back(make_pair(memory, copyBytes));
             }
-            delete [] buff;
+            delete[] buff;
         }
     }
 
@@ -2013,7 +2013,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
         {
             DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
         }
-        //char *buff = (char *)malloc(CurrentTemplate.totalBytes);
+        // char *buff = (char *)malloc(CurrentTemplate.totalBytes);
         char *buff = new char[CurrentTemplate.totalBytes];
         DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
         if (file.first.find(".idbzip") != string::npos)
@@ -2131,8 +2131,8 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
             mallocedMemory.push_back(make_pair(memory, copyBytes));
             selectedNum++;
         }
-        //free(buff);
-        delete [] buff;
+        // free(buff);
+        delete[] buff;
         if (selectedNum == params->queryNums)
             break;
     }
@@ -2211,7 +2211,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
                 }
                 default:
                 {
-                    delete [] buff;
+                    delete[] buff;
                     return StatusCode::UNKNWON_DATAFILE;
                     break;
                 }
@@ -2329,7 +2329,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
                     mallocedMemory.push_back(make_pair(memory, copyBytes));
                     selectedNum++;
                 }
-                delete [] buff;
+                delete[] buff;
                 if (selectedNum == params->queryNums)
                     break;
             }
@@ -2360,7 +2360,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
         for (auto &mem : mallocedMemory)
         {
             memcpy(data + cur + startPos, mem.first, mem.second);
-            delete [] mem.first;
+            delete[] mem.first;
             cur += mem.second;
         }
 
@@ -2493,6 +2493,24 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
     int check = CheckQueryParams(params);
     if (check != 0)
         return check;
+    string pathToLine = params->pathToLine;
+    string fileid = params->fileID;
+    while (pathToLine[pathToLine.length() - 1] == '/')
+    {
+        pathToLine.pop_back();
+    }
+
+    vector<string> paths = DataType::splitWithStl(pathToLine, "/");
+    if (paths.size() > 0)
+    {
+        if (fileid.find(paths[paths.size() - 1]) == string::npos)
+            fileid = paths[paths.size() - 1] + fileid;
+    }
+    else
+    {
+        if (fileid.find(paths[0]) == string::npos)
+            fileid = paths[0] + fileid;
+    }
     vector<string> dataFiles, packFiles;
     readDataFiles(params->pathToLine, dataFiles);
     readPakFilesList(params->pathToLine, packFiles);
@@ -2511,7 +2529,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
             string fileID;
             int readLength, zipType;
             long dataPos = packReader.Next(readLength, fileID, zipType);
-            if (fileID == params->fileID)
+            if (fileID == fileid)
             {
                 if (TemplateManager::CheckTemplate(templateName) != 0)
                     return StatusCode::SCHEMA_FILE_NOT_FOUND;
@@ -2535,7 +2553,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
                     break;
                 }
                 default:
-                    delete [] buff;
+                    delete[] buff;
                     return StatusCode::UNKNWON_DATAFILE;
                     break;
                 }
@@ -2599,7 +2617,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
                 }
                 else
                     memcpy(data + startPos, buff + pos, copyBytes);
-                delete [] buff;
+                delete[] buff;
                 buffer->buffer = data;
                 buffer->length = copyBytes + startPos;
                 return 0;
@@ -2609,7 +2627,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 
     for (string &file : dataFiles)
     {
-        if (file.find(params->fileID) != string::npos)
+        if (file.find(fileid) != string::npos)
         {
             long len;
             DB_GetFileLengthByPath(const_cast<char *>(file.c_str()), &len);
@@ -3638,7 +3656,7 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
-    memcpy(newBuffer, buffer->buffer, startPos);
+    //memcpy(newBuffer, buffer->buffer, startPos);
     long newBufCur = startPos; //在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
@@ -3759,7 +3777,7 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
         if (typeList[i].valueType != ValueType::REAL)
             typeList[i].valueType = ValueType::REAL; //均值统一用浮点数表示
     }
-    // CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
     buffer->buffer = newBuffer;
     return 0;
 }
@@ -3829,7 +3847,7 @@ int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
-    memcpy(newBuffer, buffer->buffer, startPos);
+    //memcpy(newBuffer, buffer->buffer, startPos);
     long newBufCur = startPos; //在新缓冲区中的偏移量
     char res[4] = {0};
     for (int k = 0; k < 4; k++)
@@ -3847,7 +3865,7 @@ int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
         if (typeList[i].valueType != ValueType::UDINT)
             typeList[i].valueType = ValueType::UDINT; //计数统一用32位无符号数表示
     }
-    // CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
     buffer->buffer = newBuffer;
     return 0;
 }
@@ -3917,7 +3935,7 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
-    memcpy(newBuffer, buffer->buffer, startPos);
+    //memcpy(newBuffer, buffer->buffer, startPos);
     long newBufCur = startPos; //在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
@@ -4102,7 +4120,7 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
         if (typeList[i].valueType != ValueType::REAL)
             typeList[i].valueType = ValueType::REAL; //标准差统一用浮点数表示
     }
-    // CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
     buffer->buffer = newBuffer;
     return 0;
 }
@@ -4172,7 +4190,7 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
-    memcpy(newBuffer, buffer->buffer, startPos);
+    //memcpy(newBuffer, buffer->buffer, startPos);
     long newBufCur = startPos; //在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
@@ -4356,7 +4374,7 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
         if (typeList[i].valueType != ValueType::REAL)
             typeList[i].valueType = ValueType::REAL; //方差统一用浮点数表示
     }
-    // CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
     buffer->buffer = newBuffer;
     return 0;
 }
@@ -4365,7 +4383,7 @@ int main()
 {
     DataTypeConverter converter;
     DB_QueryParams params;
-    params.pathToLine = "/";
+    params.pathToLine = "jinfei";
     params.fileID = "JinfeiTen102";
     char code[10];
     code[0] = (char)0;
@@ -4384,7 +4402,7 @@ int main()
     params.start = 1648812610100;
     params.end = 1648812630100;
     params.order = ASCEND;
-    params.compareType = GT;
+    params.compareType = CMP_NONE;
     params.compareValue = "666";
     params.queryType = LAST;
     params.byPath = 1;

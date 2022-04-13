@@ -1,7 +1,8 @@
 #include <utils.hpp>
 
 using namespace std;
-void *checkTime(void *ptr);
+
+#ifndef WIN32
 
 pthread_t timer; //计时器，另开一个新的线程
 int timerStarted = false;
@@ -13,7 +14,7 @@ void *checkTime(void *ptr)
     while (1)
     {
         long curTime = getMilliTime();
-        if (curTime % (long)interval < interval)
+        if (curTime % interval < interval)
         {
             vector<string> dirs;
             readAllDirs(dirs, settings("Filename_Label"));
@@ -25,13 +26,12 @@ void *checkTime(void *ptr)
                 DB_Pack(dir.c_str(), 0, 0);
             }
             cout << "Pack complete" << endl;
-            
         }
         sleep(interval / 1000);
         // sleep_until
     }
 }
-
+#endif
 /**
  * @brief 将一个缓冲区中的一条数据(文件)存放在指定路径下，以文件ID+时间的方式命名
  * @param buffer    数据缓冲区
@@ -44,6 +44,7 @@ void *checkTime(void *ptr)
  */
 int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
 {
+#ifndef WIN32
     if (!timerStarted && settings("Pack_Mode") == "timed")
     {
         int ret = pthread_create(&timer, NULL, checkTime, NULL);
@@ -52,7 +53,7 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
             cout << "pthread_create error: error_code=" << ret << endl;
         }
     }
-
+#endif
     string savepath = buffer->savePath;
     if (savepath == "")
         return StatusCode::EMPTY_SAVE_PATH;

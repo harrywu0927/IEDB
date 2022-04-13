@@ -1,5 +1,7 @@
 #include <utils.hpp>
 
+mutex packMutex;
+
 /**
  * @brief 将一个文件夹下的压缩或未压缩的数据文件打包为一个文件(.pak)，pak文件内的数据均为时间升序型
  * @param pathToLine        到产线的路径
@@ -26,6 +28,7 @@ int DB_Pack(const char *pathToLine, int num, int packAll)
  */
 int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
 {
+    packMutex.lock();
     TemplateManager::CheckTemplate(pathToLine);
     if (filesWithTime.size() < 1)
         return -1;
@@ -107,12 +110,14 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
         }
         else
         {
+            packMutex.unlock();
             return errno;
         }
     }
     fwrite(packBuffer, cur, 1, (FILE *)fp);
     free(packBuffer);
     DB_Close(fp);
+    packMutex.unlock();
     return 0;
 }
 

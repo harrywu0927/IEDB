@@ -17,6 +17,7 @@ unordered_map<string, bool> filesListRead;
 //递归获取所有子文件夹
 void readAllDirs(vector<string> &dirs, string basePath)
 {
+    
     DIR *dir;
     struct dirent *ptr;
     if ((dir = opendir(basePath.c_str())) == NULL)

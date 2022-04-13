@@ -18,6 +18,8 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <memory>
+#include <stack>
+#include <mutex>
 #include <stdio.h>
 #include <string.h>
 #include <algorithm>

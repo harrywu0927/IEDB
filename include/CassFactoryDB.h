@@ -3,238 +3,238 @@
 // {
 // #endif
 
-    /*
-     *  数据交换缓冲区
-     *  查询时，buffer中的数据存放方式：第1个字节为查询到的变量总数(0<N<256)，
-     *  随后的N*11字节依次为：数据类型代号1字节、路径编码10字节
-     *  数据类型代号如下：
-     *  1:UINT, 2:USINT, 3:UDINT, 4:INT, 5:BOOL, 6:SINT, 7:DINT, 8:REAL, 9:TIME, 10:IMAGE
-     *  如果变量不是数组且携带时间，则此变量的代号值+10
-     *  如果变量是数组且不带时间，则此变量的代号值+20
-     *  如果变量是数组且携带时间，则此变量的代号值+30
-     *  随后为数据区,按行依序排列
-     *  查询整个文件时，只有数据区
-     */
+/*
+ *  数据交换缓冲区
+ *  查询时，buffer中的数据存放方式：第1个字节为查询到的变量总数(0<N<256)，
+ *  随后的N*11字节依次为：数据类型代号1字节、路径编码10字节
+ *  数据类型代号如下：
+ *  1:UINT, 2:USINT, 3:UDINT, 4:INT, 5:BOOL, 6:SINT, 7:DINT, 8:REAL, 9:TIME, 10:IMAGE
+ *  如果变量不是数组且携带时间，则此变量的代号值+10
+ *  如果变量是数组且不带时间，则此变量的代号值+20
+ *  如果变量是数组且携带时间，则此变量的代号值+30
+ *  随后为数据区,按行依序排列
+ *  查询整个文件时，只有数据区
+ */
 #pragma once
-    struct DB_DataBuffer
-    {
-        char *buffer;         //缓冲区地址
-        long length;          //缓冲区总长度
-        const char *savePath; //存储路径
-        int bufferMalloced;   //是否查询到数据
-    };
-    //比较方式
-    enum DB_CompareType
-    {
-        CMP_NONE,
-        GT, //大于
-        LT, //小于
-        EQ, //等于
-        GE, //大于等于
-        LE  //小于等于
-    };
-    //查询条件
-    enum DB_QueryType
-    {
-        TIMESPAN, //时间区间
-        LAST,     //最新条数
-        FILEID,   //文件ID
-        QRY_NONE
-    };
-    //排列方式
-    enum DB_Order
-    {
-        ASCEND,   //按值升序
-        DESCEND,  //按值降序
-        DISTINCT, //去除重复
-        TIME_ASC, //按时间升序
-        TIME_DSC, //按时间降序
-        ODR_NONE
-    };
-    //查询请求参数
-    struct DB_QueryParams
-    {
-        char *pathCode;                  //路径编码
-        const char *valueName;           //变量名,必须赋值或置为NULL！！
-        int byPath;                      // 1表示根据路径编码查询，0表示根据变量名查询
-        int isContinue;                  //是否继续获取数据，1表示接续上次未传输完的数据，0表示结束
-        long start;                      //开始时间
-        long end;                        //结束时间
-        long queryNums;                  //查询记录条数
-        const char *compareValue;        //比较某个值,当byPath为1时，若选中多个变量，将选择变量名中指出的变量比较数值
-        const char *fileID;              //文件ID
-        const char *pathToLine;          //到产线层级的路径
-        enum DB_CompareType compareType; //比较方式
-        enum DB_QueryType queryType;     //查询条件
-        enum DB_Order order;             //排列方式
-        int queryID;                     //请求ID
-    };
+struct DB_DataBuffer
+{
+    char *buffer;         //缓冲区地址
+    long length;          //缓冲区总长度
+    const char *savePath; //存储路径
+    int bufferMalloced;   //是否查询到数据
+};
+//比较方式
+enum DB_CompareType
+{
+    CMP_NONE,
+    GT, //大于
+    LT, //小于
+    EQ, //等于
+    GE, //大于等于
+    LE  //小于等于
+};
+//查询条件
+enum DB_QueryType
+{
+    TIMESPAN, //时间区间
+    LAST,     //最新条数
+    FILEID,   //文件ID
+    QRY_NONE
+};
+//排列方式
+enum DB_Order
+{
+    ASCEND,   //按值升序
+    DESCEND,  //按值降序
+    DISTINCT, //去除重复
+    TIME_ASC, //按时间升序
+    TIME_DSC, //按时间降序
+    ODR_NONE
+};
+//查询请求参数
+struct DB_QueryParams
+{
+    char *pathCode;                  //路径编码
+    const char *valueName;           //变量名,必须赋值或置为NULL！！
+    int byPath;                      // 1表示根据路径编码查询，0表示根据变量名查询
+    int isContinue;                  //是否继续获取数据，1表示接续上次未传输完的数据，0表示结束
+    long start;                      //开始时间
+    long end;                        //结束时间
+    long queryNums;                  //查询记录条数
+    const char *compareValue;        //比较某个值,当byPath为1时，若选中多个变量，将选择变量名中指出的变量比较数值
+    const char *fileID;              //文件ID
+    const char *pathToLine;          //到产线层级的路径
+    enum DB_CompareType compareType; //比较方式
+    enum DB_QueryType queryType;     //查询条件
+    enum DB_Order order;             //排列方式
+    int queryID;                     //请求ID
+};
 
-    //在指定路径下从模版文件(.tem)加载模版
-    int DB_LoadSchema(const char *pathToSet);
+//在指定路径下从模版文件(.tem)加载模版
+int DB_LoadSchema(const char *pathToSet);
 
-    //卸载指定路径下的当前模版
-    int DB_UnloadSchema(const char *pathToUnset);
+//卸载指定路径下的当前模版
+int DB_UnloadSchema(const char *pathToUnset);
 
-    //读取指定变量的数据到新开辟的缓冲区，读取后需要清空此缓冲区
-    int DB_QueryByPath(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
+//读取指定变量的数据到新开辟的缓冲区，读取后需要清空此缓冲区
+int DB_QueryByPath(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
-    //读取指定变量一段时间内的数据到缓冲区
-    int DB_QueryByTimespan(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
+//读取指定变量一段时间内的数据到缓冲区
+int DB_QueryByTimespan(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
-    //读取指定变量最新的若干条记录
-    int DB_QueryLastRecords(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
+//读取指定变量最新的若干条记录
+int DB_QueryLastRecords(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
-    //根据文件ID和变量在某一产线文件夹下的数据文件中查询数据
-    int DB_QueryByFileID(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
+//根据文件ID和变量在某一产线文件夹下的数据文件中查询数据
+int DB_QueryByFileID(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
-    //读取所有符合查询条件的整个文件的数据
-    int DB_QueryWholeFile(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
+//读取所有符合查询条件的整个文件的数据
+int DB_QueryWholeFile(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
-    //自定义查询
-    int DB_ExecuteQuery(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
+//自定义查询
+int DB_ExecuteQuery(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
-    //插入一条记录
-    int DB_InsertRecord(struct DB_DataBuffer *buffer, int addTime);
+//插入一条记录
+int DB_InsertRecord(struct DB_DataBuffer *buffer, int addTime);
 
-    //插入多条记录
-    int DB_InsertRecords(struct DB_DataBuffer buffer[], int recordsNum, int addTime);
+//插入多条记录
+int DB_InsertRecords(struct DB_DataBuffer buffer[], int recordsNum, int addTime);
 
-    //按条件删除记录
-    int DB_DeleteRecords(struct DB_QueryParams *params);
+//按条件删除记录
+int DB_DeleteRecords(struct DB_QueryParams *params);
 
-    //最大值
-    int DB_MAX(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
+//最大值
+int DB_MAX(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
-    //最小值
-    int DB_MIN(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
+//最小值
+int DB_MIN(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
-    //标准差
-    int DB_STD(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
+//标准差
+int DB_STD(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
-    //方差
-    int DB_STDEV(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
+//方差
+int DB_STDEV(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
-    //求和
-    int DB_SUM(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
+//求和
+int DB_SUM(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
-    //计次数
-    int DB_COUNT(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
+//计次数
+int DB_COUNT(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
-    //平均值
-    int DB_AVG(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
+//平均值
+int DB_AVG(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
-    //文件打包
-    int DB_Pack(const char *pathToLine, int num, int packAll);
+//文件打包
+int DB_Pack(const char *pathToLine, int num, int packAll);
 
-    //读取文件内容到缓冲区
-    int DB_ReadFile(struct DB_DataBuffer *buffer);
-    //打开文件
-    // mode为打开文件的方式,如“wb”,"rb"等
-    int DB_Open(char path[], char mode[], long *fptr);
+//读取文件内容到缓冲区
+int DB_ReadFile(struct DB_DataBuffer *buffer);
+//打开文件
+// mode为打开文件的方式,如“wb”,"rb"等
+int DB_Open(char path[], char mode[], long *fptr);
 
-    //写入数据
-    int DB_Write(long fp, char buf[], long length);
+//写入数据
+int DB_Write(long fp, char buf[], long length);
 
-    //读取文件,数据将存放在buf数组中，在Open过后使用
-    int DB_Read(long fp, char buf[]);
+//读取文件,数据将存放在buf数组中，在Open过后使用
+int DB_Read(long fp, char buf[]);
 
-    //根据路径直接读取文件
-    int DB_OpenAndRead(char path[], char buf[]);
+//根据路径直接读取文件
+int DB_OpenAndRead(char path[], char buf[]);
 
-    //关闭文件
-    int DB_Close(long fp);
+//关闭文件
+int DB_Close(long fp);
 
-    //创建文件夹
-    int DB_CreateDirectory(char path[]);
+//创建文件夹
+int DB_CreateDirectory(char path[]);
 
-    //删除文件夹
-    int DB_DeleteDirectory(char path[]);
+//删除文件夹
+int DB_DeleteDirectory(char path[]);
 
-    //删除文件
-    int DB_DeleteFile(char path[]);
+//删除文件
+int DB_DeleteFile(char path[]);
 
-    //获取文件长度
-    int DB_GetFileLengthByPath(char path[], long *length); //需要在Close过后使用
-    int DB_GetFileLengthByFilePtr(long fileptr, long *length);
-    //标准模板数据信息
-    struct DB_TreeNodeParams
-    {
-        char *pathCode;  //编码
-        char *valueName; //变量名
-        int valueType; //数据类型
-        int isArrary;
-        int arrayLen;
-        long startTime;         //开始时间
-        long endTime;           //结束时间
-        int hasTime;            //带８字节时间戳
-        const char *pathToLine; //到产线层级的路径
-    };
+//获取文件长度
+int DB_GetFileLengthByPath(char path[], long *length); //需要在Close过后使用
+int DB_GetFileLengthByFilePtr(long fileptr, long *length);
+//标准模板数据信息
+struct DB_TreeNodeParams
+{
+    char *pathCode;  //编码
+    char *valueName; //变量名
+    int valueType;   //数据类型
+    int isArrary;
+    int arrayLen;
+    long startTime;         //开始时间
+    long endTime;           //结束时间
+    int hasTime;            //带８字节时间戳
+    const char *pathToLine; //到产线层级的路径
+};
 
-    //压缩模板的数据信息
-    struct DB_ZipNodeParams
-    {
-        char *valueName;     //变量名
-        int valueType;     //数据类型
-        char *standardValue; //标准值
-        char *maxValue;      //最大值
-        char *minValue;      //最小值
-        int isArrary;
-        int arrayLen;
-        int hasTime;            //带八字节时间戳
-        const char *pathToLine; //到产线层级的路径
-    };
+//压缩模板的数据信息
+struct DB_ZipNodeParams
+{
+    char *valueName;     //变量名
+    int valueType;       //数据类型
+    char *standardValue; //标准值
+    char *maxValue;      //最大值
+    char *minValue;      //最小值
+    int isArrary;
+    int arrayLen;
+    int hasTime;            //带八字节时间戳
+    const char *pathToLine; //到产线层级的路径
+};
 
-    //往标准模板里添加新的树节点
-    int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams);
+//往标准模板里添加新的树节点
+int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams);
 
-    //修改标准模板里的树节点
-    int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams);
+//修改标准模板里的树节点
+int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams);
 
-    //删除标准模板里的树节点
-    int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams);
+//删除标准模板里的树节点
+int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams);
 
-    //往压缩模板里添加新的树节点
-    int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams);
+//往压缩模板里添加新的树节点
+int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams);
 
-    //修改压缩模板里的树节点
-    int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams);
+//修改压缩模板里的树节点
+int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams);
 
-    //删除压缩模板里的树节点
-    int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams);
+//删除压缩模板里的树节点
+int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams);
 
-    //在指定路径下从压缩模板文件(.ziptem)加载模板
-    int DB_LoadZipSchema(const char *pathToSet);
+//在指定路径下从压缩模板文件(.ziptem)加载模板
+int DB_LoadZipSchema(const char *pathToSet);
 
-    //卸载指定路径下的压缩模板
-    int DB_UnloadZipSchema(const char *pathToUnset);
+//卸载指定路径下的压缩模板
+int DB_UnloadZipSchema(const char *pathToUnset);
 
-    //压缩已有文件
-    int DB_ZipFile(const char *ZipTemPath, const char *pathToLine);
+//压缩已有文件
+int DB_ZipFile(const char *ZipTemPath, const char *pathToLine);
 
-    //还原压缩后的文件
-    int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine);
+//还原压缩后的文件
+int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine);
 
-    //压缩接收到的整条数据
-    int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, long *buffLength);
+//压缩接收到的整条数据
+int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, long *buffLength);
 
-    //压缩只有开关量的文件
-    int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine);
+//压缩只有开关量的文件
+int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine);
 
-    //还原被压缩的开关量文件返回原状态
-    int DB_ReZipSwitchFile(const char *ZipTemPath, const char *filepath);
+//还原被压缩的开关量文件返回原状态
+int DB_ReZipSwitchFile(const char *ZipTemPath, const char *filepath);
 
-    //压缩接收到的只有开关量类型的整条数据
-    int DB_ZipRecvSwitchBuff(const char *ZipTemPath, const char *filepath, char *buff, long *buffLength);
+//压缩接收到的只有开关量类型的整条数据
+int DB_ZipRecvSwitchBuff(const char *ZipTemPath, const char *filepath, char *buff, long *buffLength);
 
-    //压缩只有模拟量的文件
-    int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine);
+//压缩只有模拟量的文件
+int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine);
 
-    //还原被压缩的模拟量文件返回原状态
-    int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine);
+//还原被压缩的模拟量文件返回原状态
+int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine);
 
-    //压缩接收到的只有模拟量类型的整条数据
-    int DB_ZipRecvAnalogFile(const char *ZipTempPath, const char *filepath, char *buff, long *buffLength);
+//压缩接收到的只有模拟量类型的整条数据
+int DB_ZipRecvAnalogFile(const char *ZipTempPath, const char *filepath, char *buff, long *buffLength);
 
 // #ifdef __cplusplus
 // }
