@@ -115,6 +115,8 @@ void readIDBZIPFilesList(string path, vector<string> &files);
 
 void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWithTime);
 
+void readIDBZIPFilesWithTimestamps(string path, vector<pair<string, long>> &filesWithTime);
+
 void readDataFilesWithTimestamps(string path, vector<pair<string, long>> &filesWithTime);
 
 void readDataFiles(string path, vector<string> &files);

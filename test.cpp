@@ -34,9 +34,6 @@ void tk(int n)
         cout << "Hello World!" << endl;
         this_thread::sleep_for(chrono::seconds(1));
     }
-        
-    
-    
 }
 int main()
 {
@@ -101,19 +98,21 @@ int main()
     // zipParam.pathToLine="jinfei/";
     // zipParam.start=1648742400000;
     // zipParam.end=1648828800000;
-    // zipParam.start=1649520000000;
-    // zipParam.end=1649692800000;
-    // DB_ZipSwitchFileByTimeSpan(&zipParam);
-    // DB_ZipAnalogFileByTimeSpan(&zipParam);
+    // //zipParam.start=1649520000000;
+    // //zipParam.end=1649692800000;
+    // // DB_ZipSwitchFileByTimeSpan(&zipParam);
+    // // DB_ZipAnalogFileByTimeSpan(&zipParam);
     // DB_ZipFileByTimeSpan(&zipParam);
 
-    long len;
-    DB_GetFileLengthByPath("/Jinfei91_2022-4-1-19-28-49-807.idb",&len);
-    cout<<len<<endl;
-    char buff[len];
-    DB_OpenAndRead("/Jinfei91_2022-4-1-19-28-49-807.idb",buff);
-    DB_ZipRecvAnalogFile("jinfei","jinfei",buff,&len);
-    cout<<len<<endl;
+    // long len;
+    // DB_GetFileLengthByPath("/Jinfei91_2022-4-1-19-28-49-807.idb",&len);
+    // cout<<len<<endl;
+    // char buff[len];
+    // DB_OpenAndRead("/Jinfei91_2022-4-1-19-28-49-807.idb",buff);
+    // DB_ZipRecvBuff("jinfei","jinfei",buff,&len);
+    // // DB_ZipRecvAnalogFile("jinfei","jinfei",buff,&len);
+    // // DB_ZipRecvSwitchBuff("jinfei","jinfei",buff,&len);
+    // cout<<len<<endl;
     
     // DB_ZipSwitchFile("/jinfei/","/jinfei/");
     // DB_ReZipSwitchFile("/jinfei/","/jinfei/");
@@ -186,21 +185,21 @@ int main()
     //     usleep(100000);
     // }
     // return 0;
-    DB_DataBuffer buffer;
-    buffer.savePath = "jinfei";
-    buffer.length = 11;
-    char buf[11] = {'3'};
-    buffer.buffer = buf;
-    cout<<"test"<<endl;
-    // thread th(tk,1);
-    // th.join();
-    for (int i = 0; i < 20; i++)
-    {
-        char type = 1;
-        memcpy(buffer.buffer,&type,1);
-        DB_InsertRecord(&buffer, 1);
-        usleep(1000000);
-    }
+    // DB_DataBuffer buffer;
+    // buffer.savePath = "jinfei";
+    // buffer.length = 11;
+    // char buf[11] = {'3'};
+    // buffer.buffer = buf;
+    // cout<<"test"<<endl;
+    // // thread th(tk,1);
+    // // th.join();
+    // for (int i = 0; i < 20; i++)
+    // {
+    //     char type = 1;
+    //     memcpy(buffer.buffer,&type,1);
+    //     DB_InsertRecord(&buffer, 1);
+    //     usleep(1000000);
+    // }
 
     // DB_ReadFile(&buffer);
     return 0;
