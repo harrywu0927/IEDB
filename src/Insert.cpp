@@ -42,12 +42,12 @@ int timerStarted = false;
  */
 int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
 {
-    if (!timerStarted)
-    {
-        timer = thread(checkTime, atol(settings("Pack_Interval").c_str()));
-        timer.join();
-        timerStarted = true;
-    }
+    // if (!timerStarted)
+    // {
+    //     timer = thread(checkTime, atol(settings("Pack_Interval").c_str()));
+    //     timer.join();
+    //     timerStarted = true;
+    // }
 
     string savepath = buffer->savePath;
     if (savepath == "")

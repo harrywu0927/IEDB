@@ -222,7 +222,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
-                        if (currentUSintValue != standardUSintValue && (currentUSintValue < maxUSintValue || currentUSintValue > minUSintValue))
+                        if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
                         {
                             //既有数据又有时间
                             char zipType[1] = {0};
@@ -248,7 +248,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
                     }
                     else //不带时间戳
                     {
-                        if (currentUSintValue != standardUSintValue && (currentUSintValue < maxUSintValue || currentUSintValue > minUSintValue))
+                        if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
                         {
                             //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                             uint16_t posNum = i;
@@ -337,7 +337,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
-                        if (currentUintValue != standardUintValue && (currentUintValue < maxUintValue || currentUintValue > minUintValue))
+                        if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
                         {
                             //既有数据又有时间
                             char zipType[1] = {0};
@@ -363,7 +363,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
                     }
                     else //不带时间戳
                     {
-                        if (currentUintValue != standardUintValue && (currentUintValue < maxUintValue || currentUintValue > minUintValue))
+                        if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
                         {
                             //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                             uint16_t posNum = i;
@@ -452,7 +452,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
-                        if (currentUDintValue != standardUDintValue && (currentUDintValue < maxUDintValue || currentUDintValue > minUDintValue))
+                        if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
                         {
                             //既有数据又有时间
                             char zipType[1] = {0};
@@ -478,7 +478,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
                     }
                     else //不带时间戳
                     {
-                        if (currentUDintValue != standardUDintValue && (currentUDintValue < maxUDintValue || currentUDintValue > minUDintValue))
+                        if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
                         {
                             //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                             uint16_t posNum = i;
@@ -567,7 +567,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
-                        if (currentSintValue != standardSintValue && (currentSintValue < maxSintValue || currentSintValue > minSintValue))
+                        if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
                         {
                             //既有数据又有时间
                             char zipType[1] = {0};
@@ -593,7 +593,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
                     }
                     else //不带时间戳
                     {
-                        if (currentSintValue != standardSintValue && (currentSintValue < maxSintValue || currentSintValue > minSintValue))
+                        if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
                         {
                             //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                             uint16_t posNum = i;
@@ -682,7 +682,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
-                        if (currentIntValue != standardIntValue && (currentIntValue < maxIntValue || currentIntValue > minIntValue))
+                        if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
                         {
                             //既有数据又有时间
                             char zipType[1] = {0};
@@ -708,7 +708,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
                     }
                     else //不带时间戳
                     {
-                        if (currentIntValue != standardIntValue && (currentIntValue < maxIntValue || currentIntValue > minIntValue))
+                        if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
                         {
                             //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                             uint16_t posNum = i;
@@ -797,7 +797,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
-                        if (currentDintValue != standardDintValue && (currentDintValue < maxDintValue || currentDintValue > minDintValue))
+                        if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
                         {
                             //既有数据又有时间
                             char zipType[1] = {0};
@@ -823,7 +823,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
                     }
                     else //不带时间戳
                     {
-                        if (currentDintValue != standardDintValue && (currentDintValue < maxDintValue || currentDintValue > minDintValue))
+                        if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
                         {
                             //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                             uint16_t posNum = i;
@@ -912,7 +912,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
-                        if (currentRealValue != standardFloatValue && (currentRealValue < maxFloatValue || currentRealValue > minFloatValue))
+                        if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
                         {
                             //既有数据又有时间
                             char zipType[1] = {0};
@@ -938,7 +938,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
                     }
                     else //不带时间戳
                     {
-                        if (currentRealValue != standardFloatValue && (currentRealValue < maxFloatValue || currentRealValue > minFloatValue))
+                        if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
                         {
                             //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                             uint16_t posNum = i;
@@ -2180,7 +2180,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
-                    if (currentUSintValue != standardUSintValue && (currentUSintValue < maxUSintValue || currentUSintValue > minUSintValue))
+                    if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
                     {
                         //既有数据又有时间
                         char zipType[1] = {0};
@@ -2206,7 +2206,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
                 }
                 else //不带时间戳
                 {
-                    if (currentUSintValue != standardUSintValue && (currentUSintValue < maxUSintValue || currentUSintValue > minUSintValue))
+                    if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                         uint16_t posNum = i;
@@ -2295,7 +2295,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
-                    if (currentUintValue != standardUintValue && (currentUintValue < maxUintValue || currentUintValue > minUintValue))
+                    if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
                     {
                         //既有数据又有时间
                         char zipType[1] = {0};
@@ -2321,7 +2321,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
                 }
                 else //不带时间戳
                 {
-                    if (currentUintValue != standardUintValue && (currentUintValue < maxUintValue || currentUintValue > minUintValue))
+                    if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                         uint16_t posNum = i;
@@ -2410,7 +2410,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
-                    if (currentUDintValue != standardUDintValue && (currentUDintValue < maxUDintValue || currentUDintValue > minUDintValue))
+                    if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
                     {
                         //既有数据又有时间
                         char zipType[1] = {0};
@@ -2436,7 +2436,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
                 }
                 else //不带时间戳
                 {
-                    if (currentUDintValue != standardUDintValue && (currentUDintValue < maxUDintValue || currentUDintValue > minUDintValue))
+                    if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                         uint16_t posNum = i;
@@ -2525,7 +2525,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
-                    if (currentSintValue != standardSintValue && (currentSintValue < maxSintValue || currentSintValue > minSintValue))
+                    if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
                     {
                         //既有数据又有时间
                         char zipType[1] = {0};
@@ -2551,7 +2551,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
                 }
                 else //不带时间戳
                 {
-                    if (currentSintValue != standardSintValue && (currentSintValue < maxSintValue || currentSintValue > minSintValue))
+                    if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                         uint16_t posNum = i;
@@ -2640,7 +2640,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
-                    if (currentIntValue != standardIntValue && (currentIntValue < maxIntValue || currentIntValue > minIntValue))
+                    if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
                     {
                         //既有数据又有时间
                         char zipType[1] = {0};
@@ -2666,7 +2666,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
                 }
                 else //不带时间戳
                 {
-                    if (currentIntValue != standardIntValue && (currentIntValue < maxIntValue || currentIntValue > minIntValue))
+                    if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                         uint16_t posNum = i;
@@ -2755,7 +2755,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
-                    if (currentDintValue != standardDintValue && (currentDintValue < maxDintValue || currentDintValue > minDintValue))
+                    if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
                     {
                         //既有数据又有时间
                         char zipType[1] = {0};
@@ -2781,7 +2781,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
                 }
                 else //不带时间戳
                 {
-                    if (currentDintValue != standardDintValue && (currentDintValue < maxDintValue || currentDintValue > minDintValue))
+                    if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                         uint16_t posNum = i;
@@ -2870,7 +2870,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
-                    if (currentRealValue != standardFloatValue && (currentRealValue < maxFloatValue || currentRealValue > minFloatValue))
+                    if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
                     {
                         //既有数据又有时间
                         char zipType[1] = {0};
@@ -2896,7 +2896,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
                 }
                 else //不带时间戳
                 {
-                    if (currentRealValue != standardFloatValue && (currentRealValue < maxFloatValue || currentRealValue > minFloatValue))
+                    if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                         uint16_t posNum = i;
@@ -3248,7 +3248,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
-                        if (currentUSintValue != standardUSintValue && (currentUSintValue < maxUSintValue || currentUSintValue > minUSintValue))
+                        if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
                         {
                             //既有数据又有时间
                             char zipType[1] = {0};
@@ -3274,7 +3274,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
                     }
                     else //不带时间戳
                     {
-                        if (currentUSintValue != standardUSintValue && (currentUSintValue < maxUSintValue || currentUSintValue > minUSintValue))
+                        if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
                         {
                             //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                             uint16_t posNum = i;
@@ -3363,7 +3363,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
-                        if (currentUintValue != standardUintValue && (currentUintValue < maxUintValue || currentUintValue > minUintValue))
+                        if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
                         {
                             //既有数据又有时间
                             char zipType[1] = {0};
@@ -3389,7 +3389,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
                     }
                     else //不带时间戳
                     {
-                        if (currentUintValue != standardUintValue && (currentUintValue < maxUintValue || currentUintValue > minUintValue))
+                        if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
                         {
                             //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                             uint16_t posNum = i;
@@ -3478,7 +3478,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
-                        if (currentUDintValue != standardUDintValue && (currentUDintValue < maxUDintValue || currentUDintValue > minUDintValue))
+                        if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
                         {
                             //既有数据又有时间
                             char zipType[1] = {0};
@@ -3504,7 +3504,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
                     }
                     else //不带时间戳
                     {
-                        if (currentUDintValue != standardUDintValue && (currentUDintValue < maxUDintValue || currentUDintValue > minUDintValue))
+                        if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
                         {
                             //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                             uint16_t posNum = i;
@@ -3593,7 +3593,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
-                        if (currentSintValue != standardSintValue && (currentSintValue < maxSintValue || currentSintValue > minSintValue))
+                        if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
                         {
                             //既有数据又有时间
                             char zipType[1] = {0};
@@ -3619,7 +3619,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
                     }
                     else //不带时间戳
                     {
-                        if (currentSintValue != standardSintValue && (currentSintValue < maxSintValue || currentSintValue > minSintValue))
+                        if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
                         {
                             //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                             uint16_t posNum = i;
@@ -3708,7 +3708,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
-                        if (currentIntValue != standardIntValue && (currentIntValue < maxIntValue || currentIntValue > minIntValue))
+                        if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
                         {
                             //既有数据又有时间
                             char zipType[1] = {0};
@@ -3734,7 +3734,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
                     }
                     else //不带时间戳
                     {
-                        if (currentIntValue != standardIntValue && (currentIntValue < maxIntValue || currentIntValue > minIntValue))
+                        if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
                         {
                             //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                             uint16_t posNum = i;
@@ -3823,7 +3823,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
-                        if (currentDintValue != standardDintValue && (currentDintValue < maxDintValue || currentDintValue > minDintValue))
+                        if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
                         {
                             //既有数据又有时间
                             char zipType[1] = {0};
@@ -3849,7 +3849,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
                     }
                     else //不带时间戳
                     {
-                        if (currentDintValue != standardDintValue && (currentDintValue < maxDintValue || currentDintValue > minDintValue))
+                        if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
                         {
                             //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                             uint16_t posNum = i;
@@ -3938,7 +3938,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
-                        if (currentRealValue != standardFloatValue && (currentRealValue < maxFloatValue || currentRealValue > minFloatValue))
+                        if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
                         {
                             //既有数据又有时间
                             char zipType[1] = {0};
@@ -3964,7 +3964,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
                     }
                     else //不带时间戳
                     {
-                        if (currentRealValue != standardFloatValue && (currentRealValue < maxFloatValue || currentRealValue > minFloatValue))
+                        if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
                         {
                             //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                             uint16_t posNum = i;
