@@ -38,6 +38,7 @@ typedef unsigned int uint;
 typedef unsigned short ushort;
 #endif
 
+
 namespace StatusCode
 {
     enum StatusCode
@@ -740,6 +741,8 @@ public:
     long Next(int &readLength, long &timestamp, int &zipType);
 
     long Next(int &readLength, string &fileID, int &zipType);
+
+    void Skip(int index);
 
     void ReadPackHead(int &fileNum, string &templateName);
 

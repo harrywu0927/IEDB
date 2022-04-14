@@ -236,6 +236,54 @@ long PackFileReader::Next(int &readLength, string &fileID, int &zipType)
     return dataPos;
 }
 
+void PackFileReader::Skip(int index)
+{
+    for (int i = 0; i < index; i++)
+    {
+        curPos += 28;
+        int ztype = (int)packBuffer[curPos++]; //压缩情况
+        if (ztype != 1)
+        {
+            int len;
+            memcpy(&len, packBuffer + curPos, 4);
+            curPos += 4 + len;
+        }
+    }
+    // memcpy(&timestamp, packBuffer + curPos, 8);
+    // curPos += 8;
+    // char fid[20] = {0};
+    // memcpy(fid, packBuffer + curPos, 20);
+    // curPos += 20;
+    // fileID = fid;
+    // zipType = (int)packBuffer[curPos++]; //压缩情况
+    // long dataPos = curPos;
+    // switch (zipType)
+    // {
+    // case 0: //非压缩
+    // {
+    //     memcpy(&readLength, packBuffer + curPos, 4);
+    //     dataPos = curPos + 4;
+    //     curPos += 4 + readLength;
+    //     break;
+    // }
+    // case 1: //完全压缩
+    // {
+    //     readLength = 0;
+    //     break;
+    // }
+    // case 2: //不完全压缩
+    // {
+    //     memcpy(&readLength, packBuffer + curPos, 4);
+    //     dataPos = curPos + 4;
+    //     curPos += 4 + readLength;
+    //     break;
+    // }
+    // default:
+    //     break;
+    // }
+    // return dataPos;
+}
+
 /**
  * @brief 读取pak文件包头
  * @param fileNum            包中文件总数

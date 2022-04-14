@@ -1267,10 +1267,10 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
                 selectedPacks.push_back(make_pair(file, start));
             }
         }
-        else
-        {
-            return StatusCode::FILENAME_MODIFIED;
-        }
+        // else
+        // {
+        //     return StatusCode::FILENAME_MODIFIED;
+        // }
     }
 
     //确认当前模版

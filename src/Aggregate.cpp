@@ -1,217 +1,217 @@
 
-#include "../include/utils.hpp"
-// int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
-// {
-//     TemplateManager::SetTemplate(params->pathToLine);
-//     //检查是否有图片或数组
-//     if(CurrentTemplate.checkHasArray(params->pathCode)) return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-//     cout<<EDVDB_ExecuteQuery(buffer, params)<<endl;
-//     cout<<"buffer length"<<buffer->length<<endl;
-//     int typeNum = buffer->buffer[0];
-//     vector<DataType> typeList;
-//     int recordLength = 0; //每行的长度
-//     long bufPos = 0;
-//     for (int i = 0; i < typeNum; i++)
-//     {
-//         DataType type;
-//         int typeVal = buffer->buffer[i * 11 + 1];
-//         switch ((typeVal - 1) / 10)
-//         {
-//         case 0:
-//         {
-//             type.isArray = false;
-//             type.hasTime = false;
-//             break;
-//         }
-//         case 1:
-//         {
-//             type.isArray = false;
-//             type.hasTime = true;
-//             break;
-//         }
-//         case 2:
-//         {
-//             type.isArray = true;
-//             type.hasTime = false;
-//             break;
-//         }
-//         case 3:
-//         {
-//             type.isArray = true;
-//             type.hasTime = true;
-//             break;
-//         }
-//         default:
-//             break;
-//         }
-//         type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
-//         type.valueBytes = DataType::GetValueBytes(type.valueType);
-//         typeList.push_back(type);
-//         recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
-//     }
-//     long startPos = typeNum * 11 + 1;                       //数据区起始位置
-//     long rows = (buffer->length - startPos) / recordLength; //获取行数
-//     long cur = startPos;                                    //在buffer中的偏移量
-//     char *newBuffer = (char *)malloc(recordLength + startPos);
-//     buffer->length = startPos + recordLength;
-//     memcpy(newBuffer, buffer->buffer, startPos);
-//     long newBufCur = startPos; //在新缓冲区中的偏移量
-//     for (int i = 0; i < typeNum; i++)
-//     {
-//         //cur = curs[i];
-//         cout<<"no array"<<endl;
-//         cur = startPos + getBufferDataPos(typeList, i);
-//         int bytes = typeList[i].valueBytes; //此类型的值字节数
-//         char column[bytes * rows];          //每列的所有值缓存
-//         long colPos = 0;                    //在column中的偏移量
-//         for (int j = 0; j < rows; j++)
-//         {
-//             memcpy(column + colPos, buffer->buffer + cur, bytes);
-//             colPos += bytes;
-//             cur += recordLength;
-//         }
-//         DataTypeConverter converter;
-//         switch (typeList[i].valueType)
-//         {
-//         case ValueType::INT:
-//         {
-//             short max = INT16_MIN;
-//             char val[2];
-//             for (int k = 0; k < rows; k++)
-//             {
-//                 memcpy(val, column + k * 2, 2);
-//                 short value = converter.ToInt16(val);
-//                 if (max < value)
-//                     max = value;
-//             }
-//             cout << "max:" << max << endl;
-//             memcpy(newBuffer + newBufCur, &max, 2);
-//             newBufCur += 2;
-//             break;
-//         }
-//         case ValueType::UINT:
-//         {
-//             uint16_t max = 0;
-//             char val[2];
-//             for (int k = 0; k < rows; k++)
-//             {
-//                 memcpy(val, column + k * 2, 2);
-//                 short value = converter.ToUInt16(val);
-//                 if (max < value)
-//                     max = value;
-//             }
-//             cout << "max:" << max << endl;
-//             memcpy(newBuffer + newBufCur, val, 2);
-//             newBufCur += 2;
-//             break;
-//         }
-//         case ValueType::DINT:
-//         {
-//             int max = INT_MIN;
-//             char val[4];
-//             for (int k = 0; k < rows; k++)
-//             {
-//                 memcpy(val, column + k * 4, 4);
-//                 short value = converter.ToInt32(val);
-//                 if (max < value)
-//                     max = value;
-//             }
-//             cout << "max:" << max << endl;
-//             memcpy(newBuffer + newBufCur, val, 4);
-//             newBufCur += 4;
-//             break;
-//         }
-//         case ValueType::UDINT:
-//         {
-//             uint max = 0;
-//             char val[4];
-//             for (int k = 0; k < rows; k++)
-//             {
-//                 memcpy(val, column + k * 4, 4);
-//                 short value = converter.ToUInt32(val);
-//                 if (max < value)
-//                     max = value;
-//             }
-//             cout << "max:" << max << endl;
-//             memcpy(newBuffer + newBufCur, val, 4);
-//             newBufCur += 4;
-//             break;
-//         }
-//         case ValueType::REAL:
-//         {
-//             float max = __FLT_MIN__;
-//             char val[4];
-//             for (int k = 0; k < rows; k++)
-//             {
-//                 memcpy(val, column + k * 4, 4);
-//                 short value = converter.ToFloat(val);
-//                 if (max < value)
-//                     max = value;
-//             }
-//             cout << "max:" << max << endl;
-//             memcpy(newBuffer + newBufCur, val, 4);
-//             newBufCur += 4;
-//             break;
-//         }
-//         case ValueType::TIME:
-//         {
-//             int max = INT_MIN;
-//             char val[4];
-//             for (int k = 0; k < rows; k++)
-//             {
-//                 memcpy(val, column + k * 4, 4);
-//                 short value = converter.ToInt32(val);
-//                 if (max < value)
-//                     max = value;
-//             }
-//             cout << "max:" << max << endl;
-//             memcpy(newBuffer + newBufCur, val, 4);
-//             newBufCur += 4;
-//             break;
-//         }
-//         case ValueType::SINT:
-//         {
-//             char max = INT8_MIN;
-//             char value;
-//             for (int k = 0; k < rows; k++)
-//             {
-//                 value = column[k];
-//                 if (max < value)
-//                     max = value;
-//             }
-//             cout << "max:" << (int)max << endl;
-//             newBuffer[newBufCur++] = value;
-//             break;
-//         }
-//         default:
-//             break;
-//         }
-//     }
-//     free(buffer->buffer);
-//     buffer->buffer = NULL;
-//     buffer->buffer = newBuffer;
-//     return 0;
-// }
-// int EDVDB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
-// {
-// }
-// int EDVDB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
-// {
-// }
-// int EDVDB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
-// {
-// }
-// int EDVDB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
-// {
-// }
-// int EDVDB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
-// {
-// }
-// int EDVDB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
-// {
-// }
-// int main(){
-//     DB_DataBuffer buffer;
-//     DB_QueryParams params;
-//     DB_MAX(&buffer, &params);
-// }
+#include <utils.hpp>
+
+int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
+{
+    long normal = 0;
+    vector<string> packFiles, dataFiles;
+    vector<pair<string, long>> selectedPacks, dataWithTime;
+    switch (params->queryType)
+    {
+    case TIMESPAN:
+    {
+        readDataFilesWithTimestamps(params->pathToLine, dataWithTime);
+        readPakFilesList(params->pathToLine, packFiles);
+        for (auto &file : dataWithTime)
+        {
+            struct stat fileInfo;
+            if (stat(file.first.c_str(), &fileInfo) == -1)
+            {
+                continue;
+            }
+            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            {
+                if (file.second >= params->start && file.second <= params->end)
+                {
+                    if (fileInfo.st_size == 0)
+                    {
+                        normal++;
+                        continue;
+                    }
+                    if (file.first.back() != 'p')
+                    {
+                        DB_DataBuffer buffer;
+                        buffer.savePath = file.first.c_str();
+                        DB_ReadFile(&buffer);
+                        if (IsNormalIDBFile(buffer.buffer, params->pathToLine))
+                            normal++;
+                    }
+                }
+            }
+        }
+        for (auto &file : packFiles)
+        {
+            string tmp = file;
+            while (tmp.back() == '/')
+                tmp.pop_back();
+            vector<string> vec = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
+            string packName = vec[vec.size() - 1];
+            vector<string> timespan = DataType::StringSplit(const_cast<char *>(packName.c_str()), "-");
+            if (timespan.size() > 0)
+            {
+                long start = atol(timespan[0].c_str());
+                long end = atol(timespan[1].c_str());
+                if ((start < params->start && end >= params->start) || (start < params->end && end >= params->start) || (start <= params->start && end >= params->end) || (start >= params->start && end <= params->end)) //落入或部分落入时间区间
+                {
+                    selectedPacks.push_back(make_pair(file, start));
+                }
+            }
+        }
+        for (auto &pack : selectedPacks)
+        {
+            PackFileReader packReader(pack.first);
+            int fileNum;
+            string templateName;
+            packReader.ReadPackHead(fileNum, templateName);
+            for (int i = 0; i < fileNum; i++)
+            {
+                long timestamp;
+                int zipType, readLength;
+                packReader.Next(readLength, timestamp, zipType);
+                if (timestamp >= params->start && timestamp <= params->end && zipType == 1)
+                    normal++;
+            }
+        }
+        *count = normal;
+        break;
+    }
+    case LAST:
+    {
+        readDataFilesWithTimestamps(params->pathToLine, dataWithTime);
+        sortByTime(dataWithTime, TIME_DSC);
+        long i;
+        for (i = 0; i < params->queryNums && i < dataWithTime.size(); i++)
+        {
+            struct stat fileInfo;
+            if (stat(dataWithTime[i].first.c_str(), &fileInfo) == -1)
+            {
+                continue;
+            }
+            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            {
+                if (fileInfo.st_size == 0)
+                {
+                    normal++;
+                    continue;
+                }
+                if (dataWithTime[i].first.back() != 'p')
+                {
+                    DB_DataBuffer buffer;
+                    buffer.savePath = dataWithTime[i].first.c_str();
+                    DB_ReadFile(&buffer);
+                    if (IsNormalIDBFile(buffer.buffer, params->pathToLine))
+                        normal++;
+                }
+            }
+        }
+        if (i == params->queryNums)
+        {
+            *count = normal;
+            return 0;
+        }
+        readPakFilesList(params->pathToLine, packFiles);
+        for (auto &&file : packFiles)
+        {
+            string tmp = file;
+            while (tmp.back() == '/')
+                tmp.pop_back();
+            vector<string> vec = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
+            string packName = vec[vec.size() - 1];
+            vector<string> timespan = DataType::StringSplit(const_cast<char *>(packName.c_str()), "-");
+            if (timespan.size() > 0)
+            {
+                long start = atol(timespan[0].c_str());
+                selectedPacks.push_back(make_pair(file, start));
+            }
+        }
+        sortByTime(selectedPacks, TIME_DSC);
+        for (auto &&pack : selectedPacks)
+        {
+            PackFileReader packReader(pack.first);
+            int fileNum;
+            string templateName;
+            packReader.ReadPackHead(fileNum, templateName);
+            if (i + fileNum < params->queryNums)
+            {
+                i += fileNum;
+                for (int j = 0; j < fileNum; j++)
+                {
+                    long timestamp;
+                    int zipType, readLength;
+                    packReader.Next(readLength, timestamp, zipType);
+                    if (zipType == 1)
+                        normal++;
+                }
+            }
+            else
+            {
+                long timestamp;
+                int zipType, readLength;
+                packReader.Skip(fileNum - (params->queryNums - i));
+                for (int j = fileNum - (params->queryNums - i); j < fileNum; j++)
+                {
+                    packReader.Next(readLength, timestamp, zipType);
+                    if (zipType == 1)
+                        normal++;
+                }
+            }
+        }
+        *count = normal;
+        break;
+    }
+    case FILEID:
+    {
+        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+        break;
+    }
+    default:
+    {
+        readDataFiles(params->pathToLine, dataFiles);
+        readPakFilesList(params->pathToLine, packFiles);
+        for (auto &file : dataFiles)
+        {
+            struct stat fileInfo;
+            if (stat(file.c_str(), &fileInfo) == -1)
+            {
+                continue;
+            }
+            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            {
+                if (fileInfo.st_size == 0)
+                {
+                    normal++;
+                    continue;
+                }
+                if (file.back() != 'p')
+                {
+                    DB_DataBuffer buffer;
+                    buffer.savePath = file.c_str();
+                    DB_ReadFile(&buffer);
+                    if (IsNormalIDBFile(buffer.buffer, params->pathToLine))
+                        normal++;
+                }
+            }
+        }
+        for (auto &pack : packFiles)
+        {
+            PackFileReader packReader(pack);
+            int fileNum;
+            string templateName;
+            packReader.ReadPackHead(fileNum, templateName);
+            for (int i = 0; i < fileNum; i++)
+            {
+                long timestamp;
+                int zipType, readLength;
+                packReader.Next(readLength, timestamp, zipType);
+                if (zipType == 1)
+                    normal++;
+            }
+        }
+        *count = normal;
+    }
+    }
+    return 0;
+}
+int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
+{
+}

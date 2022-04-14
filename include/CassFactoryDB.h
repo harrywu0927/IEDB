@@ -127,6 +127,12 @@ int DB_AVG(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 //文件打包
 int DB_Pack(const char *pathToLine, int num, int packAll);
 
+//按条件统计正常数据条数
+int DB_GetNormalDataCount(struct DB_QueryParams *params, long *count); 
+
+//按条件统计非正常数据条数
+int DB_GetAbnormalDataCount(struct DB_QueryParams *params, long *count); 
+
 //读取文件内容到缓冲区
 int DB_ReadFile(struct DB_DataBuffer *buffer);
 //打开文件

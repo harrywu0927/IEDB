@@ -47,10 +47,6 @@ int DB_DeleteRecords(DB_QueryParams *params)
                     selectedPacks.push_back(make_pair(pack, make_tuple(start, end)));
                 }
             }
-            else
-            {
-                return StatusCode::FILENAME_MODIFIED;
-            }
         }
         if (params->compareType == CMP_NONE) //不需要比较数值，因此无需读取普通文件增加I/O耗时
         {
@@ -60,7 +56,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
             }
             /**
              *  对于包文件，若其起始时间和结束时间均在范围内，则直接删除，
-             *  否则，将包内的范围外的数据拷出后写成新的文件，将旧文件删除
+             *  否则，将包内的范围外的数据拷出后写成新的文件，将旧文件覆盖
              */
             for (auto &pack : selectedPacks)
             {
@@ -75,10 +71,9 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 int fileNum;
                 string templateName;
                 packReader.ReadPackHead(fileNum, templateName);
-                // TemplateManager::CheckTemplate(templateName);
+                TemplateManager::CheckTemplate(templateName);
                 int deleteNum = 0;
                 //一次分配一整个pak长度的空间，避免频繁分配影响性能
-                // shared_ptr<char> newPack = make_shared<char>(packReader.GetPackLength());
                 char *newPack = new char[packReader.GetPackLength()];
                 long cur = 4;
                 memcpy(newPack + cur, templateName.c_str(), templateName.length() <= 20 ? templateName.length() : 20);
@@ -94,12 +89,15 @@ int DB_DeleteRecords(DB_QueryParams *params)
                         deleteNum++;
                         continue;
                     }
-                    memcpy(newPack + cur, packReader.packBuffer + dataPos - 29, 29);
-                    cur += 29;
                     if (zipType != 1) //非完全压缩
                     {
-                        memcpy(newPack + cur, packReader.packBuffer + dataPos - 4, readLength + 4);
-                        cur += readLength + 4;
+                        memcpy(newPack + cur, packReader.packBuffer + dataPos - 33, 33 + readLength);
+                        cur += readLength + 33;
+                    }
+                    else
+                    {
+                        memcpy(newPack + cur, packReader.packBuffer + dataPos - 29, 29);
+                        cur += 29;
                     }
                 }
                 int newFileNum = fileNum - deleteNum;
@@ -328,12 +326,15 @@ int DB_DeleteRecords(DB_QueryParams *params)
                         }
                         delete[] buff;
                     }
-                    memcpy(newPack + cur, packReader.packBuffer + dataPos - 29, 29);
-                    cur += 29;
                     if (zipType != 1) //非完全压缩
                     {
-                        memcpy(newPack + cur, packReader.packBuffer + dataPos - 4, readLength + 4);
-                        cur += readLength + 4;
+                        memcpy(newPack + cur, packReader.packBuffer + dataPos - 33, 33 + readLength);
+                        cur += readLength + 33;
+                    }
+                    else
+                    {
+                        memcpy(newPack + cur, packReader.packBuffer + dataPos - 29, 29);
+                        cur += 29;
                     }
                 }
                 int newFileNum = fileNum - deleteNum;
@@ -607,7 +608,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                         long preDataPos = preInfo.first;
                         int preReadLength = get<0>(preInfo.second);
                         int preZipType = get<3>(preInfo.second);
-                        memcpy(newPack + cur, packReader.packBuffer + 24 , preDataPos);
+                        memcpy(newPack + cur, packReader.packBuffer + 24, preDataPos);
                         cur = preDataPos;
                         if (preZipType != 1) //非完全压缩
                         {
@@ -622,11 +623,15 @@ int DB_DeleteRecords(DB_QueryParams *params)
                             int readLength = get<0>(fileInfo.second);
                             int zipType = get<3>(fileInfo.second);
                             memcpy(newPack + cur, packReader.packBuffer + dataPos - 29, 29);
-                            cur += 29;
                             if (zipType != 1) //非完全压缩
                             {
-                                memcpy(newPack + cur, packReader.packBuffer + dataPos - 4, readLength + 4);
-                                cur += readLength + 4;
+                                memcpy(newPack + cur, packReader.packBuffer + dataPos - 33, 33 + readLength);
+                                cur += readLength + 33;
+                            }
+                            else
+                            {
+                                memcpy(newPack + cur, packReader.packBuffer + dataPos - 29, 29);
+                                cur += 29;
                             }
                             writeStk.pop();
                         }
@@ -835,7 +840,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 }
             }
         }
-
+        return 0;
         break;
     }
     default:
@@ -862,12 +867,12 @@ int main()
     params.pathCode = code;
     params.valueName = "S2OFF";
     // params.valueName = NULL;
-    params.start = 1649893935085;
-    params.end = 1649893939909;
+    params.start = 1649897531555;
+    params.end = 1649897532603;
     params.order = ASCEND;
-    params.compareType = GT;
+    params.compareType = LT;
     params.compareValue = "666";
-    params.queryType = LAST;
+    params.queryType = TIMESPAN;
     params.byPath = 0;
     params.queryNums = 10;
     DB_DeleteRecords(&params);

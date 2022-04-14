@@ -397,6 +397,7 @@ int DB_ReadFile(DB_DataBuffer *buffer)
     finalPath += savepath;
     cout << finalPath << endl;
     FILE *fp = fopen(finalPath.c_str(), "rb");
+    if(fp == NULL) return errno;
     fseek(fp, 0, SEEK_END);
     long len = ftell(fp);
     if (len == 0)
