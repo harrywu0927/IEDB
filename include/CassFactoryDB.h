@@ -277,6 +277,7 @@ int DB_ZipSwitchFileByFileID(struct DB_ZipParams *params);
 //根据文件ID压缩模拟量.idb文件
 int DB_ZipAnalogFileByFileID(struct DB_ZipParams *params);
 
+//根据文件ID压缩.idb文件
 int DB_ZipFileByFileID(struct DB_ZipParams *params);
 
 //根据文件ID还原开关量类型.idbzip文件
@@ -285,7 +286,7 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params);
 //根据文件ID还原模拟量类型.idbzip文件
 int DB_ReZipAnalogFileByFileID(struct DB_ZipParams *params);
 
-//根据文件ID还原开关量.idbzip文件
+//根据文件ID还原.idbzip文件
 int DB_ReZipFileByFileID(struct DB_ZipParams *params);
 
 // #ifdef __cplusplus
