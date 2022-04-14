@@ -1377,7 +1377,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
                     memcpy(copyValue + lineCur, buff + posList[i], curBytes);
                     lineCur += curBytes;
                 }
-                if (params->valueName != NULL)
+                if (params->valueName != NULL) //此处，若编码为精确搜索，而又输入了不同的变量名，FindSortPosFromSelectedData将返回0
                     sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, params->pathCode, typeList);
             }
             else
@@ -1597,7 +1597,12 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 
     if (sortDataPoses.size() > 0) //尚有问题
         sortResultByValue(mallocedMemory, sortDataPoses, params, type);
-
+    if(cur == 0)
+    {
+        buffer->buffer = NULL;
+        buffer->bufferMalloced = 0;
+        return StatusCode::NO_DATA_QUERIED;
+    }
     //动态分配内存
     char typeNum = params->byPath ? typeList.size() : 1; //数据类型总数
     char *data = (char *)malloc(cur + (int)typeNum * 11 + 1);
@@ -2162,6 +2167,8 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
         sortByTime(packsWithTime, TIME_DSC);
         for (auto &pack : packsWithTime)
         {
+            if(selectedNum == params->queryNums)
+                break;
             PackFileReader packReader(pack.first);
             if (packReader.packBuffer == NULL)
                 continue;
@@ -2265,7 +2272,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
                 if (params->valueName != NULL)
                     compareBytes = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type) == 0 ? bytes : 0;
 
-                if (compareBytes != 0) //可比较
+                if (compareBytes != 0 && params->compareType != CMP_NONE) //可比较
                 {
                     char value[compareBytes]; //值缓存
                     memcpy(value, buff + pos, compareBytes);
@@ -2570,7 +2577,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
                 {
                     pathCode = params->pathCode;
                     err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList, typeList);
-                    for (int i = 0; i < bytesList.size(); i++)
+                    for (int i = 0; i < bytesList.size() && err != 0; i++)
                     {
                         copyBytes += typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i];
                     }
@@ -2703,8 +2710,6 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
             buffer->buffer = data;
             buffer->length = copyBytes + startPos;
             return 0;
-
-            break;
         }
     }
     return StatusCode::DATAFILE_NOT_FOUND;
@@ -4379,60 +4384,59 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
     return 0;
 }
 
-int main()
-{
-    DataTypeConverter converter;
-    DB_QueryParams params;
-    params.pathToLine = "jinfei";
-    params.fileID = "JinfeiTen102";
-    char code[10];
-    code[0] = (char)0;
-    code[1] = (char)1;
-    code[2] = (char)0;
-    code[3] = (char)0;
-    code[4] = 0;
-    code[5] = (char)0;
-    code[6] = 0;
-    code[7] = (char)0;
-    code[8] = (char)0;
-    code[9] = (char)0;
-    params.pathCode = code;
-    params.valueName = "S2OFF";
-    // params.valueName = NULL;
-    params.start = 1648812610100;
-    params.end = 1648812630100;
-    params.order = ASCEND;
-    params.compareType = CMP_NONE;
-    params.compareValue = "666";
-    params.queryType = LAST;
-    params.byPath = 1;
-    params.queryNums = 8;
-    DB_DataBuffer buffer;
-    buffer.savePath = "/";
-    vector<long> bytes, positions;
-    vector<DataType> types;
-    // cout << settings("Pack_Mode") << endl;
-    // vector<pair<string, long>> files;
-    // readDataFilesWithTimestamps("", files);
-    // Packer::Pack("/",files);
-    DB_QueryLastRecords(&buffer, &params);
-    // DB_QueryByFileID(&buffer, &params);
+// int main()
+// {
+//     DataTypeConverter converter;
+//     DB_QueryParams params;
+//     params.pathToLine = "JinfeiThirteen";
+//     params.fileID = "JinfeiTen102";
+//     char code[10];
+//     code[0] = (char)0;
+//     code[1] = (char)1;
+//     code[2] = (char)0;
+//     code[3] = (char)0;
+//     code[4] = 0;
+//     code[5] = (char)0;
+//     code[6] = 0;
+//     code[7] = (char)0;
+//     code[8] = (char)0;
+//     code[9] = (char)0;
+//     params.pathCode = code;
+//     params.valueName = "S2OFF";
+//     // params.valueName = NULL;
+//     params.start = 1648812610100;
+//     params.end = 1648812630100;
+//     params.order = ASCEND;
+//     params.compareType = CMP_NONE;
+//     params.compareValue = "666";
+//     params.queryType = LAST;
+//     params.byPath = 0;
+//     params.queryNums = 8;
+//     DB_DataBuffer buffer;
+//     buffer.savePath = "/";
+//     // cout << settings("Pack_Mode") << endl;
+//     // vector<pair<string, long>> files;
+//     // readDataFilesWithTimestamps("", files);
+//     // Packer::Pack("/",files);
+//     DB_QueryLastRecords(&buffer, &params);
+//     //DB_QueryByTimespan(&buffer, &params);
+//     // DB_QueryByFileID(&buffer, &params);
 
-    if (buffer.bufferMalloced)
-    {
-        char buf[buffer.length];
-        memcpy(buf, buffer.buffer, buffer.length);
-        cout << buffer.length << endl;
-        for (int i = 0; i < buffer.length; i++)
-        {
-            cout << (int)buf[i] << " ";
-            if (i % 11 == 0)
-                cout << endl;
-        }
+//     if (buffer.bufferMalloced)
+//     {
+//         char buf[buffer.length];
+//         memcpy(buf, buffer.buffer, buffer.length);
+//         cout << buffer.length << endl;
+//         for (int i = 0; i < buffer.length; i++)
+//         {
+//             cout << (int)buf[i] << " ";
+//             if (i % 11 == 0)
+//                 cout << endl;
+//         }
 
-        free(buffer.buffer);
-    }
+//         free(buffer.buffer);
+//     }
 
-    // buffer.buffer = NULL;
-    return 0;
-}
+//     // buffer.buffer = NULL;
+//     return 0;
+// }

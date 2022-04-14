@@ -21,7 +21,7 @@
 using namespace std;
 void *tick(void *ptr)
 {
-    int n=5;
+    int n = 5;
     while (n--)
     {
         cout << "Hello World!" << endl;
@@ -30,7 +30,8 @@ void *tick(void *ptr)
 }
 void tk(int n)
 {
-    while(1){
+    while (1)
+    {
         cout << "Hello World!" << endl;
         this_thread::sleep_for(chrono::seconds(1));
     }
@@ -47,13 +48,13 @@ int main()
     // }
     // pthread_exit(NULL);
     DB_QueryParams params;
-    params.pathToLine = "jinfei";
+    params.pathToLine = "JinfeiThirteen";
     params.fileID = "JinfeiTen102";
     char code[10];
     code[0] = (char)0;
     code[1] = (char)1;
     code[2] = (char)0;
-    code[3] = (char)2;
+    code[3] = (char)1;
     code[4] = 0;
     code[5] = (char)0;
     code[6] = 0;
@@ -63,41 +64,51 @@ int main()
     params.pathCode = code;
     params.valueName = "S2OFF";
     // params.valueName = NULL;
-    params.start = 1648812610100;
-    params.end = 1648812630100;
+    params.start = 1649893935085;
+    params.end = 1649893939909;
     params.order = ASCEND;
-    params.compareType = GT;
+    params.compareType = CMP_NONE;
     params.compareValue = "666";
     params.queryType = LAST;
-    params.byPath = 1;
+    params.byPath = 0;
     params.queryNums = 8;
     DB_DataBuffer buffer;
     buffer.savePath = "/";
-    vector<long> bytes, positions;
-    vector<DataType> types;
-    // cout << settings("Pack_Mode") << endl;
-    // vector<pair<string, long>> files;
-    // readDataFilesWithTimestamps("", files);
-    // Packer::Pack("/",files);
-    DB_QueryLastRecords(&buffer, &params);
+    // DB_QueryLastRecords(&buffer, &params);
     // DB_QueryByFileID(&buffer, &params);
+    DB_QueryLastRecords(&buffer, &params);
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
 
-    // struct tm t;
-    // t.tm_year = atoi("2022") - 1900;
-    // t.tm_mon = atoi("4") - 1;
-    // t.tm_mday = atoi("10");
-    // t.tm_hour = atoi("0");
-    // t.tm_min = atoi("0");
-    // t.tm_sec = atoi("0");
-    // t.tm_isdst = -1; //不设置夏令时
-    // time_t seconds = mktime(&t);
-    // int ms = atoi("0");
-    // long start = seconds * 1000 + ms;
-    // cout<<start<<endl;
-    DB_ZipParams zipParam;
-    zipParam.pathToLine="jinfei/";
-    zipParam.start=1648742400000;
-    zipParam.end=1648828800000;
+        free(buffer.buffer);
+    }
+    return 0;
+    struct tm t;
+    t.tm_year = 122;
+    t.tm_mon = 3;
+    t.tm_mday = 14;
+    t.tm_hour = 9;
+    t.tm_min = 53;
+    t.tm_sec = 20;
+    t.tm_isdst = -1; //不设置夏令时
+    time_t seconds = mktime(&t);
+    int ms = atoi("0");
+    long start = seconds * 1000 + ms;
+    cout << start << endl;
+
+    // DB_ZipParams zipParam;
+    // zipParam.pathToLine="jinfei/";
+    // zipParam.start=1648742400000;
+    // zipParam.end=1648828800000;
     // zipParam.start=1649520000000;
     // zipParam.end=1649692800000;
     // DB_ZipSwitchFileByTimeSpan(&zipParam);

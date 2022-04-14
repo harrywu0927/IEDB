@@ -3,7 +3,7 @@
 // {
 // #endif
 
-/*
+/**
  *  数据交换缓冲区
  *  查询时，buffer中的数据存放方式：第1个字节为查询到的变量总数(0<N<256)，
  *  随后的N*11字节依次为：数据类型代号1字节、路径编码10字节
@@ -55,8 +55,8 @@ enum DB_Order
 struct DB_QueryParams
 {
     char *pathCode;                  //路径编码
-    const char *valueName;           //变量名,必须赋值或置为NULL！！
-    int byPath;                      // 1表示根据路径编码查询，0表示根据变量名查询
+    const char *valueName;           //变量名
+    int byPath;                      //1表示根据路径编码查询，0表示根据变量名查询
     int isContinue;                  //是否继续获取数据，1表示接续上次未传输完的数据，0表示结束
     long start;                      //开始时间
     long end;                        //结束时间

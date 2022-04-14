@@ -89,22 +89,17 @@ int DB_DeleteRecords(DB_QueryParams *params)
                     int readLength, zipType;
                     string fileID;
                     long dataPos = packReader.Next(readLength, timestamp, fileID, zipType);
-                    if (timestamp >= params->start || timestamp <= params->end) //在时间区间内
+                    if (timestamp >= params->start && timestamp <= params->end) //在时间区间内
                     {
                         deleteNum++;
                         continue;
                     }
-                    memcpy(newPack + cur, &timestamp, 8);
-                    cur += 8;
-                    memcpy(newPack + cur, fileID.c_str(), 20);
-                    cur += 20;
-                    memcpy(newPack + cur++, (char *)&zipType, 1);
+                    memcpy(newPack + cur, packReader.packBuffer + dataPos - 29, 29);
+                    cur += 29;
                     if (zipType != 1) //非完全压缩
                     {
-                        memcpy(newPack + cur, &readLength, 4);
-                        cur += 4;
-                        memcpy(newPack + cur, packReader.packBuffer + dataPos, readLength);
-                        cur += readLength;
+                        memcpy(newPack + cur, packReader.packBuffer + dataPos - 4, readLength + 4);
+                        cur += readLength + 4;
                     }
                 }
                 int newFileNum = fileNum - deleteNum;
@@ -116,6 +111,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 delete[] newPack;
                 DB_Close(fp);
             }
+            return 0;
         }
         else
         {
@@ -232,7 +228,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                     int readLength, zipType;
                     string fileID;
                     long dataPos = packReader.Next(readLength, timestamp, fileID, zipType);
-                    if (timestamp >= params->start || timestamp <= params->end) //在时间区间内
+                    if (timestamp >= params->start && timestamp <= params->end) //在时间区间内
                     {
                         /**
                          * 在此决定是否保留此数据，首先从压缩数据中还原出原始数据，进行常规比对
@@ -332,17 +328,12 @@ int DB_DeleteRecords(DB_QueryParams *params)
                         }
                         delete[] buff;
                     }
-                    memcpy(newPack + cur, &timestamp, 8);
-                    cur += 8;
-                    memcpy(newPack + cur, fileID.c_str(), 20);
-                    cur += 20;
-                    memcpy(newPack + cur++, (char *)&zipType, 1);
+                    memcpy(newPack + cur, packReader.packBuffer + dataPos - 29, 29);
+                    cur += 29;
                     if (zipType != 1) //非完全压缩
                     {
-                        memcpy(newPack + cur, &readLength, 4);
-                        cur += 4;
-                        memcpy(newPack + cur, packReader.packBuffer + dataPos, readLength);
-                        cur += readLength;
+                        memcpy(newPack + cur, packReader.packBuffer + dataPos - 4, readLength + 4);
+                        cur += readLength + 4;
                     }
                 }
                 int newFileNum = fileNum - deleteNum;
@@ -355,6 +346,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 DB_Close(fp);
             }
         }
+        return 0;
         break;
     }
     case LAST:
@@ -384,7 +376,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
         int selectedNum = 0;
         if (params->compareType == CMP_NONE)
         {
-            for (auto &file : selectedFiles)
+            for (auto &file : filesWithTime)
             {
                 DB_DeleteFile(const_cast<char *>(file.first.c_str()));
                 selectedNum++;
@@ -455,7 +447,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
         }
         else
         {
-            for (auto &file : selectedFiles)
+            for (auto &file : filesWithTime)
             {
                 long len;
                 if (file.first.find(".idbzip") != string::npos)
@@ -583,6 +575,11 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 memcpy(newPack + cur, templateName.c_str(), templateName.length() <= 20 ? templateName.length() : 20);
                 cur += 20;
                 stack<pair<long, tuple<int, long, string, int>>> filestk;
+                /**
+                 * 比对数据时使用filestk使数据时间降序地弹出，将不满足删除条件的数据压入writeStk
+                 * 最后写入时从writeStk中弹出的数据即为时间升序型
+                 */
+                stack<pair<long, tuple<int, long, string, int>>> writeStk;
                 for (int i = 0; i < fileNum; i++)
                 {
                     long timestamp; //暂时用不到时间戳
@@ -595,21 +592,44 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 DataType type;
                 while (!filestk.empty())
                 {
-                    auto fileInfo = filestk.top();
-                    filestk.pop();
-                    long dataPos = fileInfo.first;
-                    int readLength = get<0>(fileInfo.second);
-                    long timestamp = get<1>(fileInfo.second);
-                    string fileID = get<2>(fileInfo.second);
-                    int zipType = get<3>(fileInfo.second);
                     if (deleteComplete) //删除已完成，直接拷贝剩余数据
                     {
-                        memcpy(newPack + cur, &timestamp, 8);
-                        cur += 8;
-                        memcpy(newPack + cur, fileID.c_str(), 20);
-                        cur += 20;
-                        memcpy(newPack + cur++, (char *)&zipType, 1);
-                        memcpy(newPack + cur, packReader.packBuffer + dataPos, packReader.GetPackLength() - dataPos);
+                        // while (!filestk.empty())
+                        // {
+                        //     writeStk.push(filestk.top());
+                        //     filestk.pop();
+                        // }
+                        /**
+                         * @brief 至此已无需删除数据，此时filestk的顶部为时序最后的文件信息，
+                         * 因此可以直接从包的头部拷贝至此文件
+                         */
+                        auto preInfo = filestk.top();
+                        long preDataPos = preInfo.first;
+                        int preReadLength = get<0>(preInfo.second);
+                        int preZipType = get<3>(preInfo.second);
+                        memcpy(newPack + cur, packReader.packBuffer + 24 , preDataPos);
+                        cur = preDataPos;
+                        if (preZipType != 1) //非完全压缩
+                        {
+                            memcpy(newPack + cur, packReader.packBuffer + preDataPos - 4, preReadLength + 4);
+                            cur += preReadLength + 4;
+                        }
+
+                        while (!writeStk.empty())
+                        {
+                            auto fileInfo = writeStk.top();
+                            long dataPos = fileInfo.first;
+                            int readLength = get<0>(fileInfo.second);
+                            int zipType = get<3>(fileInfo.second);
+                            memcpy(newPack + cur, packReader.packBuffer + dataPos - 29, 29);
+                            cur += 29;
+                            if (zipType != 1) //非完全压缩
+                            {
+                                memcpy(newPack + cur, packReader.packBuffer + dataPos - 4, readLength + 4);
+                                cur += readLength + 4;
+                            }
+                            writeStk.pop();
+                        }
                         int newFileNum = fileNum - deleteNum;
                         memcpy(newPack, &newFileNum, 4);
                         char mode[2] = {'w', 'b'};
@@ -620,6 +640,14 @@ int DB_DeleteRecords(DB_QueryParams *params)
                         DB_Close(fp);
                         return 0;
                     }
+                    auto fileInfo = filestk.top();
+                    filestk.pop();
+                    long dataPos = fileInfo.first;
+                    int readLength = get<0>(fileInfo.second);
+                    long timestamp = get<1>(fileInfo.second);
+                    string fileID = get<2>(fileInfo.second);
+                    int zipType = get<3>(fileInfo.second);
+
                     char *buff = new char[CurrentTemplate.totalBytes];
                     switch (zipType)
                     {
@@ -717,21 +745,26 @@ int DB_DeleteRecords(DB_QueryParams *params)
                         continue;
                     }
                     delete[] buff;
-                    memcpy(newPack + cur, &timestamp, 8);
-                    cur += 8;
-                    memcpy(newPack + cur, fileID.c_str(), 20);
-                    cur += 20;
-                    memcpy(newPack + cur++, (char *)&zipType, 1);
-                    if (zipType != 1) //非完全压缩
-                    {
-                        memcpy(newPack + cur, &readLength, 4);
-                        cur += 4;
-                        memcpy(newPack + cur, packReader.packBuffer + dataPos, readLength);
-                        cur += readLength;
-                    }
+                    writeStk.push(fileInfo);
                 }
+                //运行到这里，代表此包中的数据已比对完毕，但还未达到删除条数
                 int newFileNum = fileNum - deleteNum;
                 memcpy(newPack, &newFileNum, 4);
+                while (!writeStk.empty())
+                {
+                    auto fileInfo = writeStk.top();
+                    long dataPos = fileInfo.first;
+                    int readLength = get<0>(fileInfo.second);
+                    int zipType = get<3>(fileInfo.second);
+                    memcpy(newPack + cur, packReader.packBuffer + dataPos - 29, 29);
+                    cur += 29;
+                    if (zipType != 1) //非完全压缩
+                    {
+                        memcpy(newPack + cur, packReader.packBuffer + dataPos - 4, readLength + 4);
+                        cur += readLength + 4;
+                    }
+                    writeStk.pop();
+                }
                 char mode[2] = {'w', 'b'};
                 long fp;
                 DB_Open(const_cast<char *>(pack.first.c_str()), mode, &fp);
@@ -786,13 +819,13 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 int readLength, zipType;
                 long timestamp;
                 long dataPos = packReader.Next(readLength, timestamp, fid, zipType);
-                if (fid == fileid) //剔除这部分数据
+                if (fid.find(fileid) != string::npos) //剔除这部分数据
                 {
                     char *newPack = new char[packReader.GetPackLength()];
                     int newNum = fileNum - 1;
-                    memcpy(newPack, packReader.packBuffer,dataPos - 28);
-                    memcpy(newPack, &newNum, 4);
-                    memcpy(newPack + dataPos - 28, packReader.packBuffer + dataPos + readLength, packReader.GetPackLength() - (dataPos + readLength));
+                    memcpy(newPack, packReader.packBuffer, dataPos - 33);                                                                              //拷贝此文件前的数据
+                    memcpy(newPack, &newNum, 4);                                                                                                       //覆写文件总数
+                    memcpy(newPack + dataPos - 33, packReader.packBuffer + dataPos + readLength, packReader.GetPackLength() - (dataPos + readLength)); //拷贝此文件后的数据
                     long fp;
                     char mode[2] = {'w', 'b'};
                     DB_Open(const_cast<char *>(pack.c_str()), mode, &fp);
@@ -810,7 +843,33 @@ int DB_DeleteRecords(DB_QueryParams *params)
     }
     return StatusCode::NO_QUERY_TYPE;
 }
-// int main()
-// {
-
-// }
+int main()
+{
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiThirteen";
+    params.fileID = "JinfeiThirteen103845";
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)0;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueName = "S2OFF";
+    // params.valueName = NULL;
+    params.start = 1649893935085;
+    params.end = 1649893939909;
+    params.order = ASCEND;
+    params.compareType = GT;
+    params.compareValue = "666";
+    params.queryType = LAST;
+    params.byPath = 0;
+    params.queryNums = 10;
+    DB_DeleteRecords(&params);
+    return 0;
+}
