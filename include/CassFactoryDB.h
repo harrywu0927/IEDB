@@ -236,6 +236,58 @@ int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine);
 //压缩接收到的只有模拟量类型的整条数据
 int DB_ZipRecvAnalogFile(const char *ZipTempPath, const char *filepath, char *buff, long *buffLength);
 
+enum DB_ZipType
+{
+    TIME_SPAN,
+    FILE_ID,
+    PATH_TO_LINE,
+};
+struct DB_ZipParams
+{
+    const char *pathToLine;  //到产线级的路径
+    long start;              //开始时间
+    long end;                //结束时间
+    const char *fileID;      //文件ID
+    enum DB_ZipType ZipType; //压缩方式
+    char *buffer;            //数据缓存
+    long bufferLen;          //数据长度
+};
+
+//根据时间段压缩开关量类型.idb文件
+int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params);
+
+//根据时间段压缩模拟量类型.idb文件
+int DB_ZipAnalogFileByTimeSpan(struct DB_ZipParams *params);
+
+//根据时间段压缩.idb文件
+int DB_ZipFileByTimeSpan(struct DB_ZipParams *params);
+
+//根据时间段还原开关量类型.idbzip文件
+int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params);
+
+//根据时间段还原模拟量类型.idbzip文件
+int DB_ReZipAnalogFileByTimeSpan(struct DB_ZipParams *params);
+
+//根据时间段还原.idbzip文件
+int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params);
+
+//根据文件ID压缩开关量.idb文件
+int DB_ZipSwitchFileByFileID(struct DB_ZipParams *params);
+
+//根据文件ID压缩模拟量.idb文件
+int DB_ZipAnalogFileByFileID(struct DB_ZipParams *params);
+
+int DB_ZipFileByFileID(struct DB_ZipParams *params);
+
+//根据文件ID还原开关量类型.idbzip文件
+int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params);
+
+//根据文件ID还原模拟量类型.idbzip文件
+int DB_ReZipAnalogFileByFileID(struct DB_ZipParams *params);
+
+//根据文件ID还原开关量.idbzip文件
+int DB_ReZipFileByFileID(struct DB_ZipParams *params);
+
 // #ifdef __cplusplus
 // }
 // #endif

@@ -38,27 +38,6 @@ typedef unsigned int uint;
 typedef unsigned short ushort;
 #endif
 
-enum DB_ZipType
-{
-    TIME_SPAN,
-    FILE_ID,
-    PATH_TO_LINE,
-};
-struct DB_ZipParams
-{
-    const char *pathToLine;  //到产线级的路径
-    long start;              //开始时间
-    long end;                //结束时间
-    const char *fileID;      //文件ID
-    enum DB_ZipType ZipType; //压缩方式
-};
-int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params);//根据时间段压缩开关量类型.idb文件
-int DB_ZipAnalogFileByTimeSpan(struct DB_ZipParams *params);//根据时间段压缩模拟量类型.idb文件
-int DB_ZipFileByTimeSpan(struct DB_ZipParams *params);//根据时间段压缩.idb文件
-int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params);//根据时间段还原开关量类型.idbzip文件
-int DB_ReZipAnalogFileByTimeSpan(struct DB_ZipParams *params);//根据时间段还原模拟量类型.idbzip文件
-int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params);//根据时间段还原.idbzip文件
-
 namespace StatusCode
 {
     enum StatusCode
@@ -143,6 +122,8 @@ int CheckQueryParams(DB_QueryParams *params);
 int CheckZipParams(DB_ZipParams *params);
 
 int ReZipBuff(char *buff, int &buffLength, const char *pathToLine);
+
+bool IsNormalIDBFile(char *readbuff, const char *pathToLine);
 
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);

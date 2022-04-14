@@ -17,7 +17,7 @@ unordered_map<string, bool> filesListRead;
 //递归获取所有子文件夹
 void readAllDirs(vector<string> &dirs, string basePath)
 {
-    
+
     DIR *dir;
     struct dirent *ptr;
     if ((dir = opendir(basePath.c_str())) == NULL)
@@ -250,7 +250,8 @@ void readDataFilesWithTimestamps(string path, vector<pair<string, long>> &filesW
     else
         finalPath += path;
     dir = opendir(finalPath.c_str());
-    if(dir == NULL) return;
+    if (dir == NULL)
+        return;
     while ((ptr = readdir(dir)) != NULL)
     {
         if (ptr->d_name[0] == '.')
@@ -404,7 +405,7 @@ void readIDBZIPFilesWithTimestamps(string path, vector<pair<string, long>> &file
         {
             string p;
             string datafile = ptr->d_name;
-            if (datafile.find(".idbzip") != string::npos )
+            if (datafile.find(".idbzip") != string::npos)
             {
                 string tmp = datafile;
                 vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[1].c_str()), "-");
@@ -566,7 +567,7 @@ void removeFilenameLabel(string &path)
     {
         path.erase(path.begin());
     }
-    while(path[0] == '/')
+    while (path[0] == '/')
         path.erase(path.begin());
 }
 
@@ -718,6 +719,281 @@ int CheckZipParams(DB_ZipParams *params)
     return 0;
 }
 
+bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
+{
+    int err = 0;
+    err = DB_LoadZipSchema(pathToLine); //加载压缩模板
+    if (err)
+    {
+        cout << "未加载模板" << endl;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
+    DataTypeConverter converter;
+    long readbuff_pos = 0;
+
+    for (size_t i = 0; i < CurrentZipTemplate.schemas.size(); i++) //循环比较
+    {
+        if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::BOOL) // BOOL变量
+        {
+            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            {
+                return false;
+            }
+            else
+            {
+                char standardBool = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                // 1个字节,暂定，根据后续情况可能进行更改
+                char value[1] = {0};
+                memcpy(value, readbuff + readbuff_pos, 1);
+                char currentUSintValue = value[0];
+
+                if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带时间戳
+                {
+                    if (standardBool != readbuff[readbuff_pos])
+                        return false;
+                    else
+                        readbuff_pos += 9;
+                }
+                else //不带时间戳
+                {
+                    if (standardBool != readbuff[readbuff_pos])
+                        return false;
+                    else
+                        readbuff_pos += 1;
+                }
+            }
+        }
+        else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::USINT) // USINT变量
+        {
+            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            {
+                return false;
+            }
+            else
+            {
+                char standardUSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                char maxUSintValue = CurrentZipTemplate.schemas[i].second.maxValue[0];
+                char minUSintValue = CurrentZipTemplate.schemas[i].second.minValue[0];
+                // 1个字节,暂定，根据后续情况可能进行更改
+                char value[1] = {0};
+                memcpy(value, readbuff + readbuff_pos, 1);
+                char currentUSintValue = value[0];
+
+                if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带时间戳
+                {
+                    if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
+                        return false;
+                    else
+                        readbuff_pos += 9;
+                }
+                else //不带时间戳
+                {
+                    if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
+                        return false;
+                    else
+                        readbuff_pos += 1;
+                }
+            }
+        }
+        else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::UINT) // UINT变量
+        {
+            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            {
+                return false;
+            }
+            else
+            {
+                ushort standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                ushort maxUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                ushort minUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
+                // 2个字节,暂定，根据后续情况可能进行更改
+                char value[2] = {0};
+                memcpy(value, readbuff + readbuff_pos, 2);
+                ushort currentUintValue = converter.ToUInt16(value);
+
+                if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带时间戳
+                {
+                    if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
+                        return false;
+                    else
+                        readbuff_pos += 10;
+                }
+                else //不带时间戳
+                {
+                    if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
+                        return false;
+                    else
+                        readbuff_pos += 2;
+                }
+            }
+        }
+        else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::UDINT) // UDINT变量
+        {
+            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            {
+                return false;
+            }
+            else
+            {
+                uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                uint32 maxUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                uint32 minUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
+                // 4个字节,暂定，根据后续情况可能进行更改
+                char value[4] = {0};
+                memcpy(value, readbuff + readbuff_pos, 4);
+                uint32 currentUDintValue = converter.ToUInt32(value);
+
+                if (CurrentZipTemplate.schemas[i].second.hasTime) //带时间戳
+                {
+                    if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
+                        return false;
+                    else
+                        readbuff_pos += 12;
+                }
+                else //不带时间戳
+                {
+                    if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
+                        return false;
+                    else
+                        readbuff_pos += 4;
+                }
+            }
+        }
+        else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::SINT) // SINT变量
+        {
+            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            {
+                return false;
+            }
+            else
+            {
+                char standardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                char maxSintValue = CurrentZipTemplate.schemas[i].second.maxValue[0];
+                char minSintValue = CurrentZipTemplate.schemas[i].second.minValue[0];
+                // 2个字节,暂定，根据后续情况可能进行更改
+                char value[1] = {0};
+                memcpy(value, readbuff + readbuff_pos, 1);
+                char currentSintValue = value[0];
+
+                if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带时间戳
+                {
+                    if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
+                        return false;
+                    else
+                        readbuff_pos += 9;
+                }
+                else //不带时间戳
+                {
+                    if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
+                        return false;
+                    else
+                        readbuff_pos += 1;
+                }
+            }
+        }
+        else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::INT) // INT变量
+        {
+            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            {
+                return false;
+            }
+            else
+            {
+                short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                short maxIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                short minIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
+                // 2个字节,暂定，根据后续情况可能进行更改
+                char value[2] = {0};
+                memcpy(value, readbuff + readbuff_pos, 2);
+                short currentIntValue = converter.ToInt16(value);
+
+                if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带有时间戳
+                {
+                    if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
+                        return false;
+                    else
+                        readbuff_pos += 10;
+                }
+                else //不带时间戳
+                {
+                    if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
+                        return false;
+                    else
+                        readbuff_pos += 2;
+                }
+            }
+        }
+        else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::DINT) // DINT变量
+        {
+            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            {
+                return false;
+            }
+            else
+            {
+                int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                int maxDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                int minDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
+                // 4个字节,暂定，根据后续情况可能进行更改
+                char value[4] = {0};
+                memcpy(value, readbuff + readbuff_pos, 4);
+                int currentDintValue = converter.ToInt32(value);
+
+                if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带有时间戳
+                {
+                    if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
+                        return false;
+                    else
+                        readbuff_pos += 12;
+                }
+                else //不带时间戳
+                {
+                    if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
+                        return false;
+                    else
+                        readbuff_pos += 4;
+                }
+            }
+        }
+        else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::REAL) // REAL变量
+        {
+            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            {
+                return false;
+            }
+            else
+            {
+                float standardFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                float maxFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                float minFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.minValue);
+                // 4个字节,暂定，根据后续情况可能进行更改
+                char value[4] = {0};
+                memcpy(value, readbuff + readbuff_pos, 4);
+                int currentRealValue = converter.ToFloat(value);
+
+                if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带有时间戳
+                {
+                    if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
+                        return false;
+                    else
+                        readbuff_pos += 12;
+                }
+                else //不带时间戳
+                {
+                    if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
+                        return false;
+                    else
+                        readbuff_pos += 4;
+                }
+            }
+        }
+        else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::IMAGE)
+        {
+            return false;
+        }
+    }
+    return true;
+}
 
 int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
 {

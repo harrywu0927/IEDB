@@ -355,7 +355,7 @@ int DB_LoadZipSchema(const char *path)
     vector<DataType> dataTypes;
     while (i < length)
     {
-        char variable[30], dataType[30], standardValue[10], maxValue[10], minValue[10],hasTime[1];
+        char variable[30], dataType[30], standardValue[10], maxValue[10], minValue[10], hasTime[1];
         memcpy(variable, buf + i, 30);
         i += 30;
         memcpy(dataType, buf + i, 30);
@@ -366,8 +366,8 @@ int DB_LoadZipSchema(const char *path)
         i += 10;
         memcpy(minValue, buf + i, 10);
         i += 10;
-        memcpy(hasTime,buf+i,1);
-        i+=1;
+        memcpy(hasTime, buf + i, 1);
+        i += 1;
         vector<string> paths;
 
         dataName.push_back(variable);
@@ -376,7 +376,7 @@ int DB_LoadZipSchema(const char *path)
         memcpy(type.standardValue, standardValue, 10);
         memcpy(type.maxValue, maxValue, 10);
         memcpy(type.minValue, minValue, 10);
-        type.hasTime=(bool)hasTime[0];
+        type.hasTime = (bool)hasTime[0];
         // strcpy(type.standardValue,standardValue);
         // strcpy(type.maxValue,maxValue);
         // strcpy(type.minValue,minValue);
