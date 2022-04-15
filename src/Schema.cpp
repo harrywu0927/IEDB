@@ -110,9 +110,10 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *params)
 }
 
 /**
- * @brief 修改标准模板中已存在的节点,根据编码进行定位和修改
+ * @brief 修改标准模板里的树节点
  *
- * @param params 标准模板参数
+ * @param params 需要修改的节点
+ * @param newTreeParams 需要修改的信息
  * @return　0:success,
  *         others: StatusCode
  * @note   更新节点参数必须齐全，pathToLine pathcode valueNmae hasTime valueType isArray arrayLen
@@ -402,161 +403,161 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
     {
         //标准值
         char s[1];
-        uint8_t sValue=(uint8_t)atoi(ZipParams->standardValue);
-        s[0]=sValue;
-        memcpy(standardValue,s,1);
+        uint8_t sValue = (uint8_t)atoi(ZipParams->standardValue);
+        s[0] = sValue;
+        memcpy(standardValue, s, 1);
 
         //最大值
         char ma[1];
-        uint8_t maValue=(uint8_t)atoi(ZipParams->maxValue);
-        ma[0]=maValue;
-        memcpy(maxValue,ma,1);
+        uint8_t maValue = (uint8_t)atoi(ZipParams->maxValue);
+        ma[0] = maValue;
+        memcpy(maxValue, ma, 1);
 
         //最小值
         char mi[1];
-        uint8_t miValue=(uint8_t)atoi(ZipParams->minValue);
-        mi[0]=miValue;
-        memcpy(minValue,mi,1);
+        uint8_t miValue = (uint8_t)atoi(ZipParams->minValue);
+        mi[0] = miValue;
+        memcpy(minValue, mi, 1);
     }
-    else if(DataType::JudgeValueTypeByNum(ZipParams->valueType)=="UINT")
+    else if (DataType::JudgeValueTypeByNum(ZipParams->valueType) == "UINT")
     {
         //标准值
         char s[2];
-        ushort sValue=(ushort)atoi(ZipParams->standardValue);
-        converter.ToUInt16Buff_m(sValue,s);
-        memcpy(standardValue,s,2);
+        ushort sValue = (ushort)atoi(ZipParams->standardValue);
+        converter.ToUInt16Buff_m(sValue, s);
+        memcpy(standardValue, s, 2);
 
         //最大值
         char ma[2];
-        ushort maValue=(ushort)atoi(ZipParams->maxValue);
-        converter.ToUInt16Buff_m(maValue,ma);
-        memcpy(maxValue,ma,2);
+        ushort maValue = (ushort)atoi(ZipParams->maxValue);
+        converter.ToUInt16Buff_m(maValue, ma);
+        memcpy(maxValue, ma, 2);
 
         //最小值
         char mi[2];
-        ushort miValue=(ushort)atoi(ZipParams->minValue);
-        converter.ToUInt16Buff_m(miValue,mi);
-        memcpy(minValue,mi,2);
+        ushort miValue = (ushort)atoi(ZipParams->minValue);
+        converter.ToUInt16Buff_m(miValue, mi);
+        memcpy(minValue, mi, 2);
     }
-    else if(DataType::JudgeValueTypeByNum(ZipParams->valueType)=="UDINT")
+    else if (DataType::JudgeValueTypeByNum(ZipParams->valueType) == "UDINT")
     {
         //标准值
         char s[4];
-        uint32_t sValue=(uint32_t)atoi(ZipParams->standardValue);
-        converter.ToUInt32Buff_m(sValue,s);
-        memcpy(standardValue,s,4);
+        uint32_t sValue = (uint32_t)atoi(ZipParams->standardValue);
+        converter.ToUInt32Buff_m(sValue, s);
+        memcpy(standardValue, s, 4);
 
         //最大值
         char ma[4];
-        ushort maValue=(ushort)atoi(ZipParams->maxValue);
-        converter.ToUInt32Buff_m(maValue,ma);
-        memcpy(maxValue,ma,4);
+        ushort maValue = (ushort)atoi(ZipParams->maxValue);
+        converter.ToUInt32Buff_m(maValue, ma);
+        memcpy(maxValue, ma, 4);
 
         //最小值
         char mi[4];
-        ushort miValue=(ushort)atoi(ZipParams->minValue);
-        converter.ToUInt32Buff_m(miValue,mi);
-        memcpy(minValue,mi,4);
+        ushort miValue = (ushort)atoi(ZipParams->minValue);
+        converter.ToUInt32Buff_m(miValue, mi);
+        memcpy(minValue, mi, 4);
     }
-    else if(DataType::JudgeValueTypeByNum(ZipParams->valueType)=="SINT")
+    else if (DataType::JudgeValueTypeByNum(ZipParams->valueType) == "SINT")
     {
         //标准值
         char s[1];
-        int8_t sValue=(int8_t)atoi(ZipParams->standardValue);
-        s[0]=sValue;
-        memcpy(standardValue,s,1);
+        int8_t sValue = (int8_t)atoi(ZipParams->standardValue);
+        s[0] = sValue;
+        memcpy(standardValue, s, 1);
 
         //最大值
         char ma[1];
-        int8_t maValue=(int8_t)atoi(ZipParams->maxValue);
-        ma[0]=maValue;
-        memcpy(maxValue,ma,1);
+        int8_t maValue = (int8_t)atoi(ZipParams->maxValue);
+        ma[0] = maValue;
+        memcpy(maxValue, ma, 1);
 
         //最小值
         char mi[1];
-        int8_t miValue=(int8_t)atoi(ZipParams->minValue);
-        mi[0]=miValue;
-        memcpy(minValue,mi,1);
+        int8_t miValue = (int8_t)atoi(ZipParams->minValue);
+        mi[0] = miValue;
+        memcpy(minValue, mi, 1);
     }
-    else if(DataType::JudgeValueTypeByNum(ZipParams->valueType)=="INT")
+    else if (DataType::JudgeValueTypeByNum(ZipParams->valueType) == "INT")
     {
         //标准值
         char s[2];
-        short sValue=(short)atoi(ZipParams->standardValue);
-        converter.ToInt16Buff_m(sValue,s);
-        memcpy(standardValue,s,2);
+        short sValue = (short)atoi(ZipParams->standardValue);
+        converter.ToInt16Buff_m(sValue, s);
+        memcpy(standardValue, s, 2);
 
         //最大值
         char ma[2];
-        short maValue=(short)atoi(ZipParams->maxValue);
-        converter.ToInt16Buff_m(maValue,ma);
-        memcpy(maxValue,ma,2);
+        short maValue = (short)atoi(ZipParams->maxValue);
+        converter.ToInt16Buff_m(maValue, ma);
+        memcpy(maxValue, ma, 2);
 
         //最小值
         char mi[2];
-        short miValue=(short)atoi(ZipParams->minValue);
-        converter.ToInt16Buff_m(miValue,mi);
-        memcpy(minValue,mi,2);
+        short miValue = (short)atoi(ZipParams->minValue);
+        converter.ToInt16Buff_m(miValue, mi);
+        memcpy(minValue, mi, 2);
     }
-    else if(DataType::JudgeValueTypeByNum(ZipParams->valueType)=="DINT")
+    else if (DataType::JudgeValueTypeByNum(ZipParams->valueType) == "DINT")
     {
         //标准值
         char s[4];
-        int sValue=(int)atoi(ZipParams->standardValue);
-        converter.ToInt32Buff_m(sValue,s);
-        memcpy(standardValue,s,4);
+        int sValue = (int)atoi(ZipParams->standardValue);
+        converter.ToInt32Buff_m(sValue, s);
+        memcpy(standardValue, s, 4);
 
         //最大值
         char ma[4];
-        int maValue=(int)atoi(ZipParams->maxValue);
-        converter.ToInt32Buff_m(maValue,ma);
-        memcpy(maxValue,ma,4);
+        int maValue = (int)atoi(ZipParams->maxValue);
+        converter.ToInt32Buff_m(maValue, ma);
+        memcpy(maxValue, ma, 4);
 
         //最小值
         char mi[4];
-        int miValue=(int)atoi(ZipParams->minValue);
-        converter.ToInt32Buff_m(miValue,mi);
-        memcpy(minValue,mi,4);
+        int miValue = (int)atoi(ZipParams->minValue);
+        converter.ToInt32Buff_m(miValue, mi);
+        memcpy(minValue, mi, 4);
     }
-    else if(DataType::JudgeValueTypeByNum(ZipParams->valueType)=="REAL")
+    else if (DataType::JudgeValueTypeByNum(ZipParams->valueType) == "REAL")
     {
         //标准值
         char s[4];
-        float sValue=(float)atof(ZipParams->standardValue);
-        converter.ToFloatBuff_m(sValue,s);
-        memcpy(standardValue,s,4);
+        float sValue = (float)atof(ZipParams->standardValue);
+        converter.ToFloatBuff_m(sValue, s);
+        memcpy(standardValue, s, 4);
 
         //最大值
         char ma[4];
-        float maValue=(float)atof(ZipParams->maxValue);
-        converter.ToFloatBuff_m(maValue,ma);
-        memcpy(maxValue,ma,4);
+        float maValue = (float)atof(ZipParams->maxValue);
+        converter.ToFloatBuff_m(maValue, ma);
+        memcpy(maxValue, ma, 4);
 
         //最小值
         char mi[4];
-        float miValue=(float)atof(ZipParams->minValue);
-        converter.ToFloatBuff_m(miValue,mi);
-        memcpy(minValue,mi,4);
+        float miValue = (float)atof(ZipParams->minValue);
+        converter.ToFloatBuff_m(miValue, mi);
+        memcpy(minValue, mi, 4);
     }
-    else if(DataType::JudgeValueTypeByNum(ZipParams->valueType)=="IMAGE")
+    else if (DataType::JudgeValueTypeByNum(ZipParams->valueType) == "IMAGE")
     {
         //标准值
         char s[4];
-        float sValue=(float)atof(ZipParams->standardValue);
-        converter.ToFloatBuff_m(sValue,s);
-        memcpy(standardValue,s,4);
+        float sValue = (float)atof(ZipParams->standardValue);
+        converter.ToFloatBuff_m(sValue, s);
+        memcpy(standardValue, s, 4);
 
         //最大值
         char ma[4];
-        float maValue=(float)atof(ZipParams->maxValue);
-        converter.ToFloatBuff_m(maValue,ma);
-        memcpy(maxValue,ma,4);
+        float maValue = (float)atof(ZipParams->maxValue);
+        converter.ToFloatBuff_m(maValue, ma);
+        memcpy(maxValue, ma, 4);
 
         //最小值
         char mi[4];
-        float miValue=(float)atof(ZipParams->minValue);
-        converter.ToFloatBuff_m(miValue,mi);
-        memcpy(minValue,mi,4);
+        float miValue = (float)atof(ZipParams->minValue);
+        converter.ToFloatBuff_m(miValue, mi);
+        memcpy(minValue, mi, 4);
     }
     else
         return StatusCode::UNKNOWN_TYPE;
@@ -582,6 +583,32 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
         }
     }
     return err;
+}
+
+/**
+ * @brief 修改压缩模板里的树节点
+ *
+ * @param params 需要修改的节点
+ * @param newTreeParams 需要修改的信息
+ * @return　0:success,
+ *         others: StatusCode
+ * @note   更新节点参数必须齐全，pathToLine valueNmae hasTime valueType isArray arrayLen standardValue maxValue minValue
+ */
+int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams)
+{
+    return 0;
+}
+
+/**
+ * @brief 删除压缩模板节点，根据变量名进行定位
+ *
+ * @param TreeParams 压缩模板参数
+ * @return 0:success,　
+ *         others: StatusCode
+ */
+int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
+{
+    return 0;
 }
 
 /**
@@ -670,50 +697,50 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 
 int main()
 {
-//     DB_LoadZipSchema("jinfei/");
+    //     DB_LoadZipSchema("jinfei/");
 
-//     // DB_TreeNodeParams params;
-//     // params.pathToLine = "/";
-//     // char code[10];
-//     // code[0] = (char)0;
-//     // code[1] = (char)1;
-//     // code[2] = (char)0;
-//     // code[3] = (char)4;
-//     // code[4] = 'R';
-//     // code[5] = (char)1;
-//     // code[6] = 0;
-//     // code[7] = (char)0;
-//     // code[8] = (char)0;
-//     // code[9] = (char)0;
-//     // params.pathCode = code;
-//     // params.valueType = 3;
-//     // params.hasTime = 0;
-//     // params.isArrary = 0;
-//     // params.arrayLen = 100;
-//     // params.valueName = "S4ON";
+    //     // DB_TreeNodeParams params;
+    //     // params.pathToLine = "/";
+    //     // char code[10];
+    //     // code[0] = (char)0;
+    //     // code[1] = (char)1;
+    //     // code[2] = (char)0;
+    //     // code[3] = (char)4;
+    //     // code[4] = 'R';
+    //     // code[5] = (char)1;
+    //     // code[6] = 0;
+    //     // code[7] = (char)0;
+    //     // code[8] = (char)0;
+    //     // code[9] = (char)0;
+    //     // params.pathCode = code;
+    //     // params.valueType = 3;
+    //     // params.hasTime = 0;
+    //     // params.isArrary = 0;
+    //     // params.arrayLen = 100;
+    //     // params.valueName = "S4ON";
 
-//     // DB_TreeNodeParams newTreeParams;
-//     // newTreeParams.pathToLine = "/";
-//     // char newcode[10];
-//     // newcode[0] = (char)0;
-//     // newcode[1] = (char)1;
-//     // newcode[2] = (char)0;
-//     // newcode[3] = (char)4;
-//     // newcode[4] = 'R';
-//     // newcode[5] = (char)1;
-//     // newcode[6] = 0;
-//     // newcode[7] = (char)0;
-//     // newcode[8] = (char)0;
-//     // newcode[9] = (char)0;
-//     // newTreeParams.pathCode = newcode;
-//     // newTreeParams.valueType = 3;
-//     // newTreeParams.hasTime = 0;
-//     // newTreeParams.isArrary = 0;
-//     // newTreeParams.arrayLen = 100;
-//     // newTreeParams.valueName = "S4ON";
-//     // DB_UpdateNodeToSchema(&params,&newTreeParams);
-//     // DB_AddNodeToSchema(&params);
-//     // DB_DeleteNodeToSchema(&params);
+    //     // DB_TreeNodeParams newTreeParams;
+    //     // newTreeParams.pathToLine = "/";
+    //     // char newcode[10];
+    //     // newcode[0] = (char)0;
+    //     // newcode[1] = (char)1;
+    //     // newcode[2] = (char)0;
+    //     // newcode[3] = (char)4;
+    //     // newcode[4] = 'R';
+    //     // newcode[5] = (char)1;
+    //     // newcode[6] = 0;
+    //     // newcode[7] = (char)0;
+    //     // newcode[8] = (char)0;
+    //     // newcode[9] = (char)0;
+    //     // newTreeParams.pathCode = newcode;
+    //     // newTreeParams.valueType = 3;
+    //     // newTreeParams.hasTime = 0;
+    //     // newTreeParams.isArrary = 0;
+    //     // newTreeParams.arrayLen = 100;
+    //     // newTreeParams.valueName = "S4ON";
+    //     // DB_UpdateNodeToSchema(&params,&newTreeParams);
+    //     // DB_AddNodeToSchema(&params);
+    //     // DB_DeleteNodeToSchema(&params);
 
     DB_ZipNodeParams params;
     params.pathToLine = "/";
@@ -722,9 +749,9 @@ int main()
     params.isArrary = 0;
     params.arrayLen = 100;
     params.valueName = "S4OFF";
-    params.standardValue="210";
-    params.maxValue="230";
-    params.minValue="190";
+    params.standardValue = "210";
+    params.maxValue = "230";
+    params.minValue = "190";
     DB_AddNodeToZipSchema(&params);
     return 0;
 }
