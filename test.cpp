@@ -153,5 +153,15 @@ int main()
     // }
 
     // DB_ReadFile(&buffer);
+
+    char value[4];
+    int num=12000;
+    DataTypeConverter dc;
+    dc.ToUInt32Buff_m(num,value);
+    cout<<num;
+    char value1[2];
+    int num1=45536;
+    dc.ToUInt16Buff_m(num1,value1);
+    cout<<num1;
     return 0;
 }

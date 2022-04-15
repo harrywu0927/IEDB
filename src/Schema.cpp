@@ -10,7 +10,7 @@ ZipTemplate CurrentZipTemplate;
  * @param params 标准模板参数
  * @return　0:success,
  *         others: StatusCode
- * @note   新节点参数必须齐全，pathcode valueNmae hasTime valueType isArray arrayLen
+ * @note   新节点参数必须齐全，pathToLine pathcode valueNmae hasTime valueType isArray arrayLen
  */
 int DB_AddNodeToSchema(struct DB_TreeNodeParams *params)
 {
@@ -115,7 +115,7 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *params)
  * @param params 标准模板参数
  * @return　0:success,
  *         others: StatusCode
- * @note   更新节点参数必须齐全，pathcode valueNmae hasTime valueType isArray arrayLen
+ * @note   更新节点参数必须齐全，pathToLine pathcode valueNmae hasTime valueType isArray arrayLen
  */
 int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *params, struct DB_TreeNodeParams *newTreeParams)
 {
@@ -319,6 +319,272 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *params)
 }
 
 /**
+ * @brief 向压缩模板添加新节点
+ *
+ * @param params 压缩模板参数
+ * @return　0:success,
+ *         others: StatusCode
+ * @note   新节点参数必须齐全，pathToLine valueNmae hasTime valueType isArray arrayLen standardValue maxValue minValue
+ */
+int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
+{
+    int err;
+    vector<string> files;
+    readFileList(ZipParams->pathToLine, files);
+    string temPath = "";
+    for (string file : files) //找到带有后缀ziptem的文件
+    {
+        string s = file;
+        vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
+        if (vec[vec.size() - 1].find("ziptem") != string::npos)
+        {
+            temPath = file;
+            break;
+        }
+    }
+    if (temPath == "")
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+
+    long len;
+    DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
+    char readBuf[len];
+    long readbuf_pos = 0;
+    DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
+
+    DataTypeConverter converter;
+
+    for (long i = 0; i < len / 91; i++) //寻找是否有相同的变量名
+    {
+        char existValueName[30];
+        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        if (strcmp(ZipParams->valueName, existValueName) == 0)
+        {
+            cout << "存在相同的变量名" << endl;
+            return StatusCode::VARIABLE_NAME_EXIST;
+        }
+        readbuf_pos += 91;
+    }
+
+    char valueNmae[30], valueType[30], standardValue[10], maxValue[10], minValue[10], hasTime[1]; //先初始化为0
+    memset(valueNmae, 0, sizeof(valueNmae));
+    memset(valueType, 0, sizeof(valueType));
+    memset(standardValue, 0, sizeof(standardValue));
+    memset(maxValue, 0, sizeof(maxValue));
+    memset(minValue, 0, sizeof(minValue));
+
+    if (ZipParams->isArrary == 1) //是数组类型,拼接字符串
+    {
+        strcpy(valueType, "ARRAY [0..");
+        char s[10];
+        sprintf(s, "%d", ZipParams->arrayLen);
+        strcat(valueType, s);
+        strcat(valueType, "] OF ");
+        string valueTypeStr = DataType::JudgeValueTypeByNum(ZipParams->valueType);
+        // memcpy(valueType, const_cast<char *>(valueTypeStr.c_str()), valueTypeStr.length());
+        strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+    }
+    else //不是数组类型，直接赋值字符串
+    {
+        string valueTypeStr = DataType::JudgeValueTypeByNum(ZipParams->valueType);
+        memcpy(valueType, const_cast<char *>(valueTypeStr.c_str()), valueTypeStr.length());
+    }
+
+    strcpy(valueNmae, ZipParams->valueName);
+    hasTime[0] = (char)ZipParams->hasTime;
+
+    if (DataType::JudgeValueTypeByNum(ZipParams->valueType) == "BOOL")
+    {
+        memcpy(standardValue, ZipParams->standardValue, 1);
+        memcpy(maxValue, ZipParams->maxValue, 1);
+        memcpy(minValue, ZipParams->minValue, 1);
+    }
+    else if (DataType::JudgeValueTypeByNum(ZipParams->valueType) == "USINT")
+    {
+        //标准值
+        char s[1];
+        uint8_t sValue=(uint8_t)atoi(ZipParams->standardValue);
+        s[0]=sValue;
+        memcpy(standardValue,s,1);
+
+        //最大值
+        char ma[1];
+        uint8_t maValue=(uint8_t)atoi(ZipParams->maxValue);
+        ma[0]=maValue;
+        memcpy(maxValue,ma,1);
+
+        //最小值
+        char mi[1];
+        uint8_t miValue=(uint8_t)atoi(ZipParams->minValue);
+        mi[0]=miValue;
+        memcpy(minValue,mi,1);
+    }
+    else if(DataType::JudgeValueTypeByNum(ZipParams->valueType)=="UINT")
+    {
+        //标准值
+        char s[2];
+        ushort sValue=(ushort)atoi(ZipParams->standardValue);
+        converter.ToUInt16Buff_m(sValue,s);
+        memcpy(standardValue,s,2);
+
+        //最大值
+        char ma[2];
+        ushort maValue=(ushort)atoi(ZipParams->maxValue);
+        converter.ToUInt16Buff_m(maValue,ma);
+        memcpy(maxValue,ma,2);
+
+        //最小值
+        char mi[2];
+        ushort miValue=(ushort)atoi(ZipParams->minValue);
+        converter.ToUInt16Buff_m(miValue,mi);
+        memcpy(minValue,mi,2);
+    }
+    else if(DataType::JudgeValueTypeByNum(ZipParams->valueType)=="UDINT")
+    {
+        //标准值
+        char s[4];
+        uint32_t sValue=(uint32_t)atoi(ZipParams->standardValue);
+        converter.ToUInt32Buff_m(sValue,s);
+        memcpy(standardValue,s,4);
+
+        //最大值
+        char ma[4];
+        ushort maValue=(ushort)atoi(ZipParams->maxValue);
+        converter.ToUInt32Buff_m(maValue,ma);
+        memcpy(maxValue,ma,4);
+
+        //最小值
+        char mi[4];
+        ushort miValue=(ushort)atoi(ZipParams->minValue);
+        converter.ToUInt32Buff_m(miValue,mi);
+        memcpy(minValue,mi,4);
+    }
+    else if(DataType::JudgeValueTypeByNum(ZipParams->valueType)=="SINT")
+    {
+        //标准值
+        char s[1];
+        int8_t sValue=(int8_t)atoi(ZipParams->standardValue);
+        s[0]=sValue;
+        memcpy(standardValue,s,1);
+
+        //最大值
+        char ma[1];
+        int8_t maValue=(int8_t)atoi(ZipParams->maxValue);
+        ma[0]=maValue;
+        memcpy(maxValue,ma,1);
+
+        //最小值
+        char mi[1];
+        int8_t miValue=(int8_t)atoi(ZipParams->minValue);
+        mi[0]=miValue;
+        memcpy(minValue,mi,1);
+    }
+    else if(DataType::JudgeValueTypeByNum(ZipParams->valueType)=="INT")
+    {
+        //标准值
+        char s[2];
+        short sValue=(short)atoi(ZipParams->standardValue);
+        converter.ToInt16Buff_m(sValue,s);
+        memcpy(standardValue,s,2);
+
+        //最大值
+        char ma[2];
+        short maValue=(short)atoi(ZipParams->maxValue);
+        converter.ToInt16Buff_m(maValue,ma);
+        memcpy(maxValue,ma,2);
+
+        //最小值
+        char mi[2];
+        short miValue=(short)atoi(ZipParams->minValue);
+        converter.ToInt16Buff_m(miValue,mi);
+        memcpy(minValue,mi,2);
+    }
+    else if(DataType::JudgeValueTypeByNum(ZipParams->valueType)=="DINT")
+    {
+        //标准值
+        char s[4];
+        int sValue=(int)atoi(ZipParams->standardValue);
+        converter.ToInt32Buff_m(sValue,s);
+        memcpy(standardValue,s,4);
+
+        //最大值
+        char ma[4];
+        int maValue=(int)atoi(ZipParams->maxValue);
+        converter.ToInt32Buff_m(maValue,ma);
+        memcpy(maxValue,ma,4);
+
+        //最小值
+        char mi[4];
+        int miValue=(int)atoi(ZipParams->minValue);
+        converter.ToInt32Buff_m(miValue,mi);
+        memcpy(minValue,mi,4);
+    }
+    else if(DataType::JudgeValueTypeByNum(ZipParams->valueType)=="REAL")
+    {
+        //标准值
+        char s[4];
+        float sValue=(float)atof(ZipParams->standardValue);
+        converter.ToFloatBuff_m(sValue,s);
+        memcpy(standardValue,s,4);
+
+        //最大值
+        char ma[4];
+        float maValue=(float)atof(ZipParams->maxValue);
+        converter.ToFloatBuff_m(maValue,ma);
+        memcpy(maxValue,ma,4);
+
+        //最小值
+        char mi[4];
+        float miValue=(float)atof(ZipParams->minValue);
+        converter.ToFloatBuff_m(miValue,mi);
+        memcpy(minValue,mi,4);
+    }
+    else if(DataType::JudgeValueTypeByNum(ZipParams->valueType)=="IMAGE")
+    {
+        //标准值
+        char s[4];
+        float sValue=(float)atof(ZipParams->standardValue);
+        converter.ToFloatBuff_m(sValue,s);
+        memcpy(standardValue,s,4);
+
+        //最大值
+        char ma[4];
+        float maValue=(float)atof(ZipParams->maxValue);
+        converter.ToFloatBuff_m(maValue,ma);
+        memcpy(maxValue,ma,4);
+
+        //最小值
+        char mi[4];
+        float miValue=(float)atof(ZipParams->minValue);
+        converter.ToFloatBuff_m(miValue,mi);
+        memcpy(minValue,mi,4);
+    }
+    else
+        return StatusCode::UNKNOWN_TYPE;
+
+    char writeBuf[91]; //将所有参数传入writeBuf中，已追加写的方式写入已有模板文件中
+    memcpy(writeBuf, valueNmae, 30);
+    memcpy(writeBuf + 30, valueType, 30);
+    memcpy(writeBuf + 60, standardValue, 10);
+    memcpy(writeBuf + 70, maxValue, 10);
+    memcpy(writeBuf + 80, minValue, 10);
+    memcpy(writeBuf + 90, hasTime, 1);
+
+    //打开文件并追加写入
+    long fp;
+    err = DB_Open(const_cast<char *>(temPath.c_str()), "ab+", &fp);
+    if (err == 0)
+    {
+        err = DB_Write(fp, writeBuf, 91);
+
+        if (err == 0)
+        {
+            err = DB_Close(fp);
+        }
+    }
+    return err;
+}
+
+/**
  * @brief 加载压缩模板
  *
  * @param path 压缩模板路径
@@ -402,12 +668,10 @@ int DB_UnloadZipSchema(const char *pathToUnset)
     return ZipTemplateManager::UnsetZipTemplate(pathToUnset);
 }
 
-// int main()
-// {
+int main()
+{
 //     DB_LoadZipSchema("jinfei/");
-//     // char test[len];
-//     // memcpy(test,readbuf,len);
-//     // cout<<test<<endl;
+
 //     // DB_TreeNodeParams params;
 //     // params.pathToLine = "/";
 //     // char code[10];
@@ -450,5 +714,17 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 //     // DB_UpdateNodeToSchema(&params,&newTreeParams);
 //     // DB_AddNodeToSchema(&params);
 //     // DB_DeleteNodeToSchema(&params);
-//     return 0;
-// }
+
+    DB_ZipNodeParams params;
+    params.pathToLine = "/";
+    params.valueType = 2;
+    params.hasTime = 1;
+    params.isArrary = 0;
+    params.arrayLen = 100;
+    params.valueName = "S4OFF";
+    params.standardValue="210";
+    params.maxValue="230";
+    params.minValue="190";
+    DB_AddNodeToZipSchema(&params);
+    return 0;
+}
