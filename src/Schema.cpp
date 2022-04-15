@@ -599,17 +599,17 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     return 0;
 }
 
-/**
- * @brief 删除压缩模板节点，根据变量名进行定位
- *
- * @param TreeParams 压缩模板参数
- * @return 0:success,　
- *         others: StatusCode
- */
-int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
-{
-    return 0;
-}
+// /**
+//  * @brief 删除压缩模板节点，根据变量名进行定位
+//  *
+//  * @param TreeParams 压缩模板参数
+//  * @return 0:success,　
+//  *         others: StatusCode
+//  */
+// int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
+// {
+//     return 0;
+// }
 
 /**
  * @brief 加载压缩模板
