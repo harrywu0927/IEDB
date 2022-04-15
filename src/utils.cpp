@@ -8,7 +8,7 @@ vector<Template> templates;
 int errorCode;
 neb::CJsonObject settings = FileIDManager::GetSetting();
 unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
-unordered_map<string, bool> filesListRead;
+//unordered_map<string, bool> filesListRead;
 
 //  string packMode;       //定时打包或存储一定数量后打包
 //  int packNum;           //一次打包的文件数量

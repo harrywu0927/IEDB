@@ -38,7 +38,6 @@ typedef unsigned int uint;
 typedef unsigned short ushort;
 #endif
 
-
 namespace StatusCode
 {
     enum StatusCode
@@ -734,7 +733,7 @@ public:
     {
         if (packBuffer != NULL)
             free(packBuffer);
-        cout << "buffer freed" << endl;
+        // cout << "buffer freed" << endl;
     }
     long Next(int &readLength, long &timestamp, string &fileID, int &zipType);
 
@@ -750,11 +749,16 @@ public:
     {
         return packLength;
     }
+
+    void SetCurPos(long pos)
+    {
+        curPos = pos;
+    }
 };
 
 //产线文件夹命名规范统一为 xxxx/yyy
-extern unordered_map<string, int> curNum;         //记录每个产线文件夹当前已有idb文件数
-extern unordered_map<string, bool> filesListRead; //记录每个产线文件夹是否已读取过文件列表
+extern unordered_map<string, int> curNum; //记录每个产线文件夹当前已有idb文件数
+// extern unordered_map<string, bool> filesListRead; //记录每个产线文件夹是否已读取过文件列表
 //文件ID管理
 //根据总体目录结构发放文件ID
 class FileIDManager

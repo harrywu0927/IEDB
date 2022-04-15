@@ -262,7 +262,10 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
             for (auto &file : selectedFiles)
             {
                 long len; //文件长度
-                DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+                struct stat fileInfo;
+                stat(file.first.c_str(), &fileInfo);
+                len = fileInfo.st_size;
+                //DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
                 char buff[len]; //文件内容缓存
                 DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 
@@ -1337,7 +1340,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
             }
             default:
                 delete[] buff;
-                return StatusCode::UNKNWON_DATAFILE;
+                continue;
                 break;
             }
             //获取数据的偏移量和数据类型

@@ -78,6 +78,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 long cur = 4;
                 memcpy(newPack + cur, templateName.c_str(), templateName.length() <= 20 ? templateName.length() : 20);
                 cur += 20;
+                bool packNameChange = false; //若删除的数据包含首尾文件，则包名的时间段需要修改
                 for (int i = 0; i < fileNum; i++)
                 {
                     long timestamp;
@@ -87,6 +88,8 @@ int DB_DeleteRecords(DB_QueryParams *params)
                     if (timestamp >= params->start && timestamp <= params->end) //在时间区间内
                     {
                         deleteNum++;
+                        if (timestamp == get<1>(pack.second) || timestamp == get<0>(pack.second))
+                            packNameChange = true;
                         continue;
                     }
                     if (zipType != 1) //非完全压缩
@@ -102,6 +105,29 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 }
                 int newFileNum = fileNum - deleteNum;
                 memcpy(newPack, &newFileNum, 4);
+
+                if (packNameChange)
+                {
+                    long newpackStart, newpackEnd;
+                    int readLength, zipType;
+                    free(packReader.packBuffer);
+                    packReader.packBuffer = newPack;
+                    packReader.SetCurPos(24);
+                    packReader.Next(readLength, newpackStart, zipType);
+                    packReader.Skip(newFileNum - 2);
+                    packReader.Next(readLength, newpackEnd, zipType);
+                    auto vec = DataType::splitWithStl(pack.first, "/");
+                    string newPackName = vec[0] + "/" + to_string(newpackStart) + "-" + to_string(newpackEnd) + ".pak";
+                    char mode[2] = {'w', 'b'};
+                    long fp;
+                    DB_Open(const_cast<char *>(newPackName.c_str()), mode, &fp);
+                    fwrite(newPack, cur, 1, (FILE *)fp);
+                    // delete[] newPack;
+                    // newPack = NULL;
+                    DB_Close(fp);
+                    DB_DeleteFile(const_cast<char *>(pack.first.c_str()));
+                    continue;
+                }
                 char mode[2] = {'w', 'b'};
                 long fp;
                 DB_Open(const_cast<char *>(pack.first.c_str()), mode, &fp);
@@ -206,6 +232,11 @@ int DB_DeleteRecords(DB_QueryParams *params)
              */
             for (auto &pack : selectedPacks)
             {
+                if (std::get<0>(pack.second) >= params->start && std::get<1>(pack.second) <= params->end)
+                {
+                    DB_DeleteFile(const_cast<char *>(pack.first.c_str()));
+                    continue;
+                }
                 PackFileReader packReader(pack.first);
                 if (packReader.packBuffer == NULL)
                     continue;
@@ -220,6 +251,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 long cur = 4;
                 memcpy(newPack + cur, templateName.c_str(), templateName.length() <= 20 ? templateName.length() : 20);
                 cur += 20;
+                bool packNameChange = false; //若删除的数据包含首尾文件，则包名的时间段需要修改
                 for (int i = 0; i < fileNum; i++)
                 {
                     long timestamp;
@@ -228,6 +260,8 @@ int DB_DeleteRecords(DB_QueryParams *params)
                     long dataPos = packReader.Next(readLength, timestamp, fileID, zipType);
                     if (timestamp >= params->start && timestamp <= params->end) //在时间区间内
                     {
+                        if (timestamp == get<1>(pack.second) || timestamp == get<0>(pack.second))
+                            packNameChange = true;
                         /**
                          * 在此决定是否保留此数据，首先从压缩数据中还原出原始数据，进行常规比对
                          * 若满足删除条件，则直接continue
@@ -339,6 +373,29 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 }
                 int newFileNum = fileNum - deleteNum;
                 memcpy(newPack, &newFileNum, 4);
+
+                if (packNameChange)
+                {
+                    long newpackStart, newpackEnd;
+                    int readLength, zipType;
+                    free(packReader.packBuffer);
+                    packReader.packBuffer = newPack;
+                    packReader.SetCurPos(24);
+                    packReader.Next(readLength, newpackStart, zipType);
+                    packReader.Skip(newFileNum - 2);
+                    packReader.Next(readLength, newpackEnd, zipType);
+                    auto vec = DataType::splitWithStl(pack.first, "/");
+                    string newPackName = vec[0] + "/" + to_string(newpackStart) + "-" + to_string(newpackEnd) + ".pak";
+                    char mode[2] = {'w', 'b'};
+                    long fp;
+                    DB_Open(const_cast<char *>(newPackName.c_str()), mode, &fp);
+                    fwrite(newPack, cur, 1, (FILE *)fp);
+                    // delete[] newPack;
+                    // newPack = NULL;
+                    DB_Close(fp);
+                    DB_DeleteFile(const_cast<char *>(pack.first.c_str()));
+                    continue;
+                }
                 char mode[2] = {'w', 'b'};
                 long fp;
                 DB_Open(const_cast<char *>(pack.first.c_str()), mode, &fp);
@@ -430,20 +487,21 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 long timestamp;
                 int readLength, zipType;
                 long dataPos;
-                for (int i = 0; i < fileNum - (params->queryNums - selectedNum); i++)
-                {
-                    dataPos = packReader.Next(readLength, timestamp, zipType);
-                }
+                packReader.Skip(fileNum - (params->queryNums - selectedNum) - 1);
+                dataPos = packReader.Next(readLength, timestamp, zipType);
+
                 memcpy(newPack, packReader.packBuffer, dataPos + readLength);
                 int newNum = fileNum - params->queryNums + selectedNum;
                 memcpy(newPack, &newNum, 4); //覆写新的文件个数
+                auto vec = DataType::splitWithStl(pack.first, "/");
+                string newPackName = vec[0] + "/" + to_string(pack.second) + "-" + to_string(timestamp) + ".pak";
                 long fp;
                 char mode[2] = {'w', 'b'};
-                DB_Open(const_cast<char *>(pack.first.c_str()), mode, &fp);
+                DB_Open(const_cast<char *>(newPackName.c_str()), mode, &fp);
                 fwrite(newPack, dataPos + readLength, 1, (FILE *)fp);
                 delete[] newPack;
                 DB_Close(fp);
-                return 0;
+                return DB_DeleteFile(const_cast<char *>(pack.first.c_str()));
             }
         }
         else
@@ -595,11 +653,6 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 {
                     if (deleteComplete) //删除已完成，直接拷贝剩余数据
                     {
-                        // while (!filestk.empty())
-                        // {
-                        //     writeStk.push(filestk.top());
-                        //     filestk.pop();
-                        // }
                         /**
                          * @brief 至此已无需删除数据，此时filestk的顶部为时序最后的文件信息，
                          * 因此可以直接从包的头部拷贝至此文件
@@ -615,10 +668,11 @@ int DB_DeleteRecords(DB_QueryParams *params)
                             memcpy(newPack + cur, packReader.packBuffer + preDataPos - 4, preReadLength + 4);
                             cur += preReadLength + 4;
                         }
-
+                        auto fileInfo = writeStk.top();
+                        long newpackEnd;
                         while (!writeStk.empty())
                         {
-                            auto fileInfo = writeStk.top();
+                            fileInfo = writeStk.top();
                             long dataPos = fileInfo.first;
                             int readLength = get<0>(fileInfo.second);
                             int zipType = get<3>(fileInfo.second);
@@ -635,15 +689,18 @@ int DB_DeleteRecords(DB_QueryParams *params)
                             }
                             writeStk.pop();
                         }
+                        memcpy(&newpackEnd, packReader.packBuffer + fileInfo.first - (get<3>(fileInfo.second) == 1 ? 29 : 33), 8);
                         int newFileNum = fileNum - deleteNum;
                         memcpy(newPack, &newFileNum, 4);
                         char mode[2] = {'w', 'b'};
                         long fp;
-                        DB_Open(const_cast<char *>(pack.first.c_str()), mode, &fp);
+                        auto vec = DataType::splitWithStl(pack.first, "/");
+                        string newPackName = vec[0] + "/" + to_string(pack.second) + "-" + to_string(newpackEnd) + ".pak";
+                        DB_Open(const_cast<char *>(newPackName.c_str()), mode, &fp);
                         fwrite(newPack, cur, 1, (FILE *)fp);
                         delete[] newPack;
                         DB_Close(fp);
-                        return 0;
+                        return DB_DeleteFile(const_cast<char *>(pack.first.c_str()));
                     }
                     auto fileInfo = filestk.top();
                     filestk.pop();
@@ -755,6 +812,14 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 //运行到这里，代表此包中的数据已比对完毕，但还未达到删除条数
                 int newFileNum = fileNum - deleteNum;
                 memcpy(newPack, &newFileNum, 4);
+                long newpackStart, newpackEnd;
+                if (!writeStk.empty())
+                {
+                    auto fileInfo = writeStk.top();
+                    writeStk.pop();
+                    newpackStart = get<1>(fileInfo.second);
+                    newpackEnd = newpackStart; //避免writeStk中只有一个元素的情况下newpackEnd为空
+                }
                 while (!writeStk.empty())
                 {
                     auto fileInfo = writeStk.top();
@@ -769,15 +834,19 @@ int DB_DeleteRecords(DB_QueryParams *params)
                         cur += readLength + 4;
                     }
                     writeStk.pop();
+                    if (writeStk.empty())
+                    {
+                        newpackEnd = get<1>(fileInfo.second);
+                    }
                 }
                 char mode[2] = {'w', 'b'};
                 long fp;
-                DB_Open(const_cast<char *>(pack.first.c_str()), mode, &fp);
+                auto vec = DataType::splitWithStl(pack.first, "/");
+                string newPackName = vec[0] + "/" + to_string(newpackStart) + "-" + to_string(newpackEnd) + ".pak";
+                DB_Open(const_cast<char *>(newPackName.c_str()), mode, &fp);
                 fwrite(newPack, cur, 1, (FILE *)fp);
                 delete[] newPack;
                 DB_Close(fp);
-                if (deleteComplete)
-                    return 0;
             }
         }
         break;
@@ -867,10 +936,10 @@ int main()
     params.pathCode = code;
     params.valueName = "S2OFF";
     // params.valueName = NULL;
-    params.start = 1649897531555;
-    params.end = 1649897532603;
+    params.start = 1649890000000;
+    params.end = 1649898032603;
     params.order = ASCEND;
-    params.compareType = LT;
+    params.compareType = CMP_NONE;
     params.compareValue = "666";
     params.queryType = TIMESPAN;
     params.byPath = 0;
