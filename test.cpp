@@ -64,12 +64,12 @@ int main()
     params.pathCode = code;
     params.valueName = "S2OFF";
     // params.valueName = NULL;
-    params.start = 1648812610100;
-    params.end = 1648812630100;
+    params.start = 1649897531555;
+    params.end = 1649901032603;
     params.order = ASCEND;
     params.compareType = CMP_NONE;
     params.compareValue = "666";
-    params.queryType = LAST;
+    params.queryType = TIMESPAN;
     params.byPath = 1;
     params.queryNums = 8;
     DB_DataBuffer buffer;
@@ -81,21 +81,23 @@ int main()
     // readDataFilesWithTimestamps("", files);
     // Packer::Pack("/",files);
     //DB_QueryLastRecords(&buffer, &params);
-    DB_MAX(&buffer, &params);
-    if (buffer.bufferMalloced)
-    {
-        char buf[buffer.length];
-        memcpy(buf, buffer.buffer, buffer.length);
-        cout << buffer.length << endl;
-        for (int i = 0; i < buffer.length; i++)
-        {
-            cout << (int)buf[i] << " ";
-            if (i % 11 == 0)
-                cout << endl;
-        }
+    long count = 0;
+    DB_GetNormalDataCount(&params, &count);
+    // DB_MAX(&buffer, &params);
+    // if (buffer.bufferMalloced)
+    // {
+    //     char buf[buffer.length];
+    //     memcpy(buf, buffer.buffer, buffer.length);
+    //     cout << buffer.length << endl;
+    //     for (int i = 0; i < buffer.length; i++)
+    //     {
+    //         cout << (int)buf[i] << " ";
+    //         if (i % 11 == 0)
+    //             cout << endl;
+    //     }
 
-        free(buffer.buffer);
-    }
+    //     free(buffer.buffer);
+    // }
     // DB_QueryByFileID(&buffer, &params);
     return 0;
     // struct tm t;

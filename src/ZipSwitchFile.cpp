@@ -327,6 +327,8 @@ int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
             cout << "未找到文件" << endl;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
+        
+        ReZipSwitchBuf(readbuff, len, writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
 
         DB_DeleteFile(const_cast<char *>(filesWithTime[fileNum].first.c_str())); //删除原文件
         long fp;

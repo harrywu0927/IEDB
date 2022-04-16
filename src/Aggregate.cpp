@@ -740,7 +740,7 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
-    //memcpy(newBuffer, buffer->buffer, startPos);
+    // memcpy(newBuffer, buffer->buffer, startPos);
     long newBufCur = startPos; //在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
@@ -931,7 +931,7 @@ int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
-    //memcpy(newBuffer, buffer->buffer, startPos);
+    // memcpy(newBuffer, buffer->buffer, startPos);
     long newBufCur = startPos; //在新缓冲区中的偏移量
     char res[4] = {0};
     for (int k = 0; k < 4; k++)
@@ -1019,7 +1019,7 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
-    //memcpy(newBuffer, buffer->buffer, startPos);
+    // memcpy(newBuffer, buffer->buffer, startPos);
     long newBufCur = startPos; //在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
@@ -1274,7 +1274,7 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
-    //memcpy(newBuffer, buffer->buffer, startPos);
+    // memcpy(newBuffer, buffer->buffer, startPos);
     long newBufCur = startPos; //在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
@@ -1465,7 +1465,7 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 /**
  * @brief 按条件统计正常文件条数
- * 
+ *
  * @param params  查询请求参数
  * @param count  计数值
  * @return statuscode
@@ -1536,9 +1536,20 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
             {
                 long timestamp;
                 int zipType, readLength;
-                packReader.Next(readLength, timestamp, zipType);
-                if (timestamp >= params->start && timestamp <= params->end && zipType == 1)
-                    normal++;
+                long dataPos = packReader.Next(readLength, timestamp, zipType);
+                if (timestamp >= params->start && timestamp <= params->end && zipType != 2)
+                {
+                    if (zipType == 0)
+                    {
+                        char buff[readLength];
+                        memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                        if (IsNormalIDBFile(buff, params->pathToLine))
+                        {
+                            normal++;
+                        }
+                    }
+                    else normal++;
+                }
             }
         }
         *count = normal;
@@ -1607,9 +1618,20 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
                 {
                     long timestamp;
                     int zipType, readLength;
-                    packReader.Next(readLength, timestamp, zipType);
-                    if (zipType == 1)
-                        normal++;
+                    long dataPos = packReader.Next(readLength, timestamp, zipType);
+                    if (zipType != 2)
+                    {
+                        if (zipType == 0)
+                        {
+                            char buff[readLength];
+                            memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                            if (IsNormalIDBFile(buff, params->pathToLine))
+                            {
+                                normal++;
+                            }
+                        }
+                        else normal++;
+                    }
                 }
             }
             else
@@ -1619,9 +1641,20 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
                 packReader.Skip(fileNum - (params->queryNums - i));
                 for (int j = fileNum - (params->queryNums - i); j < fileNum; j++)
                 {
-                    packReader.Next(readLength, timestamp, zipType);
-                    if (zipType == 1)
-                        normal++;
+                    long dataPos = packReader.Next(readLength, timestamp, zipType);
+                    if (zipType != 2)
+                    {
+                        if (zipType == 0)
+                        {
+                            char buff[readLength];
+                            memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                            if (IsNormalIDBFile(buff, params->pathToLine))
+                            {
+                                normal++;
+                            }
+                        }
+                        else normal++;
+                    }
                 }
             }
         }
@@ -1671,9 +1704,19 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
             {
                 long timestamp;
                 int zipType, readLength;
-                packReader.Next(readLength, timestamp, zipType);
+                long dataPos = packReader.Next(readLength, timestamp, zipType);
                 if (zipType == 1)
-                    normal++;
+                {
+                    if (zipType == 0)
+                    {
+                        char buff[readLength];
+                        memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                        if (IsNormalIDBFile(buff, params->pathToLine))
+                        {
+                            normal++;
+                        }
+                    }
+                }
             }
         }
         *count = normal;
@@ -1684,7 +1727,7 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
 
 /**
  * @brief 按条件统计非正常文件条数
- * 
+ *
  * @param params  查询请求参数
  * @param count  计数值
  * @return statuscode
@@ -1703,7 +1746,8 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
         for (auto &file : dataWithTime)
         {
             struct stat fileInfo;
-            if (stat(file.first.c_str(), &fileInfo) == -1)
+            string finalPath = settings("Filename_Label") + "/" + file.first;
+            if (stat(finalPath.c_str(), &fileInfo) == -1)
             {
                 continue;
             }
@@ -1755,9 +1799,20 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
             {
                 long timestamp;
                 int zipType, readLength;
-                packReader.Next(readLength, timestamp, zipType);
+                long dataPos = packReader.Next(readLength, timestamp, zipType);
                 if (timestamp >= params->start && timestamp <= params->end && zipType != 1)
-                    abnormal++;
+                {
+                    if (zipType == 0)
+                    {
+                        char buff[readLength];
+                        memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                        if (!IsNormalIDBFile(buff, params->pathToLine))
+                        {
+                            abnormal++;
+                        }
+                    }
+                    else abnormal++;
+                }
             }
         }
         *count = abnormal;
@@ -1771,7 +1826,8 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
         for (i = 0; i < params->queryNums && i < dataWithTime.size(); i++)
         {
             struct stat fileInfo;
-            if (stat(dataWithTime[i].first.c_str(), &fileInfo) == -1)
+            string finalPath = settings("Filename_Label") + "/" + dataWithTime[i].first;
+            if (stat(finalPath.c_str(), &fileInfo) == -1)
             {
                 continue;
             }
@@ -1826,9 +1882,20 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
                 {
                     long timestamp;
                     int zipType, readLength;
-                    packReader.Next(readLength, timestamp, zipType);
+                    long dataPos = packReader.Next(readLength, timestamp, zipType);
                     if (zipType != 1)
-                        abnormal++;
+                    {
+                        if (zipType == 0)
+                        {
+                            char buff[readLength];
+                            memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                            if (!IsNormalIDBFile(buff, params->pathToLine))
+                            {
+                                abnormal++;
+                            }
+                        }
+                        else abnormal++;
+                    }
                 }
             }
             else
@@ -1838,9 +1905,20 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
                 packReader.Skip(fileNum - (params->queryNums - i));
                 for (int j = fileNum - (params->queryNums - i); j < fileNum; j++)
                 {
-                    packReader.Next(readLength, timestamp, zipType);
+                    long dataPos = packReader.Next(readLength, timestamp, zipType);
                     if (zipType != 1)
-                        abnormal++;
+                    {
+                        if (zipType == 0)
+                        {
+                            char buff[readLength];
+                            memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                            if (!IsNormalIDBFile(buff, params->pathToLine))
+                            {
+                                abnormal++;
+                            }
+                        }
+                        else abnormal++;
+                    }
                 }
             }
         }
@@ -1859,7 +1937,8 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
         for (auto &file : dataFiles)
         {
             struct stat fileInfo;
-            if (stat(file.c_str(), &fileInfo) == -1)
+            string finalPath = settings("Filename_Label") + "/" + file;
+            if (stat(finalPath.c_str(), &fileInfo) == -1)
             {
                 continue;
             }
@@ -1890,9 +1969,20 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
             {
                 long timestamp;
                 int zipType, readLength;
-                packReader.Next(readLength, timestamp, zipType);
+                long dataPos = packReader.Next(readLength, timestamp, zipType);
                 if (zipType != 1)
-                    abnormal++;
+                {
+                    if (zipType == 0)
+                    {
+                        char buff[readLength];
+                        memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                        if (!IsNormalIDBFile(buff, params->pathToLine))
+                        {
+                            abnormal++;
+                        }
+                    }
+                    else abnormal++;
+                }
             }
         }
         *count = abnormal;
@@ -1900,34 +1990,16 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
     }
     return 0;
 }
-// int main()
-// {
-//     DB_QueryParams params;
-//     params.pathToLine = "JinfeiThirteen";
-//     params.fileID = "JinfeiThirteen103845";
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)0;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     params.pathCode = code;
-//     params.valueName = "S2OFF";
-//     // params.valueName = NULL;
-//     params.start = 1649897531555;
-//     params.end = 1649901032603;
-//     params.order = ASCEND;
-//     params.compareType = LT;
-//     params.compareValue = "666";
-//     params.queryType = TIMESPAN;
-//     params.byPath = 0;
-//     params.queryNums = 10;
-//     long count;
-//     DB_GetAbnormalDataCount(&params, &count);
-//     return 0;
-// }
+int main()
+{
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiThirteen";
+    params.start = 1649897531555;
+    params.end = 1649901032603;
+    params.queryType = TIMESPAN;
+    params.queryNums = 10;
+    long count;
+    DB_GetAbnormalDataCount(&params, &count);
+    DB_GetNormalDataCount(&params, &count);
+    return 0;
+}
