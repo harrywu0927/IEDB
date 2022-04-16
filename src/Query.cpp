@@ -679,9 +679,8 @@ int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
         sortByTime(selectedPacks, TIME_ASC);
 
         //比较指定变量给定的数据值，筛选符合条件的值
-        vector<pair<char *, long>>
-            mallocedMemory; //已在堆区分配的进入筛选范围数据的内存地址和长度集
-        long cur = 0;       //记录已选中的文件总长度
+        vector<pair<char *, long>> mallocedMemory; //已在堆区分配的进入筛选范围数据的内存地址和长度集
+        long cur = 0;                              //记录已选中的文件总长度
         /*<-----!!!警惕内存泄露!!!----->*/
         if (params->compareType != DB_CompareType::CMP_NONE)
         {
@@ -1077,7 +1076,7 @@ int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
             {
                 //检索到的数量不够，继续从打包文件中获取
                 vector<string> packList;
-                vector<pair<string,long>> packsWithTime;
+                vector<pair<string, long>> packsWithTime;
                 readPakFilesList(params->pathToLine, packList);
                 for (auto &pack : packList)
                 {
@@ -1107,7 +1106,7 @@ int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
                     int fileNum;
                     string templateName;
                     packReader.ReadPackHead(fileNum, templateName);
-                    // TemplateManager::CheckTemplate(templateName);
+                    TemplateManager::CheckTemplate(templateName);
                     //由于pak中的文件按时间升序存放，首先依次将此包中文件信息压入栈中，弹出时即为时间降序型
 
                     stack<pair<long, tuple<int, long, int>>> filestk;
@@ -1169,7 +1168,7 @@ int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
                         if (params->valueName != NULL)
                             compareBytes = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type) == 0 ? bytes : 0;
 
-                        if (compareBytes != 0 && params->compareType != CMP_NONE) //可比较
+                        if (compareBytes != 0) //可比较
                         {
                             char value[compareBytes]; //值缓存
                             memcpy(value, buff + pos, compareBytes);
@@ -1269,16 +1268,61 @@ int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
         }
         else //不需要比较数值,直接拷贝前N个文件
         {
-            for (int i = 0; i < params->queryNums; i++)
+            int selected = 0;
+            for (int i = 0; i < params->queryNums && i < filesWithTime.size(); i++)
             {
                 long len;
                 DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[i].first.c_str()), &len);
                 char buff[len];
                 DB_OpenAndRead(const_cast<char *>(filesWithTime[i].first.c_str()), buff);
-                char *memory = (char *)malloc(len);
+                char *memory = new char[len];
                 memcpy(memory, buff, len);
                 mallocedMemory.push_back(make_pair(memory, len));
                 cur += len;
+                selected++;
+            }
+            if (selected < params->queryNums)
+            {
+                vector<string> packFiles;
+                //检索到的数量不够，继续从打包文件中获取
+                readPakFilesList(params->pathToLine, packFiles);
+                vector<pair<string, long>> packsWithTime;
+                for (auto &pack : packFiles)
+                {
+                    string tmp = pack;
+                    while (tmp.back() == '/')
+                        tmp.pop_back();
+                    vector<string> vec = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
+                    string packName = vec[vec.size() - 1];
+                    vector<string> timespan = DataType::StringSplit(const_cast<char *>(packName.c_str()), "-");
+                    if (timespan.size() > 0)
+                    {
+                        long start = atol(timespan[0].c_str());
+                        packsWithTime.push_back(make_pair(pack, start));
+                    }
+                    else
+                    {
+                        return StatusCode::FILENAME_MODIFIED;
+                    }
+                }
+                sortByTime(packsWithTime, TIME_DSC);
+
+                for (auto &pack : packsWithTime)
+                {
+                    if (selected == params->queryNums)
+                        break;
+                    PackFileReader packReader(pack.first);
+                    if (packReader.packBuffer == NULL)
+                        continue;
+                    int fileNum;
+                    string templateName;
+                    packReader.ReadPackHead(fileNum, templateName);
+                    TemplateManager::CheckTemplate(templateName);
+                    //由于pak中的文件按时间升序存放，首先依次将此包中文件信息压入栈中，弹出时即为时间降序型
+
+                    stack<pair<long, tuple<int, long, int>>> filestk;
+
+                }
             }
             if (cur != 0)
             {
@@ -1287,7 +1331,7 @@ int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
                 for (auto &mem : mallocedMemory)
                 {
                     memcpy(data + cur, mem.first, mem.second);
-                    free(mem.first);
+                    delete[] mem.first;
                     cur += mem.second;
                 }
                 buffer->bufferMalloced = 1;
@@ -3252,59 +3296,59 @@ int TEST_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
     return 0;
 }
 
-// int main()
-// {
-//     DataTypeConverter converter;
-//     DB_QueryParams params;
-//     params.pathToLine = "/";
-//     params.fileID = "JinfeiTen102";
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)0;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     params.pathCode = code;
-//     params.valueName = "S2OFF";
-//     // params.valueName = NULL;
-//     params.start = 1648812610100;
-//     params.end = 1648812630100;
-//     params.order = ASCEND;
-//     params.compareType = LT;
-//     params.compareValue = "666";
-//     params.queryType = TIMESPAN;
-//     params.byPath = 0;
-//     params.queryNums = 2;
-//     DB_DataBuffer buffer;
-//     buffer.savePath = "/";
-//     // cout << settings("Pack_Mode") << endl;
-//     // vector<pair<string, long>> files;
-//     // readDataFilesWithTimestamps("", files);
-//     // Packer::Pack("/",files);
-//     //DB_QueryWholeFile_New(&buffer, &params);
-//     DB_QueryByTimespan(&buffer, &params);
-//     //  DB_QueryByFileID(&buffer, &params);
+int main()
+{
+    DataTypeConverter converter;
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiSixteen";
+    params.fileID = "JinfeiSixteen100";
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)0;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueName = "S2OFF";
+    // params.valueName = NULL;
+    params.start = 1648812610100;
+    params.end = 1648812630100;
+    params.order = ASCEND;
+    params.compareType = LT;
+    params.compareValue = "666";
+    params.queryType = TIMESPAN;
+    params.byPath = 0;
+    params.queryNums = 10;
+    DB_DataBuffer buffer;
+    buffer.savePath = "/";
+    // cout << settings("Pack_Mode") << endl;
+    // vector<pair<string, long>> files;
+    // readDataFilesWithTimestamps("", files);
+    // Packer::Pack("/",files);
+    // DB_QueryWholeFile_New(&buffer, &params);
+    // DB_QueryLastRecords(&buffer, &params);
+    DB_QueryByFileID(&buffer, &params);
 
-//     if (buffer.bufferMalloced)
-//     {
-//         char buf[buffer.length];
-//         memcpy(buf, buffer.buffer, buffer.length);
-//         cout << buffer.length << endl;
-//         for (int i = 0; i < buffer.length; i++)
-//         {
-//             cout << (int)buf[i] << " ";
-//             if (i % 11 == 0)
-//                 cout << endl;
-//         }
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
 
-//         free(buffer.buffer);
-//     }
+        free(buffer.buffer);
+    }
 
-//     // buffer.buffer = NULL;
-//     return 0;
-// }
+    // buffer.buffer = NULL;
+    return 0;
+}

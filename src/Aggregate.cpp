@@ -2021,13 +2021,14 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
 int main()
 {
     DB_QueryParams params;
-    params.pathToLine = "JinfeiThirteen";
+    params.pathToLine = "JinfeiSixteen";
     params.start = 1649897531555;
     params.end = 1649901032603;
     params.queryType = QRY_NONE;
     params.queryNums = 10;
     long count;
     DB_GetAbnormalDataCount(&params, &count);
+    count=0;
     DB_GetNormalDataCount(&params, &count);
     return 0;
 }
