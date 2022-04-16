@@ -245,7 +245,6 @@ void readDataFilesWithTimestamps(string path, vector<pair<string, long>> &filesW
     struct dirent *ptr;
     DIR *dir;
     string finalPath = settings("Filename_Label");
-    cout<<finalPath<<endl;
     if (path[0] != '/')
         finalPath += "/" + path;
     else

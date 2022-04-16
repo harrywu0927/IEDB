@@ -1501,9 +1501,12 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
                     {
                         DB_DataBuffer buffer;
                         buffer.savePath = file.first.c_str();
-                        DB_ReadFile(&buffer);
-                        if (IsNormalIDBFile(buffer.buffer, params->pathToLine))
-                            normal++;
+                        if (DB_ReadFile(&buffer) == 0)
+                        {
+                            if (IsNormalIDBFile(buffer.buffer, params->pathToLine))
+                                normal++;
+                            free(buffer.buffer);
+                        }
                     }
                 }
             }
@@ -1548,7 +1551,8 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
                             normal++;
                         }
                     }
-                    else normal++;
+                    else
+                        normal++;
                 }
             }
         }
@@ -1578,9 +1582,12 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
                 {
                     DB_DataBuffer buffer;
                     buffer.savePath = dataWithTime[i].first.c_str();
-                    DB_ReadFile(&buffer);
-                    if (IsNormalIDBFile(buffer.buffer, params->pathToLine))
-                        normal++;
+                    if (DB_ReadFile(&buffer) == 0)
+                    {
+                        if (IsNormalIDBFile(buffer.buffer, params->pathToLine))
+                            normal++;
+                        free(buffer.buffer);
+                    }
                 }
             }
         }
@@ -1630,7 +1637,8 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
                                 normal++;
                             }
                         }
-                        else normal++;
+                        else
+                            normal++;
                     }
                 }
             }
@@ -1653,7 +1661,8 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
                                 normal++;
                             }
                         }
-                        else normal++;
+                        else
+                            normal++;
                     }
                 }
             }
@@ -1673,7 +1682,8 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
         for (auto &file : dataFiles)
         {
             struct stat fileInfo;
-            if (stat(file.c_str(), &fileInfo) == -1)
+            string finalPath = settings("Filename_Label") + "/" + file;
+            if (stat(finalPath.c_str(), &fileInfo) == -1)
             {
                 continue;
             }
@@ -1688,9 +1698,12 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
                 {
                     DB_DataBuffer buffer;
                     buffer.savePath = file.c_str();
-                    DB_ReadFile(&buffer);
-                    if (IsNormalIDBFile(buffer.buffer, params->pathToLine))
-                        normal++;
+                    if (DB_ReadFile(&buffer) == 0)
+                    {
+                        if (IsNormalIDBFile(buffer.buffer, params->pathToLine))
+                            normal++;
+                        free(buffer.buffer);
+                    }
                 }
             }
         }
@@ -1705,7 +1718,7 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
                 long timestamp;
                 int zipType, readLength;
                 long dataPos = packReader.Next(readLength, timestamp, zipType);
-                if (zipType == 1)
+                if (zipType != 2)
                 {
                     if (zipType == 0)
                     {
@@ -1716,6 +1729,8 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
                             normal++;
                         }
                     }
+                    else
+                        normal++;
                 }
             }
         }
@@ -1759,9 +1774,12 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
                     {
                         DB_DataBuffer buffer;
                         buffer.savePath = file.first.c_str();
-                        DB_ReadFile(&buffer);
-                        if (!IsNormalIDBFile(buffer.buffer, params->pathToLine))
-                            abnormal++;
+                        if (DB_ReadFile(&buffer) == 0)
+                        {
+                            if (!IsNormalIDBFile(buffer.buffer, params->pathToLine))
+                                abnormal++;
+                            free(buffer.buffer);
+                        }
                     }
                     else
                     {
@@ -1811,7 +1829,8 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
                             abnormal++;
                         }
                     }
-                    else abnormal++;
+                    else
+                        abnormal++;
                 }
             }
         }
@@ -1837,9 +1856,12 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
                 {
                     DB_DataBuffer buffer;
                     buffer.savePath = dataWithTime[i].first.c_str();
-                    DB_ReadFile(&buffer);
-                    if (!IsNormalIDBFile(buffer.buffer, params->pathToLine))
-                        abnormal++;
+                    if (DB_ReadFile(&buffer) == 0)
+                    {
+                        if (!IsNormalIDBFile(buffer.buffer, params->pathToLine))
+                            abnormal++;
+                        free(buffer.buffer);
+                    }
                 }
                 else
                 {
@@ -1894,7 +1916,8 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
                                 abnormal++;
                             }
                         }
-                        else abnormal++;
+                        else
+                            abnormal++;
                     }
                 }
             }
@@ -1917,7 +1940,8 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
                                 abnormal++;
                             }
                         }
-                        else abnormal++;
+                        else
+                            abnormal++;
                     }
                 }
             }
@@ -1948,9 +1972,12 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
                 {
                     DB_DataBuffer buffer;
                     buffer.savePath = file.c_str();
-                    DB_ReadFile(&buffer);
-                    if (!IsNormalIDBFile(buffer.buffer, params->pathToLine))
-                        abnormal++;
+                    if (DB_ReadFile(&buffer) == 0)
+                    {
+                        if (!IsNormalIDBFile(buffer.buffer, params->pathToLine))
+                            abnormal++;
+                        free(buffer.buffer);
+                    }
                 }
                 else
                 {
@@ -1981,7 +2008,8 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
                             abnormal++;
                         }
                     }
-                    else abnormal++;
+                    else
+                        abnormal++;
                 }
             }
         }
@@ -1996,7 +2024,7 @@ int main()
     params.pathToLine = "JinfeiThirteen";
     params.start = 1649897531555;
     params.end = 1649901032603;
-    params.queryType = TIMESPAN;
+    params.queryType = QRY_NONE;
     params.queryNums = 10;
     long count;
     DB_GetAbnormalDataCount(&params, &count);
