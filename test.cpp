@@ -175,10 +175,10 @@ int main()
     int num = 12000;
     DataTypeConverter dc;
     dc.ToUInt32Buff_m(num, value);
-    cout << num;
+    cout << num<<endl;
     char value1[2];
     int num1 = 45536;
     dc.ToUInt16Buff_m(num1, value1);
-    cout << num1;
+    cout << num1<<endl;
     return 0;
 }

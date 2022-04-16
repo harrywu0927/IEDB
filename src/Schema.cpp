@@ -12,11 +12,11 @@ ZipTemplate CurrentZipTemplate;
  *         others: StatusCode
  * @note   新节点参数必须齐全，pathToLine pathcode valueNmae hasTime valueType isArray arrayLen
  */
-int DB_AddNodeToSchema(struct DB_TreeNodeParams *params)
+int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 {
     int err;
     vector<string> files;
-    readFileList(params->pathToLine, files);
+    readFileList(TreeParams->pathToLine, files);
     string temPath = "";
     for (string file : files) //找到带有后缀tem的文件
     {
@@ -41,7 +41,7 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *params)
     {
         char existValueName[30];
         memcpy(existValueName, readBuf + readbuf_pos, 30);
-        if (strcmp(params->valueName, existValueName) == 0)
+        if (strcmp(TreeParams->valueName, existValueName) == 0)
         {
             cout << "存在相同的变量名" << endl;
             return StatusCode::VARIABLE_NAME_EXIST;
@@ -53,7 +53,7 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *params)
         int j = 0;
         for (j = 0; j < 10; j++)
         {
-            if (params->pathCode[j] != existPathCode[j])
+            if (TreeParams->pathCode[j] != existPathCode[j])
                 break;
         }
         if (j == 10)
@@ -68,25 +68,25 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *params)
     memset(valueType, 0, sizeof(valueType));
     memset(pathCode, 0, sizeof(pathCode));
 
-    if (params->isArrary == 1) //是数组类型,拼接字符串
+    if (TreeParams->isArrary == 1) //是数组类型,拼接字符串
     {
         strcpy(valueType, "ARRAY [0..");
         char s[10];
-        sprintf(s, "%d", params->arrayLen);
+        sprintf(s, "%d", TreeParams->arrayLen);
         strcat(valueType, s);
         strcat(valueType, "] OF ");
-        string valueTypeStr = DataType::JudgeValueTypeByNum(params->valueType);
+        string valueTypeStr = DataType::JudgeValueTypeByNum(TreeParams->valueType);
         // memcpy(valueType, const_cast<char *>(valueTypeStr.c_str()), valueTypeStr.length());
         strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
     }
     else //不是数组类型，直接赋值字符串
     {
-        string valueTypeStr = DataType::JudgeValueTypeByNum(params->valueType);
+        string valueTypeStr = DataType::JudgeValueTypeByNum(TreeParams->valueType);
         memcpy(valueType, const_cast<char *>(valueTypeStr.c_str()), valueTypeStr.length());
     }
-    strcpy(valueNmae, params->valueName);
-    hasTime[0] = (char)params->hasTime;
-    memcpy(pathCode, params->pathCode, 10);
+    strcpy(valueNmae, TreeParams->valueName);
+    hasTime[0] = (char)TreeParams->hasTime;
+    memcpy(pathCode, TreeParams->pathCode, 10);
 
     char writeBuf[71]; //将所有参数传入writeBuf中，已追加写的方式写入已有模板文件中
     memcpy(writeBuf, valueNmae, 30);
@@ -118,11 +118,11 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *params)
  *         others: StatusCode
  * @note   更新节点参数必须齐全，pathToLine pathcode valueNmae hasTime valueType isArray arrayLen
  */
-int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *params, struct DB_TreeNodeParams *newTreeParams)
+int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams)
 {
     int err;
     vector<string> files;
-    readFileList(params->pathToLine, files);
+    readFileList(TreeParams->pathToLine, files);
     string temPath = "";
     for (string file : files) //找到带有后缀tem的文件
     {
@@ -152,7 +152,7 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *params, struct DB_TreeNodePa
         int j = 0;
         for (j = 0; j < 10; j++)
         {
-            if (params->pathCode[j] != existPathCode[j])
+            if (TreeParams->pathCode[j] != existPathCode[j])
                 break;
         }
         if (j == 10)
@@ -249,11 +249,11 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *params, struct DB_TreeNodePa
  * @return　0:success,
  *         others: StatusCode
  */
-int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *params)
+int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 {
     int err;
     vector<string> files;
-    readFileList(params->pathToLine, files);
+    readFileList(TreeParams->pathToLine, files);
     string temPath = "";
     for (string file : files) //找到带有后缀tem的文件
     {
@@ -283,7 +283,7 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *params)
         int j = 0;
         for (j = 0; j < 10; j++)
         {
-            if (params->pathCode[j] != existPathCode[j])
+            if (TreeParams->pathCode[j] != existPathCode[j])
                 break;
         }
         if (j == 10)
@@ -599,17 +599,74 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     return 0;
 }
 
-// /**
-//  * @brief 删除压缩模板节点，根据变量名进行定位
-//  *
-//  * @param TreeParams 压缩模板参数
-//  * @return 0:success,　
-//  *         others: StatusCode
-//  */
-// int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
-// {
-//     return 0;
-// }
+/**
+ * @brief 删除压缩模板节点，根据变量名进行定位
+ *
+ * @param TreeParams 压缩模板参数
+ * @return 0:success,　
+ *         others: StatusCode
+ */
+int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
+{
+    int err;
+    vector<string> files;
+    readFileList(ZipParams->pathToLine, files);
+    string temPath = "";
+    for (string file : files) //找到带有后缀ziptem的文件
+    {
+        string s = file;
+        vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
+        if ( vec[vec.size() - 1].find("ziptem") != string::npos)
+        {
+            temPath = file;
+            break;
+        }
+    }
+    if (temPath == "")
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+
+    long len;
+    DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
+    char readBuf[len];
+    long readbuf_pos = 0;
+    DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
+
+    long pos = -1;                      //记录删除节点在第几条
+    for (long i = 0; i < len / 91; i++) //寻找是否有相同的变量名
+    {
+        char existValueName[30];
+        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        if (strcmp(ZipParams->valueName, existValueName) == 0)
+        {
+            pos=i;//记录这条记录的位置
+        }
+        readbuf_pos += 91;
+    }
+    if (pos == -1)
+    {
+        cout << "未找到要删除的记录！" << endl;
+        return StatusCode::UNKNOWN_PATHCODE;
+    }
+
+    char writeBuf[len - 91];
+    memcpy(writeBuf, readBuf, pos * 91);                                       //拷贝要被删除的记录之前的记录
+    memcpy(writeBuf + pos * 91, readBuf + pos * 91 + 91, len - pos * 91 - 91); //拷贝要被删除的记录之后的记录
+
+    //打开文件并追加写入
+    long fp;
+    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
+    if (err == 0)
+    {
+        if (len - 91 != 0)
+            err = DB_Write(fp, writeBuf, len - 91);
+
+        if (err == 0)
+        {
+            err = DB_Close(fp);
+        }
+    }
+    return err;
+}
 
 /**
  * @brief 加载压缩模板
@@ -695,63 +752,64 @@ int DB_UnloadZipSchema(const char *pathToUnset)
     return ZipTemplateManager::UnsetZipTemplate(pathToUnset);
 }
 
-// int main()
-// {
-//     //     DB_LoadZipSchema("jinfei/");
+int main()
+{
+    // DB_LoadZipSchema("jinfei/");
 
-//     //     // DB_TreeNodeParams params;
-//     //     // params.pathToLine = "/";
-//     //     // char code[10];
-//     //     // code[0] = (char)0;
-//     //     // code[1] = (char)1;
-//     //     // code[2] = (char)0;
-//     //     // code[3] = (char)4;
-//     //     // code[4] = 'R';
-//     //     // code[5] = (char)1;
-//     //     // code[6] = 0;
-//     //     // code[7] = (char)0;
-//     //     // code[8] = (char)0;
-//     //     // code[9] = (char)0;
-//     //     // params.pathCode = code;
-//     //     // params.valueType = 3;
-//     //     // params.hasTime = 0;
-//     //     // params.isArrary = 0;
-//     //     // params.arrayLen = 100;
-//     //     // params.valueName = "S4ON";
+    // DB_TreeNodeParams params;
+    // params.pathToLine = "/";
+    // char code[10];
+    // code[0] = (char)0;
+    // code[1] = (char)1;
+    // code[2] = (char)0;
+    // code[3] = (char)4;
+    // code[4] = 'R';
+    // code[5] = (char)1;
+    // code[6] = 0;
+    // code[7] = (char)0;
+    // code[8] = (char)0;
+    // code[9] = (char)0;
+    // params.pathCode = code;
+    // params.valueType = 3;
+    // params.hasTime = 0;
+    // params.isArrary = 0;
+    // params.arrayLen = 100;
+    // params.valueName = "S4ON";
 
-//     //     // DB_TreeNodeParams newTreeParams;
-//     //     // newTreeParams.pathToLine = "/";
-//     //     // char newcode[10];
-//     //     // newcode[0] = (char)0;
-//     //     // newcode[1] = (char)1;
-//     //     // newcode[2] = (char)0;
-//     //     // newcode[3] = (char)4;
-//     //     // newcode[4] = 'R';
-//     //     // newcode[5] = (char)1;
-//     //     // newcode[6] = 0;
-//     //     // newcode[7] = (char)0;
-//     //     // newcode[8] = (char)0;
-//     //     // newcode[9] = (char)0;
-//     //     // newTreeParams.pathCode = newcode;
-//     //     // newTreeParams.valueType = 3;
-//     //     // newTreeParams.hasTime = 0;
-//     //     // newTreeParams.isArrary = 0;
-//     //     // newTreeParams.arrayLen = 100;
-//     //     // newTreeParams.valueName = "S4ON";
-//     //     // DB_UpdateNodeToSchema(&params,&newTreeParams);
-//     //     // DB_AddNodeToSchema(&params);
-//     //     // DB_DeleteNodeToSchema(&params);
+    // DB_TreeNodeParams newTreeParams;
+    // newTreeParams.pathToLine = "/";
+    // char newcode[10];
+    // newcode[0] = (char)0;
+    // newcode[1] = (char)1;
+    // newcode[2] = (char)0;
+    // newcode[3] = (char)4;
+    // newcode[4] = 'R';
+    // newcode[5] = (char)1;
+    // newcode[6] = 0;
+    // newcode[7] = (char)0;
+    // newcode[8] = (char)0;
+    // newcode[9] = (char)0;
+    // newTreeParams.pathCode = newcode;
+    // newTreeParams.valueType = 3;
+    // newTreeParams.hasTime = 0;
+    // newTreeParams.isArrary = 0;
+    // newTreeParams.arrayLen = 100;
+    // newTreeParams.valueName = "S4ON";
+    // DB_UpdateNodeToSchema(&params,&newTreeParams);
+    // DB_AddNodeToSchema(&params);
+    // DB_DeleteNodeToSchema(&params);
 
-//     DB_ZipNodeParams params;
-//     params.pathToLine = "/";
-//     params.valueType = 2;
-//     params.hasTime = 1;
-//     params.isArrary = 0;
-//     params.arrayLen = 100;
-//     params.valueName = "S4OFF";
-//     params.standardValue = "210";
-//     params.maxValue = "230";
-//     params.minValue = "190";
-//     DB_AddNodeToZipSchema(&params);
-//     return 0;
-// }
+    DB_ZipNodeParams params;
+    params.pathToLine = "/";
+    params.valueType = 2;
+    params.hasTime = 1;
+    params.isArrary = 0;
+    params.arrayLen = 100;
+    params.valueName = "S4ON";
+    params.standardValue = "210";
+    params.maxValue = "230";
+    params.minValue = "190";
+    //DB_AddNodeToZipSchema(&params);
+    DB_DeleteNodeToZipSchema(&params);
+    return 0;
+}
