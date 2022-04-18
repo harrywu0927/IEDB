@@ -1484,7 +1484,8 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
         for (auto &file : dataWithTime)
         {
             struct stat fileInfo;
-            if (stat(file.first.c_str(), &fileInfo) == -1)
+            string finalPath = settings("Filename_Label") + "/" + file.first;
+            if (stat(finalPath.c_str(), &fileInfo) == -1)
             {
                 continue;
             }

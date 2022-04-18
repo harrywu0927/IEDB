@@ -36,8 +36,32 @@ void tk(int n)
         this_thread::sleep_for(chrono::seconds(1));
     }
 }
+void checkSettings()
+{
+    FILE *fp = fopen("settings.json","r+");
+
+    while (1)
+    {
+        fseek(fp, 0, SEEK_END);
+        int len = ftell(fp);
+        fseek(fp, 0, SEEK_SET);
+        char buff[len];
+        fread(buff, len, 1, fp);
+        string str = buff;
+        string contents(str);
+        neb::CJsonObject tmp(contents);
+        
+        cout<<tmp("Filename_Label")<<endl;
+
+        this_thread::sleep_for(chrono::seconds(3));
+    }
+}
 int main()
 {
+    //fd_set set;
+    //thread th1(checkSettings);
+    //th1.detach();
+
     // std::thread t1(tk,5);
     // t1.join();
     // pthread_t pid;
@@ -80,7 +104,7 @@ int main()
     // vector<pair<string, long>> files;
     // readDataFilesWithTimestamps("", files);
     // Packer::Pack("/",files);
-    //DB_QueryLastRecords(&buffer, &params);
+    // DB_QueryLastRecords(&buffer, &params);
     long count = 0;
     DB_GetNormalDataCount(&params, &count);
     // DB_MAX(&buffer, &params);

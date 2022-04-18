@@ -701,6 +701,8 @@ class Packer
 {
 public:
     static int Pack(string pathToLine, vector<pair<string, long>> &filesWithTime);
+
+    static int RePack(string pathToLine, vector<pair<string, tuple<long, long>>> &packsWithTime);
 };
 
 class PackFileReader

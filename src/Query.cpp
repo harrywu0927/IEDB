@@ -1321,7 +1321,6 @@ int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
                     //由于pak中的文件按时间升序存放，首先依次将此包中文件信息压入栈中，弹出时即为时间降序型
 
                     stack<pair<long, tuple<int, long, int>>> filestk;
-
                 }
             }
             if (cur != 0)
@@ -1368,10 +1367,24 @@ int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
                 memcpy(data, buff, len);
                 buffer->buffer = data;
                 return 0;
-
-                break;
             }
         }
+        // for (auto &pack : )
+        // {
+        //     PackFileReader packReader(pack.first);
+        //     if (packReader.packBuffer == NULL)
+        //         continue;
+        //     int fileNum;
+        //     string templateName;
+        //     packReader.ReadPackHead(fileNum, templateName);
+        //     TemplateManager::CheckTemplate(templateName);
+        //     for (int i = 0; i < fileNum; i++)
+        //     {
+        //         string fileID;
+
+        //     }
+            
+        // }
 
         break;
     }
@@ -2951,7 +2964,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
                 {
                     pathCode = params->pathCode;
                     err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList, typeList);
-                    for (int i = 0; i < bytesList.size() && err != 0; i++)
+                    for (int i = 0; i < bytesList.size() && err == 0; i++)
                     {
                         copyBytes += typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i];
                     }
@@ -3301,7 +3314,7 @@ int main()
     DataTypeConverter converter;
     DB_QueryParams params;
     params.pathToLine = "JinfeiSixteen";
-    params.fileID = "JinfeiSixteen100";
+    params.fileID = "JinfeiSixteen1";
     char code[10];
     code[0] = (char)0;
     code[1] = (char)1;
@@ -3322,7 +3335,7 @@ int main()
     params.compareType = LT;
     params.compareValue = "666";
     params.queryType = TIMESPAN;
-    params.byPath = 0;
+    params.byPath = 1;
     params.queryNums = 10;
     DB_DataBuffer buffer;
     buffer.savePath = "/";
