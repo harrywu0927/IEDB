@@ -952,7 +952,7 @@ int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
             cur = 0;
             for (auto &mem : mallocedMemory)
             {
-                memcpy(data, mem.first, mem.second);
+                memcpy(data + cur, mem.first, mem.second);
                 delete[] mem.first;
                 cur += mem.second;
             }
@@ -1321,6 +1321,59 @@ int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
                     //由于pak中的文件按时间升序存放，首先依次将此包中文件信息压入栈中，弹出时即为时间降序型
 
                     stack<pair<long, tuple<int, long, int>>> filestk;
+                    for (int i = 0; i < fileNum; i++)
+                    {
+                        long timestamp; //暂时用不到时间戳
+                        int readLength, zipType;
+                        long dataPos = packReader.Next(readLength, timestamp, zipType);
+                        auto t = make_tuple(readLength, timestamp, zipType);
+                        filestk.push(make_pair(dataPos, t));
+                    }
+                    while (!filestk.empty())
+                    {
+                        auto fileInfo = filestk.top();
+                        filestk.pop();
+                        long dataPos = fileInfo.first;
+                        int readLength = get<0>(fileInfo.second);
+                        long timestamp = get<1>(fileInfo.second);
+                        int zipType = get<2>(fileInfo.second);
+
+                        char *buff = new char[CurrentTemplate.totalBytes];
+                        switch (zipType)
+                        {
+                        case 0:
+                        {
+                            memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                            break;
+                        }
+                        case 1:
+                        {
+                            ReZipBuff(buff, readLength, params->pathToLine);
+                            break;
+                        }
+                        case 2:
+                        {
+                            memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                            ReZipBuff(buff, readLength, params->pathToLine);
+                            break;
+                        }
+                        default:
+                        {
+                            delete[] buff;
+                            return StatusCode::UNKNWON_DATAFILE;
+                            break;
+                        }
+                        }
+                        char *memory = new char[readLength];
+                        memcpy(memory, buff, readLength);
+                        cur += readLength;
+                        mallocedMemory.push_back(make_pair(memory, readLength));
+                        selected++;
+
+                        delete[] buff;
+                        if (selected == params->queryNums)
+                            break;
+                    }
                 }
             }
             if (cur != 0)
@@ -1369,22 +1422,64 @@ int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
                 return 0;
             }
         }
-        // for (auto &pack : )
-        // {
-        //     PackFileReader packReader(pack.first);
-        //     if (packReader.packBuffer == NULL)
-        //         continue;
-        //     int fileNum;
-        //     string templateName;
-        //     packReader.ReadPackHead(fileNum, templateName);
-        //     TemplateManager::CheckTemplate(templateName);
-        //     for (int i = 0; i < fileNum; i++)
-        //     {
-        //         string fileID;
-
-        //     }
-            
-        // }
+        vector<string> packList;
+        readPakFilesList(params->pathToLine, packList);
+        for (auto &pack : packList)
+        {
+            PackFileReader packReader(pack);
+            if (packReader.packBuffer == NULL)
+                continue;
+            int fileNum;
+            string templateName;
+            packReader.ReadPackHead(fileNum, templateName);
+            TemplateManager::CheckTemplate(templateName);
+            for (int i = 0; i < fileNum; i++)
+            {
+                string fileID;
+                int readLength, zipType;
+                long dataPos = packReader.Next(readLength, fileID, zipType);
+                char *buff = new char[CurrentTemplate.totalBytes];
+                if (fileID.c_str() == params->fileID)
+                {
+                    switch (zipType)
+                    {
+                    case 0:
+                    {
+                        memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                        break;
+                    }
+                    case 1:
+                    {
+                        ReZipBuff(buff, readLength, params->pathToLine);
+                        break;
+                    }
+                    case 2:
+                    {
+                        memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                        ReZipBuff(buff, readLength, params->pathToLine);
+                        break;
+                    }
+                    default:
+                        delete[] buff;
+                        continue;
+                        break;
+                    }
+                    char *data = (char *)malloc(readLength);
+                    if (data == NULL)
+                    {
+                        buffer->buffer = NULL;
+                        buffer->bufferMalloced = 0;
+                        return StatusCode::BUFFER_FULL;
+                    }
+                    //内存分配成功，传入数据
+                    buffer->bufferMalloced = 1;
+                    buffer->length = readLength;
+                    memcpy(data, buff, readLength);
+                    buffer->buffer = data;
+                    return 0;
+                }
+            }
+        }
 
         break;
     }
@@ -3309,59 +3404,59 @@ int TEST_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
     return 0;
 }
 
-// int main()
-// {
-//     DataTypeConverter converter;
-//     DB_QueryParams params;
-//     params.pathToLine = "JinfeiSixteen";
-//     params.fileID = "JinfeiSixteen1";
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)0;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     params.pathCode = code;
-//     params.valueName = "S2OFF";
-//     // params.valueName = NULL;
-//     params.start = 1648812610100;
-//     params.end = 1648812630100;
-//     params.order = ASCEND;
-//     params.compareType = LT;
-//     params.compareValue = "666";
-//     params.queryType = TIMESPAN;
-//     params.byPath = 1;
-//     params.queryNums = 10;
-//     DB_DataBuffer buffer;
-//     buffer.savePath = "/";
-//     // cout << settings("Pack_Mode") << endl;
-//     // vector<pair<string, long>> files;
-//     // readDataFilesWithTimestamps("", files);
-//     // Packer::Pack("/",files);
-//     // DB_QueryWholeFile_New(&buffer, &params);
-//     // DB_QueryLastRecords(&buffer, &params);
-//     DB_QueryByFileID(&buffer, &params);
+int main()
+{
+    DataTypeConverter converter;
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiSixteen";
+    params.fileID = "JinfeiSixteen1";
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)2;
+    code[4] = 'R';
+    code[5] = (char)2;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueName = "S2OFF";
+    // params.valueName = NULL;
+    params.start = 1650095500000;
+    params.end = 1650095600000;
+    params.order = ASCEND;
+    params.compareType = CMP_NONE;
+    params.compareValue = "666";
+    params.queryType = TIMESPAN;
+    params.byPath = 1;
+    params.queryNums = 10;
+    DB_DataBuffer buffer;
+    buffer.savePath = "/";
+    // cout << settings("Pack_Mode") << endl;
+    // vector<pair<string, long>> files;
+    // readDataFilesWithTimestamps("", files);
+    // Packer::Pack("/",files);
+    // DB_QueryWholeFile_New(&buffer, &params);
+    // DB_QueryLastRecords(&buffer, &params);
+    DB_QueryWholeFile_New(&buffer, &params);
 
-//     if (buffer.bufferMalloced)
-//     {
-//         char buf[buffer.length];
-//         memcpy(buf, buffer.buffer, buffer.length);
-//         cout << buffer.length << endl;
-//         for (int i = 0; i < buffer.length; i++)
-//         {
-//             cout << (int)buf[i] << " ";
-//             if (i % 11 == 0)
-//                 cout << endl;
-//         }
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
 
-//         free(buffer.buffer);
-//     }
+        free(buffer.buffer);
+    }
 
-//     // buffer.buffer = NULL;
-//     return 0;
-// }
+    // buffer.buffer = NULL;
+    return 0;
+}

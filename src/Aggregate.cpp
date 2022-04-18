@@ -2030,19 +2030,19 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
     }
     return 0;
 }
-int main()
-{
-    DB_QueryParams params;
-    params.pathToLine = "JinfeiSixteen";
-    params.start = 1650093531555;
-    params.end = 1650099992603;
-    params.queryType = LAST;
-    params.queryNums = 1000;
-    long count;
-    DB_GetAbnormalDataCount(&params, &count);
-    cout << count << endl;
-    count = 0;
-    DB_GetNormalDataCount(&params, &count);
-    cout << count << endl;
-    return 0;
-}
+// int main()
+// {
+//     DB_QueryParams params;
+//     params.pathToLine = "JinfeiSixteen";
+//     params.start = 1650093531555;
+//     params.end = 1650099992603;
+//     params.queryType = LAST;
+//     params.queryNums = 1000;
+//     long count;
+//     DB_GetAbnormalDataCount(&params, &count);
+//     cout << count << endl;
+//     count = 0;
+//     DB_GetNormalDataCount(&params, &count);
+//     cout << count << endl;
+//     return 0;
+// }
