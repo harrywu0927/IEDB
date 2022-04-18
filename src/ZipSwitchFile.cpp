@@ -327,8 +327,6 @@ int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
             cout << "未找到文件" << endl;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
-        
-        ReZipSwitchBuf(readbuff, len, writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
 
         ReZipSwitchBuf(readbuff, len, writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
 
