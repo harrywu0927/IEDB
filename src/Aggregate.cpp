@@ -1564,11 +1564,12 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
     {
         readDataFilesWithTimestamps(params->pathToLine, dataWithTime);
         sortByTime(dataWithTime, TIME_DSC);
-        long i;
+        long i = 0;
         for (i = 0; i < params->queryNums && i < dataWithTime.size(); i++)
         {
             struct stat fileInfo;
-            if (stat(dataWithTime[i].first.c_str(), &fileInfo) == -1)
+            string finalPath = settings("Filename_Label") + "/" + dataWithTime[i].first;
+            if (stat(finalPath.c_str(), &fileInfo) == -1)
             {
                 continue;
             }
@@ -1648,8 +1649,13 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
                 long timestamp;
                 int zipType, readLength;
                 packReader.Skip(fileNum - (params->queryNums - i));
-                for (int j = fileNum - (params->queryNums - i); j < fileNum; j++)
+                for (int j = fileNum - (params->queryNums - i); j < fileNum; j++,i++)
                 {
+                    if(i == params->queryNums)
+                    {
+                        *count = normal;
+                        return 0;
+                    }
                     long dataPos = packReader.Next(readLength, timestamp, zipType);
                     if (zipType != 2)
                     {
@@ -1842,7 +1848,7 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
     {
         readDataFilesWithTimestamps(params->pathToLine, dataWithTime);
         sortByTime(dataWithTime, TIME_DSC);
-        long i;
+        long i = 0;
         for (i = 0; i < params->queryNums && i < dataWithTime.size(); i++)
         {
             struct stat fileInfo;
@@ -1927,8 +1933,13 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
                 long timestamp;
                 int zipType, readLength;
                 packReader.Skip(fileNum - (params->queryNums - i));
-                for (int j = fileNum - (params->queryNums - i); j < fileNum; j++)
+                for (int j = fileNum - (params->queryNums - i); j < fileNum; j++,i++)
                 {
+                    if(i == params->queryNums)
+                    {
+                        *count = abnormal;
+                        return 0;
+                    }
                     long dataPos = packReader.Next(readLength, timestamp, zipType);
                     if (zipType != 1)
                     {
@@ -2019,17 +2030,19 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
     }
     return 0;
 }
-// int main()
-// {
-//     DB_QueryParams params;
-//     params.pathToLine = "JinfeiSixteen";
-//     params.start = 1649897531555;
-//     params.end = 1649901032603;
-//     params.queryType = QRY_NONE;
-//     params.queryNums = 10;
-//     long count;
-//     DB_GetAbnormalDataCount(&params, &count);
-//     count=0;
-//     DB_GetNormalDataCount(&params, &count);
-//     return 0;
-// }
+int main()
+{
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiSixteen";
+    params.start = 1650093531555;
+    params.end = 1650099992603;
+    params.queryType = LAST;
+    params.queryNums = 1000;
+    long count;
+    DB_GetAbnormalDataCount(&params, &count);
+    cout << count << endl;
+    count = 0;
+    DB_GetNormalDataCount(&params, &count);
+    cout << count << endl;
+    return 0;
+}
