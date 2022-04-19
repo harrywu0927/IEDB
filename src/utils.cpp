@@ -2,14 +2,14 @@
 
 unordered_map<string, int> getDirCurrentFileIDIndex();
 long getMilliTime();
-void checkSettings();
+void* checkSettings(void *ptr);
 
 int maxTemplates = 20;
 vector<Template> templates;
 int errorCode;
 neb::CJsonObject settings = FileIDManager::GetSetting();
 unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
-void checkSettings()
+void* checkSettings(void *ptr)
 {
     FILE *fp = fopen("settings.json","r+");
 
@@ -24,12 +24,13 @@ void checkSettings()
         string contents(str);
         neb::CJsonObject tmp(contents);
         settings = tmp;
-        //cout<<tmp("Filename_Label")<<endl;
-
-        this_thread::sleep_for(chrono::seconds(3));
+        cout<<tmp("Filename_Label")<<endl;
+        sleep(3);
+        //this_thread::sleep_for(chrono::seconds(3));
     }
 }
-thread settingsWatcher;
+//thread settingsWatcher;
+pthread_t settingsWatcher;
 //unordered_map<string, bool> filesListRead;
 
 //  string packMode;       //定时打包或存储一定数量后打包
@@ -503,8 +504,9 @@ neb::CJsonObject FileIDManager::GetSetting()
     string contents(buffer.str());
     neb::CJsonObject tmp(contents);
     strcpy(Label, settings("Filename_Label").c_str());
-    settingsWatcher = thread(checkSettings);
-    settingsWatcher.detach();
+    pthread_create(&settingsWatcher, NULL, checkSettings, NULL);
+    //settingsWatcher = thread(checkSettings);
+    //settingsWatcher.detach();
     return tmp;
 }
 
@@ -662,9 +664,13 @@ int CheckQueryParams(DB_QueryParams *params)
     {
     case TIMESPAN:
     {
-        if (params->start == 0 || params->end == 0)
+        if ((params->start == 0 && params->end == 0)||params->start > params->end)
         {
             return StatusCode::INVALID_TIMESPAN;
+        }
+        else if(params->end == 0)
+        {
+            params->end = getMilliTime();
         }
         break;
     }

@@ -107,6 +107,7 @@ int main()
     // DB_QueryLastRecords(&buffer, &params);
     long count = 0;
     DB_GetNormalDataCount(&params, &count);
+    sleep(10);
     // DB_MAX(&buffer, &params);
     // if (buffer.bufferMalloced)
     // {

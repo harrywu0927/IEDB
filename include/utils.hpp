@@ -566,6 +566,7 @@ public:
 
 int getBufferDataPos(vector<DataType> &typeList, int num);
 
+
 extern Template CurrentTemplate;
 extern int maxTemplates;
 extern vector<Template> templates;
