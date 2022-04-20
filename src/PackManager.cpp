@@ -1,5 +1,5 @@
 #include <utils.hpp>
-PackManager packManager(1024 * 1024);
+
 /**
  * @brief 根据时间段获取所有包含此时间区间的包文件
  *
@@ -37,7 +37,7 @@ vector<pair<string, pair<char *, long>>> PackManager::GetPacksByTime(string path
  * @param index
  * @return pair<string, tuple<long, long, char*>>
  */
-pair<string, tuple<long, long, char *>> PackManager::GetLastPack(string pathToLine, int index)
+pair<string, pair<char *, long>> PackManager::GetLastPack(string pathToLine, int index)
 {
 }
 
@@ -65,7 +65,7 @@ void PackManager::PutPack(string path, pair<char *, long> pack)
     key2pos[path] = packsInMem.begin();
     memUsed += pack.second;
 }
-
+float hits = 0;
 /**
  * @brief get
  *
@@ -78,9 +78,11 @@ pair<char *, long> PackManager::GetPack(string path)
     if (search != key2pos.end())
     {
         PutPack(path, key2pos[path]->second);
+        hits++;
         return key2pos[path]->second;
     }
     //缺页中断
+    hits--;
     ReadPack(path);
     return GetPack(path);
 }
@@ -103,4 +105,13 @@ void PackManager::ReadPack(string path)
 
 int main()
 {
+    vector<string> files;
+    readPakFilesList("JinfeiSixteen", files);
+    for (int i = 0; i < 100; i++)
+    {
+        int index = rand() % files.size();
+        packManager.GetPack(files[index]);
+    }
+    cout << "hit percenge:" << hits << endl;
+    return 0;
 }

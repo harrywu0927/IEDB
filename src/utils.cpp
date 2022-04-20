@@ -2,16 +2,17 @@
 
 unordered_map<string, int> getDirCurrentFileIDIndex();
 long getMilliTime();
-void* checkSettings(void *ptr);
+void *checkSettings(void *ptr);
 
 int maxTemplates = 20;
 vector<Template> templates;
 int errorCode;
 neb::CJsonObject settings = FileIDManager::GetSetting();
 unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
-void* checkSettings(void *ptr)
+PackManager packManager(1024 * 1024 * 4);
+void *checkSettings(void *ptr)
 {
-    FILE *fp = fopen("settings.json","r+");
+    FILE *fp = fopen("settings.json", "r+");
 
     while (1)
     {
@@ -24,14 +25,14 @@ void* checkSettings(void *ptr)
         string contents(str);
         neb::CJsonObject tmp(contents);
         settings = tmp;
-        cout<<tmp("Filename_Label")<<endl;
+        cout << tmp("Filename_Label") << endl;
         sleep(3);
-        //this_thread::sleep_for(chrono::seconds(3));
+        // this_thread::sleep_for(chrono::seconds(3));
     }
 }
-//thread settingsWatcher;
+// thread settingsWatcher;
 pthread_t settingsWatcher;
-//unordered_map<string, bool> filesListRead;
+// unordered_map<string, bool> filesListRead;
 
 //  string packMode;       //定时打包或存储一定数量后打包
 //  int packNum;           //一次打包的文件数量
@@ -504,9 +505,9 @@ neb::CJsonObject FileIDManager::GetSetting()
     string contents(buffer.str());
     neb::CJsonObject tmp(contents);
     strcpy(Label, settings("Filename_Label").c_str());
-    //pthread_create(&settingsWatcher, NULL, checkSettings, NULL);
-    //settingsWatcher = thread(checkSettings);
-    //settingsWatcher.detach();
+    // pthread_create(&settingsWatcher, NULL, checkSettings, NULL);
+    // settingsWatcher = thread(checkSettings);
+    // settingsWatcher.detach();
     return tmp;
 }
 
@@ -664,11 +665,11 @@ int CheckQueryParams(DB_QueryParams *params)
     {
     case TIMESPAN:
     {
-        if ((params->start == 0 && params->end == 0)||params->start > params->end)
+        if ((params->start == 0 && params->end == 0) || params->start > params->end)
         {
             return StatusCode::INVALID_TIMESPAN;
         }
-        else if(params->end == 0)
+        else if (params->end == 0)
         {
             params->end = getMilliTime();
         }

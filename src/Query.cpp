@@ -209,9 +209,9 @@ int DB_ExecuteQuery(DB_DataBuffer *buffer, DB_QueryParams *params)
  *
  * @return  0:success,
  *          others: StatusCode
- * @note
+ * @note deprecated
  */
-int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryWholeFile_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -616,7 +616,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note
  */
-int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -2134,7 +2134,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
  *
  * @return  0:success,
  *          others: StatusCode
- * @note
+ * @note deprecated
  */
 int DB_QueryLastRecords_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
@@ -2874,6 +2874,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note 获取产线文件夹下的所有数据文件，找到带有指定ID的文件后读取，加载模版，根据模版找到变量在数据中的位置
  *          找到后开辟内存空间，将数据放入，将缓冲区首地址赋值给buffer
+ * deprecated
  */
 int DB_QueryByFileID_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 {

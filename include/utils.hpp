@@ -92,6 +92,8 @@ namespace ValueType
 extern int errorCode; //错误码
 
 extern int maxThreads; //此设备支持的最大线程数
+
+extern neb::CJsonObject settings;
 //获取某一目录下的所有文件
 //不递归子文件夹
 void readFileList(string path, vector<string> &files);
@@ -734,6 +736,13 @@ public:
         if (err != 0)
             errorCode = err;
     }
+    PackFileReader(char *buffer, long length)
+    {
+        packBuffer = buffer;
+        buffer = NULL;
+        packLength = length;
+        curPos = 24;
+    }
     ~PackFileReader()
     {
         if (packBuffer != NULL)
@@ -776,6 +785,51 @@ private:
 public:
     PackManager(long memcap)
     {
+        vector<string> packList, dirs;
+
+        readAllDirs(dirs, settings("Filename_Label"));
+        for (auto &d : dirs)
+        {
+            DIR *dir = opendir(d.c_str());
+            struct dirent *ptr;
+            if (dir == NULL)
+                continue;
+            while ((ptr = readdir(dir)) != NULL)
+            {
+                if (ptr->d_name[0] == '.')
+                    continue;
+                if (ptr->d_type == 0)
+                {
+                    string fileName = ptr->d_name;
+                    string dirWithoutPrefix = d + "/" + fileName;
+                    for (int i = 0; i <= settings("Filename_Label").length(); i++)
+                    {
+                        dirWithoutPrefix.erase(dirWithoutPrefix.begin());
+                    }
+
+                    if (fileName.find(".pak") != string::npos)
+                    {
+                        for (int i = 0; i <= settings("Filename_Label").length(); i++)
+                        {
+                            d.erase(d.begin());
+                        }
+                        string tmp = fileName;
+                        while (tmp.back() == '/')
+                            tmp.pop_back();
+                        vector<string> vec = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
+                        string packName = vec[vec.size() - 1];
+                        vector<string> timespan = DataType::StringSplit(const_cast<char *>(packName.c_str()), "-");
+                        if (timespan.size() > 0)
+                        {
+                            long start = atol(timespan[0].c_str());
+                            long end = atol(timespan[1].c_str());
+                            allPacks.push_back(make_pair(d + "/" + fileName, make_tuple(start, end)));
+                        }
+                    }
+                }
+            }
+            closedir(dir);
+        }
         memCapacity = memcap;
     }
     ~PackManager()
@@ -796,7 +850,7 @@ public:
 
     vector<pair<string, pair<char *, long>>> GetPacksByTime(string pathToLine, long start, long end);
 
-    pair<string, tuple<long, long, char *>> GetLastPack(string pathToLine, int index);
+    pair<string, pair<char *, long>> GetLastPack(string pathToLine, int index);
 };
 
 extern PackManager packManager;
@@ -815,7 +869,6 @@ public:
     static void GetSettings();
     static neb::CJsonObject GetSetting();
 };
-extern neb::CJsonObject settings; //= FileIDManager::GetSetting();
 
 extern vector<ZipTemplate> ZipTemplates;
 extern ZipTemplate CurrentZipTemplate;
