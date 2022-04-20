@@ -504,7 +504,7 @@ neb::CJsonObject FileIDManager::GetSetting()
     string contents(buffer.str());
     neb::CJsonObject tmp(contents);
     strcpy(Label, settings("Filename_Label").c_str());
-    pthread_create(&settingsWatcher, NULL, checkSettings, NULL);
+    //pthread_create(&settingsWatcher, NULL, checkSettings, NULL);
     //settingsWatcher = thread(checkSettings);
     //settingsWatcher.detach();
     return tmp;
@@ -746,13 +746,13 @@ int CheckZipParams(DB_ZipParams *params)
 
 bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
 {
-    int err = 0;
-    err = DB_LoadZipSchema(pathToLine); //加载压缩模板
-    if (err)
-    {
-        cout << "未加载模板" << endl;
-        return StatusCode::SCHEMA_FILE_NOT_FOUND;
-    }
+    // int err = 0;
+    // err = DB_LoadZipSchema(pathToLine); //加载压缩模板
+    // if (err)
+    // {
+    //     cout << "未加载模板" << endl;
+    //     return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    // }
     DataTypeConverter converter;
     long readbuff_pos = 0;
 

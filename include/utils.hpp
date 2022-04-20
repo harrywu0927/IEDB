@@ -28,6 +28,7 @@
 #include <sstream>
 #include "CJsonObject.hpp"
 #include <thread>
+#include <future>
 #include <chrono>
 using namespace std;
 #pragma once
@@ -89,6 +90,8 @@ namespace ValueType
 }
 
 extern int errorCode; //错误码
+
+extern int maxThreads; //此设备支持的最大线程数
 //获取某一目录下的所有文件
 //不递归子文件夹
 void readFileList(string path, vector<string> &files);
@@ -566,7 +569,6 @@ public:
 
 int getBufferDataPos(vector<DataType> &typeList, int num);
 
-
 extern Template CurrentTemplate;
 extern int maxTemplates;
 extern vector<Template> templates;
@@ -712,7 +714,7 @@ private:
     long curPos;     //当前读到的位置
     long packLength; // pak长度
 public:
-    char *packBuffer = NULL; // pak缓存
+    char *packBuffer = NULL; // pak缓存地址
     PackFileReader(string pathFilePath)
     {
         DB_DataBuffer buffer;
@@ -758,6 +760,46 @@ public:
         curPos = pos;
     }
 };
+
+/**
+ * @brief 包文件的管理，将一部分包文件放于内存中，提高查询效率，按照LRU策略管理
+ *
+ */
+class PackManager
+{
+private:
+    long memUsed; //已占用内存大小
+    long memCapacity;
+    list<pair<string, pair<char *, long>>> packsInMem; //当前内存中的pack文件路径-内存地址、长度
+    unordered_map<string, list<pair<string, pair<char *, long>>>::iterator> key2pos;
+
+public:
+    PackManager(long memcap)
+    {
+        memCapacity = memcap;
+    }
+    ~PackManager()
+    {
+        for (auto &pack : packsInMem)
+        {
+            free(pack.second.first);
+        }
+    }
+    // unordered_map<string, pair<char *, long>> packsInMem;
+    vector<pair<string, tuple<long, long>>> allPacks; //磁盘中当前所有目录下的所有包文件的路径、时间段,按照时间升序存放
+
+    void PutPack(string path, pair<char *, long> pack);
+
+    pair<char *, long> GetPack(string path);
+
+    void ReadPack(string path);
+
+    vector<pair<string, pair<char *, long>>> GetPacksByTime(string pathToLine, long start, long end);
+
+    pair<string, tuple<long, long, char *>> GetLastPack(string pathToLine, int index);
+};
+
+extern PackManager packManager;
 
 //产线文件夹命名规范统一为 xxxx/yyy
 extern unordered_map<string, int> curNum; //记录每个产线文件夹当前已有idb文件数

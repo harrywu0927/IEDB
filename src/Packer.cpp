@@ -122,6 +122,21 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
 }
 
 /**
+ * @brief 对体积较小的包文件再次合并
+ * 
+ * @param pathToLine 存储路径
+ * @param packsWithTime 带时间戳的包文件
+ * @return int 
+ */
+int Packer::RePack(string pathToLine, vector<pair<string, tuple<long, long>>> &packsWithTime)
+{
+    packMutex.lock();
+    
+    packMutex.unlock();
+    return 0;
+}
+
+/**
  * @brief 获取pak文件中本次应读取的文件长度、文件ID和时间戳
  * @param readLength      本次应读取的文件长度
  * @param timestamp       本文件的时间戳

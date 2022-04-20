@@ -18,16 +18,19 @@
 #include <stdio.h>
 #include <string.h>
 #include <sstream>
+#include <future>
+#include <mutex>
 using namespace std;
-void *tick(void *ptr)
-{
-    int n = 5;
-    while (n--)
-    {
-        cout << "Hello World!" << endl;
-        sleep(1);
-    }
-}
+// void *tick(void *ptr)
+// {
+//     int n = 5;
+//     while (n--)
+//     {
+//         cout << "Hello World!" << endl;
+//         sleep(1);
+//     }
+// }
+mutex imute;
 void tk(int n)
 {
     while (1)
@@ -38,7 +41,7 @@ void tk(int n)
 }
 void checkSettings()
 {
-    FILE *fp = fopen("settings.json","r+");
+    FILE *fp = fopen("settings.json", "r+");
 
     while (1)
     {
@@ -50,17 +53,35 @@ void checkSettings()
         string str = buff;
         string contents(str);
         neb::CJsonObject tmp(contents);
-        
-        cout<<tmp("Filename_Label")<<endl;
+
+        cout << tmp("Filename_Label") << endl;
 
         this_thread::sleep_for(chrono::seconds(3));
     }
 }
+// int i = 0;
+int tick(int *i)
+{
+    // while (*i < 100)
+    //{
+    imute.lock();
+    if (*i < 100)
+    {
+        *i += 1;
+        cout << *i << endl;
+    }
+
+    imute.unlock();
+    this_thread::sleep_for(chrono::milliseconds(rand() % 500));
+    //}
+
+    return 1;
+}
 int main()
 {
-    //fd_set set;
-    //thread th1(checkSettings);
-    //th1.detach();
+    // fd_set set;
+    // thread th1(checkSettings);
+    // th1.detach();
 
     // std::thread t1(tk,5);
     // t1.join();
@@ -71,8 +92,37 @@ int main()
     //     cout << "pthread_create error: error_code=" << ret << endl;
     // }
     // pthread_exit(NULL);
+
+    // int maxThreads = thread::hardware_concurrency();
+    // int i = 0;
+    // future_status status[maxThreads - 1];
+    // future<int> f[maxThreads - 1];
+    // for (int j = 0; j < maxThreads - 1; j++)
+    // {
+    //     status[j] = future_status::ready;
+    // }
+    // int count2 = 0;
+    // do
+    // {
+    //     for (int j = 0; j < maxThreads - 1; j++)
+    //     {
+    //         //f[j].wait();
+    //         if (status[j] == future_status::ready)
+    //         {
+    //             // count2 += f[j].get();
+    //             f[j] = async(std::launch::async, tick, &i);
+    //             status[j] = f[j].wait_for(chrono::milliseconds(0));
+    //             cout << "thread" << j << endl;
+    //         }
+    //         else{
+    //             status[j] = f[j].wait_for(chrono::milliseconds(0));
+    //         }
+    //     }
+    // } while (i < 100);
+    // cout << "count" << count2 << endl;
+    // return 0;
     DB_QueryParams params;
-    params.pathToLine = "/";
+    params.pathToLine = "JinfeiSixteen";
     params.fileID = "JinfeiTen102";
     char code[10];
     code[0] = (char)0;
@@ -88,12 +138,12 @@ int main()
     params.pathCode = code;
     params.valueName = "S2OFF";
     // params.valueName = NULL;
-    params.start = 1649897531555;
-    params.end = 1649901032603;
+    params.start = 1650007531555;
+    params.end = 1651901032603;
     params.order = ASCEND;
     params.compareType = CMP_NONE;
     params.compareValue = "666";
-    params.queryType = TIMESPAN;
+    params.queryType = QRY_NONE;
     params.byPath = 1;
     params.queryNums = 8;
     DB_DataBuffer buffer;
@@ -107,19 +157,22 @@ int main()
     // DB_QueryLastRecords(&buffer, &params);
     long count = 0;
     DB_GetNormalDataCount(&params, &count);
-    sleep(10);
-    // DB_MAX(&buffer, &params);
-    // if (buffer.bufferMalloced)
-    // {
-    //     char buf[buffer.length];
-    //     memcpy(buf, buffer.buffer, buffer.length);
-    //     cout << buffer.length << endl;
-    //     for (int i = 0; i < buffer.length; i++)
-    //     {
-    //         cout << (int)buf[i] << " ";
-    //         if (i % 11 == 0)
-    //             cout << endl;
-    //     }
+    cout << count << endl;
+    DB_GetAbnormalDataCount(&params, &count);
+    cout << count << endl;
+    // sleep(10);
+    //  DB_MAX(&buffer, &params);
+    //  if (buffer.bufferMalloced)
+    //  {
+    //      char buf[buffer.length];
+    //      memcpy(buf, buffer.buffer, buffer.length);
+    //      cout << buffer.length << endl;
+    //      for (int i = 0; i < buffer.length; i++)
+    //      {
+    //          cout << (int)buf[i] << " ";
+    //          if (i % 11 == 0)
+    //              cout << endl;
+    //      }
 
     //     free(buffer.buffer);
     // }
@@ -200,10 +253,10 @@ int main()
     int num = 12000;
     DataTypeConverter dc;
     dc.ToUInt32Buff_m(num, value);
-    cout << num<<endl;
+    cout << num << endl;
     char value1[2];
     int num1 = 45536;
     dc.ToUInt16Buff_m(num1, value1);
-    cout << num1<<endl;
+    cout << num1 << endl;
     return 0;
 }
