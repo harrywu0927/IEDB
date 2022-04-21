@@ -25,11 +25,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
-                for (char j = 0; j < 2; j++)
-                {
-                    zipPosNum[1 - j] |= posNum;
-                    posNum >>= 8;
-                }
+                converter.ToUInt16Buff(posNum, zipPosNum);
                 memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
@@ -71,11 +67,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
-                    for (char j = 0; j < 2; j++)
-                    {
-                        zipPosNum[1 - j] |= posNum;
-                        posNum >>= 8;
-                    }
+                    converter.ToUInt16Buff(posNum, zipPosNum);
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
@@ -110,11 +102,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                         uint16_t posNum = i;
                         char zipPosNum[2] = {0};
-                        for (char j = 0; j < 2; j++)
-                        {
-                            zipPosNum[1 - j] |= posNum;
-                            posNum >>= 8;
-                        }
+                        converter.ToUInt16Buff(posNum, zipPosNum);
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
@@ -138,11 +126,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
-                for (char j = 0; j < 2; j++)
-                {
-                    zipPosNum[1 - j] |= posNum;
-                    posNum >>= 8;
-                }
+                converter.ToUInt16Buff(posNum, zipPosNum);
                 memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
@@ -186,11 +170,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
-                    for (char j = 0; j < 2; j++)
-                    {
-                        zipPosNum[1 - j] |= posNum;
-                        posNum >>= 8;
-                    }
+                    converter.ToUInt16Buff(posNum, zipPosNum);
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
@@ -225,11 +205,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                         uint16_t posNum = i;
                         char zipPosNum[2] = {0};
-                        for (char j = 0; j < 2; j++)
-                        {
-                            zipPosNum[1 - j] |= posNum;
-                            posNum >>= 8;
-                        }
+                        converter.ToUInt16Buff(posNum, zipPosNum);
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
@@ -253,11 +229,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
-                for (char j = 0; j < 2; j++)
-                {
-                    zipPosNum[1 - j] |= posNum;
-                    posNum >>= 8;
-                }
+                converter.ToUInt16Buff(posNum, zipPosNum);
                 memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
@@ -301,11 +273,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
-                    for (char j = 0; j < 2; j++)
-                    {
-                        zipPosNum[1 - j] |= posNum;
-                        posNum >>= 8;
-                    }
+                    converter.ToUInt16Buff(posNum, zipPosNum);
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
@@ -340,11 +308,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                         uint16_t posNum = i;
                         char zipPosNum[2] = {0};
-                        for (char j = 0; j < 2; j++)
-                        {
-                            zipPosNum[1 - j] |= posNum;
-                            posNum >>= 8;
-                        }
+                        converter.ToUInt16Buff(posNum, zipPosNum);
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
@@ -368,11 +332,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
-                for (char j = 0; j < 2; j++)
-                {
-                    zipPosNum[1 - j] |= posNum;
-                    posNum >>= 8;
-                }
+                converter.ToUInt16Buff(posNum, zipPosNum);
                 memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
@@ -416,11 +376,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
-                    for (char j = 0; j < 2; j++)
-                    {
-                        zipPosNum[1 - j] |= posNum;
-                        posNum >>= 8;
-                    }
+                    converter.ToUInt16Buff(posNum, zipPosNum);
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
@@ -455,11 +411,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                         uint16_t posNum = i;
                         char zipPosNum[2] = {0};
-                        for (char j = 0; j < 2; j++)
-                        {
-                            zipPosNum[1 - j] |= posNum;
-                            posNum >>= 8;
-                        }
+                        converter.ToUInt16Buff(posNum, zipPosNum);
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
@@ -483,11 +435,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
-                for (char j = 0; j < 2; j++)
-                {
-                    zipPosNum[1 - j] |= posNum;
-                    posNum >>= 8;
-                }
+                converter.ToUInt16Buff(posNum, zipPosNum);
                 memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
@@ -531,11 +479,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
-                    for (char j = 0; j < 2; j++)
-                    {
-                        zipPosNum[1 - j] |= posNum;
-                        posNum >>= 8;
-                    }
+                    converter.ToUInt16Buff(posNum, zipPosNum);
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
@@ -570,11 +514,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                         uint16_t posNum = i;
                         char zipPosNum[2] = {0};
-                        for (char j = 0; j < 2; j++)
-                        {
-                            zipPosNum[1 - j] |= posNum;
-                            posNum >>= 8;
-                        }
+                        converter.ToUInt16Buff(posNum, zipPosNum);
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
@@ -598,11 +538,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
-                for (char j = 0; j < 2; j++)
-                {
-                    zipPosNum[1 - j] |= posNum;
-                    posNum >>= 8;
-                }
+                converter.ToUInt16Buff(posNum, zipPosNum);
                 memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
@@ -646,11 +582,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
-                    for (char j = 0; j < 2; j++)
-                    {
-                        zipPosNum[1 - j] |= posNum;
-                        posNum >>= 8;
-                    }
+                    converter.ToUInt16Buff(posNum, zipPosNum);
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
@@ -685,11 +617,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                         uint16_t posNum = i;
                         char zipPosNum[2] = {0};
-                        for (char j = 0; j < 2; j++)
-                        {
-                            zipPosNum[1 - j] |= posNum;
-                            posNum >>= 8;
-                        }
+                        converter.ToUInt16Buff(posNum, zipPosNum);
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
@@ -713,11 +641,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
-                for (char j = 0; j < 2; j++)
-                {
-                    zipPosNum[1 - j] |= posNum;
-                    posNum >>= 8;
-                }
+                converter.ToUInt16Buff(posNum, zipPosNum);
                 memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
@@ -761,11 +685,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
-                    for (char j = 0; j < 2; j++)
-                    {
-                        zipPosNum[1 - j] |= posNum;
-                        posNum >>= 8;
-                    }
+                    converter.ToUInt16Buff(posNum, zipPosNum);
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
@@ -800,11 +720,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                         uint16_t posNum = i;
                         char zipPosNum[2] = {0};
-                        for (char j = 0; j < 2; j++)
-                        {
-                            zipPosNum[1 - j] |= posNum;
-                            posNum >>= 8;
-                        }
+                        converter.ToUInt16Buff(posNum, zipPosNum);
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
@@ -828,11 +744,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
-                for (char j = 0; j < 2; j++)
-                {
-                    zipPosNum[1 - j] |= posNum;
-                    posNum >>= 8;
-                }
+                converter.ToUInt16Buff(posNum, zipPosNum);
                 memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
@@ -876,11 +788,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
-                    for (char j = 0; j < 2; j++)
-                    {
-                        zipPosNum[1 - j] |= posNum;
-                        posNum >>= 8;
-                    }
+                    converter.ToUInt16Buff(posNum, zipPosNum);
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
@@ -915,11 +823,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                         uint16_t posNum = i;
                         char zipPosNum[2] = {0};
-                        for (char j = 0; j < 2; j++)
-                        {
-                            zipPosNum[1 - j] |= posNum;
-                            posNum >>= 8;
-                        }
+                        converter.ToUInt16Buff(posNum, zipPosNum);
                         memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
@@ -942,11 +846,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
             //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
             uint16_t posNum = i;
             char zipPosNum[2] = {0};
-            for (char j = 0; j < 2; j++)
-            {
-                zipPosNum[1 - j] |= posNum;
-                posNum >>= 8;
-            }
+            converter.ToUInt16Buff(posNum, zipPosNum);
             memcpy(writebuff + writebuff_pos, zipPosNum, 2);
             writebuff_pos += 2;
 
@@ -1097,11 +997,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
             {
                 uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char UDintValue[4] = {0};
-                for (int j = 0; j < 4; j++)
-                {
-                    UDintValue[3 - j] |= standardUDintValue;
-                    standardUDintValue >>= 8;
-                }
+                converter.ToUInt32Buff(standardUDintValue, UDintValue);
                 memcpy(writebuff + writebuff_pos, UDintValue, 4); // UDINT标准值
                 writebuff_pos += 4;
             }
@@ -1148,11 +1044,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                             {
                                 uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                                 char UDintValue[4] = {0};
-                                for (int j = 0; j < 4; j++)
-                                {
-                                    UDintValue[3 - j] |= standardUDintValue;
-                                    standardUDintValue >>= 8;
-                                }
+                                converter.ToUInt32Buff(standardUDintValue, UDintValue);
                                 memcpy(writebuff + writebuff_pos, UDintValue, 4); // UDINT标准值
                                 writebuff_pos += 4;
 
@@ -1177,11 +1069,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                     {
                         uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char UDintValue[4] = {0};
-                        for (int j = 0; j < 4; j++)
-                        {
-                            UDintValue[3 - j] |= standardUDintValue;
-                            standardUDintValue >>= 8;
-                        }
+                        converter.ToUInt32Buff(standardUDintValue, UDintValue);
                         memcpy(writebuff + writebuff_pos, UDintValue, 4); // UDINT标准值
                         writebuff_pos += 4;
                     }
@@ -1190,11 +1078,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                 {
                     uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char UDintValue[4] = {0};
-                    for (int j = 0; j < 4; j++)
-                    {
-                        UDintValue[3 - j] |= standardUDintValue;
-                        standardUDintValue >>= 8;
-                    }
+                    converter.ToUInt32Buff(standardUDintValue, UDintValue);
                     memcpy(writebuff + writebuff_pos, UDintValue, 4); // UDINT标准值
                     writebuff_pos += 4;
                 }
@@ -1299,11 +1183,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
             {
                 uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char UintValue[2] = {0};
-                for (int j = 0; j < 2; j++)
-                {
-                    UintValue[1 - j] |= standardUintValue;
-                    standardUintValue >>= 8;
-                }
+                converter.ToUInt16Buff(standardUintValue, UintValue);
                 memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
                 writebuff_pos += 2;
             }
@@ -1350,11 +1230,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                             {
                                 uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                                 char UintValue[2] = {0};
-                                for (int j = 0; j < 2; j++)
-                                {
-                                    UintValue[1 - j] |= standardUintValue;
-                                    standardUintValue >>= 8;
-                                }
+                                converter.ToUInt16Buff(standardUintValue, UintValue);
                                 memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
                                 writebuff_pos += 2;
 
@@ -1379,11 +1255,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                     {
                         uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char UintValue[2] = {0};
-                        for (int j = 0; j < 2; j++)
-                        {
-                            UintValue[1 - j] |= standardUintValue;
-                            standardUintValue >>= 8;
-                        }
+                        converter.ToUInt16Buff(standardUintValue, UintValue);
                         memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
                         writebuff_pos += 2;
                     }
@@ -1392,11 +1264,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                 {
                     uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char UintValue[2] = {0};
-                    for (int j = 0; j < 2; j++)
-                    {
-                        UintValue[1 - j] |= standardUintValue;
-                        standardUintValue >>= 8;
-                    }
+                    converter.ToUInt16Buff(standardUintValue, UintValue);
                     memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
                     writebuff_pos += 2;
                 }
@@ -1501,11 +1369,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
             {
                 short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char IntValue[2] = {0};
-                for (int j = 0; j < 2; j++)
-                {
-                    IntValue[1 - j] |= standardIntValue;
-                    standardIntValue >>= 8;
-                }
+                converter.ToInt16Buff(standardIntValue, IntValue);
                 memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
                 writebuff_pos += 2;
             }
@@ -1552,11 +1416,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                             {
                                 short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                                 char IntValue[2] = {0};
-                                for (int j = 0; j < 2; j++)
-                                {
-                                    IntValue[1 - j] |= standardIntValue;
-                                    standardIntValue >>= 8;
-                                }
+                                converter.ToInt16Buff(standardIntValue, IntValue);
                                 memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
                                 writebuff_pos += 2;
 
@@ -1581,11 +1441,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                     {
                         short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char IntValue[2] = {0};
-                        for (int j = 0; j < 2; j++)
-                        {
-                            IntValue[1 - j] |= standardIntValue;
-                            standardIntValue >>= 8;
-                        }
+                        converter.ToInt16Buff(standardIntValue, IntValue);
                         memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
                         writebuff_pos += 2;
                     }
@@ -1594,11 +1450,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                 {
                     short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char IntValue[2] = {0};
-                    for (int j = 0; j < 2; j++)
-                    {
-                        IntValue[1 - j] |= standardIntValue;
-                        standardIntValue >>= 8;
-                    }
+                    converter.ToInt16Buff(standardIntValue, IntValue);
                     memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
                     writebuff_pos += 2;
                 }
@@ -1610,11 +1462,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
             {
                 int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char DintValue[4] = {0};
-                for (int j = 0; j < 4; j++)
-                {
-                    DintValue[3 - j] |= standardDintValue;
-                    standardDintValue >>= 8;
-                }
+                converter.ToInt32Buff(standardDintValue, DintValue);
                 memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
                 writebuff_pos += 4;
             }
@@ -1661,11 +1509,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                             {
                                 int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                                 char DintValue[4] = {0};
-                                for (int j = 0; j < 4; j++)
-                                {
-                                    DintValue[3 - j] |= standardDintValue;
-                                    standardDintValue >>= 8;
-                                }
+                                converter.ToInt32Buff(standardDintValue, DintValue);
                                 memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
                                 writebuff_pos += 4;
 
@@ -1690,11 +1534,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                     {
                         int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char DintValue[4] = {0};
-                        for (int j = 0; j < 4; j++)
-                        {
-                            DintValue[3 - j] |= standardDintValue;
-                            standardDintValue >>= 8;
-                        }
+                        converter.ToInt32Buff(standardDintValue, DintValue);
                         memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
                         writebuff_pos += 4;
                     }
@@ -1703,11 +1543,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                 {
                     int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char DintValue[4] = {0};
-                    for (int j = 0; j < 4; j++)
-                    {
-                        DintValue[3 - j] |= standardDintValue;
-                        standardDintValue >>= 8;
-                    }
+                    converter.ToInt32Buff(standardDintValue, DintValue);
                     memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
                     writebuff_pos += 4;
                 }
@@ -1719,12 +1555,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
             {
                 float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char RealValue[4] = {0};
-                void *pf;
-                pf = &standardRealValue;
-                for (int j = 0; j < 4; j++)
-                {
-                    *((unsigned char *)pf + j) = RealValue[j];
-                }
+                converter.ToFloatBuff(standardRealValue, RealValue);
                 memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
                 writebuff_pos += 4;
             }
@@ -1771,12 +1602,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                             {
                                 float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                                 char RealValue[4] = {0};
-                                void *pf;
-                                pf = &standardRealValue;
-                                for (int j = 0; j < 4; j++)
-                                {
-                                    *((unsigned char *)pf + j) = RealValue[j];
-                                }
+                                converter.ToFloatBuff(standardRealValue, RealValue);
                                 memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
                                 writebuff_pos += 4;
 
@@ -1801,12 +1627,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                     {
                         float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char RealValue[4] = {0};
-                        void *pf;
-                        pf = &standardRealValue;
-                        for (int j = 0; j < 4; j++)
-                        {
-                            *((unsigned char *)pf + j) = RealValue[j];
-                        }
+                        converter.ToFloatBuff(standardRealValue, RealValue);
                         memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
                         writebuff_pos += 4;
                     }
@@ -1815,12 +1636,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                 {
                     float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char RealValue[4] = {0};
-                    void *pf;
-                    pf = &standardRealValue;
-                    for (int j = 0; j < 4; j++)
-                    {
-                        *((unsigned char *)pf + j) = RealValue[j];
-                    }
+                    converter.ToFloatBuff(standardRealValue, RealValue);
                     memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
                     writebuff_pos += 4;
                 }
@@ -1934,17 +1750,23 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
             long fp;
             string finalpath = filesWithTime[fileNum].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
             //创建新文件并写入
-            err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
-            if (err == 0)
-            {
-                if (writebuff_pos != 0)
-                    err = DB_Write(fp, writebuff, writebuff_pos);
+            // err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+            // if (err == 0)
+            // {
+            //     if (writebuff_pos != 0)
+            //         // err = DB_Write(fp, writebuff, writebuff_pos);
+            //         err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
+            //     if (err == 1)
+            //     {
+            //         err = DB_Close(fp);
+            //     }
+            // }
 
-                if (err == 0)
-                {
-                    DB_Close(fp);
-                }
-            }
+            int fd = sysOpen(const_cast<char *>(finalpath.c_str()));
+            err = write(fd, writebuff, writebuff_pos);
+            if (err == -1)
+                return errno;
+            err = close(fd);
         }
     }
     return err;
@@ -1999,15 +1821,21 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
         string finalpath = filesWithTime[fileNum].first.substr(0, filesWithTime[fileNum].first.length() - 3); //去掉后缀的zip
         //创建新文件并写入
         err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
-        if (err == 0)
-        {
-            err = DB_Write(fp, writebuff, writebuff_pos);
+        // if (err == 0)
+        // {
+        //     // err = DB_Write(fp, writebuff, writebuff_pos);
+        //     err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
+        //     if (err == 1)
+        //     {
+        //         err = DB_Close(fp);
+        //     }
+        // }
 
-            if (err == 0)
-            {
-                DB_Close(fp);
-            }
-        }
+        int fd = sysOpen(const_cast<char *>(finalpath.c_str()));
+        err = write(fd, writebuff, writebuff_pos);
+        if (err == -1)
+            return errno;
+        err = close(fd);
     }
     return err;
 }

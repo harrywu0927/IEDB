@@ -34,11 +34,7 @@ int ZipSwitchBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
-                for (char j = 0; j < 2; j++)
-                {
-                    zipPosNum[1 - j] |= posNum;
-                    posNum >>= 8;
-                }
+                converter.ToUInt16Buff(posNum, zipPosNum);
                 memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
@@ -73,11 +69,7 @@ int ZipSwitchBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
-                    for (char j = 0; j < 2; j++)
-                    {
-                        zipPosNum[1 - j] |= posNum;
-                        posNum >>= 8;
-                    }
+                    converter.ToUInt16Buff(posNum, zipPosNum);
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
@@ -125,11 +117,7 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
             {
                 uint32 standardBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char boolTime[4] = {0};
-                for (int j = 0; j < 4; j++)
-                {
-                    boolTime[3 - j] |= standardBoolTime;
-                    standardBoolTime >>= 8;
-                }
+                converter.ToUInt32Buff(standardBoolTime, boolTime);
                 memcpy(writebuff + writebuff_pos, boolTime, 4); //持续时长
                 writebuff_pos += 4;
             }
@@ -155,11 +143,7 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
                         {
                             uint32 standardBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                             char boolTime[4] = {0};
-                            for (int j = 0; j < 4; j++)
-                            {
-                                boolTime[3 - j] |= standardBoolTime;
-                                standardBoolTime >>= 8;
-                            }
+                            converter.ToUInt32Buff(standardBoolTime, boolTime);
                             memcpy(writebuff + writebuff_pos, boolTime, 4); //持续时长
                             writebuff_pos += 4;
 
@@ -183,11 +167,7 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     {
                         uint32 standardBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char boolTime[4] = {0};
-                        for (int j = 0; j < 4; j++)
-                        {
-                            boolTime[3 - j] |= standardBoolTime;
-                            standardBoolTime >>= 8;
-                        }
+                        converter.ToUInt32Buff(standardBoolTime, boolTime);
                         memcpy(writebuff + writebuff_pos, boolTime, 4); //持续时长
                         writebuff_pos += 4;
                     }
@@ -196,11 +176,7 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
                 {
                     uint32 standardBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char boolTime[4] = {0};
-                    for (int j = 0; j < 4; j++)
-                    {
-                        boolTime[3 - j] |= standardBoolTime;
-                        standardBoolTime >>= 8;
-                    }
+                    converter.ToUInt32Buff(standardBoolTime, boolTime);
                     memcpy(writebuff + writebuff_pos, boolTime, 4); //持续时长
                     writebuff_pos += 4;
                 }
@@ -270,17 +246,23 @@ int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
             long fp;
             string finalpath = filesWithTime[fileNum].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
             //创建新文件并写入
-            err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
-            if (err == 0)
-            {
-                if (writebuff_pos != 0)
-                    err = DB_Write(fp, writebuff, writebuff_pos);
+            // err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+            // if (err == 0)
+            // {
+            //     if (writebuff_pos != 0)
+            //         // err = DB_Write(fp, writebuff, writebuff_pos);
+            //         err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
+            //     if (err == 1)
+            //     {
+            //         err = DB_Close(fp);
+            //     }
+            // }
 
-                if (err == 0)
-                {
-                    DB_Close(fp);
-                }
-            }
+            int fd = sysOpen(const_cast<char *>(finalpath.c_str()));
+            err = write(fd, writebuff, writebuff_pos);
+            if (err == -1)
+                return errno;
+            err = close(fd);
         }
     }
     return err;
@@ -334,16 +316,22 @@ int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
         long fp;
         string finalpath = filesWithTime[fileNum].first.substr(0, filesWithTime[fileNum].first.length() - 3); //去掉后缀的zip
         //创建新文件并写入
-        err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
-        if (err == 0)
-        {
-            err = DB_Write(fp, writebuff, writebuff_pos);
+        // err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+        // if (err == 0)
+        // {
+        //     // err = DB_Write(fp, writebuff, writebuff_pos);
+        //     err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
+        //     if (err == 1)
+        //     {
+        //         err = DB_Close(fp);
+        //     }
+        // }
 
-            if (err == 0)
-            {
-                DB_Close(fp);
-            }
-        }
+        int fd = sysOpen(const_cast<char *>(finalpath.c_str()));
+        err = write(fd, writebuff, writebuff_pos);
+        if (err == -1)
+            return errno;
+        err = close(fd);
     }
     return err;
 }
@@ -775,4 +763,10 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
         }
     }
     return err;
+}
+
+int main()
+{
+    DB_ZipSwitchFile("jinfei", "jinfei");
+    return 0;
 }

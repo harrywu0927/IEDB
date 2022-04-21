@@ -130,6 +130,8 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine);
 
 bool IsNormalIDBFile(char *readbuff, const char *pathToLine);
 
+int sysOpen(char path[]);
+
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);
 

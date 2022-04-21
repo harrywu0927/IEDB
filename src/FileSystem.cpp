@@ -8,6 +8,8 @@
 #include <windows.h>
 #else
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
 #include <sys/statvfs.h>
 #endif
 #include <sys/stat.h>
@@ -67,11 +69,11 @@ int get_file_size_time(const char *filename, pair<long, long> *s_t)
 void getDiskSpaces()
 {
 #ifdef WIN32
-DWORD64 qwFreeBytesToCaller;
-bool bResult = GetDiskFreeSpaceEx(TEXT("C:"), 
-         (PULARGE_INTEGER)&qwFreeBytesToCaller, 
-         (PULARGE_INTEGER)&totalSpace, 
-         (PULARGE_INTEGER)&availableSpace);
+    DWORD64 qwFreeBytesToCaller;
+    bool bResult = GetDiskFreeSpaceEx(TEXT("C:"),
+                                      (PULARGE_INTEGER)&qwFreeBytesToCaller,
+                                      (PULARGE_INTEGER)&totalSpace,
+                                      (PULARGE_INTEGER)&availableSpace);
 #else
     struct statvfs diskInfo;
     statvfs("./", &diskInfo);
@@ -397,7 +399,8 @@ int DB_ReadFile(DB_DataBuffer *buffer)
     finalPath += savepath;
     cout << finalPath << endl;
     FILE *fp = fopen(finalPath.c_str(), "rb");
-    if(fp == NULL) return errno;
+    if (fp == NULL)
+        return errno;
     fseek(fp, 0, SEEK_END);
     long len = ftell(fp);
     if (len == 0)
@@ -520,6 +523,20 @@ int DB_DeleteDirectory(char path[])
     }
     return 0;
 }
+
+int sysOpen(char path[])
+{
+    char finalPath[100];
+    strcpy(finalPath, labelPath);
+    strcat(finalPath, "/");
+    strcat(finalPath, path);
+
+    int fd = open(finalPath,O_CREAT|O_RDWR,S_IRWXG|S_IRWXO|S_IRWXU);
+    if(fd == -1)
+        return errno;
+    return fd;
+}
+
 // int main()
 // {
 //     long fp;

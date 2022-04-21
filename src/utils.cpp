@@ -1138,11 +1138,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
             {
                 uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char UDintValue[4] = {0};
-                for (int j = 0; j < 4; j++)
-                {
-                    UDintValue[3 - j] |= standardUDintValue;
-                    standardUDintValue >>= 8;
-                }
+                converter.ToUInt32Buff(standardUDintValue, UDintValue);
                 memcpy(writebuff + writebuff_pos, UDintValue, 4); // UDINT标准值
                 writebuff_pos += 4;
             }
@@ -1189,11 +1185,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                             {
                                 uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                                 char UDintValue[4] = {0};
-                                for (int j = 0; j < 4; j++)
-                                {
-                                    UDintValue[3 - j] |= standardUDintValue;
-                                    standardUDintValue >>= 8;
-                                }
+                                converter.ToUInt32Buff(standardUDintValue, UDintValue);
                                 memcpy(writebuff + writebuff_pos, UDintValue, 4); // UDINT标准值
                                 writebuff_pos += 4;
 
@@ -1218,11 +1210,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                     {
                         uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char UDintValue[4] = {0};
-                        for (int j = 0; j < 4; j++)
-                        {
-                            UDintValue[3 - j] |= standardUDintValue;
-                            standardUDintValue >>= 8;
-                        }
+                        converter.ToUInt32Buff(standardUDintValue, UDintValue);
                         memcpy(writebuff + writebuff_pos, UDintValue, 4); // UDINT标准值
                         writebuff_pos += 4;
                     }
@@ -1231,11 +1219,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                 {
                     uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char UDintValue[4] = {0};
-                    for (int j = 0; j < 4; j++)
-                    {
-                        UDintValue[3 - j] |= standardUDintValue;
-                        standardUDintValue >>= 8;
-                    }
+                    converter.ToUInt32Buff(standardUDintValue, UDintValue);
                     memcpy(writebuff + writebuff_pos, UDintValue, 4); // UDINT标准值
                     writebuff_pos += 4;
                 }
@@ -1340,11 +1324,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
             {
                 uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char UintValue[2] = {0};
-                for (int j = 0; j < 2; j++)
-                {
-                    UintValue[1 - j] |= standardUintValue;
-                    standardUintValue >>= 8;
-                }
+                converter.ToUInt16Buff(standardUintValue, UintValue);
                 memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
                 writebuff_pos += 2;
             }
@@ -1391,11 +1371,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                             {
                                 uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                                 char UintValue[2] = {0};
-                                for (int j = 0; j < 2; j++)
-                                {
-                                    UintValue[1 - j] |= standardUintValue;
-                                    standardUintValue >>= 8;
-                                }
+                                converter.ToUInt16Buff(standardUintValue, UintValue);
                                 memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
                                 writebuff_pos += 2;
 
@@ -1420,11 +1396,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                     {
                         uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char UintValue[2] = {0};
-                        for (int j = 0; j < 2; j++)
-                        {
-                            UintValue[1 - j] |= standardUintValue;
-                            standardUintValue >>= 8;
-                        }
+                        converter.ToUInt16Buff(standardUintValue, UintValue);
                         memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
                         writebuff_pos += 2;
                     }
@@ -1433,11 +1405,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                 {
                     uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char UintValue[2] = {0};
-                    for (int j = 0; j < 2; j++)
-                    {
-                        UintValue[1 - j] |= standardUintValue;
-                        standardUintValue >>= 8;
-                    }
+                    converter.ToUInt16Buff(standardUintValue, UintValue);
                     memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
                     writebuff_pos += 2;
                 }
@@ -1542,11 +1510,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
             {
                 short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char IntValue[2] = {0};
-                for (int j = 0; j < 2; j++)
-                {
-                    IntValue[1 - j] |= standardIntValue;
-                    standardIntValue >>= 8;
-                }
+                converter.ToInt16Buff(standardIntValue, IntValue);
                 memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
                 writebuff_pos += 2;
             }
@@ -1593,11 +1557,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                             {
                                 short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                                 char IntValue[2] = {0};
-                                for (int j = 0; j < 2; j++)
-                                {
-                                    IntValue[1 - j] |= standardIntValue;
-                                    standardIntValue >>= 8;
-                                }
+                                converter.ToInt16Buff(standardIntValue, IntValue);
                                 memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
                                 writebuff_pos += 2;
 
@@ -1622,11 +1582,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                     {
                         short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char IntValue[2] = {0};
-                        for (int j = 0; j < 2; j++)
-                        {
-                            IntValue[1 - j] |= standardIntValue;
-                            standardIntValue >>= 8;
-                        }
+                        converter.ToInt16Buff(standardIntValue, IntValue);
                         memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
                         writebuff_pos += 2;
                     }
@@ -1635,11 +1591,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                 {
                     short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char IntValue[2] = {0};
-                    for (int j = 0; j < 2; j++)
-                    {
-                        IntValue[1 - j] |= standardIntValue;
-                        standardIntValue >>= 8;
-                    }
+                    converter.ToInt16Buff(standardIntValue, IntValue);
                     memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
                     writebuff_pos += 2;
                 }
@@ -1651,11 +1603,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
             {
                 int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char DintValue[4] = {0};
-                for (int j = 0; j < 4; j++)
-                {
-                    DintValue[3 - j] |= standardDintValue;
-                    standardDintValue >>= 8;
-                }
+                converter.ToInt32Buff(standardDintValue, DintValue);
                 memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
                 writebuff_pos += 4;
             }
@@ -1702,11 +1650,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                             {
                                 int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                                 char DintValue[4] = {0};
-                                for (int j = 0; j < 4; j++)
-                                {
-                                    DintValue[3 - j] |= standardDintValue;
-                                    standardDintValue >>= 8;
-                                }
+                                converter.ToInt32Buff(standardDintValue, DintValue);
                                 memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
                                 writebuff_pos += 4;
 
@@ -1731,11 +1675,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                     {
                         int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char DintValue[4] = {0};
-                        for (int j = 0; j < 4; j++)
-                        {
-                            DintValue[3 - j] |= standardDintValue;
-                            standardDintValue >>= 8;
-                        }
+                        converter.ToInt32Buff(standardDintValue, DintValue);
                         memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
                         writebuff_pos += 4;
                     }
@@ -1744,11 +1684,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                 {
                     int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char DintValue[4] = {0};
-                    for (int j = 0; j < 4; j++)
-                    {
-                        DintValue[3 - j] |= standardDintValue;
-                        standardDintValue >>= 8;
-                    }
+                    converter.ToInt32Buff(standardDintValue, DintValue);
                     memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
                     writebuff_pos += 4;
                 }
@@ -1760,12 +1696,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
             {
                 float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char RealValue[4] = {0};
-                void *pf;
-                pf = &standardRealValue;
-                for (int j = 0; j < 4; j++)
-                {
-                    *((unsigned char *)pf + j) = RealValue[j];
-                }
+                converter.ToFloatBuff(standardRealValue, RealValue);
                 memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
                 writebuff_pos += 4;
             }
@@ -1812,12 +1743,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                             {
                                 float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                                 char RealValue[4] = {0};
-                                void *pf;
-                                pf = &standardRealValue;
-                                for (int j = 0; j < 4; j++)
-                                {
-                                    *((unsigned char *)pf + j) = RealValue[j];
-                                }
+                                converter.ToFloatBuff(standardRealValue, RealValue);
                                 memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
                                 writebuff_pos += 4;
 
@@ -1842,12 +1768,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                     {
                         float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char RealValue[4] = {0};
-                        void *pf;
-                        pf = &standardRealValue;
-                        for (int j = 0; j < 4; j++)
-                        {
-                            *((unsigned char *)pf + j) = RealValue[j];
-                        }
+                        converter.ToFloatBuff(standardRealValue, RealValue);
                         memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
                         writebuff_pos += 4;
                     }
@@ -1856,12 +1777,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                 {
                     float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char RealValue[4] = {0};
-                    void *pf;
-                    pf = &standardRealValue;
-                    for (int j = 0; j < 4; j++)
-                    {
-                        *((unsigned char *)pf + j) = RealValue[j];
-                    }
+                    converter.ToFloatBuff(standardRealValue, RealValue);
                     memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
                     writebuff_pos += 4;
                 }
