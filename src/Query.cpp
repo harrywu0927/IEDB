@@ -1438,9 +1438,10 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                 string fileID;
                 int readLength, zipType;
                 long dataPos = packReader.Next(readLength, fileID, zipType);
-                char *buff = new char[CurrentTemplate.totalBytes];
-                if (fileID.c_str() == params->fileID)
+                string fid = params->fileID;
+                if (fileID == fid)
                 {
+                    char *buff = new char[CurrentTemplate.totalBytes];
                     switch (zipType)
                     {
                     case 0:
@@ -3410,7 +3411,7 @@ int main()
     DataTypeConverter converter;
     DB_QueryParams params;
     params.pathToLine = "JinfeiSixteen";
-    params.fileID = "JinfeiSixteen11";
+    params.fileID = "JinfeiSixteen15";
     char code[10];
     code[0] = (char)0;
     code[1] = (char)1;

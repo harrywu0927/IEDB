@@ -9,7 +9,7 @@ vector<Template> templates;
 int errorCode;
 neb::CJsonObject settings = FileIDManager::GetSetting();
 unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
-PackManager packManager(1024 * 1024 * 4);
+
 void *checkSettings(void *ptr)
 {
     FILE *fp = fopen("settings.json", "r+");

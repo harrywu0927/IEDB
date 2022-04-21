@@ -798,7 +798,7 @@ public:
             {
                 if (ptr->d_name[0] == '.')
                     continue;
-                if (ptr->d_type == 0)
+                if (ptr->d_type == 8)
                 {
                     string fileName = ptr->d_name;
                     string dirWithoutPrefix = d + "/" + fileName;
@@ -839,7 +839,6 @@ public:
             free(pack.second.first);
         }
     }
-    // unordered_map<string, pair<char *, long>> packsInMem;
     vector<pair<string, tuple<long, long>>> allPacks; //磁盘中当前所有目录下的所有包文件的路径、时间段,按照时间升序存放
 
     void PutPack(string path, pair<char *, long> pack);

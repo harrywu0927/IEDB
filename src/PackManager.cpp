@@ -1,5 +1,5 @@
 #include <utils.hpp>
-
+PackManager packManager(1024 * 1024 * 4);
 /**
  * @brief 根据时间段获取所有包含此时间区间的包文件
  *
@@ -105,13 +105,14 @@ void PackManager::ReadPack(string path)
 
 int main()
 {
-    vector<string> files;
-    readPakFilesList("JinfeiSixteen", files);
-    for (int i = 0; i < 100; i++)
-    {
-        int index = rand() % files.size();
-        packManager.GetPack(files[index]);
-    }
-    cout << "hit percenge:" << hits << endl;
+    auto packs = packManager.GetPacksByTime("JinfeiSixteen", 1649499567677, 1650090000000);
+    // vector<string> files;
+    // readPakFilesList("JinfeiSixteen", files);
+    // for (int i = 0; i < 100; i++)
+    // {
+    //     int index = rand() % files.size();
+    //     packManager.GetPack(files[index]);
+    // }
+    // cout << "hit percenge:" << hits << endl;
     return 0;
 }
