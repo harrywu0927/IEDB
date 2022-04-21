@@ -82,6 +82,7 @@ int tick(int *i)
 
     return 1;
 }
+#ifndef __linux__
 enum BYTE_UNITS
 {
     BYTES = 0,
@@ -129,11 +130,10 @@ void getMemUsePercentage()
     float value = float((usedMem * 100) / totalMem);
     cout << value << endl;
 }
-
+#endif
 int main()
 {
-    getMemUsePercentage();
-    return 0;
+
     // fd_set set;
     // thread th1(checkSettings);
     // th1.detach();
