@@ -19,8 +19,10 @@
 #include <string.h>
 #include <sstream>
 #include <future>
-#include <mutex>
+#ifndef __linux__
 #include <mach/mach.h>
+#endif
+#include <mutex>
 #include <sys/sysctl.h>
 #include <sys/types.h>
 using namespace std;
