@@ -13,6 +13,8 @@ void *checkTime(void *ptr)
     long interval = atol(settings("Pack_Interval").c_str());
     while (1)
     {
+        if (timerStarted == false)
+            pthread_exit(NULL);
         long curTime = getMilliTime();
         if (curTime % interval < interval)
         {
@@ -52,6 +54,9 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
         {
             cout << "pthread_create error: error_code=" << ret << endl;
         }
+    }
+    else if (settings("Pack_Mode") == "auto")
+    {
     }
 #endif
     string savepath = buffer->savePath;

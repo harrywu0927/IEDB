@@ -33,6 +33,8 @@
 using namespace std;
 #pragma once
 
+#define PACK_MAX_SIZE 1024 * 1024 * 5
+
 #ifdef WIN32
 typedef long long int long;
 typedef unsigned int uint;
@@ -709,7 +711,7 @@ class Packer
 public:
     static int Pack(string pathToLine, vector<pair<string, long>> &filesWithTime);
 
-    static int RePack(string pathToLine, vector<pair<string, tuple<long, long>>> &packsWithTime);
+    static int RePack(string pathToLine);
 };
 
 class PackFileReader
@@ -785,7 +787,7 @@ private:
     unordered_map<string, list<pair<string, pair<char *, long>>>::iterator> key2pos;
 
 public:
-    PackManager(long memcap)
+    PackManager(long memcap) //初始化allPacks
     {
         vector<string> packList, dirs;
 
@@ -804,16 +806,22 @@ public:
                 {
                     string fileName = ptr->d_name;
                     string dirWithoutPrefix = d + "/" + fileName;
-                    for (int i = 0; i <= settings("Filename_Label").length(); i++)
+                    string fileLabel = settings("Filename_Label");
+                    while (fileLabel[fileLabel.length() - 1] == '/')
+                    {
+                        fileLabel.pop_back();
+                    }
+                    for (int i = 0; i <= fileLabel.length(); i++)
                     {
                         dirWithoutPrefix.erase(dirWithoutPrefix.begin());
                     }
-
+                    string pathToLine = DataType::splitWithStl(dirWithoutPrefix, "/")[0];
                     if (fileName.find(".pak") != string::npos)
                     {
+                        string str = d;
                         for (int i = 0; i <= settings("Filename_Label").length(); i++)
                         {
-                            d.erase(d.begin());
+                            str.erase(str.begin());
                         }
                         string tmp = fileName;
                         while (tmp.back() == '/')
@@ -825,13 +833,22 @@ public:
                         {
                             long start = atol(timespan[0].c_str());
                             long end = atol(timespan[1].c_str());
-                            allPacks.push_back(make_pair(d + "/" + fileName, make_tuple(start, end)));
+                            allPacks[pathToLine].push_back(make_pair(str + "/" + fileName, make_tuple(start, end)));
                         }
                     }
                 }
             }
             closedir(dir);
         }
+        for (auto &iter : allPacks)
+        {
+            sort(iter.second.begin(), iter.second.end(),
+                 [](pair<string, tuple<long, long>> iter1, pair<string, tuple<long, long>> iter2) -> bool
+                 {
+                     return get<0>(iter1.second) < get<0>(iter2.second);
+                 });
+        }
+
         memCapacity = memcap;
     }
     ~PackManager()
@@ -841,8 +858,8 @@ public:
             free(pack.second.first);
         }
     }
-    vector<pair<string, tuple<long, long>>> allPacks; //磁盘中当前所有目录下的所有包文件的路径、时间段,按照时间升序存放
-
+    // vector<pair<string, tuple<long, long>>> allPacks; //磁盘中当前所有目录下的所有包文件的路径、时间段,按照时间升序存放
+    unordered_map<string, vector<pair<string, tuple<long, long>>>> allPacks;
     void PutPack(string path, pair<char *, long> pack);
 
     pair<char *, long> GetPack(string path);

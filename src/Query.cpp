@@ -1106,7 +1106,8 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                     int fileNum;
                     string templateName;
                     packReader.ReadPackHead(fileNum, templateName);
-                    TemplateManager::CheckTemplate(templateName);
+                    if (TemplateManager::CheckTemplate(templateName) != 0)
+                        continue;
                     //由于pak中的文件按时间升序存放，首先依次将此包中文件信息压入栈中，弹出时即为时间降序型
 
                     stack<pair<long, tuple<int, long, int>>> filestk;
@@ -3406,59 +3407,59 @@ int TEST_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
     return 0;
 }
 
-int main()
-{
-    DataTypeConverter converter;
-    DB_QueryParams params;
-    params.pathToLine = "JinfeiSixteen";
-    params.fileID = "JinfeiSixteen15";
-    char code[10];
-    code[0] = (char)0;
-    code[1] = (char)1;
-    code[2] = (char)0;
-    code[3] = (char)0;
-    code[4] = 0;
-    code[5] = (char)0;
-    code[6] = 0;
-    code[7] = (char)0;
-    code[8] = (char)0;
-    code[9] = (char)0;
-    params.pathCode = code;
-    params.valueName = "S2OFF";
-    // params.valueName = NULL;
-    params.start = 1650095500000;
-    params.end = 1650095600000;
-    params.order = ASCEND;
-    params.compareType = CMP_NONE;
-    params.compareValue = "666";
-    params.queryType = FILEID;
-    params.byPath = 0;
-    params.queryNums = 10;
-    DB_DataBuffer buffer;
-    buffer.savePath = "/";
-    // cout << settings("Pack_Mode") << endl;
-    // vector<pair<string, long>> files;
-    // readDataFilesWithTimestamps("", files);
-    // Packer::Pack("/",files);
-    // DB_QueryWholeFile_New(&buffer, &params);
-    // DB_QueryLastRecords(&buffer, &params);
-    DB_QueryWholeFile(&buffer, &params);
+// int main()
+// {
+//     DataTypeConverter converter;
+//     DB_QueryParams params;
+//     params.pathToLine = "JinfeiSixteen";
+//     params.fileID = "JinfeiSixteen15";
+//     char code[10];
+//     code[0] = (char)0;
+//     code[1] = (char)1;
+//     code[2] = (char)0;
+//     code[3] = (char)0;
+//     code[4] = 0;
+//     code[5] = (char)0;
+//     code[6] = 0;
+//     code[7] = (char)0;
+//     code[8] = (char)0;
+//     code[9] = (char)0;
+//     params.pathCode = code;
+//     params.valueName = "S2OFF";
+//     // params.valueName = NULL;
+//     params.start = 1650095500000;
+//     params.end = 1650095600000;
+//     params.order = ASCEND;
+//     params.compareType = CMP_NONE;
+//     params.compareValue = "666";
+//     params.queryType = FILEID;
+//     params.byPath = 0;
+//     params.queryNums = 10;
+//     DB_DataBuffer buffer;
+//     buffer.savePath = "/";
+//     // cout << settings("Pack_Mode") << endl;
+//     // vector<pair<string, long>> files;
+//     // readDataFilesWithTimestamps("", files);
+//     // Packer::Pack("/",files);
+//     // DB_QueryWholeFile_New(&buffer, &params);
+//     // DB_QueryLastRecords(&buffer, &params);
+//     DB_QueryWholeFile(&buffer, &params);
 
-    if (buffer.bufferMalloced)
-    {
-        char buf[buffer.length];
-        memcpy(buf, buffer.buffer, buffer.length);
-        cout << buffer.length << endl;
-        for (int i = 0; i < buffer.length; i++)
-        {
-            cout << (int)buf[i] << " ";
-            if (i % 11 == 0)
-                cout << endl;
-        }
+//     if (buffer.bufferMalloced)
+//     {
+//         char buf[buffer.length];
+//         memcpy(buf, buffer.buffer, buffer.length);
+//         cout << buffer.length << endl;
+//         for (int i = 0; i < buffer.length; i++)
+//         {
+//             cout << (int)buf[i] << " ";
+//             if (i % 11 == 0)
+//                 cout << endl;
+//         }
 
-        free(buffer.buffer);
-    }
+//         free(buffer.buffer);
+//     }
 
-    // buffer.buffer = NULL;
-    return 0;
-}
+//     // buffer.buffer = NULL;
+//     return 0;
+// }

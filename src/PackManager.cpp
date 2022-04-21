@@ -1,25 +1,23 @@
 #include <utils.hpp>
-PackManager packManager(1024 * 1024 * 4);
+
 /**
  * @brief 根据时间段获取所有包含此时间区间的包文件
  *
- * @param pathToLine
- * @param start
- * @param end
+ * @param pathToLine 到产线的路径
+ * @param start 起始时间
+ * @param end 结束时间
  * @return vector<pair<string, tuple<long, long, char*>>>
  */
 vector<pair<string, pair<char *, long>>> PackManager::GetPacksByTime(string pathToLine, long start, long end)
 {
     vector<pair<string, pair<char *, long>>> selectedPacks;
-    for (auto &pack : allPacks)
+    string tmp = pathToLine;
+    while (tmp[0] == '/')
+        tmp.erase(tmp.begin());
+    while (tmp[tmp.size() - 1] == '/')
+        tmp.pop_back();
+    for (auto &pack : allPacks[tmp])
     {
-        string tmp = pathToLine;
-        while (tmp[0] == '/')
-            tmp.erase(tmp.begin());
-        while (tmp[tmp.size() - 1] == '/')
-            tmp.pop_back();
-        if (pack.first.substr(tmp.length()) != tmp)
-            continue;
         long packStart = get<0>(pack.second);
         long packEnd = get<1>(pack.second);
         if ((packStart < start && packEnd >= start) || (packStart < end && packEnd >= start) || (packStart <= start && packEnd >= end) || (packStart >= start && packEnd <= end)) //落入或部分落入时间区间
@@ -31,21 +29,28 @@ vector<pair<string, pair<char *, long>>> PackManager::GetPacksByTime(string path
 }
 
 /**
- * @brief 获取磁盘上当前所有包中的最后index个包
+ * @brief 获取磁盘上当前所有目录下的某一产线下的所有包中的最后index个包
  *
- * @param pathToLine
- * @param index
+ * @param pathToLine 到产线的路径
+ * @param index 最后index个
  * @return pair<string, tuple<long, long, char*>>
  */
 pair<string, pair<char *, long>> PackManager::GetLastPack(string pathToLine, int index)
 {
+    string tmp = pathToLine;
+    while (tmp[0] == '/')
+        tmp.erase(tmp.begin());
+    while (tmp[tmp.size() - 1] == '/')
+        tmp.pop_back();
+    string packPath = allPacks[tmp][allPacks[tmp].size() - index].first;
+    return {packPath, GetPack(packPath)};
 }
 
 /**
  * @brief put
  *
- * @param path
- * @param pack
+ * @param path 包的路径
+ * @param pack 内存地址-长度对
  */
 void PackManager::PutPack(string path, pair<char *, long> pack)
 {
@@ -58,7 +63,7 @@ void PackManager::PutPack(string path, pair<char *, long> pack)
     {
         memUsed -= packsInMem.back().second.second;
         key2pos.erase(packsInMem.back().first);
-        free(packsInMem.back().second.first);
+        free(packsInMem.back().second.first); //置换时注意清空此内存
         packsInMem.pop_back();
     }
     packsInMem.push_front({path, pack});
@@ -69,7 +74,7 @@ float hits = 0;
 /**
  * @brief get
  *
- * @param path
+ * @param path 包的路径
  * @return pair<char *, long>
  */
 pair<char *, long> PackManager::GetPack(string path)
@@ -90,7 +95,7 @@ pair<char *, long> PackManager::GetPack(string path)
 /**
  * @brief 从磁盘读取包
  *
- * @param path 路径
+ * @param path 包的存放路径
  */
 void PackManager::ReadPack(string path)
 {

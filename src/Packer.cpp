@@ -123,15 +123,103 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
 
 /**
  * @brief 对体积较小的包文件再次合并
- * 
+ *
  * @param pathToLine 存储路径
- * @param packsWithTime 带时间戳的包文件
- * @return int 
+ * @return int
+ * @note 需要修改allPacks中的元素，pak文件名，删除原pak
  */
-int Packer::RePack(string pathToLine, vector<pair<string, tuple<long, long>>> &packsWithTime)
+int Packer::RePack(string pathToLine)
 {
+    vector<string> packs;
+    vector<tuple<string, long, long>> packsWithTime, curPacks;
     packMutex.lock();
-    
+    while (pathToLine[0] == '/')
+        pathToLine.erase(0);
+    while (pathToLine[pathToLine.length() - 1] == '/')
+        pathToLine.pop_back();
+
+    readPakFilesList(pathToLine, packs);
+    struct stat fileInfo;
+    for (auto &pack : packs)
+    {
+        string tmp = pack;
+        while (tmp.back() == '/')
+            tmp.pop_back();
+        vector<string> vec = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
+        string packName = vec[vec.size() - 1];
+        vector<string> timespan = DataType::StringSplit(const_cast<char *>(packName.c_str()), "-");
+        if (timespan.size() > 0)
+        {
+            long start = atol(timespan[0].c_str());
+            long end = atol(timespan[1].c_str());
+            packsWithTime.push_back(make_tuple(pack, start, end));
+        }
+    }
+    // sort by time_asc
+    sort(packsWithTime.begin(), packsWithTime.end(),
+         [](tuple<string, long, long> iter1, tuple<string, long, long> iter2) -> bool
+         {
+             return std::get<1>(iter1) < std::get<1>(iter2);
+         });
+    int packSize = 1024 * 1024;
+    int cursize = 0;
+    string lastTemName = "";
+    for (auto &pack : packsWithTime)
+    {
+        if (stat(get<0>(pack).c_str(), &fileInfo) == -1)
+            continue;
+
+        cursize += fileInfo.st_size;
+        curPacks.push_back(pack);
+        if (cursize >= packSize)
+        {
+            char *buffer = new char[cursize];
+            long pos = 24;
+            int newFileNum = 0;
+            long newStart = getMilliTime(), newEnd = 0;
+            for (auto &pk : curPacks)
+            {
+                auto packToRepack = packManager.GetPack(std::get<0>(pk));
+                string templateName;
+                char temName[20] = {0};
+                memcpy(temName, buffer + 4, 20);
+                templateName = temName;
+                if (lastTemName == "" || templateName == lastTemName) //由于不同的包所使用的模版可能不同，因此仅合并模版相同的包
+                {
+                    memcpy(buffer + pos, packToRepack.first + 24, packToRepack.second - 24);
+                    pos += packToRepack.second - 24;
+                    int fileNum;
+                    memcpy(&fileNum, buffer, 4);
+                    newFileNum += fileNum;
+                    lastTemName = templateName;
+                    DB_DeleteFile(const_cast<char *>(std::get<0>(pk).c_str()));
+                    for (auto i = packManager.allPacks[pathToLine].begin(); i != packManager.allPacks[pathToLine].end(); i++)
+                    {
+                        if (i->first == std::get<0>(pk))
+                        {
+                            packManager.allPacks[pathToLine].erase(i);
+                        }
+                    }
+                    if (newStart > std::get<1>(pk))
+                        newStart = std::get<1>(pk);
+                    if (newEnd < std::get<2>(pk))
+                        newEnd = std::get<2>(pk);
+                }
+            }
+            memcpy(buffer, &newFileNum, 4);
+            memcpy(buffer + 4, lastTemName.c_str(), lastTemName.length());
+            string newPackPath = pathToLine + "/" + to_string(newStart) + "-" + to_string(newEnd) + ".pak";
+            long fp;
+            char mode[2] = {'w', 'b'};
+            DB_Open(const_cast<char *>(newPackPath.c_str()), mode, &fp);
+            fwrite(buffer, pos, 1, (FILE *)fp);
+            DB_Close(fp);
+            delete[] buffer;
+            cursize = 0;
+            curPacks.clear();
+        }
+    }
+
     packMutex.unlock();
     return 0;
 }
@@ -253,7 +341,7 @@ long PackFileReader::Next(int &readLength, string &fileID, int &zipType)
 
 /**
  * @brief 略过包中的若干个文件
- * 
+ *
  * @param index 略过个数
  */
 void PackFileReader::Skip(int index)

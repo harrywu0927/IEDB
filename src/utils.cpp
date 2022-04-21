@@ -9,7 +9,7 @@ vector<Template> templates;
 int errorCode;
 neb::CJsonObject settings = FileIDManager::GetSetting();
 unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
-
+PackManager packManager(1024 * 1024 * 4);
 void *checkSettings(void *ptr)
 {
     FILE *fp = fopen("settings.json", "r+");
@@ -456,6 +456,12 @@ void readIDBZIPFilesWithTimestamps(string path, vector<pair<string, long>> &file
     closedir(dir);
 }
 
+/**
+ * @brief 读取包文件列表
+ *
+ * @param path 文件夹路径
+ * @param files 包文件列表
+ */
 void readPakFilesList(string path, vector<string> &files)
 {
     struct dirent *ptr;
@@ -1853,8 +1859,8 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
 //     // ReZipBuff(buff, length, "/");
 //     // cout<<length<<endl;
 //     // return 0;
-//     vector<string> vec = DataType::splitWithStl("jinfei/","/");
-//     //curNum = getDirCurrentFileIDIndex();
+//     vector<string> vec = DataType::splitWithStl("jinfei/", "/");
+//     // curNum = getDirCurrentFileIDIndex();
 //     return 0;
 //     char *buff = (char *)malloc(24);
 //     buff[0] = 0;
