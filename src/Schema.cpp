@@ -5,7 +5,7 @@ vector<ZipTemplate> ZipTemplates;
 ZipTemplate CurrentZipTemplate;
 
 /**
- * @brief 向标准模板添加新节点
+ * @brief 向标准模板添加新节点,暂定直接在尾部追加
  *
  * @param params 标准模板参数
  * @return　0:success,
@@ -63,6 +63,25 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
         }
         readbuf_pos += 10;
     }
+
+    if (TreeParams->valueType < 1 || TreeParams->valueType > 10)
+    {
+        cout << "数据类型选择错误" << endl;
+        return StatusCode::UNKNOWN_TYPE;
+    }
+
+    if (TreeParams->isArrary != 0 && TreeParams->isArrary != 1)
+    {
+        cout << "isArray只能为0或1" << endl;
+        return StatusCode::ISARRAY_ERROR;
+    }
+
+    if (TreeParams->hasTime != 0 && TreeParams->hasTime != 1)
+    {
+        cout << "hasTime只能为0或1" << endl;
+        return StatusCode::HASTIME_ERROR;
+    }
+
     char valueNmae[30], hasTime[1], pathCode[10], valueType[30]; //先初始化为0
     memset(valueNmae, 0, sizeof(valueNmae));
     memset(valueType, 0, sizeof(valueType));
@@ -70,6 +89,11 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 
     if (TreeParams->isArrary == 1) //是数组类型,拼接字符串
     {
+        if (TreeParams->arrayLen < 1)
+        {
+            cout << "数组长度不能小于１" << endl;
+            return StatusCode::ARRAYLEN_ERROR;
+        }
         strcpy(valueType, "ARRAY [0..");
         char s[10];
         sprintf(s, "%d", TreeParams->arrayLen);
@@ -84,6 +108,7 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
         string valueTypeStr = DataType::JudgeValueTypeByNum(TreeParams->valueType);
         memcpy(valueType, const_cast<char *>(valueTypeStr.c_str()), valueTypeStr.length());
     }
+
     strcpy(valueNmae, TreeParams->valueName);
     hasTime[0] = (char)TreeParams->hasTime;
     memcpy(pathCode, TreeParams->pathCode, 10);
@@ -168,6 +193,24 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
         return StatusCode::UNKNOWN_PATHCODE;
     }
 
+    if (newTreeParams->valueType < 1 || newTreeParams->valueType > 10)
+    {
+        cout << "数据类型选择错误" << endl;
+        return StatusCode::UNKNOWN_TYPE;
+    }
+
+    if (newTreeParams->isArrary != 0 && newTreeParams->isArrary != 1 && newTreeParams->isArrary != -1)
+    {
+        cout << "isArray只能为0或1" << endl;
+        return StatusCode::ISARRAY_ERROR;
+    }
+
+    if (newTreeParams->hasTime != 0 && newTreeParams->hasTime != 1 && newTreeParams->hasTime != -1)
+    {
+        cout << "hasTime只能为0或1" << endl;
+        return StatusCode::HASTIME_ERROR;
+    }
+
     readbuf_pos = 0;
     for (long i = 0; i < len / 71; i++) //寻找模板是否有与更新参数相同的变量名或者编码
     {
@@ -203,6 +246,11 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
 
     if (newTreeParams->isArrary == 1) //是数组类型,拼接字符串
     {
+        if (newTreeParams->arrayLen < 1)
+        {
+            cout << "数组长度不能小于１" << endl;
+            return StatusCode::ARRAYLEN_ERROR;
+        }
         strcpy(valueType, "ARRAY [0..");
         char s[10];
         sprintf(s, "%d", newTreeParams->arrayLen);
@@ -218,10 +266,13 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
     }
 
     strcpy(valueNmae, newTreeParams->valueName);
-    hasTime[0] = (char)newTreeParams->hasTime;
+    if (newTreeParams->hasTime == -1)
+        hasTime[0] = readBuf[71 * pos + 60];
+    else
+        hasTime[0] = (char)newTreeParams->hasTime;
     memcpy(pathCode, newTreeParams->pathCode, 10);
 
-    //将所有参数传入readBuf中，已覆盖写的方式写入已有模板文件中
+    //将所有参数传入readBuf中，以覆盖写的方式写入已有模板文件中
     memcpy(readBuf + 71 * pos, valueNmae, 30);
     memcpy(readBuf + 71 * pos + 30, valueType, 30);
     memcpy(readBuf + 71 * pos + 60, hasTime, 1);
@@ -320,7 +371,7 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 }
 
 /**
- * @brief 向压缩模板添加新节点
+ * @brief 向压缩模板添加新节点，暂定直接在尾部追加
  *
  * @param params 压缩模板参数
  * @return　0:success,
@@ -366,6 +417,24 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
         readbuf_pos += 91;
     }
 
+    if (ZipParams->valueType < 1 || ZipParams->valueType > 10)
+    {
+        cout << "数据类型选择错误" << endl;
+        return StatusCode::UNKNOWN_TYPE;
+    }
+
+    if (ZipParams->isArrary != 0 && ZipParams->isArrary != 1)
+    {
+        cout << "isArray只能为0或1" << endl;
+        return StatusCode::ISARRAY_ERROR;
+    }
+
+    if (ZipParams->hasTime != 0 && ZipParams->hasTime != 1)
+    {
+        cout << "hasTime只能为0或1" << endl;
+        return StatusCode::HASTIME_ERROR;
+    }
+
     char valueNmae[30], valueType[30], standardValue[10], maxValue[10], minValue[10], hasTime[1]; //先初始化为0
     memset(valueNmae, 0, sizeof(valueNmae));
     memset(valueType, 0, sizeof(valueType));
@@ -375,6 +444,11 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 
     if (ZipParams->isArrary == 1) //是数组类型,拼接字符串
     {
+        if (ZipParams->arrayLen < 1)
+        {
+            cout << "数组长度不能小于１" << endl;
+            return StatusCode::ARRAYLEN_ERROR;
+        }
         strcpy(valueType, "ARRAY [0..");
         char s[10];
         sprintf(s, "%d", ZipParams->arrayLen);
@@ -651,6 +725,24 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
         readbuf_pos += 91;
     }
 
+    if (newZipParams->valueType < 1 || newZipParams->valueType > 10)
+    {
+        cout << "数据类型选择错误" << endl;
+        return StatusCode::UNKNOWN_TYPE;
+    }
+
+    if (newZipParams->isArrary != 0 && newZipParams->isArrary != 1)
+    {
+        cout << "isArray只能为0或1" << endl;
+        return StatusCode::ISARRAY_ERROR;
+    }
+
+    if (newZipParams->hasTime != 0 && newZipParams->hasTime != 1)
+    {
+        cout << "hasTime只能为0或1" << endl;
+        return StatusCode::HASTIME_ERROR;
+    }
+
     char valueNmae[30], valueType[30], standardValue[10], maxValue[10], minValue[10], hasTime[1]; //先初始化为0
     memset(valueNmae, 0, sizeof(valueNmae));
     memset(valueType, 0, sizeof(valueType));
@@ -660,6 +752,11 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
 
     if (newZipParams->isArrary == 1) //是数组类型,拼接字符串
     {
+        if (newZipParams->arrayLen < 1)
+        {
+            cout << "数组长度不能小于１" << endl;
+            return StatusCode::ARRAYLEN_ERROR;
+        }
         strcpy(valueType, "ARRAY [0..");
         char s[10];
         sprintf(s, "%d", newZipParams->arrayLen);

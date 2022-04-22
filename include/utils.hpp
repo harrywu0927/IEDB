@@ -71,6 +71,9 @@ namespace StatusCode
         NO_COMPARE_VALUE = 158,          //指定了比较类型却没有赋值
         ZIPTYPE_ERROR = 159,             //压缩数据类型出现问题
         NO_ZIP_TYPE = 160,               //未指定压缩/还原条件
+        ISARRAY_ERROR = 161,             // isArray只能为0或者1
+        HASTIME_ERROR = 162,             // hasTime只能为0或者1
+        ARRAYLEN_ERROR = 163,            // arrayLen不能小于１
     };
 }
 namespace ValueType

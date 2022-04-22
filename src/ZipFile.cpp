@@ -1750,23 +1750,23 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
             long fp;
             string finalpath = filesWithTime[fileNum].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
             //创建新文件并写入
-            // err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
-            // if (err == 0)
-            // {
-            //     if (writebuff_pos != 0)
-            //         // err = DB_Write(fp, writebuff, writebuff_pos);
-            //         err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
-            //     if (err == 1)
-            //     {
-            //         err = DB_Close(fp);
-            //     }
-            // }
+            err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+            if (err == 0)
+            {
+                if (writebuff_pos != 0)
+                    // err = DB_Write(fp, writebuff, writebuff_pos);
+                    err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
+                if (err == 1)
+                {
+                    err = DB_Close(fp);
+                }
+            }
 
-            int fd = sysOpen(const_cast<char *>(finalpath.c_str()));
-            err = write(fd, writebuff, writebuff_pos);
-            if (err == -1)
-                return errno;
-            err = close(fd);
+            // int fd = sysOpen(const_cast<char *>(finalpath.c_str()));
+            // err = write(fd, writebuff, writebuff_pos);
+            // if (err == -1)
+            //     return errno;
+            // err = close(fd);
         }
     }
     return err;
@@ -1821,21 +1821,21 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
         string finalpath = filesWithTime[fileNum].first.substr(0, filesWithTime[fileNum].first.length() - 3); //去掉后缀的zip
         //创建新文件并写入
         err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
-        // if (err == 0)
-        // {
-        //     // err = DB_Write(fp, writebuff, writebuff_pos);
-        //     err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
-        //     if (err == 1)
-        //     {
-        //         err = DB_Close(fp);
-        //     }
-        // }
+        if (err == 0)
+        {
+            // err = DB_Write(fp, writebuff, writebuff_pos);
+            err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
+            if (err == 1)
+            {
+                err = DB_Close(fp);
+            }
+        }
 
-        int fd = sysOpen(const_cast<char *>(finalpath.c_str()));
-        err = write(fd, writebuff, writebuff_pos);
-        if (err == -1)
-            return errno;
-        err = close(fd);
+        // int fd = sysOpen(const_cast<char *>(finalpath.c_str()));
+        // err = write(fd, writebuff, writebuff_pos);
+        // if (err == -1)
+        //     return errno;
+        // err = close(fd);
     }
     return err;
 }
