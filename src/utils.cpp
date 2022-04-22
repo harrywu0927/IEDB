@@ -722,9 +722,13 @@ int CheckZipParams(DB_ZipParams *params)
     {
     case TIME_SPAN:
     {
-        if (params->start == 0 || params->end == 0)
+        if ((params->start == 0 && params->end == 0) || params->start > params->end)
         {
             return StatusCode::INVALID_TIMESPAN;
+        }
+        else if (params->end == 0)
+        {
+            params->end = getMilliTime();
         }
         break;
     }

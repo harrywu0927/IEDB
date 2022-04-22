@@ -131,6 +131,108 @@ void getMemUsePercentage()
     cout << value << endl;
 }
 #endif
+#ifdef __linux__
+typedef struct MEMPACKED
+{
+    char name1[20];
+    unsigned long MemTotal;
+    char name2[20];
+    unsigned long MemFree;
+    char name3[20];
+    unsigned long Buffers;
+    char name4[20];
+    unsigned long Cached;
+
+} MEM_OCCUPY;
+
+typedef struct os_line_data
+{
+    char *val;
+    int len;
+} os_line_data;
+
+static char *os_getline(char *sin, os_line_data *line, char delim)
+{
+    char *out = sin;
+    if (*out == '\0')
+        return NULL;
+    //	while (*out && (*out == delim)) { out++; }
+    line->val = out;
+    while (*out && (*out != delim))
+    {
+        out++;
+    }
+    line->len = out - line->val;
+    //	while (*out && (*out == delim)) { out++; }
+    if (*out && (*out == delim))
+    {
+        out++;
+    }
+    if (*out == '\0')
+        return NULL;
+    return out;
+}
+int Parser_EnvInfo(char *buffer, int size, MEM_OCCUPY *lpMemory)
+{
+    int state = 0;
+    char *p = buffer;
+    while (p)
+    {
+        os_line_data line = {0};
+        p = os_getline(p, &line, ':');
+        if (p == NULL || line.len <= 0)
+            continue;
+
+        if (line.len == 8 && strncmp(line.val, "MemTotal", 8) == 0)
+        {
+            char *point = strtok(p, " ");
+            memcpy(lpMemory->name1, "MemTotal", 8);
+            lpMemory->MemTotal = atol(point);
+        }
+        else if (line.len == 7 && strncmp(line.val, "MemFree", 7) == 0)
+        {
+            char *point = strtok(p, " ");
+            memcpy(lpMemory->name2, "MemFree", 7);
+            lpMemory->MemFree = atol(point);
+        }
+        else if (line.len == 7 && strncmp(line.val, "Buffers", 7) == 0)
+        {
+            char *point = strtok(p, " ");
+            memcpy(lpMemory->name3, "Buffers", 7);
+            lpMemory->Buffers = atol(point);
+        }
+        else if (line.len == 6 && strncmp(line.val, "Cached", 6) == 0)
+        {
+            char *point = strtok(p, " ");
+            memcpy(lpMemory->name4, "Cached", 6);
+            lpMemory->Cached = atol(point);
+        }
+    }
+}
+
+int get_procmeminfo(MEM_OCCUPY *lpMemory)
+{
+    FILE *fd;
+    char buff[128] = {0};
+    fd = fopen("/proc/meminfo", "r");
+    if (fd < 0)
+        return -1;
+    fgets(buff, sizeof(buff), fd);
+    Parser_EnvInfo(buff, sizeof(buff), lpMemory);
+
+    fgets(buff, sizeof(buff), fd);
+    Parser_EnvInfo(buff, sizeof(buff), lpMemory);
+
+    fgets(buff, sizeof(buff), fd);
+    Parser_EnvInfo(buff, sizeof(buff), lpMemory);
+
+    fgets(buff, sizeof(buff), fd);
+    Parser_EnvInfo(buff, sizeof(buff), lpMemory);
+
+    fclose(fd);
+}
+
+#endif
 int main()
 {
     // fd_set set;

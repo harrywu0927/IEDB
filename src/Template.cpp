@@ -486,6 +486,79 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
     return StatusCode::UNKNOWN_VARIABLE_NAME;
 }
 
+// int TemplateManager::SetTemplate(const char *path)
+// {
+//     // UnsetTemplate(path);
+//     vector<string> files;
+//     readFileList(path, files);
+//     string temPath = "";
+//     for (string file : files) //找到带有后缀tem的文件
+//     {
+//         string s = file;
+//         vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
+//         if (vec[vec.size() - 1].find("tem") != string::npos && vec[vec.size() - 1].find("ziptem") == string::npos)
+//         {
+//             temPath = file;
+//             break;
+//         }
+//     }
+//     if (temPath == "")
+//         return StatusCode::SCHEMA_FILE_NOT_FOUND;
+//     long length;
+//     DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &length);
+//     char buf[length];
+//     int err = DB_OpenAndRead(const_cast<char *>(temPath.c_str()), buf);
+//     if (err != 0)
+//         return err;
+//     int i = 0;
+//     vector<PathCode> pathEncodes;
+//     vector<DataType> dataTypes;
+//     while (i < length)
+//     {
+//         char variable[30], dataType[30], pathEncode[10];
+//         memcpy(variable, buf + i, 30);
+//         i += 30;
+//         memcpy(dataType, buf + i, 30);
+//         i += 30;
+//         char timeFlag = buf[++i];
+//         memcpy(pathEncode, buf + i, 10);
+//         i += 10;
+//         vector<string> paths;
+//         PathCode pathCode(pathEncode, sizeof(pathEncode) / 2, variable);
+//         DataType type;
+//         if ((int)timeFlag == 1)
+//             type.hasTime = true;
+//         else
+//             type.hasTime = false;
+//         if (DataType::GetDataTypeFromStr(dataType, type) == 0)
+//         {
+//             dataTypes.push_back(type);
+//         }
+//         else
+//             return errorCode;
+//         pathEncodes.push_back(pathCode);
+//     }
+//     Template tem(pathEncodes, dataTypes, path);
+//     AddTemplate(tem);
+//     CurrentTemplate = tem;
+//     return 0;
+// }
+
+int TemplateManager::UnsetTemplate(string path)
+{
+    for (int i = 0; i < templates.size(); i++)
+    {
+        if (templates[i].path == path)
+        {
+            templates.erase(templates.begin() + i);
+        }
+    }
+    CurrentTemplate.path = "";
+    CurrentTemplate.schemas.clear();
+    CurrentTemplate.temFileBuffer = NULL;
+    return 0;
+}
+
 long ZipTemplate::GetTotalBytes()
 {
     long total = 0;

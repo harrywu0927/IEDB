@@ -16,6 +16,7 @@ vector<pair<string, pair<char *, long>>> PackManager::GetPacksByTime(string path
         tmp.erase(tmp.begin());
     while (tmp[tmp.size() - 1] == '/')
         tmp.pop_back();
+    //由于allPacks中的元素在初始化时已经为时间升序型，因此无需再排序
     for (auto &pack : allPacks[tmp])
     {
         long packStart = get<0>(pack.second);
