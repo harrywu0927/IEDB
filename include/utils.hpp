@@ -177,10 +177,6 @@ public:
     int valueBytes;
     ValueType::ValueType valueType;
 
-    // string standardValue; //标准值
-    // string maxValue;      //最大值
-    // string minValue;      //最小值
-
     char maxValue[10];      //最大值
     char minValue[10];      //最小值
     char standardValue[10]; //标准值
@@ -673,7 +669,7 @@ public:
         {
             return SetTemplate(path.c_str());
         }
-        return -1;
+        return 0;
     }
 };
 

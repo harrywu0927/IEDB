@@ -162,7 +162,7 @@ int Packer::RePack(string pathToLine)
          {
              return std::get<0>(iter1) < std::get<0>(iter2);
          });
-    int packSize = 1024 * 1024;
+    int packThreshold = 1024 * 1024;
     int cursize = 0;
     string lastTemName = "";
     for (auto &pack : packsWithTime)
@@ -173,7 +173,7 @@ int Packer::RePack(string pathToLine)
 
         cursize += fileInfo.st_size;
         curPacks.push_back(pack);
-        if (cursize >= packSize)
+        if (cursize >= packThreshold)
         {
             char *buffer = new char[cursize];
             long pos = 24;
@@ -186,7 +186,11 @@ int Packer::RePack(string pathToLine)
                 char temName[20] = {0};
                 memcpy(temName, packToRepack.first + 4, 20);
                 templateName = temName;
-                if (lastTemName == "" || templateName == lastTemName) //由于不同的包所使用的模版可能不同，因此仅合并模版相同的包
+                /**
+                 * 由于不同的包所使用的模版可能不同，因此仅合并模版相同的包
+                 * 若出现模版名不同的包，curPacks中依然会保留此包，待之后处理
+                 */
+                if (lastTemName == "" || templateName == lastTemName)
                 {
                     memcpy(buffer + pos, packToRepack.first + 24, packToRepack.second - 24);
                     pos += packToRepack.second - 24;

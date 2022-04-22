@@ -18,6 +18,7 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
     TemplateManager::SetTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+    buffer->bufferMalloced = 0;
     if (DB_ExecuteQuery(buffer, params) != 0)
         return StatusCode::NO_DATA_QUERIED;
     if (!buffer->bufferMalloced)
@@ -246,7 +247,9 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
     TemplateManager::SetTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    DB_ExecuteQuery(buffer, params);
+    buffer->bufferMalloced = 0;
+    if (DB_ExecuteQuery(buffer, params) != 0)
+        return StatusCode::NO_DATA_QUERIED;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
@@ -472,7 +475,9 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
     TemplateManager::SetTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    DB_ExecuteQuery(buffer, params);
+    buffer->bufferMalloced = 0;
+    if (DB_ExecuteQuery(buffer, params) != 0)
+        return StatusCode::NO_DATA_QUERIED;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
@@ -693,7 +698,9 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
     TemplateManager::SetTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    DB_ExecuteQuery(buffer, params);
+    buffer->bufferMalloced = 0;
+    if (DB_ExecuteQuery(buffer, params) != 0)
+        return StatusCode::NO_DATA_QUERIED;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
@@ -884,7 +891,9 @@ int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
     TemplateManager::SetTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    DB_ExecuteQuery(buffer, params);
+    buffer->bufferMalloced = 0;
+    if (DB_ExecuteQuery(buffer, params) != 0)
+        return StatusCode::NO_DATA_QUERIED;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
@@ -972,7 +981,9 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
     TemplateManager::SetTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    DB_ExecuteQuery(buffer, params);
+    buffer->bufferMalloced = 0;
+    if (DB_ExecuteQuery(buffer, params) != 0)
+        return StatusCode::NO_DATA_QUERIED;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
@@ -1227,7 +1238,9 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
     TemplateManager::CheckTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    DB_ExecuteQuery(buffer, params);
+    buffer->bufferMalloced = 0;
+    if (DB_ExecuteQuery(buffer, params) != 0)
+        return StatusCode::NO_DATA_QUERIED;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];

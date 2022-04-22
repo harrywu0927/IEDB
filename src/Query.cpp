@@ -3444,7 +3444,7 @@ int main()
     // Packer::Pack("/",files);
     // DB_QueryWholeFile_New(&buffer, &params);
     // DB_QueryLastRecords(&buffer, &params);
-    DB_QueryWholeFile(&buffer, &params);
+    DB_QueryByFileID(&buffer, &params);
 
     if (buffer.bufferMalloced)
     {
@@ -3460,7 +3460,23 @@ int main()
 
         free(buffer.buffer);
     }
+    buffer.bufferMalloced = 0;
+    DB_QueryByFileID(&buffer, &params);
 
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
+
+        free(buffer.buffer);
+    }
     // buffer.buffer = NULL;
     return 0;
 }
