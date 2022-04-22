@@ -1,7 +1,7 @@
 {
-    "Filename_Label":"testJinFei",
-    "FileOverFlowMode":"loop",
-    "Pack_Mode":"timed",
-    "Pack_Num":1000,
-    "Pack_Interval":3000000000
+    "Filename_Label": "testIEDB",
+    "FileOverFlowMode": "loop",
+    "Pack_Mode": "timed",
+    "Pack_Num": 1000,
+    "Pack_Interval": 3000000000
 }

@@ -505,7 +505,7 @@ void FileIDManager::GetSettings()
 }
 neb::CJsonObject FileIDManager::GetSetting()
 {
-    ifstream t("./settings.json");
+    ifstream t("settings.json");
     stringstream buffer;
     buffer << t.rdbuf();
     string contents(buffer.str());

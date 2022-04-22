@@ -18,7 +18,8 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
     TemplateManager::SetTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    DB_ExecuteQuery(buffer, params);
+    if (DB_ExecuteQuery(buffer, params) != 0)
+        return StatusCode::NO_DATA_QUERIED;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
