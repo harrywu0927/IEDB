@@ -546,8 +546,7 @@ public:
             free(pack.second.first);
         }
     }
-    // vector<pair<string, tuple<long, long>>> allPacks; //磁盘中当前所有目录下的所有包文件的路径、时间段,按照时间升序存放
-    unordered_map<string, vector<pair<string, tuple<long, long>>>> allPacks;
+    unordered_map<string, vector<pair<string, tuple<long, long>>>> allPacks; //磁盘中当前所有目录下的所有包文件的路径、时间段,按照时间升序存放
     void PutPack(string path, pair<char *, long> pack);
 
     pair<char *, long> GetPack(string path);
@@ -557,6 +556,8 @@ public:
     vector<pair<string, pair<char *, long>>> GetPacksByTime(string pathToLine, long start, long end);
 
     pair<string, pair<char *, long>> GetLastPack(string pathToLine, int index);
+
+    pair<char *, long> GetPackByID(string pathToLine, string fileID);
 };
 
 extern PackManager packManager;
@@ -570,11 +571,14 @@ class FileIDManager
 {
 private:
 public:
+    //建立从包到文件ID范围的索引
+    unordered_map<string, tuple<int, int>> fidIndex;
     //派发文件ID
     static string GetFileID(string path);
     static void GetSettings();
     static neb::CJsonObject GetSetting();
 };
+extern FileIDManager fileIDManager;
 
 extern vector<ZipTemplate> ZipTemplates;
 extern ZipTemplate CurrentZipTemplate;

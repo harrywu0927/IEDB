@@ -7,9 +7,11 @@ void *checkSettings(void *ptr);
 int maxTemplates = 20;
 vector<Template> templates;
 int errorCode;
+FileIDManager fileIDManager;
 neb::CJsonObject settings = FileIDManager::GetSetting();
 unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
 PackManager packManager(1024 * 1024 * 4);
+
 void *checkSettings(void *ptr)
 {
     FILE *fp = fopen("settings.json", "r+");
@@ -32,11 +34,6 @@ void *checkSettings(void *ptr)
 }
 // thread settingsWatcher;
 pthread_t settingsWatcher;
-// unordered_map<string, bool> filesListRead;
-
-//  string packMode;       //定时打包或存储一定数量后打包
-//  int packNum;           //一次打包的文件数量
-//  long packTimeInterval; //定时打包时间间隔
 
 //递归获取所有子文件夹
 void readAllDirs(vector<string> &dirs, string basePath)
@@ -87,7 +84,7 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
         dir = opendir(d.c_str());
         if (dir == NULL)
             return map;
-        long max = 0;
+        int max = 0;
         while ((ptr = readdir(dir)) != NULL)
         {
             if (ptr->d_name[0] == '.')
@@ -111,20 +108,31 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
                     packReader.ReadPackHead(fileNum, templateName);
                     string fileID;
                     int readLength, zipType;
-                    for (int i = 0; i < fileNum; i++)
+                    packReader.Next(readLength, fileID, zipType);
+                    string startFID = fileID;
+                    packReader.Skip(fileNum - 2);
+                    packReader.Next(readLength, fileID, zipType);
+                    string endFID = fileID;
+                    string startNum = "", endNum = "";
+                    for (int i = 0; i < startFID.length(); i++)
                     {
-                        packReader.Next(readLength, fileID, zipType);
-                    }
-                    string num;
-                    for (int i = 0; i < fileID.length(); i++)
-                    {
-                        if (isdigit(fileID[i]))
+                        if (isdigit(startFID[i]))
                         {
-                            num += fileID[i];
+                            startNum += startFID[i];
                         }
                     }
-                    if (max < atol(num.c_str()))
-                        max = atol(num.c_str());
+                    for (int i = 0; i < endFID.length(); i++)
+                    {
+                        if (isdigit(endFID[i]))
+                        {
+                            endNum += endFID[i];
+                        }
+                    }
+                    int minNum = atoi(startNum.c_str());
+                    int maxNum = atoi(endNum.c_str());
+                    fileIDManager.fidIndex[dirWithoutPrefix] = make_tuple(minNum, maxNum >= minNum ? maxNum : minNum);
+                    if (max < maxNum)
+                        max = maxNum;
                 }
                 else if (fileName.find(".idb") != string::npos)
                 {
@@ -138,8 +146,8 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
                             num += fileID[i];
                         }
                     }
-                    if (max < atol(num.c_str()))
-                        max = atol(num.c_str());
+                    if (max < atoi(num.c_str()))
+                        max = atoi(num.c_str());
                 }
             }
         }

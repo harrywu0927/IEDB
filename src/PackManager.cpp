@@ -38,6 +38,8 @@ vector<pair<string, pair<char *, long>>> PackManager::GetPacksByTime(string path
  */
 pair<string, pair<char *, long>> PackManager::GetLastPack(string pathToLine, int index)
 {
+    if (index == 0)
+        index = 1;
     string tmp = pathToLine;
     while (tmp[0] == '/')
         tmp.erase(tmp.begin());
@@ -45,6 +47,38 @@ pair<string, pair<char *, long>> PackManager::GetLastPack(string pathToLine, int
         tmp.pop_back();
     string packPath = allPacks[tmp][allPacks[tmp].size() - index].first;
     return {packPath, GetPack(packPath)};
+}
+
+/**
+ * @brief 根据文件ID获取包含此ID的包
+ *
+ * @param pathToLine
+ * @param fileID
+ * @return pair<string, pair<char *, long>>
+ */
+pair<char *, long> PackManager::GetPackByID(string pathToLine, string fileID)
+{
+    while (pathToLine[0] == '/')
+        pathToLine.erase(0);
+    while (pathToLine.back() == '/')
+        pathToLine.pop_back();
+    string startNum = "", endNum = "";
+    for (int i = 0; i < fileID.length(); i++)
+    {
+        if (isdigit(fileID[i]))
+        {
+            startNum += fileID[i];
+        }
+    }
+    int num = atoi(startNum.c_str());
+    for (auto &pack : allPacks[pathToLine])
+    {
+        if (num >= std::get<0>(fileIDManager.fidIndex[pack.first]) && num <= std::get<1>(fileIDManager.fidIndex[pack.first]))
+        {
+            return GetPack(pack.first);
+        }
+    }
+    return {NULL, 0};
 }
 
 /**
@@ -84,11 +118,11 @@ pair<char *, long> PackManager::GetPack(string path)
     if (search != key2pos.end())
     {
         PutPack(path, key2pos[path]->second);
-        hits++;
+        // hits++;
         return key2pos[path]->second;
     }
     //缺页中断
-    hits--;
+    // hits--;
     ReadPack(path);
     return GetPack(path);
 }
@@ -111,6 +145,8 @@ void PackManager::ReadPack(string path)
 
 // int main()
 // {
+//     packManager.GetPackByID("JinfeiSixteen", "JinfeiSixteen1234");
+//     return 0;
 //     vector<string> files;
 //     readPakFilesList("JinfeiSixteen", files);
 //     for (int i = 0; i < 100; i++)
