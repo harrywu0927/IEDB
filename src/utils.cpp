@@ -264,6 +264,72 @@ void readIDBZIPFilesList(string path, vector<string> &files)
     closedir(dir);
 }
 
+//获取.tem文件路径
+void readTEMFilesList(string path, vector<string> &files)
+{
+    struct dirent *ptr;
+    DIR *dir;
+    string finalPath = Label;
+    if (path[0] != '/')
+        finalPath += "/" + path;
+    else
+        finalPath += path;
+    if (DB_CreateDirectory(const_cast<char *>(finalPath.c_str())))
+    {
+        errorCode = errno;
+        return;
+    }
+    dir = opendir(finalPath.c_str());
+    while ((ptr = readdir(dir)) != NULL)
+    {
+        if (ptr->d_name[0] == '.')
+            continue;
+
+        if (ptr->d_type == 8)
+        {
+            string p;
+            string datafile = ptr->d_name;
+
+            if (datafile.find(".tem") != string::npos)
+                files.push_back(p.append(path).append("/").append(ptr->d_name));
+        }
+    }
+    closedir(dir);
+}
+
+//获取.ziptem文件路径
+void readZIPTEMFilesList(string path, vector<string> &files)
+{
+    struct dirent *ptr;
+    DIR *dir;
+    string finalPath = Label;
+    if (path[0] != '/')
+        finalPath += "/" + path;
+    else
+        finalPath += path;
+    if (DB_CreateDirectory(const_cast<char *>(finalPath.c_str())))
+    {
+        errorCode = errno;
+        return;
+    }
+    dir = opendir(finalPath.c_str());
+    while ((ptr = readdir(dir)) != NULL)
+    {
+        if (ptr->d_name[0] == '.')
+            continue;
+
+        if (ptr->d_type == 8)
+        {
+            string p;
+            string datafile = ptr->d_name;
+
+            if (datafile.find(".ziptem") != string::npos)
+                files.push_back(p.append(path).append("/").append(ptr->d_name));
+        }
+    }
+    closedir(dir);
+}
+
 /**
  * @brief 从指定文件夹中获取所有数据文件，并从文件名中取得时间戳
  * @param path             路径

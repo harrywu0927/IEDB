@@ -109,6 +109,10 @@ void readIDBFilesList(string path, vector<string> &files);
 
 void readIDBZIPFilesList(string path, vector<string> &files);
 
+void readTEMFilesList(string path,vector<string> &files);
+
+void readZIPTEMFilesList(string path,vector<string> &files);
+
 void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWithTime);
 
 void readIDBZIPFilesWithTimestamps(string path, vector<pair<string, long>> &filesWithTime);
