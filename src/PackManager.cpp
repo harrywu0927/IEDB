@@ -54,7 +54,7 @@ pair<string, pair<char *, long>> PackManager::GetLastPack(string pathToLine, int
  *
  * @param pathToLine
  * @param fileID
- * @return pair<string, pair<char *, long>>
+ * @return pair<char *, long>
  */
 pair<char *, long> PackManager::GetPackByID(string pathToLine, string fileID)
 {

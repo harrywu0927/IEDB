@@ -6,7 +6,7 @@
  *
  * @return  0:success,
  *          others: StatusCode
- * @note  删除包中文件后需要修改此包总文件数，重新打包
+ * @note  删除包中文件后需要修改此包总文件数，重新打包，修改包文件名
  */
 int DB_DeleteRecords(DB_QueryParams *params)
 {
