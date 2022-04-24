@@ -243,7 +243,7 @@ int DB_AddNodeToSchema_new(struct DB_TreeNodeParams *TreeParams)
     memcpy(writeBuf + 61, pathCode, 10);
     memcpy(readBuf + len, writeBuf, 71);
 
-    //创建一个新的模板文件
+    //创建一个新的模板文件,根据当前已存在模板数量进行编号
     long fp;
     vector<string> temFiles;
     readTEMFilesList(TreeParams->pathToLine, temFiles);
@@ -486,8 +486,86 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
     memcpy(writeBuf, readBuf, pos * 71);                                       //拷贝要被删除的记录之前的记录
     memcpy(writeBuf + pos * 71, readBuf + pos * 71 + 71, len - pos * 71 - 71); //拷贝要被删除的记录之后的记录
 
-    //打开文件并追加写入
+    //打开文件并覆盖写入删除节点后的信息
     long fp;
+    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
+    if (err == 0)
+    {
+        if (len - 71 != 0)
+            err = DB_Write(fp, writeBuf, len - 71);
+
+        if (err == 0)
+        {
+            err = DB_Close(fp);
+        }
+    }
+    return err;
+}
+
+//会创建一个新的.tem文件，根据已存在的模板数量进行编号
+int DB_DeleteNodeToSchema_new(struct DB_TreeNodeParams *TreeParams)
+{
+    int err;
+    vector<string> files;
+    readFileList(TreeParams->pathToLine, files);
+    string temPath = "";
+    for (string file : files) //找到带有后缀tem的文件
+    {
+        string s = file;
+        vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
+        if (vec[vec.size() - 1].find("tem") != string::npos && vec[vec.size() - 1].find("ziptem") == string::npos)
+        {
+            temPath = file;
+            break;
+        }
+    }
+    if (temPath == "")
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+
+    long len;
+    DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
+    char readBuf[len];
+    long readbuf_pos = 0;
+    DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
+
+    long pos = -1;                      //记录删除节点在第几条
+    for (long i = 0; i < len / 71; i++) //寻找是否有相同的编码
+    {
+        readbuf_pos += 61;
+        char existPathCode[10];
+        memcpy(existPathCode, readBuf + readbuf_pos, 10);
+        int j = 0;
+        for (j = 0; j < 10; j++)
+        {
+            if (TreeParams->pathCode[j] != existPathCode[j])
+                break;
+        }
+        if (j == 10)
+        {
+            pos = i;
+            break;
+        }
+        readbuf_pos += 10;
+    }
+    if (pos == -1)
+    {
+        cout << "未找到编码！" << endl;
+        return StatusCode::UNKNOWN_PATHCODE;
+    }
+
+    char writeBuf[len - 71];
+    memcpy(writeBuf, readBuf, pos * 71);                                       //拷贝要被删除的记录之前的记录
+    memcpy(writeBuf + pos * 71, readBuf + pos * 71 + 71, len - pos * 71 - 71); //拷贝要被删除的记录之后的记录
+
+    //创建新的.tem文件，根据当前已存在的模板文件进行编号
+    long fp;
+    vector<string> temFiles;
+    readTEMFilesList(TreeParams->pathToLine, temFiles);
+    int temNum = temFiles.size() + 1;
+    char appendNum[4];
+    sprintf(appendNum, "%d", temNum);
+    temPath = TreeParams->pathToLine;
+    temPath.append("/").append(TreeParams->pathToLine).append(appendNum).append(".tem");
     err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
     if (err == 0)
     {
@@ -791,6 +869,7 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
     return err;
 }
 
+//会创建一个新的.ziptem文件，根据已存在的压缩模板文件数量进行编号
 int DB_AddNodeToZipSchema_new(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
@@ -1057,15 +1136,16 @@ int DB_AddNodeToZipSchema_new(struct DB_ZipNodeParams *ZipParams)
     memcpy(writeBuf + 80, minValue, 10);
     memcpy(writeBuf + 90, hasTime, 1);
     memcpy(readBuf + len, writeBuf, 91);
-    //打开文件并追加写入
+
+    //创建一个新的.ziptem文件，根据当前已存在的压缩模板数量进行编号
     long fp;
     vector<string> ziptemFiles;
     readZIPTEMFilesList(ZipParams->pathToLine, ziptemFiles);
-    int temNum = ziptemFiles.size() + 1;
+    int ziptemNum = ziptemFiles.size() + 1;
     char appendNum[4];
-    sprintf(appendNum, "%d", temNum);
+    sprintf(appendNum, "%d", ziptemNum);
     temPath = ZipParams->pathToLine;
-    temPath.append("/").append(ZipParams->pathToLine).append(appendNum).append(".tem");
+    temPath.append("/").append(ZipParams->pathToLine).append(appendNum).append(".ziptem");
     err = DB_Open(const_cast<char *>(temPath.c_str()), "wb", &fp);
     if (err == 0)
     {
@@ -1440,8 +1520,78 @@ int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
     memcpy(writeBuf, readBuf, pos * 91);                                       //拷贝要被删除的记录之前的记录
     memcpy(writeBuf + pos * 91, readBuf + pos * 91 + 91, len - pos * 91 - 91); //拷贝要被删除的记录之后的记录
 
-    //打开文件并追加写入
+    //打开文件并覆盖写入
     long fp;
+    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
+    if (err == 0)
+    {
+        if (len - 91 != 0)
+            err = DB_Write(fp, writeBuf, len - 91);
+
+        if (err == 0)
+        {
+            err = DB_Close(fp);
+        }
+    }
+    return err;
+}
+
+//新创建一个.ziptem文件，根据已存在压缩模板的数量进行编号
+int DB_DeleteNodeToZipSchema_new(struct DB_ZipNodeParams *ZipParams)
+{
+    int err;
+    vector<string> files;
+    readFileList(ZipParams->pathToLine, files);
+    string temPath = "";
+    for (string file : files) //找到带有后缀ziptem的文件
+    {
+        string s = file;
+        vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
+        if (vec[vec.size() - 1].find("ziptem") != string::npos)
+        {
+            temPath = file;
+            break;
+        }
+    }
+    if (temPath == "")
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+
+    long len;
+    DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
+    char readBuf[len];
+    long readbuf_pos = 0;
+    DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
+
+    long pos = -1;                      //记录删除节点在第几条
+    for (long i = 0; i < len / 91; i++) //寻找是否有相同的变量名
+    {
+        char existValueName[30];
+        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        if (strcmp(ZipParams->valueName, existValueName) == 0)
+        {
+            pos = i; //记录这条记录的位置
+        }
+        readbuf_pos += 91;
+    }
+    if (pos == -1)
+    {
+        cout << "未找到要删除的记录！" << endl;
+        return StatusCode::UNKNOWN_PATHCODE;
+    }
+
+    char writeBuf[len - 91];
+    memcpy(writeBuf, readBuf, pos * 91);                                       //拷贝要被删除的记录之前的记录
+    memcpy(writeBuf + pos * 91, readBuf + pos * 91 + 91, len - pos * 91 - 91); //拷贝要被删除的记录之后的记录
+
+    //创建新的.ziptem文件，根据当前已存在的压缩模板数量进行编号
+    long fp;
+    vector<string> ziptemFiles;
+    readZIPTEMFilesList(ZipParams->pathToLine, ziptemFiles);
+    int ziptemNum = ziptemFiles.size() + 1;
+    char appendNum[4];
+    sprintf(appendNum, "%d", ziptemNum);
+    temPath = ZipParams->pathToLine;
+    temPath.append("/").append(ZipParams->pathToLine).append(appendNum).append(".ziptem");
     err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
     if (err == 0)
     {
