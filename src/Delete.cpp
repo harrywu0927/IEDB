@@ -62,7 +62,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
             {
                 if (std::get<0>(pack.second) >= params->start && std::get<1>(pack.second) <= params->end)
                 {
-                    DB_DeleteFile(const_cast<char *>(pack.first.c_str()));
+                    packManager.DeletePack(pack.first);
                     continue;
                 }
                 PackFileReader packReader(pack.first);
@@ -234,7 +234,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
             {
                 if (std::get<0>(pack.second) >= params->start && std::get<1>(pack.second) <= params->end)
                 {
-                    DB_DeleteFile(const_cast<char *>(pack.first.c_str()));
+                    packManager.DeletePack(pack.first);
                     continue;
                 }
                 PackFileReader packReader(pack.first);
@@ -393,7 +393,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                     // delete[] newPack;
                     // newPack = NULL;
                     DB_Close(fp);
-                    DB_DeleteFile(const_cast<char *>(pack.first.c_str()));
+                    packManager.DeletePack(pack.first);
                     continue;
                 }
                 char mode[2] = {'w', 'b'};
@@ -472,7 +472,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 //若此包中文件数量不大于还要删除的文件数量，直接将其删除
                 if (fileNum <= params->queryNums - selectedNum)
                 {
-                    DB_DeleteFile(const_cast<char *>(pack.first.c_str()));
+                    packManager.DeletePack(pack.first);
                     selectedNum += fileNum;
                     if (selectedNum == params->queryNums)
                         return 0;
@@ -501,7 +501,8 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 fwrite(newPack, dataPos + readLength, 1, (FILE *)fp);
                 delete[] newPack;
                 DB_Close(fp);
-                return DB_DeleteFile(const_cast<char *>(pack.first.c_str()));
+                packManager.DeletePack(pack.first);
+                return 0;
             }
         }
         else
@@ -700,7 +701,8 @@ int DB_DeleteRecords(DB_QueryParams *params)
                         fwrite(newPack, cur, 1, (FILE *)fp);
                         delete[] newPack;
                         DB_Close(fp);
-                        return DB_DeleteFile(const_cast<char *>(pack.first.c_str()));
+                        packManager.DeletePack(pack.first);
+                        return 0;
                     }
                     auto fileInfo = filestk.top();
                     filestk.pop();
@@ -895,6 +897,8 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 long dataPos = packReader.Next(readLength, timestamp, fid, zipType);
                 if (fid.find(fileid) != string::npos) //剔除这部分数据
                 {
+                    if (fileNum == 1)
+                        packManager.DeletePack(pack);
                     char *newPack = new char[packReader.GetPackLength()];
                     int newNum = fileNum - 1;
                     memcpy(newPack, packReader.packBuffer, dataPos - 33);                                                                              //拷贝此文件前的数据

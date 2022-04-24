@@ -109,9 +109,9 @@ void readIDBFilesList(string path, vector<string> &files);
 
 void readIDBZIPFilesList(string path, vector<string> &files);
 
-void readTEMFilesList(string path,vector<string> &files);
+void readTEMFilesList(string path, vector<string> &files);
 
-void readZIPTEMFilesList(string path,vector<string> &files);
+void readZIPTEMFilesList(string path, vector<string> &files);
 
 void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWithTime);
 
@@ -143,6 +143,11 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine);
 
 int sysOpen(char path[]);
 
+// int DB_QueryLastRecords_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params);
+
+// int DB_QueryByTimespan_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params);
+// int DB_QueryByFileID_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params);
+// int DB_QueryWholeFile_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params);
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);
 
@@ -559,7 +564,9 @@ public:
 
     void ReadPack(string path);
 
-    vector<pair<string, pair<char *, long>>> GetPacksByTime(string pathToLine, long start, long end);
+    void DeletePack(string path);
+
+    vector<pair<string, tuple<long, long>>> GetPacksByTime(string pathToLine, long start, long end);
 
     pair<string, pair<char *, long>> GetLastPack(string pathToLine, int index);
 

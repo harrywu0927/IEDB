@@ -212,7 +212,7 @@ int DB_ExecuteQuery(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note deprecated
  */
-int DB_QueryWholeFile_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryWholeFile_OldOld(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -617,7 +617,7 @@ int DB_QueryWholeFile_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note
  */
-int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryWholeFile_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -1504,7 +1504,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note
  */
-int DB_QueryWholeFile_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -1622,7 +1622,8 @@ int DB_QueryWholeFile_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params)
 
             for (auto &pack : selectedPacks)
             {
-                PackFileReader packReader(pack.second.first, pack.second.second);
+                auto pk = packManager.GetPack(pack.first);
+                PackFileReader packReader(pk.first, pk.second);
                 if (packReader.packBuffer == NULL)
                     continue;
                 int fileNum;
@@ -1750,7 +1751,8 @@ int DB_QueryWholeFile_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params)
 
             for (auto &pack : selectedPacks)
             {
-                PackFileReader packReader(pack.second.first, pack.second.second);
+                auto pk = packManager.GetPack(pack.first);
+                PackFileReader packReader(pk.first, pk.second);
                 if (packReader.packBuffer == NULL)
                     continue;
                 int fileNum;
@@ -2330,7 +2332,7 @@ int DB_QueryWholeFile_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note   支持idb文件和pak文件混合查询,此处默认pak文件中的时间均早于idb和idbzip文件！！
  */
-int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByTimespan_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -2687,13 +2689,6 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
         }
         free(buff);
     }
-    DataTypeConverter converter;
-    for (int i = 0; i < sortDataPoses.size(); i++)
-    {
-        char val[type.valueBytes];
-        memcpy(val, mallocedMemory[i].first + sortDataPoses[i], type.valueBytes);
-        cout << converter.ToUInt32(val) << endl;
-    }
 
     if (sortDataPoses.size() > 0) //尚有问题
         sortResultByValue(mallocedMemory, sortDataPoses, params, type);
@@ -2754,7 +2749,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note   支持idb文件和pak文件混合查询,此处默认pak文件中的时间均早于idb和idbzip文件！！
  */
-int DB_QueryByTimespan_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -2786,10 +2781,11 @@ int DB_QueryByTimespan_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params
     vector<DataType> typeList, selectedTypes;
     vector<long> sortDataPoses; //按值排序时要比较的数据的偏移量
 
-    //先对时序在前的对包文件检索
+    //先对时序在前的包文件检索
     for (auto &pack : selectedPacks)
     {
-        PackFileReader packReader(pack.second.first, pack.second.second);
+        auto pk = packManager.GetPack(pack.first);
+        PackFileReader packReader(pk.first, pk.second);
         if (packReader.packBuffer == NULL)
             continue;
         int fileNum;
@@ -3137,7 +3133,7 @@ int DB_QueryByTimespan_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params
  *          others: StatusCode
  * @note
  */
-int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryLastRecords_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -3562,7 +3558,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note
  */
-int DB_QueryLastRecords_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -3957,7 +3953,7 @@ int DB_QueryLastRecords_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *param
  * @note 获取产线文件夹下的所有数据文件，找到带有指定ID的文件后读取，加载模版，根据模版找到变量在数据中的位置
  *          找到后开辟内存空间，将数据放入，将缓冲区首地址赋值给buffer
  */
-int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByFileID_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -4187,7 +4183,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
  * @note 获取产线文件夹下的所有数据文件，找到带有指定ID的文件后读取，加载模版，根据模版找到变量在数据中的位置
  *          找到后开辟内存空间，将数据放入，将缓冲区首地址赋值给buffer
  */
-int DB_QueryByFileID_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -4425,20 +4421,39 @@ int main()
     params.valueName = "S2OFF";
     // params.valueName = NULL;
     params.start = 1650095500000;
-    params.end = 1650095600000;
-    params.order = ASCEND;
-    params.compareType = LT;
+    params.end = 1650165600000;
+    params.order = ODR_NONE;
+    params.compareType = CMP_NONE;
     params.compareValue = "666";
-    params.queryType = LAST;
+    params.queryType = FILEID;
     params.byPath = 0;
-    params.queryNums = 20;
+    params.queryNums = 200;
     DB_DataBuffer buffer;
     buffer.savePath = "/";
     // cout << settings("Pack_Mode") << endl;
     // vector<pair<string, long>> files;
     // readDataFilesWithTimestamps("", files);
     // Packer::Pack("/",files);
-    DB_QueryWholeFile_Using_Cache(&buffer, &params);
+    auto startTime = std::chrono::system_clock::now();
+    DB_QueryByTimespan(&buffer, &params);
+
+    auto endTime = std::chrono::system_clock::now();
+    free(buffer.buffer);
+    std::cout << "首次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+
+    startTime = std::chrono::system_clock::now();
+    DB_QueryByTimespan(&buffer, &params);
+
+    endTime = std::chrono::system_clock::now();
+    std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    free(buffer.buffer);
+    startTime = std::chrono::system_clock::now();
+    DB_QueryByFileID(&buffer, &params);
+
+    endTime = std::chrono::system_clock::now();
+    std::cout << "第三次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    free(buffer.buffer);
+    return 0;
     // DB_QueryLastRecords_Using_Cache(&buffer, &params);
     // DB_QueryByTimespan_Using_Cache(&buffer, &params);
     // DB_QueryByTimespan(&buffer, &params);

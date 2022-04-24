@@ -1,16 +1,16 @@
 #include <utils.hpp>
 
 /**
- * @brief 根据时间段获取所有包含此时间区间的包文件
+ * @brief 根据时间段获取所有包含此时间区间的包文件,由于缓存容量有限，故只返回文件名和时间范围，不读取包
  *
  * @param pathToLine 到产线的路径
  * @param start 起始时间
  * @param end 结束时间
  * @return vector<pair<string, tuple<long, long, char*>>>
  */
-vector<pair<string, pair<char *, long>>> PackManager::GetPacksByTime(string pathToLine, long start, long end)
+vector<pair<string, tuple<long, long>>> PackManager::GetPacksByTime(string pathToLine, long start, long end)
 {
-    vector<pair<string, pair<char *, long>>> selectedPacks;
+    vector<pair<string, tuple<long, long>>> selectedPacks;
     string tmp = pathToLine;
     while (tmp[0] == '/')
         tmp.erase(tmp.begin());
@@ -23,7 +23,7 @@ vector<pair<string, pair<char *, long>>> PackManager::GetPacksByTime(string path
         long packEnd = get<1>(pack.second);
         if ((packStart < start && packEnd >= start) || (packStart < end && packEnd >= start) || (packStart <= start && packEnd >= end) || (packStart >= start && packEnd <= end)) //落入或部分落入时间区间
         {
-            selectedPacks.push_back(make_pair(pack.first, GetPack(pack.first)));
+            selectedPacks.push_back(pack);
         }
     }
     return selectedPacks;
@@ -119,12 +119,15 @@ pair<char *, long> PackManager::GetPack(string path)
     {
         PutPack(path, key2pos[path]->second);
         // hits++;
+        cout << "hit" << endl;
         return key2pos[path]->second;
     }
     //缺页中断
     // hits--;
     ReadPack(path);
-    return GetPack(path);
+    search = key2pos.find(path);
+    PutPack(path, key2pos[path]->second);
+    return key2pos[path]->second;
 }
 
 /**
@@ -140,6 +143,27 @@ void PackManager::ReadPack(string path)
     if (buffer.bufferMalloced)
     {
         PutPack(path, {buffer.buffer, buffer.length});
+    }
+}
+
+/**
+ * @brief 删除包
+ *
+ * @param path 路径
+ * @note 从allPacks中删除此包的索引
+ */
+void PackManager::DeletePack(string path)
+{
+    string tmp = path;
+    string pathToLine = DataType::splitWithStl(tmp, "/")[0];
+    DB_DeleteFile(const_cast<char *>(path.c_str()));
+    for (auto it = allPacks[pathToLine].begin(); it != allPacks[pathToLine].end(); it++)
+    {
+        if (it->first == path)
+        {
+            allPacks[pathToLine].erase(it);
+            break;
+        }
     }
 }
 
