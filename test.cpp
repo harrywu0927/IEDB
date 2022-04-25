@@ -252,6 +252,10 @@ int main()
     //     cout << "pthread_create error: error_code=" << ret << endl;
     // }
     // pthread_exit(NULL);
+    float fl = 1.2345;
+    char val[4] = {0};
+    memcpy(val, &fl, 4);
+    return 0;
 
     int maxThreads = thread::hardware_concurrency();
     int i = 0;

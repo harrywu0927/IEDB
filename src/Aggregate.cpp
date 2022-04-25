@@ -527,7 +527,7 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
-    memcpy(newBuffer, buffer->buffer, startPos);
+    // memcpy(newBuffer, buffer->buffer, startPos);
     long newBufCur = startPos; //在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
@@ -678,7 +678,10 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
         if (typeList[i].valueType != ValueType::REAL)
             typeList[i].valueType = ValueType::DINT; //可能超出32位数字表示范围，不是浮点数暂时统一用DINT表示
     }
-    // CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    if (params->byPath)
+        CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    else
+        CurrentTemplate.writeBufferHead(params->valueName, typeList[0], newBuffer);
     buffer->buffer = newBuffer;
     return 0;
 }
@@ -813,12 +816,9 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
             for (int k = 0; k < rows; k++)
             {
                 memcpy(val, column + k * 4, 4);
-                cout << converter.ToUInt32(val) << endl;
                 sum += converter.ToUInt32(val);
             }
-            cout << sum << " " << rows << endl;
             float res = sum / (float)rows;
-            cout << res << endl;
             memcpy(newBuffer + newBufCur, &res, 4);
             newBufCur += 4;
             break;
@@ -833,6 +833,7 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
                 floatSum += converter.ToFloat(val);
             }
             float res = floatSum / (float)rows;
+
             memcpy(newBuffer + newBufCur, &res, 4);
             newBufCur += 4;
             break;
@@ -874,7 +875,10 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
         if (typeList[i].valueType != ValueType::REAL)
             typeList[i].valueType = ValueType::REAL; //均值统一用浮点数表示
     }
-    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    if (params->byPath)
+        CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    else
+        CurrentTemplate.writeBufferHead(params->valueName, typeList[0], newBuffer);
     buffer->buffer = newBuffer;
     return 0;
 }
@@ -964,7 +968,10 @@ int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
         if (typeList[i].valueType != ValueType::UDINT)
             typeList[i].valueType = ValueType::UDINT; //计数统一用32位无符号数表示
     }
-    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    if (params->byPath)
+        CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    else
+        CurrentTemplate.writeBufferHead(params->valueName, typeList[0], newBuffer);
     buffer->buffer = newBuffer;
     return 0;
 }
@@ -1221,7 +1228,10 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
         if (typeList[i].valueType != ValueType::REAL)
             typeList[i].valueType = ValueType::REAL; //标准差统一用浮点数表示
     }
-    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    if (params->byPath)
+        CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    else
+        CurrentTemplate.writeBufferHead(params->valueName, typeList[0], newBuffer);
     buffer->buffer = newBuffer;
     return 0;
 }
@@ -1477,7 +1487,10 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
         if (typeList[i].valueType != ValueType::REAL)
             typeList[i].valueType = ValueType::REAL; //方差统一用浮点数表示
     }
-    CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    if (params->byPath)
+        CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
+    else
+        CurrentTemplate.writeBufferHead(params->valueName, typeList[0], newBuffer);
     buffer->buffer = newBuffer;
     return 0;
 }
@@ -2368,54 +2381,60 @@ int DB_GetAbnormalDataCount_MultiThread(DB_QueryParams *params, long *count)
     }
     return 0;
 }
-// int main()
-// {
-//     DB_QueryParams params;
-//     params.pathToLine = "JinfeiSixteen";
-//     params.fileID = "JinfeiSixteen15";
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)0;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     params.pathCode = code;
-//     params.valueName = "S2ON";
-//     // params.valueName = NULL;
-//     params.start = 1650095500000;
-//     params.end = 1650155600000;
-//     params.order = ODR_NONE;
-//     params.compareType = CMP_NONE;
-//     params.compareValue = "666";
-//     params.queryType = LAST;
-//     params.byPath = 0;
-//     params.queryNums = 20;
-//     DB_DataBuffer buffer;
-//     DB_AVG(&buffer, &params);
-//     if (buffer.bufferMalloced)
-//     {
-//         char buf[buffer.length];
-//         memcpy(buf, buffer.buffer, buffer.length);
-//         cout << buffer.length << endl;
-//         for (int i = 0; i < buffer.length; i++)
-//         {
-//             cout << (int)buf[i] << " ";
-//             if (i % 11 == 0)
-//                 cout << endl;
-//         }
+int main()
+{
+    DataTypeConverter converter;
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiSixteen";
+    params.fileID = "JinfeiSixteen15";
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)0;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueName = "S2ON";
+    // params.valueName = NULL;
+    params.start = 1650095500000;
+    params.end = 1650155600000;
+    params.order = ODR_NONE;
+    params.compareType = CMP_NONE;
+    params.compareValue = "666";
+    params.queryType = LAST;
+    params.byPath = 0;
+    params.queryNums = 234;
+    DB_DataBuffer buffer;
+    DB_AVG(&buffer, &params);
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        char val[4] = {0};
+        float f;
+        memcpy(val, buf + 12, 4);
+        f = converter.ToFloat(val);
+        cout << f << endl;
+        cout << buffer.length << endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
 
-//         free(buffer.buffer);
-//     }
-//     // long count;
-//     // DB_GetAbnormalDataCount(&params, &count);
-//     // cout << count << endl;
-//     // count = 0;
-//     // DB_GetNormalDataCount(&params, &count);
-//     // cout << count << endl;
-//     return 0;
-// }
+        free(buffer.buffer);
+    }
+    // long count;
+    // DB_GetAbnormalDataCount(&params, &count);
+    // cout << count << endl;
+    // count = 0;
+    // DB_GetNormalDataCount(&params, &count);
+    // cout << count << endl;
+    return 0;
+}
