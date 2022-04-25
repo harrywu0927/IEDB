@@ -252,59 +252,55 @@ int main()
     //     cout << "pthread_create error: error_code=" << ret << endl;
     // }
     // pthread_exit(NULL);
-    float fl = 1.2345;
-    char val[4] = {0};
-    memcpy(val, &fl, 4);
-    return 0;
 
-    int maxThreads = thread::hardware_concurrency();
-    int i = 0;
-    future_status status[maxThreads - 1];
-    future<int> f[maxThreads - 1];
-    for (int j = 0; j < maxThreads - 1; j++)
-    {
-        status[j] = future_status::ready;
-        //     f[j] = async(std::launch::async, tick, &i);
-        //     status[j] = f[j].wait_for(chrono::milliseconds(0));
-    }
-    int count2 = 0;
-    do
-    {
-        for (int j = 0; j < maxThreads - 1; j++)
-        {
-            // f[j].wait();
-            if (status[j] == future_status::ready)
-            {
-                // try
-                // {
-                //     count2 += f[j].get();
-                // }
-                // catch (const std::exception &e)
-                // {
-                //     std::cerr << e.what() << '\n';
-                // }
-
-                f[j] = async(std::launch::async, tick, &i, &count2);
-                status[j] = f[j].wait_for(chrono::milliseconds(0));
-                // cout << "thread" << j << endl;
-            }
-            else
-            {
-                status[j] = f[j].wait_for(chrono::milliseconds(0));
-            }
-        }
-    } while (i < 100);
-    // for (int j = 0; j < maxThreads; j++)
+    // int maxThreads = thread::hardware_concurrency();
+    // int i = 0;
+    // future_status status[maxThreads - 1];
+    // future<int> f[maxThreads - 1];
+    // for (int j = 0; j < maxThreads - 1; j++)
     // {
-    //     f[j].wait();
-    //     count2 += f[j].get();
+    //     status[j] = future_status::ready;
+    //     //     f[j] = async(std::launch::async, tick, &i);
+    //     //     status[j] = f[j].wait_for(chrono::milliseconds(0));
     // }
-    cout << "count" << count2 << endl;
-    return 0;
+    // int count2 = 0;
+    // do
+    // {
+    //     for (int j = 0; j < maxThreads - 1; j++)
+    //     {
+    //         // f[j].wait();
+    //         if (status[j] == future_status::ready)
+    //         {
+    //             // try
+    //             // {
+    //             //     count2 += f[j].get();
+    //             // }
+    //             // catch (const std::exception &e)
+    //             // {
+    //             //     std::cerr << e.what() << '\n';
+    //             // }
+
+    //             f[j] = async(std::launch::async, tick, &i, &count2);
+    //             status[j] = f[j].wait_for(chrono::milliseconds(0));
+    //             // cout << "thread" << j << endl;
+    //         }
+    //         else
+    //         {
+    //             status[j] = f[j].wait_for(chrono::milliseconds(0));
+    //         }
+    //     }
+    // } while (i < 100);
+    // // for (int j = 0; j < maxThreads; j++)
+    // // {
+    // //     f[j].wait();
+    // //     count2 += f[j].get();
+    // // }
+    // cout << "count" << count2 << endl;
+    // return 0;
 
     DB_QueryParams params;
     params.pathToLine = "JinfeiThirtee";
-    params.fileID = "JinfeiSixteen15";
+    params.fileID = "JinfeiSixteen13455";
     char code[10];
     code[0] = (char)0;
     code[1] = (char)1;
@@ -336,25 +332,36 @@ int main()
     auto endTime = std::chrono::system_clock::now();
     free(buffer.buffer);
     std::cout << "首次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // this_thread::sleep_for(chrono::seconds(1));
+    for (int i = 0; i < 20; i++)
+    {
+        startTime = std::chrono::system_clock::now();
+        DB_QueryByTimespan_MultiThread(&buffer, &params);
 
+        endTime = std::chrono::system_clock::now();
+        std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+        free(buffer.buffer);
+    }
     startTime = std::chrono::system_clock::now();
-    DB_QueryLastRecords(&buffer, &params);
+    DB_QueryByTimespan(&buffer, &params);
 
     endTime = std::chrono::system_clock::now();
     std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
     free(buffer.buffer);
+    // this_thread::sleep_for(chrono::seconds(1));
     startTime = std::chrono::system_clock::now();
-    DB_QueryLastRecords(&buffer, &params);
-
-    endTime = std::chrono::system_clock::now();
-    std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    free(buffer.buffer);
-    startTime = std::chrono::system_clock::now();
-    DB_QueryByFileID(&buffer, &params);
+    DB_QueryByTimespan_MultiThread(&buffer, &params);
 
     endTime = std::chrono::system_clock::now();
     std::cout << "第三次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    // free(buffer.buffer);
+    free(buffer.buffer);
+    // this_thread::sleep_for(chrono::seconds(1));
+    startTime = std::chrono::system_clock::now();
+    // DB_QueryByFileID(&buffer, &params);
+
+    endTime = std::chrono::system_clock::now();
+    // std::cout << "第四次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    //  free(buffer.buffer);
     return 0;
     // long count = 0;
     // DB_GetNormalDataCount(&params, &count);

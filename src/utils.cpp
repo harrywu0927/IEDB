@@ -1920,7 +1920,7 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
     }
     memcpy(buff, writebuff, writebuff_pos);
     buffLength = (int)writebuff_pos;
-    return err;
+    return 0;
 }
 // int main()
 // {

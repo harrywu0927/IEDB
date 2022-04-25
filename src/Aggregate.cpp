@@ -2381,60 +2381,60 @@ int DB_GetAbnormalDataCount_MultiThread(DB_QueryParams *params, long *count)
     }
     return 0;
 }
-int main()
-{
-    DataTypeConverter converter;
-    DB_QueryParams params;
-    params.pathToLine = "JinfeiSixteen";
-    params.fileID = "JinfeiSixteen15";
-    char code[10];
-    code[0] = (char)0;
-    code[1] = (char)1;
-    code[2] = (char)0;
-    code[3] = (char)0;
-    code[4] = 0;
-    code[5] = (char)0;
-    code[6] = 0;
-    code[7] = (char)0;
-    code[8] = (char)0;
-    code[9] = (char)0;
-    params.pathCode = code;
-    params.valueName = "S2ON";
-    // params.valueName = NULL;
-    params.start = 1650095500000;
-    params.end = 1650155600000;
-    params.order = ODR_NONE;
-    params.compareType = CMP_NONE;
-    params.compareValue = "666";
-    params.queryType = LAST;
-    params.byPath = 0;
-    params.queryNums = 234;
-    DB_DataBuffer buffer;
-    DB_AVG(&buffer, &params);
-    if (buffer.bufferMalloced)
-    {
-        char buf[buffer.length];
-        memcpy(buf, buffer.buffer, buffer.length);
-        char val[4] = {0};
-        float f;
-        memcpy(val, buf + 12, 4);
-        f = converter.ToFloat(val);
-        cout << f << endl;
-        cout << buffer.length << endl;
-        for (int i = 0; i < buffer.length; i++)
-        {
-            cout << (int)buf[i] << " ";
-            if (i % 11 == 0)
-                cout << endl;
-        }
+// int main()
+// {
+//     DataTypeConverter converter;
+//     DB_QueryParams params;
+//     params.pathToLine = "JinfeiSixteen";
+//     params.fileID = "JinfeiSixteen15";
+//     char code[10];
+//     code[0] = (char)0;
+//     code[1] = (char)1;
+//     code[2] = (char)0;
+//     code[3] = (char)0;
+//     code[4] = 0;
+//     code[5] = (char)0;
+//     code[6] = 0;
+//     code[7] = (char)0;
+//     code[8] = (char)0;
+//     code[9] = (char)0;
+//     params.pathCode = code;
+//     params.valueName = "S2ON";
+//     // params.valueName = NULL;
+//     params.start = 1650095500000;
+//     params.end = 1650155600000;
+//     params.order = ODR_NONE;
+//     params.compareType = CMP_NONE;
+//     params.compareValue = "666";
+//     params.queryType = LAST;
+//     params.byPath = 0;
+//     params.queryNums = 234;
+//     DB_DataBuffer buffer;
+//     DB_AVG(&buffer, &params);
+//     if (buffer.bufferMalloced)
+//     {
+//         char buf[buffer.length];
+//         memcpy(buf, buffer.buffer, buffer.length);
+//         char val[4] = {0};
+//         float f;
+//         memcpy(val, buf + 12, 4);
+//         f = converter.ToFloat(val);
+//         cout << f << endl;
+//         cout << buffer.length << endl;
+//         for (int i = 0; i < buffer.length; i++)
+//         {
+//             cout << (int)buf[i] << " ";
+//             if (i % 11 == 0)
+//                 cout << endl;
+//         }
 
-        free(buffer.buffer);
-    }
-    // long count;
-    // DB_GetAbnormalDataCount(&params, &count);
-    // cout << count << endl;
-    // count = 0;
-    // DB_GetNormalDataCount(&params, &count);
-    // cout << count << endl;
-    return 0;
-}
+//         free(buffer.buffer);
+//     }
+//     // long count;
+//     // DB_GetAbnormalDataCount(&params, &count);
+//     // cout << count << endl;
+//     // count = 0;
+//     // DB_GetNormalDataCount(&params, &count);
+//     // cout << count << endl;
+//     return 0;
+// }

@@ -3154,13 +3154,13 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
     }
 
     if (sortDataPoses.size() > 0) //尚有问题
-        sortResultByValue(mallocedMemory, sortDataPoses, params, type);
-    if (cur == 0)
-    {
-        buffer->buffer = NULL;
-        buffer->bufferMalloced = 0;
-        return StatusCode::NO_DATA_QUERIED;
-    }
+                                  // sortResultByValue(mallocedMemory, sortDataPoses, params, type);
+        if (cur == 0)
+        {
+            buffer->buffer = NULL;
+            buffer->bufferMalloced = 0;
+            return StatusCode::NO_DATA_QUERIED;
+        }
     //动态分配内存
     char typeNum = params->byPath ? typeList.size() : 1; //数据类型总数
     char *data = (char *)malloc(cur + (int)typeNum * 11 + 1);
@@ -3204,6 +3204,15 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 mutex curMutex; //防止多线程访问冲突
 mutex memMutex;
+/**
+ * @brief 线程任务，处理单个包
+ *
+ * @param pack 包的内存地址-长度对
+ * @param params 查询参数
+ * @param cur 当前已分配的内存总长度，临界资源，需要加线程互斥锁
+ * @param mallocedMemory 已分配的内存地址-长度-排序值偏移量元组，临界资源，需要加线程互斥锁
+ * @return int
+ */
 int PackProcess(pair<char *, long> pack, DB_QueryParams *params, long *cur, vector<tuple<char *, long, long>> *mallocedMemory)
 {
     // vector<tuple<char *, long, long>> mallocedMemory;
@@ -3216,7 +3225,13 @@ int PackProcess(pair<char *, long> pack, DB_QueryParams *params, long *cur, vect
     if (TemplateManager::CheckTemplate(templateName) != 0)
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     vector<DataType> typeList;
-
+    int err = 0;
+    err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
+    if (err)
+    {
+        cout << "未加载模板" << endl;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
     for (int i = 0; i < fileNum; i++)
     {
         typeList.clear();
@@ -3353,14 +3368,21 @@ int PackProcess(pair<char *, long> pack, DB_QueryParams *params, long *cur, vect
             canCopy = true;
         if (canCopy) //需要此数据
         {
-            char *memory = new char[copyBytes];
-            memcpy(memory, copyValue, copyBytes);
-            curMutex.lock();
-            *cur += copyBytes;
-            curMutex.unlock();
-            memMutex.lock();
-            mallocedMemory->push_back(make_tuple(memory, copyBytes, sortPos));
-            memMutex.unlock();
+            char *memory = new (std::nothrow) char[copyBytes];
+            if (memory == nullptr)
+            {
+                cout << "memory null" << endl;
+            }
+            else
+            {
+                memcpy(memory, copyValue, copyBytes);
+                curMutex.lock();
+                *cur += copyBytes;
+                curMutex.unlock();
+                memMutex.lock();
+                mallocedMemory->push_back(make_tuple(memory, copyBytes, sortPos));
+                memMutex.unlock();
+            }
         }
         delete[] buff;
     }
@@ -3426,10 +3448,11 @@ int DB_QueryByTimespan_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params
             // f[j].wait();
             if (status[j] == future_status::ready)
             {
-                // count2 += f[j].get();
                 auto pk = packManager.GetPack(selectedPacks[index].first);
+                // cout << selectedPacks[index].first << endl;
+                // cout << pk.first << endl;
                 f[j] = async(std::launch::async, PackProcess, pk, params, &cur, &mallocedMemory);
-                status[j] = f[j].wait_for(chrono::milliseconds(0));
+                status[j] = f[j].wait_for(chrono::milliseconds(1));
                 // cout << "thread" << j << " index" << index << endl;
                 index++;
                 if (index == selectedPacks.size())
@@ -3437,10 +3460,16 @@ int DB_QueryByTimespan_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params
             }
             else
             {
-                status[j] = f[j].wait_for(chrono::milliseconds(0));
+                status[j] = f[j].wait_for(chrono::milliseconds(1));
             }
         }
     } while (index < selectedPacks.size());
+    for (int j = 0; j < maxThreads - 1; j++)
+    {
+        if (status[j] != future_status::ready)
+            f[j].wait();
+    }
+
     // sort(mallocedMemory.begin(), mallocedMemory.end(),
     // [](tuple<char*,long,long> iter1, tuple<char*,long,long> iter2) -> bool {
 
@@ -4905,94 +4934,94 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
     return StatusCode::DATAFILE_NOT_FOUND;
 }
 
-// int main()
-// {
-//     DataTypeConverter converter;
-//     DB_QueryParams params;
-//     params.pathToLine = "JinfeiThirtee";
-//     params.fileID = "JinfeiSixteen15";
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)0;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     params.pathCode = code;
-//     params.valueName = "S2OFF";
-//     // params.valueName = NULL;
-//     params.start = 1650095500000;
-//     params.end = 1650175600000;
-//     params.order = ODR_NONE;
-//     params.compareType = CMP_NONE;
-//     params.compareValue = "666";
-//     params.queryType = FILEID;
-//     params.byPath = 0;
-//     params.queryNums = 200;
-//     DB_DataBuffer buffer;
-//     buffer.savePath = "/";
-//     // cout << settings("Pack_Mode") << endl;
-//     // vector<pair<string, long>> files;
-//     // readDataFilesWithTimestamps("", files);
-//     // Packer::Pack("/",files);
-//     auto startTime = std::chrono::system_clock::now();
-//     DB_QueryByFileID_Old(&buffer, &params);
+int main()
+{
+    DataTypeConverter converter;
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiSixteen";
+    params.fileID = "JinfeiSixteen15";
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)0;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueName = "S2OFF";
+    // params.valueName = NULL;
+    params.start = 1650095500000;
+    params.end = 1650175600000;
+    params.order = ODR_NONE;
+    params.compareType = CMP_NONE;
+    params.compareValue = "666";
+    params.queryType = FILEID;
+    params.byPath = 0;
+    params.queryNums = 200;
+    DB_DataBuffer buffer;
+    buffer.savePath = "/";
+    // cout << settings("Pack_Mode") << endl;
+    // vector<pair<string, long>> files;
+    // readDataFilesWithTimestamps("", files);
+    // Packer::Pack("/",files);
+    auto startTime = std::chrono::system_clock::now();
+    DB_QueryByTimespan(&buffer, &params);
 
-//     auto endTime = std::chrono::system_clock::now();
-//     free(buffer.buffer);
-//     std::cout << "首次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    auto endTime = std::chrono::system_clock::now();
+    free(buffer.buffer);
+    std::cout << "首次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
 
-//     startTime = std::chrono::system_clock::now();
-//     DB_QueryByFileID(&buffer, &params);
+    startTime = std::chrono::system_clock::now();
+    DB_QueryByTimespan(&buffer, &params);
 
-//     endTime = std::chrono::system_clock::now();
-//     std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     free(buffer.buffer);
-//     startTime = std::chrono::system_clock::now();
-//     DB_QueryByFileID(&buffer, &params);
+    endTime = std::chrono::system_clock::now();
+    std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    free(buffer.buffer);
+    startTime = std::chrono::system_clock::now();
+    DB_QueryByTimespan_MultiThread(&buffer, &params);
 
-//     endTime = std::chrono::system_clock::now();
-//     std::cout << "第三次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     // free(buffer.buffer);
-//     return 0;
-//     // DB_QueryLastRecords_Using_Cache(&buffer, &params);
-//     // DB_QueryByTimespan_Using_Cache(&buffer, &params);
-//     // DB_QueryByTimespan(&buffer, &params);
-//     if (buffer.bufferMalloced)
-//     {
-//         char buf[buffer.length];
-//         memcpy(buf, buffer.buffer, buffer.length);
-//         cout << buffer.length << endl;
-//         for (int i = 0; i < buffer.length; i++)
-//         {
-//             cout << (int)buf[i] << " ";
-//             if (i % 11 == 0)
-//                 cout << endl;
-//         }
+    endTime = std::chrono::system_clock::now();
+    std::cout << "第三次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    free(buffer.buffer);
+    return 0;
+    // DB_QueryLastRecords_Using_Cache(&buffer, &params);
+    // DB_QueryByTimespan_Using_Cache(&buffer, &params);
+    // DB_QueryByTimespan(&buffer, &params);
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
 
-//         free(buffer.buffer);
-//     }
-//     // buffer.bufferMalloced = 0;
-//     // DB_QueryByFileID(&buffer, &params);
+        free(buffer.buffer);
+    }
+    // buffer.bufferMalloced = 0;
+    // DB_QueryByFileID(&buffer, &params);
 
-//     // if (buffer.bufferMalloced)
-//     // {
-//     //     char buf[buffer.length];
-//     //     memcpy(buf, buffer.buffer, buffer.length);
-//     //     cout << buffer.length << endl;
-//     //     for (int i = 0; i < buffer.length; i++)
-//     //     {
-//     //         cout << (int)buf[i] << " ";
-//     //         if (i % 11 == 0)
-//     //             cout << endl;
-//     //     }
+    // if (buffer.bufferMalloced)
+    // {
+    //     char buf[buffer.length];
+    //     memcpy(buf, buffer.buffer, buffer.length);
+    //     cout << buffer.length << endl;
+    //     for (int i = 0; i < buffer.length; i++)
+    //     {
+    //         cout << (int)buf[i] << " ";
+    //         if (i % 11 == 0)
+    //             cout << endl;
+    //     }
 
-//     //     free(buffer.buffer);
-//     // }
-//     // buffer.buffer = NULL;
-//     return 0;
-// }
+    //     free(buffer.buffer);
+    // }
+    // buffer.buffer = NULL;
+    return 0;
+}
