@@ -35,7 +35,7 @@ using namespace std;
 //         sleep(1);
 //     }
 // }
-mutex imute;
+mutex imute, countmute;
 void tk(int n)
 {
     while (1)
@@ -65,7 +65,7 @@ void checkSettings()
     }
 }
 // int i = 0;
-int tick(int *i)
+int tick(int *i, int *count)
 {
     // while (*i < 100)
     //{
@@ -77,9 +77,13 @@ int tick(int *i)
     }
 
     imute.unlock();
-    this_thread::sleep_for(chrono::milliseconds(rand() % 500));
-    //}
 
+    //}
+    countmute.lock();
+    *count += 1;
+    cout << "count:" << *count << endl;
+    countmute.unlock();
+    this_thread::sleep_for(chrono::milliseconds(rand() % 500));
     return 1;
 }
 #ifndef __linux__
@@ -249,34 +253,50 @@ int main()
     // }
     // pthread_exit(NULL);
 
-    // int maxThreads = thread::hardware_concurrency();
-    // int i = 0;
-    // future_status status[maxThreads - 1];
-    // future<int> f[maxThreads - 1];
-    // for (int j = 0; j < maxThreads - 1; j++)
+    int maxThreads = thread::hardware_concurrency();
+    int i = 0;
+    future_status status[maxThreads - 1];
+    future<int> f[maxThreads - 1];
+    for (int j = 0; j < maxThreads - 1; j++)
+    {
+        status[j] = future_status::ready;
+        //     f[j] = async(std::launch::async, tick, &i);
+        //     status[j] = f[j].wait_for(chrono::milliseconds(0));
+    }
+    int count2 = 0;
+    do
+    {
+        for (int j = 0; j < maxThreads - 1; j++)
+        {
+            // f[j].wait();
+            if (status[j] == future_status::ready)
+            {
+                // try
+                // {
+                //     count2 += f[j].get();
+                // }
+                // catch (const std::exception &e)
+                // {
+                //     std::cerr << e.what() << '\n';
+                // }
+
+                f[j] = async(std::launch::async, tick, &i, &count2);
+                status[j] = f[j].wait_for(chrono::milliseconds(0));
+                // cout << "thread" << j << endl;
+            }
+            else
+            {
+                status[j] = f[j].wait_for(chrono::milliseconds(0));
+            }
+        }
+    } while (i < 100);
+    // for (int j = 0; j < maxThreads; j++)
     // {
-    //     status[j] = future_status::ready;
+    //     f[j].wait();
+    //     count2 += f[j].get();
     // }
-    // int count2 = 0;
-    // do
-    // {
-    //     for (int j = 0; j < maxThreads - 1; j++)
-    //     {
-    //         //f[j].wait();
-    //         if (status[j] == future_status::ready)
-    //         {
-    //             // count2 += f[j].get();
-    //             f[j] = async(std::launch::async, tick, &i);
-    //             status[j] = f[j].wait_for(chrono::milliseconds(0));
-    //             cout << "thread" << j << endl;
-    //         }
-    //         else{
-    //             status[j] = f[j].wait_for(chrono::milliseconds(0));
-    //         }
-    //     }
-    // } while (i < 100);
-    // cout << "count" << count2 << endl;
-    // return 0;
+    cout << "count" << count2 << endl;
+    return 0;
 
     DB_QueryParams params;
     params.pathToLine = "JinfeiThirtee";
@@ -330,7 +350,7 @@ int main()
 
     endTime = std::chrono::system_clock::now();
     std::cout << "第三次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    free(buffer.buffer);
+    // free(buffer.buffer);
     return 0;
     // long count = 0;
     // DB_GetNormalDataCount(&params, &count);

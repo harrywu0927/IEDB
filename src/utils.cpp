@@ -7,10 +7,11 @@ void *checkSettings(void *ptr);
 int maxTemplates = 20;
 vector<Template> templates;
 int errorCode;
+// int maxThreads = thread::hardware_concurrency();
 FileIDManager fileIDManager;
 neb::CJsonObject settings = FileIDManager::GetSetting();
 unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
-PackManager packManager(1024 * 1024);
+PackManager packManager(atoi(settings("Pack_Cache_Size").c_str()) * 1024 * 2);
 
 void *checkSettings(void *ptr)
 {

@@ -305,7 +305,11 @@ public:
     static int SetTemplate(const char *path)
     {
         vector<string> files;
-        readFileList(path, files);
+        string pathToLine = path;
+        // while (pathToLine.back() != '/')
+        //     pathToLine.pop_back();
+        // pathToLine.pop_back();
+        readFileList(pathToLine, files);
         string temPath = "";
         for (string file : files) //找到带有后缀tem的文件
         {
@@ -571,6 +575,11 @@ public:
     pair<string, pair<char *, long>> GetLastPack(string pathToLine, int index);
 
     pair<char *, long> GetPackByID(string pathToLine, string fileID);
+
+    void ModifyCacheCapacity(int memcap)
+    {
+        memCapacity = memcap;
+    }
 };
 
 extern PackManager packManager;

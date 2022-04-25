@@ -119,7 +119,7 @@ pair<char *, long> PackManager::GetPack(string path)
     {
         PutPack(path, key2pos[path]->second);
         // hits++;
-        cout << "hit" << endl;
+        // cout << "hit" << endl;
         return key2pos[path]->second;
     }
     //缺页中断

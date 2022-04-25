@@ -3,5 +3,6 @@
     "FileOverFlowMode": "loop",
     "Pack_Mode": "timed",
     "Pack_Num": 1000,
-    "Pack_Interval": 3000000000
+    "Pack_Interval": 3000000000,
+    "Pack_Cache_Size": 10240
 }

@@ -393,7 +393,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                     // delete[] newPack;
                     // newPack = NULL;
                     DB_Close(fp);
-                    packManager.DeletePack(pack.first);
+                    DB_DeleteFile(const_cast<char *>(pack.first.c_str()));
                     continue;
                 }
                 char mode[2] = {'w', 'b'};
@@ -501,7 +501,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                 fwrite(newPack, dataPos + readLength, 1, (FILE *)fp);
                 delete[] newPack;
                 DB_Close(fp);
-                packManager.DeletePack(pack.first);
+                DB_DeleteFile(const_cast<char *>(pack.first.c_str()));
                 return 0;
             }
         }
@@ -701,7 +701,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
                         fwrite(newPack, cur, 1, (FILE *)fp);
                         delete[] newPack;
                         DB_Close(fp);
-                        packManager.DeletePack(pack.first);
+                        DB_DeleteFile(const_cast<char *>(pack.first.c_str()));
                         return 0;
                     }
                     auto fileInfo = filestk.top();
