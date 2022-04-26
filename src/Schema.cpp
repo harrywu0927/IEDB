@@ -7,7 +7,7 @@ ZipTemplate CurrentZipTemplate;
 /**
  * @brief 向标准模板添加新节点,暂定直接在尾部追加
  *
- * @param params 标准模板参数
+ * @param TreeParams 标准模板参数
  * @return　0:success,
  *         others: StatusCode
  * @note   新节点参数必须齐全，pathToLine pathcode valueNmae hasTime valueType isArray arrayLen
@@ -269,7 +269,7 @@ int DB_AddNodeToSchema_new(struct DB_TreeNodeParams *TreeParams)
 /**
  * @brief 修改标准模板里的树节点,根据编码进行定位和修改
  *
- * @param params 需要修改的节点
+ * @param TreeParams 需要修改的节点
  * @param newTreeParams 需要修改的信息
  * @return　0:success,
  *         others: StatusCode
@@ -586,7 +586,7 @@ int DB_UpdateNodeToSchema_new(struct DB_TreeNodeParams *TreeParams, struct DB_Tr
 /**
  * @brief 删除标准模板中已存在的节点,根据编码进行定位和删除
  *
- * @param params 标准模板参数
+ * @param TreeParams 标准模板参数
  * @return　0:success,
  *         others: StatusCode
  */
@@ -741,7 +741,7 @@ int DB_DeleteNodeToSchema_new(struct DB_TreeNodeParams *TreeParams)
 /**
  * @brief 向压缩模板添加新节点，暂定直接在尾部追加
  *
- * @param params 压缩模板参数
+ * @param ZipParams 压缩模板参数
  * @return　0:success,
  *         others: StatusCode
  * @note   新节点参数必须齐全，pathToLine valueNmae hasTime valueType isArray arrayLen standardValue maxValue minValue
@@ -1320,8 +1320,8 @@ int DB_AddNodeToZipSchema_new(struct DB_ZipNodeParams *ZipParams)
 /**
  * @brief 修改压缩模板里的树节点
  *
- * @param params 需要修改的节点
- * @param newTreeParams 需要修改的信息
+ * @param Zipparams 需要修改的节点
+ * @param newZipParams 需要修改的信息
  * @return　0:success,
  *         others: StatusCode
  * @note   更新节点参数必须齐全，pathToLine valueNmae hasTime valueType isArray arrayLen standardValue maxValue minValue
@@ -1935,7 +1935,7 @@ int DB_UpdateNodeToZipSchema_new(struct DB_ZipNodeParams *ZipParams, struct DB_Z
 /**
  * @brief 删除压缩模板节点，根据变量名进行定位
  *
- * @param TreeParams 压缩模板参数
+ * @param ZipParams 压缩模板参数
  * @return 0:success,　
  *         others: StatusCode
  */

@@ -3,6 +3,7 @@
 #include <string.h>
 using namespace std;
 
+//将大端存储方式的字符数组转换为指定类型的数值
 short DataTypeConverter::ToInt16(const char *str)
 {
     short value = 0;
@@ -69,6 +70,7 @@ float DataTypeConverter::ToFloat(const char *str)
     return floatVariable;
 }
 
+//将小端存储方式的字符数组转换为指定类型数值
 short DataTypeConverter::ToInt16_m(const char *str)
 {
     short value = 0;
@@ -133,6 +135,7 @@ float DataTypeConverter::ToFloat_m(const char *str)
     return floatVariable;
 }
 
+//将指定类型的数值转换为大端存储方式的字符数组
 void DataTypeConverter::ToInt16Buff(short num, char *buff)
 {
     char IntValue[2] = {0};
@@ -189,6 +192,7 @@ void DataTypeConverter::ToFloatBuff(float num, char *buff)
     memcpy(buff, RealValue, 4);
 }
 
+//将指定类型的数值转换为小端存储方式的字符数组
 void DataTypeConverter::ToInt16Buff_m(short num, char *buff)
 {
     char IntValue[2] = {0};
