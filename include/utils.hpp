@@ -145,6 +145,8 @@ int sysOpen(char path[]);
 
 int DB_QueryByTimespan_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params);
 
+int DB_QueryByTimespan_Old(DB_DataBuffer *buffer, DB_QueryParams *params);
+
 // int DB_QueryLastRecords_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params);
 
 // int DB_QueryByTimespan_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params);

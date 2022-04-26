@@ -159,14 +159,14 @@ int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, vector<long> &
  *          others: StatusCode
  * @note
  */
-int sortResultByValue(vector<tuple<char *, long, long>> &mallocedMemory, DB_QueryParams *params, DataType &type)
+int sortResult(vector<tuple<char *, long, long, long>> &mallocedMemory, DB_QueryParams *params, DataType &type)
 {
     switch (params->order)
     {
     case ASCEND: //升序
     {
         sort(mallocedMemory.begin(), mallocedMemory.end(),
-             [&type](tuple<char *, long, long> iter1, tuple<char *, long, long> iter2) -> bool
+             [&type](tuple<char *, long, long, long> iter1, tuple<char *, long, long, long> iter2) -> bool
              {
                  char value1[type.valueBytes], value2[type.valueBytes];
                  memcpy(value1, get<0>(iter1) + get<2>(iter1), type.valueBytes);
@@ -179,7 +179,7 @@ int sortResultByValue(vector<tuple<char *, long, long>> &mallocedMemory, DB_Quer
     case DESCEND: //降序
     {
         sort(mallocedMemory.begin(), mallocedMemory.end(),
-             [&type](tuple<char *, long, long> iter1, tuple<char *, long, long> iter2) -> bool
+             [&type](tuple<char *, long, long, long> iter1, tuple<char *, long, long, long> iter2) -> bool
              {
                  char value1[type.valueBytes], value2[type.valueBytes];
                  memcpy(value1, get<0>(iter1) + get<2>(iter1), type.valueBytes);
@@ -219,6 +219,24 @@ int sortResultByValue(vector<tuple<char *, long, long>> &mallocedMemory, DB_Quer
             }
         }
 
+        break;
+    }
+    case TIME_ASC:
+    {
+        sort(mallocedMemory.begin(), mallocedMemory.end(),
+             [](tuple<char *, long, long, long> iter1, tuple<char *, long, long, long> iter2) -> bool
+             {
+                 return get<3>(iter1) < get<3>(iter2);
+             });
+        break;
+    }
+    case TIME_DSC:
+    {
+        sort(mallocedMemory.begin(), mallocedMemory.end(),
+             [](tuple<char *, long, long, long> iter1, tuple<char *, long, long, long> iter2) -> bool
+             {
+                 return get<3>(iter1) > get<3>(iter2);
+             });
         break;
     }
     default:
@@ -3210,10 +3228,11 @@ mutex memMutex;
  * @param pack 包的内存地址-长度对
  * @param params 查询参数
  * @param cur 当前已分配的内存总长度，临界资源，需要加线程互斥锁
- * @param mallocedMemory 已分配的内存地址-长度-排序值偏移量元组，临界资源，需要加线程互斥锁
+ * @param mallocedMemory 已分配的内存地址-长度-排序值偏移量-时间戳元组，临界资源，需要加线程互斥锁
+ * @param type  排序值的数据类型
  * @return int
  */
-int PackProcess(pair<char *, long> pack, DB_QueryParams *params, long *cur, vector<tuple<char *, long, long>> *mallocedMemory)
+int PackProcess(pair<char *, long> pack, DB_QueryParams *params, long *cur, vector<tuple<char *, long, long, long>> *mallocedMemory, DataType *type)
 {
     // vector<tuple<char *, long, long>> mallocedMemory;
     PackFileReader packReader(pack.first, pack.second);
@@ -3267,7 +3286,6 @@ int PackProcess(pair<char *, long> pack, DB_QueryParams *params, long *cur, vect
         //获取数据的偏移量和数据类型
         long pos = 0, bytes = 0;
         vector<long> posList, bytesList;
-        DataType type;
         long copyBytes = 0;
         int err;
         if (params->byPath)
@@ -3281,8 +3299,8 @@ int PackProcess(pair<char *, long> pack, DB_QueryParams *params, long *cur, vect
         }
         else
         {
-            err = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type);
-            copyBytes = type.hasTime ? bytes + 8 : bytes;
+            err = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, *type);
+            copyBytes = type->hasTime ? bytes + 8 : bytes;
         }
         if (err != 0)
         {
@@ -3308,7 +3326,7 @@ int PackProcess(pair<char *, long> pack, DB_QueryParams *params, long *cur, vect
 
         int compareBytes = 0;
         if (params->valueName != NULL)
-            compareBytes = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type) == 0 ? bytes : 0;
+            compareBytes = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, *type) == 0 ? bytes : 0;
         bool canCopy = false;
         if (params->compareType != CMP_NONE && compareBytes != 0) //可比较
         {
@@ -3316,7 +3334,7 @@ int PackProcess(pair<char *, long> pack, DB_QueryParams *params, long *cur, vect
             memcpy(value, buff + pos, compareBytes);
 
             //根据比较结果决定是否加入结果集
-            int compareRes = DataType::CompareValue(type, value, params->compareValue);
+            int compareRes = DataType::CompareValue(*type, value, params->compareValue);
             switch (params->compareType)
             {
             case DB_CompareType::GT:
@@ -3380,7 +3398,7 @@ int PackProcess(pair<char *, long> pack, DB_QueryParams *params, long *cur, vect
                 *cur += copyBytes;
                 curMutex.unlock();
                 memMutex.lock();
-                mallocedMemory->push_back(make_tuple(memory, copyBytes, sortPos));
+                mallocedMemory->push_back(make_tuple(memory, copyBytes, sortPos, timestamp));
                 memMutex.unlock();
             }
         }
@@ -3422,11 +3440,8 @@ int DB_QueryByTimespan_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params
     if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
 
-    //根据时间升序排序
-    sortByTime(selectedFiles, TIME_ASC);
-
-    vector<tuple<char *, long, long>> mallocedMemory; //当前已分配的内存地址-长度-排序值偏移元组
-    long cur = 0;                                     //已选择的数据总长
+    vector<tuple<char *, long, long, long>> mallocedMemory; //当前已分配的内存地址-长度-排序值偏移-时间戳元组
+    long cur = 0;                                           //已选择的数据总长
     DataType type;
     vector<DataType> typeList, selectedTypes;
     vector<long> sortDataPoses; //按值排序时要比较的数据的偏移量
@@ -3451,7 +3466,7 @@ int DB_QueryByTimespan_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params
                 auto pk = packManager.GetPack(selectedPacks[index].first);
                 // cout << selectedPacks[index].first << endl;
                 // cout << pk.first << endl;
-                f[j] = async(std::launch::async, PackProcess, pk, params, &cur, &mallocedMemory);
+                f[j] = async(std::launch::async, PackProcess, pk, params, &cur, &mallocedMemory, &type);
                 status[j] = f[j].wait_for(chrono::milliseconds(1));
                 // cout << "thread" << j << " index" << index << endl;
                 index++;
@@ -3470,10 +3485,6 @@ int DB_QueryByTimespan_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params
             f[j].wait();
     }
 
-    // sort(mallocedMemory.begin(), mallocedMemory.end(),
-    // [](tuple<char*,long,long> iter1, tuple<char*,long,long> iter2) -> bool {
-
-    // });
     //对时序在后的普通文件检索
     for (auto &file : selectedFiles)
     {
@@ -3603,13 +3614,12 @@ int DB_QueryByTimespan_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params
             char *memory = new char[copyBytes];
             memcpy(memory, copyValue, copyBytes);
             cur += copyBytes;
-            mallocedMemory.push_back(make_tuple(memory, copyBytes, sortPos));
+            mallocedMemory.push_back(make_tuple(memory, copyBytes, sortPos, file.second));
         }
         delete[] buff;
     }
 
-    if (sortDataPoses.size() > 0) //尚有问题
-        sortResultByValue(mallocedMemory, params, type);
+    sortResult(mallocedMemory, params, type);
     if (cur == 0)
     {
         buffer->buffer = NULL;
@@ -4934,94 +4944,94 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
     return StatusCode::DATAFILE_NOT_FOUND;
 }
 
-// int main()
-// {
-//     DataTypeConverter converter;
-//     DB_QueryParams params;
-//     params.pathToLine = "JinfeiSixteen";
-//     params.fileID = "JinfeiSixteen15";
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)0;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     params.pathCode = code;
-//     params.valueName = "S2OFF";
-//     // params.valueName = NULL;
-//     params.start = 1650095500000;
-//     params.end = 1650175600000;
-//     params.order = ODR_NONE;
-//     params.compareType = CMP_NONE;
-//     params.compareValue = "666";
-//     params.queryType = FILEID;
-//     params.byPath = 0;
-//     params.queryNums = 200;
-//     DB_DataBuffer buffer;
-//     buffer.savePath = "/";
-//     // cout << settings("Pack_Mode") << endl;
-//     // vector<pair<string, long>> files;
-//     // readDataFilesWithTimestamps("", files);
-//     // Packer::Pack("/",files);
-//     auto startTime = std::chrono::system_clock::now();
-//     DB_QueryByTimespan(&buffer, &params);
+int main()
+{
+    DataTypeConverter converter;
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiSixteen";
+    params.fileID = "JinfeiSixteen15";
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)0;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueName = "S2OFF";
+    // params.valueName = NULL;
+    params.start = 1650095500000;
+    params.end = 1650175600000;
+    params.order = TIME_DSC;
+    params.compareType = LT;
+    params.compareValue = "666";
+    params.queryType = FILEID;
+    params.byPath = 1;
+    params.queryNums = 200;
+    DB_DataBuffer buffer;
+    buffer.savePath = "/";
+    // cout << settings("Pack_Mode") << endl;
+    // vector<pair<string, long>> files;
+    // readDataFilesWithTimestamps("", files);
+    // Packer::Pack("/",files);
+    auto startTime = std::chrono::system_clock::now();
+    DB_QueryByTimespan(&buffer, &params);
 
-//     auto endTime = std::chrono::system_clock::now();
-//     free(buffer.buffer);
-//     std::cout << "首次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    auto endTime = std::chrono::system_clock::now();
+    free(buffer.buffer);
+    std::cout << "首次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
 
-//     startTime = std::chrono::system_clock::now();
-//     DB_QueryByTimespan(&buffer, &params);
+    startTime = std::chrono::system_clock::now();
+    DB_QueryByTimespan(&buffer, &params);
 
-//     endTime = std::chrono::system_clock::now();
-//     std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     free(buffer.buffer);
-//     startTime = std::chrono::system_clock::now();
-//     DB_QueryByTimespan_MultiThread(&buffer, &params);
+    endTime = std::chrono::system_clock::now();
+    std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    free(buffer.buffer);
+    startTime = std::chrono::system_clock::now();
+    DB_QueryByTimespan_MultiThread(&buffer, &params);
 
-//     endTime = std::chrono::system_clock::now();
-//     std::cout << "第三次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     free(buffer.buffer);
-//     return 0;
-//     // DB_QueryLastRecords_Using_Cache(&buffer, &params);
-//     // DB_QueryByTimespan_Using_Cache(&buffer, &params);
-//     // DB_QueryByTimespan(&buffer, &params);
-//     if (buffer.bufferMalloced)
-//     {
-//         char buf[buffer.length];
-//         memcpy(buf, buffer.buffer, buffer.length);
-//         cout << buffer.length << endl;
-//         for (int i = 0; i < buffer.length; i++)
-//         {
-//             cout << (int)buf[i] << " ";
-//             if (i % 11 == 0)
-//                 cout << endl;
-//         }
+    endTime = std::chrono::system_clock::now();
+    std::cout << "第三次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    free(buffer.buffer);
+    return 0;
+    // DB_QueryLastRecords_Using_Cache(&buffer, &params);
+    // DB_QueryByTimespan_Using_Cache(&buffer, &params);
+    // DB_QueryByTimespan(&buffer, &params);
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
 
-//         free(buffer.buffer);
-//     }
-//     // buffer.bufferMalloced = 0;
-//     // DB_QueryByFileID(&buffer, &params);
+        free(buffer.buffer);
+    }
+    // buffer.bufferMalloced = 0;
+    // DB_QueryByFileID(&buffer, &params);
 
-//     // if (buffer.bufferMalloced)
-//     // {
-//     //     char buf[buffer.length];
-//     //     memcpy(buf, buffer.buffer, buffer.length);
-//     //     cout << buffer.length << endl;
-//     //     for (int i = 0; i < buffer.length; i++)
-//     //     {
-//     //         cout << (int)buf[i] << " ";
-//     //         if (i % 11 == 0)
-//     //             cout << endl;
-//     //     }
+    // if (buffer.bufferMalloced)
+    // {
+    //     char buf[buffer.length];
+    //     memcpy(buf, buffer.buffer, buffer.length);
+    //     cout << buffer.length << endl;
+    //     for (int i = 0; i < buffer.length; i++)
+    //     {
+    //         cout << (int)buf[i] << " ";
+    //         if (i % 11 == 0)
+    //             cout << endl;
+    //     }
 
-//     //     free(buffer.buffer);
-//     // }
-//     // buffer.buffer = NULL;
-//     return 0;
-// }
+    //     free(buffer.buffer);
+    // }
+    // buffer.buffer = NULL;
+    return 0;
+}
