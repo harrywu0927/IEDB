@@ -1108,13 +1108,10 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
 
 int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
 {
-    int err = 0;
-    err = DB_LoadZipSchema(pathToLine); //加载压缩模板
-    if (err)
-    {
-        cout << "未加载模板" << endl;
+    int err;
+    //确认当前模版
+    if (ZipTemplateManager::CheckZipTemplate(pathToLine) != 0)
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
-    }
     DataTypeConverter converter;
 
     long len = buffLength;

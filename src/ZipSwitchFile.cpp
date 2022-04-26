@@ -767,6 +767,6 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
 
 // int main()
 // {
-//     DB_ZipSwitchFile("jinfei", "jinfei");
+//     DB_ReZipSwitchFile("jinfei", "jinfei");
 //     return 0;
 // }

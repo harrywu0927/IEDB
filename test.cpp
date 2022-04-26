@@ -253,6 +253,11 @@ int main()
     // }
     // pthread_exit(NULL);
 
+    // float fl = 1.2345;
+    // char val[4] = {0};
+    // memcpy(val, &fl, 4);
+    // return 0;
+
     // int maxThreads = thread::hardware_concurrency();
     // int i = 0;
     // future_status status[maxThreads - 1];
@@ -372,20 +377,20 @@ int main()
     // cout << count << endl;
     // sleep(10);
     // DB_MAX(&buffer, &params);
-    if (buffer.bufferMalloced)
-    {
-        char buf[buffer.length];
-        memcpy(buf, buffer.buffer, buffer.length);
-        cout << buffer.length << endl;
-        for (int i = 0; i < buffer.length; i++)
-        {
-            cout << (int)buf[i] << " ";
-            if (i % 11 == 0)
-                cout << endl;
-        }
+    // if (buffer.bufferMalloced)
+    // {
+    //     char buf[buffer.length];
+    //     memcpy(buf, buffer.buffer, buffer.length);
+    //     cout << buffer.length << endl;
+    //     for (int i = 0; i < buffer.length; i++)
+    //     {
+    //         cout << (int)buf[i] << " ";
+    //         if (i % 11 == 0)
+    //             cout << endl;
+    //     }
 
-        free(buffer.buffer);
-    }
+    //     free(buffer.buffer);
+    // }
     // // DB_QueryByFileID(&buffer, &params);
     // return 0;
 
