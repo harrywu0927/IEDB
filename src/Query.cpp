@@ -2846,7 +2846,7 @@ int DB_QueryByTimespan_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note   支持idb文件和pak文件混合查询,此处默认pak文件中的时间均早于idb和idbzip文件！！
  */
-int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -3417,8 +3417,12 @@ int PackProcess(pair<char *, long> pack, DB_QueryParams *params, long *cur, vect
  *          others: StatusCode
  * @note   支持idb文件和pak文件混合查询,此处默认pak文件中的时间均早于idb和idbzip文件！！
  */
-int DB_QueryByTimespan_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
+    if (maxThreads <= 2) //线程数量<=2时，多线程已无必要
+    {
+        return DB_QueryByTimespan_Single(buffer, params);
+    }
     int check = CheckQueryParams(params);
     if (check != 0)
         return check;
@@ -3457,18 +3461,13 @@ int DB_QueryByTimespan_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params
     }
     do
     {
-
         for (int j = 0; j < maxThreads - 1; j++) //留一个线程循环遍历线程集，确认每个线程的运行状态
         {
-            // f[j].wait();
             if (status[j] == future_status::ready)
             {
                 auto pk = packManager.GetPack(selectedPacks[index].first);
-                // cout << selectedPacks[index].first << endl;
-                // cout << pk.first << endl;
                 f[j] = async(std::launch::async, PackProcess, pk, params, &cur, &mallocedMemory, &type);
                 status[j] = f[j].wait_for(chrono::milliseconds(1));
-                // cout << "thread" << j << " index" << index << endl;
                 index++;
                 if (index == selectedPacks.size())
                     break;
@@ -4992,7 +4991,7 @@ int main()
     std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
     free(buffer.buffer);
     startTime = std::chrono::system_clock::now();
-    DB_QueryByTimespan_MultiThread(&buffer, &params);
+    // DB_QueryByTimespan_MultiThread(&buffer, &params);
 
     endTime = std::chrono::system_clock::now();
     std::cout << "第三次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
