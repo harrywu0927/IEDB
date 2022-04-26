@@ -253,6 +253,11 @@ int main()
     // }
     // pthread_exit(NULL);
 
+    // float fl = 1.2345;
+    // char val[4] = {0};
+    // memcpy(val, &fl, 4);
+    // return 0;
+
     // int maxThreads = thread::hardware_concurrency();
     // int i = 0;
     // future_status status[maxThreads - 1];
@@ -298,71 +303,60 @@ int main()
     // cout << "count" << count2 << endl;
     // return 0;
 
-    DB_QueryParams params;
-    params.pathToLine = "JinfeiThirtee";
-    params.fileID = "JinfeiSixteen13455";
-    char code[10];
-    code[0] = (char)0;
-    code[1] = (char)1;
-    code[2] = (char)0;
-    code[3] = (char)0;
-    code[4] = 0;
-    code[5] = (char)0;
-    code[6] = 0;
-    code[7] = (char)0;
-    code[8] = (char)0;
-    code[9] = (char)0;
-    params.pathCode = code;
-    params.valueName = "S2OFF";
-    // params.valueName = NULL;
-    params.start = 1650095500000;
-    params.end = 1650175600000;
-    params.order = ODR_NONE;
-    params.compareType = CMP_NONE;
-    params.compareValue = "666";
-    params.queryType = FILEID;
-    params.byPath = 0;
-    params.queryNums = 20000;
-    DB_DataBuffer buffer;
-    buffer.savePath = "/";
-    // cout << settings("Pack_Mode") << endl;
-    auto startTime = std::chrono::system_clock::now();
-    DB_QueryByTimespan(&buffer, &params);
+    // DB_QueryParams params;
+    // params.pathToLine = "JinfeiThirtee";
+    // params.fileID = "JinfeiSixteen15";
+    // char code[10];
+    // code[0] = (char)0;
+    // code[1] = (char)1;
+    // code[2] = (char)0;
+    // code[3] = (char)0;
+    // code[4] = 0;
+    // code[5] = (char)0;
+    // code[6] = 0;
+    // code[7] = (char)0;
+    // code[8] = (char)0;
+    // code[9] = (char)0;
+    // params.pathCode = code;
+    // params.valueName = "S2OFF";
+    // // params.valueName = NULL;
+    // params.start = 1650095500000;
+    // params.end = 1650175600000;
+    // params.order = ODR_NONE;
+    // params.compareType = CMP_NONE;
+    // params.compareValue = "666";
+    // params.queryType = FILEID;
+    // params.byPath = 0;
+    // params.queryNums = 20000;
+    // DB_DataBuffer buffer;
+    // buffer.savePath = "/";
+    // // cout << settings("Pack_Mode") << endl;
+    // auto startTime = std::chrono::system_clock::now();
+    // DB_QueryByTimespan(&buffer, &params);
 
-    auto endTime = std::chrono::system_clock::now();
-    free(buffer.buffer);
-    std::cout << "首次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    // this_thread::sleep_for(chrono::seconds(1));
-    for (int i = 0; i < 20; i++)
-    {
-        startTime = std::chrono::system_clock::now();
-        DB_QueryByTimespan_MultiThread(&buffer, &params);
+    // auto endTime = std::chrono::system_clock::now();
+    // free(buffer.buffer);
+    // std::cout << "首次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
 
-        endTime = std::chrono::system_clock::now();
-        std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-        free(buffer.buffer);
-    }
-    startTime = std::chrono::system_clock::now();
-    DB_QueryByTimespan(&buffer, &params);
+    // startTime = std::chrono::system_clock::now();
+    // DB_QueryLastRecords(&buffer, &params);
 
-    endTime = std::chrono::system_clock::now();
-    std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    free(buffer.buffer);
-    // this_thread::sleep_for(chrono::seconds(1));
-    startTime = std::chrono::system_clock::now();
-    DB_QueryByTimespan_MultiThread(&buffer, &params);
+    // endTime = std::chrono::system_clock::now();
+    // std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // free(buffer.buffer);
+    // startTime = std::chrono::system_clock::now();
+    // DB_QueryLastRecords(&buffer, &params);
 
-    endTime = std::chrono::system_clock::now();
-    std::cout << "第三次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    free(buffer.buffer);
-    // this_thread::sleep_for(chrono::seconds(1));
-    startTime = std::chrono::system_clock::now();
+    // endTime = std::chrono::system_clock::now();
+    // std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // free(buffer.buffer);
+    // startTime = std::chrono::system_clock::now();
     // DB_QueryByFileID(&buffer, &params);
 
-    endTime = std::chrono::system_clock::now();
-    // std::cout << "第四次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    //  free(buffer.buffer);
-    return 0;
+    // endTime = std::chrono::system_clock::now();
+    // std::cout << "第三次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // // free(buffer.buffer);
+    // return 0;
     // long count = 0;
     // DB_GetNormalDataCount(&params, &count);
     // cout << count << endl;
@@ -370,20 +364,20 @@ int main()
     // cout << count << endl;
     // sleep(10);
     // DB_MAX(&buffer, &params);
-    if (buffer.bufferMalloced)
-    {
-        char buf[buffer.length];
-        memcpy(buf, buffer.buffer, buffer.length);
-        cout << buffer.length << endl;
-        for (int i = 0; i < buffer.length; i++)
-        {
-            cout << (int)buf[i] << " ";
-            if (i % 11 == 0)
-                cout << endl;
-        }
+    // if (buffer.bufferMalloced)
+    // {
+    //     char buf[buffer.length];
+    //     memcpy(buf, buffer.buffer, buffer.length);
+    //     cout << buffer.length << endl;
+    //     for (int i = 0; i < buffer.length; i++)
+    //     {
+    //         cout << (int)buf[i] << " ";
+    //         if (i % 11 == 0)
+    //             cout << endl;
+    //     }
 
-        free(buffer.buffer);
-    }
+    //     free(buffer.buffer);
+    // }
     // // DB_QueryByFileID(&buffer, &params);
     // return 0;
 

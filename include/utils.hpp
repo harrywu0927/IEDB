@@ -610,17 +610,77 @@ class ZipTemplateManager
 {
 private:
 public:
-    static void AddTemplate(ZipTemplate &tem)
+    static void AddZipTemplate(ZipTemplate &tem)
     {
     }
-    static void ModifyMaxTemplates(int n)
+    static void ModifyMaxZipTemplates(int n)
     {
         maxTemplates = n;
     }
     //将模版设为当前模版
-    static int SetTemplate(ZipTemplate &tem)
+    static int SetZipTemplate(const char *path)
     {
-        CurrentZipTemplate = tem;
+        vector<string> files;
+        readFileList(path, files);
+        string temPath = "";
+        for (string file : files) //找到带有后缀ziptem的文件
+        {
+            string s = file;
+            vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
+            if (vec[vec.size() - 1].find("ziptem") != string::npos)
+            {
+                temPath = file;
+                break;
+            }
+        }
+        if (temPath == "")
+            return StatusCode::SCHEMA_FILE_NOT_FOUND;
+        long length;
+        DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &length);
+        char buf[length];
+        int err = DB_OpenAndRead(const_cast<char *>(temPath.c_str()), buf);
+        if (err != 0)
+            return err;
+        int i = 0;
+
+        DataTypeConverter dtc;
+        vector<string> dataName;
+        vector<DataType> dataTypes;
+        while (i < length)
+        {
+            char variable[30], dataType[30], standardValue[10], maxValue[10], minValue[10], hasTime[1];
+            memcpy(variable, buf + i, 30);
+            i += 30;
+            memcpy(dataType, buf + i, 30);
+            i += 30;
+            memcpy(standardValue, buf + i, 10);
+            i += 10;
+            memcpy(maxValue, buf + i, 10);
+            i += 10;
+            memcpy(minValue, buf + i, 10);
+            i += 10;
+            memcpy(hasTime, buf + i, 1);
+            i += 1;
+            vector<string> paths;
+
+            dataName.push_back(variable);
+            DataType type;
+
+            memcpy(type.standardValue, standardValue, 10);
+            memcpy(type.maxValue, maxValue, 10);
+            memcpy(type.minValue, minValue, 10);
+            type.hasTime = (bool)hasTime[0];
+            // strcpy(type.standardValue,standardValue);
+            // strcpy(type.maxValue,maxValue);
+            // strcpy(type.minValue,minValue);
+            if (DataType::GetDataTypeFromStr(dataType, type) == 0)
+            {
+                dataTypes.push_back(type);
+            }
+        }
+        ZipTemplate tem(dataName, dataTypes, path);
+        AddZipTemplate(tem);
+        CurrentZipTemplate=tem;
         return 0;
     }
     //卸载指定路径下的模版
@@ -636,6 +696,15 @@ public:
         CurrentZipTemplate.path = "";
         CurrentZipTemplate.schemas.clear();
         CurrentZipTemplate.temFileBuffer = NULL;
+        return 0;
+    }
+    //检查是否已加载了模板
+    static int CheckZipTemplate(string path)
+    {
+        if ((path != CurrentZipTemplate.path && path != "") || CurrentZipTemplate.path == "")
+        {
+            return SetZipTemplate(path.c_str());
+        }
         return 0;
     }
 };
