@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <sstream>
+#include <utils.hpp>
 #include <CJsonObject.hpp>
 using namespace std;
 #ifdef WIN32
@@ -29,7 +30,6 @@ typedef long long int long;
 #endif
 // extern int errno;
 neb::CJsonObject ReadConfig();
-static neb::CJsonObject config = ReadConfig();
 long availableSpace = 1024 * 1024 * 10;
 size_t totalSpace = 0;
 char labelPath[100] = "./";
@@ -37,16 +37,6 @@ char labelPath[100] = "./";
 void SetBasePath(char path[])
 {
     strcpy(labelPath, path);
-}
-neb::CJsonObject ReadConfig()
-{
-    ifstream t("./settings.json");
-    stringstream buffer;
-    buffer << t.rdbuf();
-    string contents(buffer.str());
-    neb::CJsonObject tmp(contents);
-    strcpy(labelPath, config("Filename_Label").c_str());
-    return tmp;
 }
 int get_file_size_time(const char *filename, pair<long, long> *s_t)
 {
@@ -152,9 +142,8 @@ queue<string> fileQueue = InitFileQueue();
 
 int DB_GetFileLengthByPath(char path[], long *length)
 {
-    // ReadConfig();
     char finalPath[100];
-    strcpy(finalPath, labelPath);
+    strcpy(finalPath, settings("Filename_Label").c_str());
     strcat(finalPath, "/");
     strcat(finalPath, path);
     FILE *fp = fopen(finalPath, "r");
@@ -269,11 +258,11 @@ int DB_Write(long fp, char *buf, long length)
     bool allowWrite = true;
     // ReadConfig();   //读取配置
 
-    if (config("FileOverFlowMode") == "loop")
+    if (settings("FileOverFlowMode") == "loop")
     {
         allowWrite = LoopMode(buf, length);
     }
-    else if (config("FileOverFlowMode") == "limit")
+    else if (settings("FileOverFlowMode") == "limit")
     {
         allowWrite = LimitMode(buf, length);
     }
@@ -297,7 +286,7 @@ int DB_Open(char path[], char mode[], long *fptr)
 {
     // ReadConfig();
     char finalPath[100];
-    strcpy(finalPath, labelPath);
+    strcpy(finalPath, settings("Filename_Label").c_str());
     strcat(finalPath, "/");
     strcat(finalPath, path);
     // fileQueue.push(finalPath);
@@ -347,7 +336,7 @@ int DB_DeleteFile(char path[])
 {
     // ReadConfig();
     char finalPath[100];
-    strcpy(finalPath, labelPath);
+    strcpy(finalPath, settings("Filename_Label").c_str());
     strcat(finalPath, "/");
     strcat(finalPath, path);
     // availableSpace += GetFileLengthByPath(path);
@@ -371,7 +360,7 @@ int DB_Read(long fptr, char buf[])
 int DB_OpenAndRead(char path[], char buf[])
 {
     char finalPath[100];
-    strcpy(finalPath, labelPath);
+    strcpy(finalPath, settings("Filename_Label").c_str());
     strcat(finalPath, "/");
     strcat(finalPath, path);
     FILE *fp = fopen(finalPath, "rb");
@@ -391,7 +380,7 @@ int DB_OpenAndRead(char path[], char buf[])
 
 int DB_ReadFile(DB_DataBuffer *buffer)
 {
-    string finalPath = labelPath;
+    string finalPath = settings("Filename_Label");
 
     string savepath = buffer->savePath;
     if (savepath[0] != '/')
@@ -527,12 +516,12 @@ int DB_DeleteDirectory(char path[])
 int sysOpen(char path[])
 {
     char finalPath[100];
-    strcpy(finalPath, labelPath);
+    strcpy(finalPath, settings("Filename_Label").c_str());
     strcat(finalPath, "/");
     strcat(finalPath, path);
 
-    int fd = open(finalPath,O_CREAT|O_RDWR,S_IRWXG|S_IRWXO|S_IRWXU);
-    if(fd == -1)
+    int fd = open(finalPath, O_CREAT | O_RDWR, S_IRWXG | S_IRWXO | S_IRWXU);
+    if (fd == -1)
         return errno;
     return fd;
 }

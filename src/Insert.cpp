@@ -3,7 +3,7 @@
 using namespace std;
 
 #ifndef WIN32
-
+void *checkSettings(void *ptr);
 pthread_t timer; //计时器，另开一个新的线程
 int timerStarted = false;
 void *checkTime(void *ptr)
@@ -33,6 +33,29 @@ void *checkTime(void *ptr)
         // sleep_until
     }
 }
+void *checkSettings(void *ptr)
+{
+    FILE *fp = fopen("settings.json", "r+");
+
+    while (1)
+    {
+        fseek(fp, 0, SEEK_END);
+        int len = ftell(fp);
+        fseek(fp, 0, SEEK_SET);
+        char buff[len];
+        fread(buff, len, 1, fp);
+        string str = buff;
+        string contents(str);
+        neb::CJsonObject tmp(contents);
+        settings = tmp;
+        cout << tmp("Filename_Label") << endl;
+        sleep(3);
+        // this_thread::sleep_for(chrono::seconds(3));
+    }
+}
+// thread settingsWatcher;
+pthread_t settingsWatcher;
+int settingsWatcherStarted = false;
 #endif
 /**
  * @brief 将一个缓冲区中的一条数据(文件)存放在指定路径下，以文件ID+时间的方式命名
@@ -47,6 +70,11 @@ void *checkTime(void *ptr)
 int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
 {
 #ifndef WIN32
+    if (!settingsWatcherStarted)
+    {
+        pthread_create(&settingsWatcher, NULL, checkSettings, NULL);
+        settingsWatcherStarted = true;
+    }
     if (!timerStarted && settings("Pack_Mode") == "timed")
     {
         int ret = pthread_create(&timer, NULL, checkTime, NULL);

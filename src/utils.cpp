@@ -2,7 +2,6 @@
 
 unordered_map<string, int> getDirCurrentFileIDIndex();
 long getMilliTime();
-void *checkSettings(void *ptr);
 
 int maxTemplates = 20;
 vector<Template> templates;
@@ -12,29 +11,6 @@ FileIDManager fileIDManager;
 neb::CJsonObject settings = FileIDManager::GetSetting();
 unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
 PackManager packManager(atoi(settings("Pack_Cache_Size").c_str()) * 1024 * 2);
-
-void *checkSettings(void *ptr)
-{
-    FILE *fp = fopen("settings.json", "r+");
-
-    while (1)
-    {
-        fseek(fp, 0, SEEK_END);
-        int len = ftell(fp);
-        fseek(fp, 0, SEEK_SET);
-        char buff[len];
-        fread(buff, len, 1, fp);
-        string str = buff;
-        string contents(str);
-        neb::CJsonObject tmp(contents);
-        settings = tmp;
-        cout << tmp("Filename_Label") << endl;
-        sleep(3);
-        // this_thread::sleep_for(chrono::seconds(3));
-    }
-}
-// thread settingsWatcher;
-pthread_t settingsWatcher;
 
 //递归获取所有子文件夹
 void readAllDirs(vector<string> &dirs, string basePath)

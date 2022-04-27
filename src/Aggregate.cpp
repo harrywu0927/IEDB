@@ -2857,9 +2857,9 @@ int main()
     params.order = ODR_NONE;
     params.compareType = CMP_NONE;
     params.compareValue = "666";
-    params.queryType = TIMESPAN;
+    params.queryType = LAST;
     params.byPath = 0;
-    params.queryNums = 234;
+    params.queryNums = 23456;
     // DB_DataBuffer buffer;
     // DB_AVG(&buffer, &params);
     // if (buffer.bufferMalloced)
