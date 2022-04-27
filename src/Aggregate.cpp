@@ -1786,6 +1786,383 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
     return 0;
 }
 
+int CountSinglePack_Normal(DB_QueryParams *param, pair<char *, long> pack)
+{
+    int normal = 0;
+    switch (param->queryType)
+    {
+    case TIMESPAN:
+    {
+        PackFileReader packReader(pack.first, pack.second);
+        int fileNum;
+        string templateName;
+        packReader.ReadPackHead(fileNum, templateName);
+        for (int i = 0; i < fileNum; i++)
+        {
+            long timestamp;
+            int zipType, readLength;
+            long dataPos = packReader.Next(readLength, timestamp, zipType);
+            if (timestamp >= param->start && timestamp <= param->end && zipType != 2)
+            {
+                if (zipType == 0)
+                {
+                    char buff[readLength];
+                    memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                    if (IsNormalIDBFile(buff, param->pathToLine))
+                    {
+                        normal++;
+                    }
+                }
+                else
+                    normal++;
+            }
+        }
+        break;
+    }
+    case LAST:
+    {
+        break;
+    }
+    case FILEID:
+        break;
+    default:
+    {
+        PackFileReader packReader(pack.first, pack.second);
+        int fileNum;
+        string templateName;
+        packReader.ReadPackHead(fileNum, templateName);
+        for (int i = 0; i < fileNum; i++)
+        {
+            long timestamp;
+            int zipType, readLength;
+            long dataPos = packReader.Next(readLength, timestamp, zipType);
+            if (zipType != 2)
+            {
+                if (zipType == 0)
+                {
+                    char buff[readLength];
+                    memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                    if (IsNormalIDBFile(buff, param->pathToLine))
+                    {
+                        normal++;
+                    }
+                }
+                else
+                    normal++;
+            }
+        }
+        break;
+    }
+    }
+    return normal;
+}
+
+/**
+ * @brief 按条件统计正常文件条数
+ *
+ * @param params  查询请求参数
+ * @param count  计数值
+ * @return statuscode
+ */
+int DB_GetNormalDataCount_MultiThread(DB_QueryParams *params, long *count)
+{
+    int err = 0;
+    err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
+    if (err)
+    {
+        cout << "未加载模板" << endl;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
+    long normal = 0;
+    vector<string> packFiles, dataFiles;
+    vector<pair<string, long>> selectedPacks, dataWithTime;
+    switch (params->queryType)
+    {
+    case TIMESPAN:
+    {
+        readDataFilesWithTimestamps(params->pathToLine, dataWithTime);
+        auto packFiles = packManager.GetPacksByTime(params->pathToLine, params->start, params->end);
+        for (auto &file : dataWithTime)
+        {
+            struct stat fileInfo;
+            string finalPath = settings("Filename_Label") + "/" + file.first;
+            if (stat(finalPath.c_str(), &fileInfo) == -1)
+            {
+                continue;
+            }
+            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            {
+                if (file.second >= params->start && file.second <= params->end)
+                {
+                    if (fileInfo.st_size == 0)
+                    {
+                        normal++;
+                        continue;
+                    }
+                    if (file.first.back() != 'p')
+                    {
+                        DB_DataBuffer buffer;
+                        buffer.savePath = file.first.c_str();
+                        if (DB_ReadFile(&buffer) == 0)
+                        {
+                            if (IsNormalIDBFile(buffer.buffer, params->pathToLine))
+                                normal++;
+                            free(buffer.buffer);
+                        }
+                    }
+                }
+            }
+        }
+        int index = 0;
+        future_status status[maxThreads - 1];
+        future<int> f[maxThreads - 1];
+        for (int j = 0; j < maxThreads - 1 && index < packFiles.size(); j++)
+        {
+            auto pk = packManager.GetPack(packFiles[index].first);
+            f[j] = async(std::launch::async, CountSinglePack_Normal, params, pk);
+            status[j] = f[j].wait_for(chrono::milliseconds(1));
+            index++;
+        }
+        while (index < packFiles.size())
+        {
+            for (int j = 0; j < maxThreads - 1; j++) //留一个线程循环遍历线程集，确认每个线程的运行状态
+            {
+                if (status[j] == future_status::ready)
+                {
+                    normal += f[j].get();
+                    auto pk = packManager.GetPack(packFiles[index].first);
+                    f[j] = async(std::launch::async, CountSinglePack_Normal, params, pk);
+                    status[j] = f[j].wait_for(chrono::milliseconds(1));
+                    index++;
+                    if (index == packFiles.size())
+                        break;
+                }
+                else
+                {
+                    status[j] = f[j].wait_for(chrono::milliseconds(1));
+                }
+            }
+        }
+        for (int j = 0; j < maxThreads - 1 && j < packFiles.size(); j++)
+        {
+            if (status[j] != future_status::ready)
+            {
+                f[j].wait();
+                normal += f[j].get();
+            }
+            else
+            {
+                normal += f[j].get();
+            }
+        }
+
+        *count = normal;
+        break;
+    }
+    case LAST:
+    {
+        readDataFilesWithTimestamps(params->pathToLine, dataWithTime);
+        sortByTime(dataWithTime, TIME_DSC);
+        long i = 0;
+        for (i = 0; i < params->queryNums && i < dataWithTime.size(); i++)
+        {
+            struct stat fileInfo;
+            string finalPath = settings("Filename_Label") + "/" + dataWithTime[i].first;
+            if (stat(finalPath.c_str(), &fileInfo) == -1)
+            {
+                continue;
+            }
+            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            {
+                if (fileInfo.st_size == 0)
+                {
+                    normal++;
+                    continue;
+                }
+                if (dataWithTime[i].first.back() != 'p')
+                {
+                    DB_DataBuffer buffer;
+                    buffer.savePath = dataWithTime[i].first.c_str();
+                    if (DB_ReadFile(&buffer) == 0)
+                    {
+                        if (IsNormalIDBFile(buffer.buffer, params->pathToLine))
+                            normal++;
+                        free(buffer.buffer);
+                    }
+                }
+            }
+        }
+        if (i == params->queryNums)
+        {
+            *count = normal;
+            return 0;
+        }
+        readPakFilesList(params->pathToLine, packFiles);
+        for (auto &&file : packFiles)
+        {
+            string tmp = file;
+            while (tmp.back() == '/')
+                tmp.pop_back();
+            vector<string> vec = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
+            string packName = vec[vec.size() - 1];
+            vector<string> timespan = DataType::StringSplit(const_cast<char *>(packName.c_str()), "-");
+            if (timespan.size() > 0)
+            {
+                long start = atol(timespan[0].c_str());
+                selectedPacks.push_back(make_pair(file, start));
+            }
+        }
+        sortByTime(selectedPacks, TIME_DSC);
+        for (auto &&pack : selectedPacks)
+        {
+            PackFileReader packReader(pack.first);
+            int fileNum;
+            string templateName;
+            packReader.ReadPackHead(fileNum, templateName);
+            if (i + fileNum < params->queryNums)
+            {
+                i += fileNum;
+                for (int j = 0; j < fileNum; j++)
+                {
+                    long timestamp;
+                    int zipType, readLength;
+                    long dataPos = packReader.Next(readLength, timestamp, zipType);
+                    if (zipType != 2)
+                    {
+                        if (zipType == 0)
+                        {
+                            char buff[readLength];
+                            memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                            if (IsNormalIDBFile(buff, params->pathToLine))
+                            {
+                                normal++;
+                            }
+                        }
+                        else
+                            normal++;
+                    }
+                }
+            }
+            else
+            {
+                long timestamp;
+                int zipType, readLength;
+                packReader.Skip(fileNum - (params->queryNums - i));
+                for (int j = fileNum - (params->queryNums - i); j < fileNum; j++, i++)
+                {
+                    if (i == params->queryNums)
+                    {
+                        *count = normal;
+                        return 0;
+                    }
+                    long dataPos = packReader.Next(readLength, timestamp, zipType);
+                    if (zipType != 2)
+                    {
+                        if (zipType == 0)
+                        {
+                            char buff[readLength];
+                            memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                            if (IsNormalIDBFile(buff, params->pathToLine))
+                            {
+                                normal++;
+                            }
+                        }
+                        else
+                            normal++;
+                    }
+                }
+            }
+        }
+        *count = normal;
+        break;
+    }
+    case FILEID:
+    {
+        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+        break;
+    }
+    default:
+    {
+        readDataFiles(params->pathToLine, dataFiles);
+        auto packFiles = packManager.allPacks[params->pathToLine];
+        for (auto &file : dataFiles)
+        {
+            struct stat fileInfo;
+            string finalPath = settings("Filename_Label") + "/" + file;
+            if (stat(finalPath.c_str(), &fileInfo) == -1)
+            {
+                continue;
+            }
+            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            {
+                if (fileInfo.st_size == 0)
+                {
+                    normal++;
+                    continue;
+                }
+                if (file.back() != 'p')
+                {
+                    DB_DataBuffer buffer;
+                    buffer.savePath = file.c_str();
+                    if (DB_ReadFile(&buffer) == 0)
+                    {
+                        if (IsNormalIDBFile(buffer.buffer, params->pathToLine))
+                            normal++;
+                        free(buffer.buffer);
+                    }
+                }
+            }
+        }
+
+        int index = 0;
+        future_status status[maxThreads - 1];
+        future<int> f[maxThreads - 1];
+        for (int j = 0; j < maxThreads - 1 && index < packFiles.size(); j++)
+        {
+            auto pk = packManager.GetPack(packFiles[index].first);
+            f[j] = async(std::launch::async, CountSinglePack_Normal, params, pk);
+            status[j] = f[j].wait_for(chrono::milliseconds(1));
+            index++;
+        }
+        while (index < packFiles.size())
+        {
+            for (int j = 0; j < maxThreads - 1; j++) //留一个线程循环遍历线程集，确认每个线程的运行状态
+            {
+                if (status[j] == future_status::ready)
+                {
+                    normal += f[j].get();
+                    auto pk = packManager.GetPack(packFiles[index].first);
+                    f[j] = async(std::launch::async, CountSinglePack_Normal, params, pk);
+                    status[j] = f[j].wait_for(chrono::milliseconds(1));
+                    index++;
+                    if (index == packFiles.size())
+                        break;
+                }
+                else
+                {
+                    status[j] = f[j].wait_for(chrono::milliseconds(1));
+                }
+            }
+        }
+        for (int j = 0; j < maxThreads - 1 && j < packFiles.size(); j++)
+        {
+            if (status[j] != future_status::ready)
+            {
+                f[j].wait();
+                normal += f[j].get();
+            }
+            else
+            {
+                normal += f[j].get();
+            }
+        }
+
+        *count = normal;
+    }
+    }
+    return 0;
+}
+
 /**
  * @brief 按条件统计非正常文件条数
  *
@@ -2077,26 +2454,79 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
     return 0;
 }
 
-// int CountSinglePack(DB_QueryType type, long *count, int *packIndex)
-// {
-//     switch (type)
-//     {
-//     case TIMESPAN:
-//     {
-
-//         break;
-//     }
-//     case LAST:
-//     {
-//     }
-//     case FILEID:
-//         break;
-//     default:
-//     {
-//         break;
-//     }
-//     }
-// }
+int CountSinglePack_Abnormal(DB_QueryParams *param, pair<char *, long> pack)
+{
+    int abnormal = 0;
+    switch (param->queryType)
+    {
+    case TIMESPAN:
+    {
+        PackFileReader packReader(pack.first, pack.second);
+        int fileNum;
+        string templateName;
+        packReader.ReadPackHead(fileNum, templateName);
+        for (int i = 0; i < fileNum; i++)
+        {
+            long timestamp;
+            int zipType, readLength;
+            long dataPos = packReader.Next(readLength, timestamp, zipType);
+            if (timestamp >= param->start && timestamp <= param->end)
+            {
+                if (zipType != 1)
+                {
+                    if (zipType == 0)
+                    {
+                        char buff[readLength];
+                        memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                        if (!IsNormalIDBFile(buff, templateName.c_str()))
+                        {
+                            abnormal++;
+                        }
+                    }
+                    else
+                        abnormal++;
+                }
+            }
+        }
+        break;
+    }
+    case LAST:
+    {
+        break;
+    }
+    case FILEID:
+        break;
+    default:
+    {
+        PackFileReader packReader(pack.first, pack.second);
+        int fileNum;
+        string templateName;
+        packReader.ReadPackHead(fileNum, templateName);
+        for (int i = 0; i < fileNum; i++)
+        {
+            long timestamp;
+            int zipType, readLength;
+            long dataPos = packReader.Next(readLength, timestamp, zipType);
+            if (zipType != 1)
+            {
+                if (zipType == 0)
+                {
+                    char buff[readLength];
+                    memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                    if (!IsNormalIDBFile(buff, templateName.c_str()))
+                    {
+                        abnormal++;
+                    }
+                }
+                else
+                    abnormal++;
+            }
+        }
+        break;
+    }
+    }
+    return abnormal;
+}
 
 /**
  * @brief 按条件统计非正常文件条数
@@ -2107,6 +2537,13 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
  */
 int DB_GetAbnormalDataCount_MultiThread(DB_QueryParams *params, long *count)
 {
+    int err = 0;
+    err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
+    if (err)
+    {
+        cout << "未加载模板" << endl;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
     long abnormal = 0;
     vector<string> packFiles, dataFiles;
     vector<pair<string, long>> selectedPacks, dataWithTime;
@@ -2115,7 +2552,7 @@ int DB_GetAbnormalDataCount_MultiThread(DB_QueryParams *params, long *count)
     case TIMESPAN:
     {
         readDataFilesWithTimestamps(params->pathToLine, dataWithTime);
-        readPakFilesList(params->pathToLine, packFiles);
+        auto packFiles = packManager.GetPacksByTime(params->pathToLine, params->start, params->end);
         for (auto &file : dataWithTime)
         {
             struct stat fileInfo;
@@ -2147,51 +2584,49 @@ int DB_GetAbnormalDataCount_MultiThread(DB_QueryParams *params, long *count)
                 }
             }
         }
-        for (auto &file : packFiles)
+        int index = 0;
+        future_status status[maxThreads - 1];
+        future<int> f[maxThreads - 1];
+        for (int j = 0; j < maxThreads - 1 && index < packFiles.size(); j++)
         {
-            string tmp = file;
-            while (tmp.back() == '/')
-                tmp.pop_back();
-            vector<string> vec = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
-            string packName = vec[vec.size() - 1];
-            vector<string> timespan = DataType::StringSplit(const_cast<char *>(packName.c_str()), "-");
-            if (timespan.size() > 0)
+            auto pk = packManager.GetPack(packFiles[index].first);
+            f[j] = async(std::launch::async, CountSinglePack_Abnormal, params, pk);
+            status[j] = f[j].wait_for(chrono::milliseconds(1));
+            index++;
+        }
+        while (index < packFiles.size())
+        {
+            for (int j = 0; j < maxThreads - 1; j++) //留一个线程循环遍历线程集，确认每个线程的运行状态
             {
-                long start = atol(timespan[0].c_str());
-                long end = atol(timespan[1].c_str());
-                if ((start < params->start && end >= params->start) || (start < params->end && end >= params->start) || (start <= params->start && end >= params->end) || (start >= params->start && end <= params->end)) //落入或部分落入时间区间
+                if (status[j] == future_status::ready)
                 {
-                    selectedPacks.push_back(make_pair(file, start));
+                    abnormal += f[j].get();
+                    auto pk = packManager.GetPack(packFiles[index].first);
+                    f[j] = async(std::launch::async, CountSinglePack_Abnormal, params, pk);
+                    status[j] = f[j].wait_for(chrono::milliseconds(1));
+                    index++;
+                    if (index == packFiles.size())
+                        break;
+                }
+                else
+                {
+                    status[j] = f[j].wait_for(chrono::milliseconds(1));
                 }
             }
         }
-        for (auto &pack : selectedPacks)
+        for (int j = 0; j < maxThreads - 1 && j < packFiles.size(); j++)
         {
-            PackFileReader packReader(pack.first);
-            int fileNum;
-            string templateName;
-            packReader.ReadPackHead(fileNum, templateName);
-            for (int i = 0; i < fileNum; i++)
+            if (status[j] != future_status::ready)
             {
-                long timestamp;
-                int zipType, readLength;
-                long dataPos = packReader.Next(readLength, timestamp, zipType);
-                if (timestamp >= params->start && timestamp <= params->end && zipType != 1)
-                {
-                    if (zipType == 0)
-                    {
-                        char buff[readLength];
-                        memcpy(buff, packReader.packBuffer + dataPos, readLength);
-                        if (!IsNormalIDBFile(buff, params->pathToLine))
-                        {
-                            abnormal++;
-                        }
-                    }
-                    else
-                        abnormal++;
-                }
+                f[j].wait();
+                abnormal += f[j].get();
+            }
+            else
+            {
+                abnormal += f[j].get();
             }
         }
+
         *count = abnormal;
         break;
     }
@@ -2320,7 +2755,7 @@ int DB_GetAbnormalDataCount_MultiThread(DB_QueryParams *params, long *count)
     default:
     {
         readDataFiles(params->pathToLine, dataFiles);
-        readPakFilesList(params->pathToLine, packFiles);
+        auto packFiles = packManager.allPacks[params->pathToLine];
         for (auto &file : dataFiles)
         {
             struct stat fileInfo;
@@ -2349,92 +2784,115 @@ int DB_GetAbnormalDataCount_MultiThread(DB_QueryParams *params, long *count)
                 }
             }
         }
-        for (auto &pack : packFiles)
+        int index = 0;
+        future_status status[maxThreads - 1];
+        future<int> f[maxThreads - 1];
+        for (int j = 0; j < maxThreads - 1 && index < packFiles.size(); j++)
         {
-            PackFileReader packReader(pack);
-            int fileNum;
-            string templateName;
-            packReader.ReadPackHead(fileNum, templateName);
-            for (int i = 0; i < fileNum; i++)
+            auto pk = packManager.GetPack(packFiles[index].first);
+            f[j] = async(std::launch::async, CountSinglePack_Abnormal, params, pk);
+            status[j] = f[j].wait_for(chrono::milliseconds(1));
+            index++;
+        }
+        while (index < packFiles.size())
+        {
+            for (int j = 0; j < maxThreads - 1; j++) //留一个线程循环遍历线程集，确认每个线程的运行状态
             {
-                long timestamp;
-                int zipType, readLength;
-                long dataPos = packReader.Next(readLength, timestamp, zipType);
-                if (zipType != 1)
+                if (status[j] == future_status::ready)
                 {
-                    if (zipType == 0)
-                    {
-                        char buff[readLength];
-                        memcpy(buff, packReader.packBuffer + dataPos, readLength);
-                        if (!IsNormalIDBFile(buff, params->pathToLine))
-                        {
-                            abnormal++;
-                        }
-                    }
-                    else
-                        abnormal++;
+                    abnormal += f[j].get();
+                    auto pk = packManager.GetPack(packFiles[index].first);
+                    f[j] = async(std::launch::async, CountSinglePack_Abnormal, params, pk);
+                    status[j] = f[j].wait_for(chrono::milliseconds(1));
+                    index++;
+                    if (index == packFiles.size())
+                        break;
+                }
+                else
+                {
+                    status[j] = f[j].wait_for(chrono::milliseconds(1));
                 }
             }
         }
+        for (int j = 0; j < maxThreads - 1 && j < packFiles.size(); j++)
+        {
+            if (status[j] != future_status::ready)
+            {
+                f[j].wait();
+                abnormal += f[j].get();
+            }
+            else
+            {
+                abnormal += f[j].get();
+            }
+        }
+
         *count = abnormal;
     }
     }
     return 0;
 }
-// int main()
-// {
-//     DataTypeConverter converter;
-//     DB_QueryParams params;
-//     params.pathToLine = "JinfeiSixteen";
-//     params.fileID = "JinfeiSixteen15";
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)0;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     params.pathCode = code;
-//     params.valueName = "S2ON";
-//     // params.valueName = NULL;
-//     params.start = 1650095500000;
-//     params.end = 1650155600000;
-//     params.order = ODR_NONE;
-//     params.compareType = CMP_NONE;
-//     params.compareValue = "666";
-//     params.queryType = LAST;
-//     params.byPath = 0;
-//     params.queryNums = 234;
-//     DB_DataBuffer buffer;
-//     DB_AVG(&buffer, &params);
-//     if (buffer.bufferMalloced)
-//     {
-//         char buf[buffer.length];
-//         memcpy(buf, buffer.buffer, buffer.length);
-//         char val[4] = {0};
-//         float f;
-//         memcpy(val, buf + 12, 4);
-//         f = converter.ToFloat(val);
-//         cout << f << endl;
-//         cout << buffer.length << endl;
-//         for (int i = 0; i < buffer.length; i++)
-//         {
-//             cout << (int)buf[i] << " ";
-//             if (i % 11 == 0)
-//                 cout << endl;
-//         }
+int main()
+{
+    // DataTypeConverter converter;
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiSixteen";
+    params.fileID = "JinfeiSixteen15";
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)0;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueName = "S2ON";
+    // params.valueName = NULL;
+    params.start = 1650095500000;
+    params.end = 1650155600000;
+    params.order = ODR_NONE;
+    params.compareType = CMP_NONE;
+    params.compareValue = "666";
+    params.queryType = TIMESPAN;
+    params.byPath = 0;
+    params.queryNums = 234;
+    // DB_DataBuffer buffer;
+    // DB_AVG(&buffer, &params);
+    // if (buffer.bufferMalloced)
+    // {
+    //     char buf[buffer.length];
+    //     memcpy(buf, buffer.buffer, buffer.length);
+    //     char val[4] = {0};
+    //     float f;
+    //     memcpy(val, buf + 12, 4);
+    //     f = converter.ToFloat(val);
+    //     cout << f << endl;
+    //     cout << buffer.length << endl;
+    //     for (int i = 0; i < buffer.length; i++)
+    //     {
+    //         cout << (int)buf[i] << " ";
+    //         if (i % 11 == 0)
+    //             cout << endl;
+    //     }
 
-//         free(buffer.buffer);
-//     }
-//     // long count;
-//     // DB_GetAbnormalDataCount(&params, &count);
-//     // cout << count << endl;
-//     // count = 0;
-//     // DB_GetNormalDataCount(&params, &count);
-//     // cout << count << endl;
-//     return 0;
-// }
+    //     free(buffer.buffer);
+    // }
+    auto startTime = std::chrono::system_clock::now();
+
+    long count;
+    DB_GetNormalDataCount_MultiThread(&params, &count);
+    auto endTime = std::chrono::system_clock::now();
+    std::cout << "第" << 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    cout << count << endl;
+    count = 0;
+    startTime = std::chrono::system_clock::now();
+    DB_GetNormalDataCount_MultiThread(&params, &count);
+    endTime = std::chrono::system_clock::now();
+    std::cout << "第" << 2 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    cout << count << endl;
+    return 0;
+}

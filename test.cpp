@@ -323,9 +323,9 @@ int main()
     params.start = 1650095500000;
     params.end = 1650155600000;
     params.order = ASCEND;
-    params.compareType = LT;
+    params.compareType = CMP_NONE;
     params.compareValue = "666";
-    params.queryType = FILEID;
+    params.queryType = TIMESPAN;
     params.byPath = 1;
     params.queryNums = 20000;
     DB_DataBuffer buffer;
@@ -337,27 +337,32 @@ int main()
     for (int i = 0; i < 10; i++)
     {
         startTime = std::chrono::system_clock::now();
-        DB_QueryByTimespan_Old(&buffer, &params);
+        DB_STD(&buffer, &params);
 
         endTime = std::chrono::system_clock::now();
         std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
         free(buffer.buffer);
+        // cout << buffer.length << endl;
+        buffer.length = 0;
         total += (endTime - startTime).count();
     }
-    cout << "不使用缓存和多线程的平均查询时间:" << total / 10 << endl;
+    cout << "使用缓存,不使用多线程的平均查询时间:" << total / 10 << endl;
     total = 0;
     for (int i = 0; i < 10; i++)
     {
         startTime = std::chrono::system_clock::now();
-        DB_QueryByTimespan(&buffer, &params);
+        DB_STD(&buffer, &params);
 
         endTime = std::chrono::system_clock::now();
         std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+        // cout << buffer.length << endl;
         free(buffer.buffer);
+        buffer.length = 0;
         total += (endTime - startTime).count();
     }
-    cout << "使用缓存的平均查询时间:" << total / 10 << endl;
+    cout << "使用缓存和多线程的平均查询时间:" << total / 10 << endl;
     total = 0;
+    return 0;
     for (int i = 0; i < 10; i++)
     {
         startTime = std::chrono::system_clock::now();

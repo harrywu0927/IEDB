@@ -147,6 +147,10 @@ int DB_QueryByTimespan_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params
 
 int DB_QueryByTimespan_Old(DB_DataBuffer *buffer, DB_QueryParams *params);
 
+int DB_QueryWholeFile_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params);
+
+int DB_QueryWholeFile_Single(DB_DataBuffer *buffer, DB_QueryParams *params);
+
 // int DB_QueryLastRecords_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params);
 
 // int DB_QueryByTimespan_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params);
@@ -682,7 +686,7 @@ public:
         }
         ZipTemplate tem(dataName, dataTypes, path);
         AddZipTemplate(tem);
-        CurrentZipTemplate=tem;
+        CurrentZipTemplate = tem;
         return 0;
     }
     //卸载指定路径下的模版
