@@ -28,6 +28,7 @@ int DB_Pack(const char *pathToLine, int num, int packAll)
  */
 int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
 {
+    IOBusy = true;
     packMutex.lock();
     TemplateManager::CheckTemplate(pathToLine);
     if (filesWithTime.size() < 1)
@@ -118,6 +119,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
     free(packBuffer);
     DB_Close(fp);
     packMutex.unlock();
+    IOBusy = false;
     return 0;
 }
 
@@ -130,6 +132,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
  */
 int Packer::RePack(string pathToLine)
 {
+    IOBusy = true;
     vector<string> packs;
     vector<pair<string, tuple<long, long>>> packsWithTime, curPacks;
     packMutex.lock();
@@ -238,6 +241,7 @@ int Packer::RePack(string pathToLine)
     }
 
     packMutex.unlock();
+    IOBusy = false;
     return 0;
 }
 

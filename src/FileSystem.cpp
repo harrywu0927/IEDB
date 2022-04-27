@@ -74,7 +74,7 @@ void getDiskSpaces()
 #endif
 }
 
-int readFileList(char *basePath, vector<string> *files)
+int readFileList_FS(char *basePath, vector<string> *files)
 {
     DIR *dir;
     struct dirent *ptr;
@@ -103,7 +103,7 @@ int readFileList(char *basePath, vector<string> *files)
             base += "/";
             base += ptr->d_name;
             files->push_back(base);
-            readFileList(const_cast<char *>(base.c_str()), files);
+            readFileList_FS(const_cast<char *>(base.c_str()), files);
         }
     }
     closedir(dir);
@@ -113,7 +113,7 @@ int readFileList(char *basePath, vector<string> *files)
 queue<string> InitFileQueue()
 {
     vector<string> files;
-    readFileList(labelPath, &files);
+    readFileList_FS(labelPath, &files);
     vector<pair<string, pair<long, long>>> vec; //将键值对保存在数组中以便排序
     for (string &file : files)
     {
@@ -182,7 +182,7 @@ bool LoopMode(char buf[], long length)
     struct dirent *ptr;
     vector<string> files;
     // char *path = "./";
-    if (readFileList(labelPath, &files) == 1)
+    if (readFileList_FS(labelPath, &files) == 1)
     {
         long needSpace = length + 1;
         if (needSpace > availableSpace) //空间不足

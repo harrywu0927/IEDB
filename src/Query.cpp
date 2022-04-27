@@ -1200,9 +1200,13 @@ int DB_QueryWholeFile_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
  */
 int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
+    IOBusy = true;
     int check = CheckQueryParams(params);
     if (check != 0)
+    {
+        IOBusy = false;
         return check;
+    }
 
     vector<pair<string, long>> filesWithTime, selectedFiles;
 
@@ -1226,7 +1230,10 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
         auto selectedPacks = packManager.GetPacksByTime(params->pathToLine, params->start, params->end);
         //确认当前模版
         if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+        {
+            IOBusy = false;
             return StatusCode::SCHEMA_FILE_NOT_FOUND;
+        }
 
         //根据时间升序或降序排序
         sortByTime(selectedFiles, TIME_ASC);
@@ -1252,7 +1259,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                 {
                     buffer->buffer = NULL;
                     buffer->bufferMalloced = 0;
-                    return err;
+                    continue;
                 }
 
                 char value[bytes]; //值缓存
@@ -1365,6 +1372,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                     {
                         buffer->buffer = NULL;
                         buffer->bufferMalloced = 0;
+                        IOBusy = false;
                         return err;
                     }
 
@@ -1503,6 +1511,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
             {
                 buffer->buffer = NULL;
                 buffer->bufferMalloced = 0;
+                IOBusy = false;
                 return StatusCode::BUFFER_FULL;
             }
             //拷贝数据
@@ -1530,7 +1539,10 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
     {
         //确认当前模版
         if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+        {
+            IOBusy = false;
             return StatusCode::SCHEMA_FILE_NOT_FOUND;
+        }
 
         //根据时间降序排序
         sortByTime(filesWithTime, TIME_DSC);
@@ -1555,7 +1567,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                 {
                     buffer->buffer = NULL;
                     buffer->bufferMalloced = 0;
-                    return err;
+                    continue;
                 }
                 char value[bytes]; //值缓存
                 memcpy(value, buff + pos, bytes);
@@ -1676,7 +1688,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                         default:
                         {
                             delete[] buff;
-                            return StatusCode::UNKNWON_DATAFILE;
+                            continue;
                             break;
                         }
                         }
@@ -1688,6 +1700,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                         {
                             buffer->buffer = NULL;
                             buffer->bufferMalloced = 0;
+                            IOBusy = false;
                             return err;
                         }
                         bool canCopy = false; //根据比较结果决定是否允许拷贝
@@ -1773,6 +1786,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                 {
                     buffer->buffer = NULL;
                     buffer->bufferMalloced = 0;
+                    IOBusy = false;
                     return StatusCode::BUFFER_FULL;
                 }
                 //拷贝数据
@@ -1943,6 +1957,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                 buffer->length = len;
                 memcpy(data, buff, len);
                 buffer->buffer = data;
+                IOBusy = false;
                 return 0;
             }
         }
@@ -2006,7 +2021,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
                 }
             }
         }
-
+        IOBusy = false;
         break;
     }
 
@@ -2014,6 +2029,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
         return StatusCode::NO_QUERY_TYPE;
         break;
     }
+    IOBusy = false;
     return 0;
 }
 
@@ -3280,6 +3296,7 @@ int DB_QueryByTimespan_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
  */
 int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
+    IOBusy = true;
     int check = CheckQueryParams(params);
     if (check != 0)
         return check;
@@ -3299,7 +3316,10 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 
     //确认当前模版
     if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+    {
+        IOBusy = false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
 
     //根据时间升序排序
     sortByTime(selectedFiles, TIME_ASC);
@@ -3376,6 +3396,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
             {
                 buffer->buffer = NULL;
                 buffer->bufferMalloced = 0;
+                IOBusy = false;
                 return err;
             }
 
@@ -3489,7 +3510,10 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
             ReZipBuff(buff, (int &)len, params->pathToLine);
         }
         if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+        {
+            IOBusy = false;
             return StatusCode::SCHEMA_FILE_NOT_FOUND;
+        }
         //获取数据的偏移量和数据类型
         long pos = 0, bytes = 0;
         vector<long> posList, bytesList;
@@ -3513,6 +3537,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
         {
             buffer->buffer = NULL;
             buffer->bufferMalloced = 0;
+            IOBusy = false;
             return err;
         }
 
@@ -3609,6 +3634,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
         {
             buffer->buffer = NULL;
             buffer->bufferMalloced = 0;
+            IOBusy = false;
             return StatusCode::NO_DATA_QUERIED;
         }
     //动态分配内存
@@ -3623,6 +3649,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
     {
         buffer->buffer = NULL;
         buffer->bufferMalloced = 0;
+        IOBusy = false;
         return StatusCode::BUFFER_FULL;
     }
     //拷贝数据
@@ -3649,6 +3676,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
     buffer->bufferMalloced = 1;
     buffer->buffer = data;
     buffer->length = cur + startPos;
+    IOBusy = false;
     return 0;
 }
 
@@ -3849,6 +3877,7 @@ int PackProcess(pair<char *, long> pack, DB_QueryParams *params, long *cur, vect
  */
 int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
+    IOBusy = true;
     if (maxThreads <= 2) //线程数量<=2时，多线程已无必要
     {
         return DB_QueryByTimespan_Single(buffer, params);
@@ -3865,7 +3894,10 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
     }
     int check = CheckQueryParams(params);
     if (check != 0)
+    {
+        IOBusy = false;
         return check;
+    }
     vector<pair<string, long>> filesWithTime, selectedFiles;
     auto selectedPacks = packManager.GetPacksByTime(params->pathToLine, params->start, params->end);
     //获取每个数据文件，并带有时间戳
@@ -3941,7 +3973,11 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
             ReZipBuff(buff, (int &)len, params->pathToLine);
         }
         if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+        {
+            IOBusy = false;
             return StatusCode::SCHEMA_FILE_NOT_FOUND;
+        }
+
         //获取数据的偏移量和数据类型
         long pos = 0, bytes = 0;
         vector<long> posList, bytesList;
@@ -4057,6 +4093,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
     {
         buffer->buffer = NULL;
         buffer->bufferMalloced = 0;
+        IOBusy = false;
         return StatusCode::NO_DATA_QUERIED;
     }
     //动态分配内存
@@ -4071,6 +4108,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
     {
         buffer->buffer = NULL;
         buffer->bufferMalloced = 0;
+        IOBusy = false;
         return StatusCode::BUFFER_FULL;
     }
     //拷贝数据
@@ -4097,6 +4135,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
     buffer->bufferMalloced = 1;
     buffer->buffer = data;
     buffer->length = cur + startPos;
+    IOBusy = false;
     return 0;
 }
 
@@ -4537,6 +4576,7 @@ int DB_QueryLastRecords_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
  */
 int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
+    IOBusy = true;
     int check = CheckQueryParams(params);
     if (check != 0)
         return check;
@@ -4548,7 +4588,10 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 
     //确认当前模版
     if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+    {
+        IOBusy = false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
 
     //根据时间降序排序
     sortByTime(selectedFiles, TIME_DSC);
@@ -4605,6 +4648,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
         {
             buffer->buffer = NULL;
             buffer->bufferMalloced = 0;
+            IOBusy = false;
             return err;
         }
         char copyValue[copyBytes];
@@ -4756,7 +4800,6 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
                 default:
                 {
                     delete[] buff;
-                    return StatusCode::UNKNWON_DATAFILE;
                     break;
                 }
                 }
@@ -4916,6 +4959,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
     {
         buffer->bufferMalloced = 0;
     }
+    IOBusy = false;
     /*<-----!!!!!!----->*/
     return 0;
 }
@@ -5162,9 +5206,13 @@ int DB_QueryByFileID_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
  */
 int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
+    IOBusy = true;
     int check = CheckQueryParams(params);
     if (check != 0)
+    {
+        IOBusy = false;
         return check;
+    }
     string pathToLine = params->pathToLine;
     string fileid = params->fileID;
     while (pathToLine[pathToLine.length() - 1] == '/')
@@ -5199,7 +5247,10 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
             if (fileID == fileid)
             {
                 if (TemplateManager::CheckTemplate(templateName) != 0)
+                {
+                    IOBusy = false;
                     return StatusCode::SCHEMA_FILE_NOT_FOUND;
+                }
                 char *buff = new char[CurrentTemplate.totalBytes];
                 switch (zipType)
                 {
@@ -5221,6 +5272,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
                 }
                 default:
                     delete[] buff;
+                    IOBusy = false;
                     return StatusCode::UNKNWON_DATAFILE;
                     break;
                 }
@@ -5251,6 +5303,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
                 {
                     buffer->buffer = NULL;
                     buffer->bufferMalloced = 0;
+                    IOBusy = false;
                     return err;
                 }
 
@@ -5268,6 +5321,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
                 {
                     buffer->buffer = NULL;
                     buffer->bufferMalloced = 0;
+                    IOBusy = false;
                     return StatusCode::BUFFER_FULL;
                 }
 
@@ -5287,6 +5341,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
                 delete[] buff;
                 buffer->buffer = data;
                 buffer->length = copyBytes + startPos;
+                IOBusy = false;
                 return 0;
             }
         }
@@ -5302,7 +5357,10 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
             char buff[len];
             DB_OpenAndRead(const_cast<char *>(file.c_str()), buff);
             if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+            {
+                IOBusy = false;
                 return StatusCode::SCHEMA_FILE_NOT_FOUND;
+            }
 
             //获取数据的偏移量和字节数
             long bytes = 0, pos = 0;         //单个变量
@@ -5330,12 +5388,14 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
             {
                 buffer->buffer = NULL;
                 buffer->bufferMalloced = 0;
+                IOBusy = false;
                 return err;
             }
             if (len < pos)
             {
                 buffer->buffer = NULL;
                 buffer->bufferMalloced = 0;
+                IOBusy = false;
                 return StatusCode::UNKNWON_DATAFILE;
             }
 
@@ -5353,6 +5413,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
             {
                 buffer->buffer = NULL;
                 buffer->bufferMalloced = 0;
+                IOBusy = false;
                 return StatusCode::BUFFER_FULL;
             }
 
@@ -5371,9 +5432,11 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
                 memcpy(data + startPos, buff + pos, copyBytes);
             buffer->buffer = data;
             buffer->length = copyBytes + startPos;
+            IOBusy = false;
             return 0;
         }
     }
+    IOBusy = false;
     return StatusCode::DATAFILE_NOT_FOUND;
 }
 

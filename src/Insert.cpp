@@ -6,6 +6,7 @@ using namespace std;
 void *checkSettings(void *ptr);
 pthread_t timer; //计时器，另开一个新的线程
 int timerStarted = false;
+bool IOBusy = false;
 void *checkTime(void *ptr)
 {
     cout << "Timer created!" << endl;
@@ -13,6 +14,9 @@ void *checkTime(void *ptr)
     long interval = atol(settings("Pack_Interval").c_str());
     while (1)
     {
+        while (IOBusy)
+        {
+        }
         if (timerStarted == false)
             pthread_exit(NULL);
         long curTime = getMilliTime();
@@ -39,6 +43,9 @@ void *checkSettings(void *ptr)
 
     while (1)
     {
+        while (IOBusy)
+        {
+        }
         fseek(fp, 0, SEEK_END);
         int len = ftell(fp);
         fseek(fp, 0, SEEK_SET);
