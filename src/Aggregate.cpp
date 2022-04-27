@@ -1502,7 +1502,7 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
  * @param count  计数值
  * @return statuscode
  */
-int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
+int DB_GetNormalDataCount_Single(DB_QueryParams *params, long *count)
 {
     int err = 0;
     err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
@@ -1864,7 +1864,7 @@ int CountSinglePack_Normal(DB_QueryParams *param, pair<char *, long> pack)
  * @param count  计数值
  * @return statuscode
  */
-int DB_GetNormalDataCount_MultiThread(DB_QueryParams *params, long *count)
+int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
 {
     int err = 0;
     err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
@@ -2170,7 +2170,7 @@ int DB_GetNormalDataCount_MultiThread(DB_QueryParams *params, long *count)
  * @param count  计数值
  * @return statuscode
  */
-int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
+int DB_GetAbnormalDataCount_Single(DB_QueryParams *params, long *count)
 {
     int err = 0;
     err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
@@ -2535,7 +2535,7 @@ int CountSinglePack_Abnormal(DB_QueryParams *param, pair<char *, long> pack)
  * @param count  计数值
  * @return statuscode
  */
-int DB_GetAbnormalDataCount_MultiThread(DB_QueryParams *params, long *count)
+int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
 {
     int err = 0;
     err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
@@ -2884,13 +2884,13 @@ int main()
     auto startTime = std::chrono::system_clock::now();
 
     long count;
-    DB_GetNormalDataCount_MultiThread(&params, &count);
+    DB_GetNormalDataCount(&params, &count);
     auto endTime = std::chrono::system_clock::now();
     std::cout << "第" << 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
     cout << count << endl;
     count = 0;
     startTime = std::chrono::system_clock::now();
-    DB_GetNormalDataCount_MultiThread(&params, &count);
+    DB_GetNormalDataCount(&params, &count);
     endTime = std::chrono::system_clock::now();
     std::cout << "第" << 2 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
     cout << count << endl;
