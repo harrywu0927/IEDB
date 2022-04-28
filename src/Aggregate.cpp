@@ -2852,12 +2852,12 @@ int main()
     params.pathCode = code;
     params.valueName = "S2ON";
     // params.valueName = NULL;
-    params.start = 1650095500000;
+    params.start = 1650105500000;
     params.end = 1650155600000;
     params.order = ODR_NONE;
     params.compareType = CMP_NONE;
     params.compareValue = "666";
-    params.queryType = LAST;
+    params.queryType = TIMESPAN;
     params.byPath = 0;
     params.queryNums = 23456;
     // DB_DataBuffer buffer;
