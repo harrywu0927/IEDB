@@ -102,7 +102,6 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
                     memcpy(res, val, 2);
                 }
             }
-            cout << "max:" << max << endl;
             memcpy(newBuffer + newBufCur, res, 2);
             newBufCur += 2;
             break;
@@ -122,7 +121,6 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
                     memcpy(res, val, 2);
                 }
             }
-            cout << "max:" << max << endl;
             memcpy(newBuffer + newBufCur, val, 2);
             newBufCur += 2;
             break;
@@ -142,7 +140,6 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
                     memcpy(res, val, 4);
                 }
             }
-            cout << "max:" << max << endl;
             memcpy(newBuffer + newBufCur, val, 4);
             newBufCur += 4;
             break;
@@ -156,14 +153,12 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
             {
                 memcpy(val, column + k * 4, 4);
                 short value = converter.ToUInt32(val);
-                cout << value << endl;
                 if (max < value)
                 {
                     max = value;
                     memcpy(res, val, 4);
                 }
             }
-            cout << "max:" << max << endl;
             memcpy(newBuffer + newBufCur, val, 4);
             newBufCur += 4;
             break;
@@ -183,7 +178,6 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
                     memcpy(res, val, 4);
                 }
             }
-            cout << "max:" << max << endl;
             memcpy(newBuffer + newBufCur, val, 4);
             newBufCur += 4;
             break;
@@ -203,7 +197,6 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
                     memcpy(res, val, 4);
                 }
             }
-            cout << "max:" << max << endl;
             memcpy(newBuffer + newBufCur, val, 4);
             newBufCur += 4;
             break;
@@ -218,7 +211,6 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
                 if (max < value)
                     max = value;
             }
-            cout << "max:" << (int)max << endl;
             memcpy(newBuffer + newBufCur++, &value, 1);
             break;
         }
@@ -331,7 +323,6 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
                     memcpy(res, val, 2);
                 }
             }
-            cout << "min:" << min << endl;
             memcpy(newBuffer + newBufCur, res, 2);
             newBufCur += 2;
             break;
@@ -351,7 +342,6 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
                     memcpy(res, val, 2);
                 }
             }
-            cout << "min:" << min << endl;
             memcpy(newBuffer + newBufCur, val, 2);
             newBufCur += 2;
             break;
@@ -371,7 +361,6 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
                     memcpy(res, val, 4);
                 }
             }
-            cout << "min:" << min << endl;
             memcpy(newBuffer + newBufCur, val, 4);
             newBufCur += 4;
             break;
@@ -391,7 +380,6 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
                     memcpy(res, val, 4);
                 }
             }
-            cout << "min:" << min << endl;
             memcpy(newBuffer + newBufCur, val, 4);
             newBufCur += 4;
             break;
@@ -411,7 +399,6 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
                     memcpy(res, val, 4);
                 }
             }
-            cout << "min:" << min << endl;
             memcpy(newBuffer + newBufCur, val, 4);
             newBufCur += 4;
             break;
@@ -431,7 +418,6 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
                     memcpy(res, val, 4);
                 }
             }
-            cout << "min:" << min << endl;
             memcpy(newBuffer + newBufCur, val, 4);
             newBufCur += 4;
             break;
@@ -446,7 +432,6 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
                 if (min > value)
                     min = value;
             }
-            cout << "min:" << (int)min << endl;
             memcpy(newBuffer + newBufCur++, &value, 1);
             break;
         }
