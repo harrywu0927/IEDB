@@ -55,7 +55,9 @@ void *checkSettings(void *ptr)
         string contents(str);
         neb::CJsonObject tmp(contents);
         settings = tmp;
-        cout << tmp("Filename_Label") << endl;
+        cout << settings("Filename_Label") << endl;
+        cout << settings("FileOverFlowMode") << endl;
+        cout << settings("Pack_Cache_Size") << endl;
         sleep(3);
         // this_thread::sleep_for(chrono::seconds(3));
     }

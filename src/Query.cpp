@@ -3702,13 +3702,8 @@ int PackProcess(pair<char *, long> pack, DB_QueryParams *params, long *cur, vect
     if (TemplateManager::CheckTemplate(templateName) != 0)
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     vector<DataType> typeList;
-    // int err = 0;
-    // err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
-    // if (err)
-    // {
-    //     cout << "未加载模板" << endl;
-    //     return StatusCode::SCHEMA_FILE_NOT_FOUND;
-    // }
+    vector<PathCode> pathCodes;
+    CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
     for (int i = 0; i < fileNum; i++)
     {
         typeList.clear();
@@ -3777,7 +3772,7 @@ int PackProcess(pair<char *, long> pack, DB_QueryParams *params, long *cur, vect
                 lineCur += curBytes;
             }
             if (params->valueName != NULL) //此处，若编码为精确搜索，而又输入了不同的变量名，FindSortPosFromSelectedData将返回0
-                sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, params->pathCode, typeList);
+                sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, pathCodes, typeList);
         }
         else
             memcpy(copyValue, buff + pos, copyBytes);
@@ -3917,7 +3912,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
     DataType type;
     vector<DataType> typeList, selectedTypes;
     vector<long> sortDataPoses; //按值排序时要比较的数据的偏移量
-
+    vector<PathCode> pathCodes;
     //先对时序在前的包文件检索
 
     int index = 0;
@@ -3951,7 +3946,13 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
         if (status[j] != future_status::ready)
             f[j].wait();
     }
-
+    if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+    {
+        IOBusy = false;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
+    if (params->byPath)
+        CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
     //对时序在后的普通文件检索
     for (auto &file : selectedFiles)
     {
@@ -3971,11 +3972,6 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
         if (file.first.find(".idbzip") != string::npos)
         {
             ReZipBuff(buff, (int &)len, params->pathToLine);
-        }
-        if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
-        {
-            IOBusy = false;
-            return StatusCode::SCHEMA_FILE_NOT_FOUND;
         }
 
         //获取数据的偏移量和数据类型
@@ -4014,7 +4010,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
                 lineCur += curBytes;
             }
             if (params->valueName != NULL)
-                sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, params->pathCode, typeList);
+                sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, pathCodes, typeList);
         }
         else
             memcpy(copyValue, buff + pos, copyBytes);
@@ -4592,7 +4588,9 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
         IOBusy = false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
-
+    vector<PathCode> pathCodes;
+    if (params->byPath)
+        CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
     //根据时间降序排序
     sortByTime(selectedFiles, TIME_DSC);
 
@@ -4663,7 +4661,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
                 lineCur += curBytes;
             }
             if (params->valueName != NULL)
-                sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, params->pathCode, typeList);
+                sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, pathCodes, typeList);
         }
         else
             memcpy(copyValue, buff + pos, copyBytes);

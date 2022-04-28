@@ -286,6 +286,7 @@ public:
     int writeBufferHead(string name, DataType &type, char *buffer);
 
     long FindSortPosFromSelectedData(vector<long> &bytesList, string name, char *pathCode, vector<DataType> &typeList);
+    long FindSortPosFromSelectedData(vector<long> &bytesList, string name, vector<PathCode> &pathCodes, vector<DataType> &typeList);
 
     long GetTotalBytes();
 };
