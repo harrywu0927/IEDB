@@ -2878,7 +2878,7 @@ int DB_QueryWholeFile_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params)
  * @return  0:success,
  *          others: StatusCode
  * @note   支持idb文件和pak文件混合查询,此处默认pak文件中的时间均早于idb和idbzip文件！！
- * 不再维护
+ *          不再维护
  */
 
 int DB_QueryByTimespan_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
@@ -3333,7 +3333,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
     DataType type;
     vector<DataType> typeList, selectedTypes;
     vector<long> sortDataPoses; //按值排序时要比较的数据的偏移量
-
+    vector<PathCode> pathCodes;
     //先对时序在前的包文件检索
     for (auto &pack : selectedPacks)
     {
@@ -3344,10 +3344,15 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
         int fileNum;
         string templateName;
         packReader.ReadPackHead(fileNum, templateName);
-        // TemplateManager::CheckTemplate(templateName);
+        if (TemplateManager::CheckTemplate(templateName) != 0)
+            return StatusCode::SCHEMA_FILE_NOT_FOUND;
+        if (params->byPath)
+        {
+            CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
+        }
         for (int i = 0; i < fileNum; i++)
         {
-            typeList.clear();
+            // typeList.clear();
             long timestamp;
             int readLength, zipType;
             long dataPos = packReader.Next(readLength, timestamp, zipType);
@@ -3385,7 +3390,10 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
             if (params->byPath)
             {
                 char *pathCode = params->pathCode;
-                err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList, typeList);
+                if (typeList.size() == 0)
+                    err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList, typeList);
+                else
+                    err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList);
                 for (int i = 0; i < bytesList.size(); i++)
                 {
                     copyBytes += typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i];
@@ -3416,7 +3424,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
                     lineCur += curBytes;
                 }
                 if (params->valueName != NULL) //此处，若编码为精确搜索，而又输入了不同的变量名，FindSortPosFromSelectedData将返回0
-                    sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, params->pathCode, typeList);
+                    sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, pathCodes, typeList);
             }
             else
                 memcpy(copyValue, buff + pos, copyBytes);
@@ -3475,7 +3483,6 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
                     break;
                 }
                 default:
-                    canCopy = true;
                     break;
                 }
             }
@@ -3615,7 +3622,6 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
                 break;
             }
             default:
-                canCopy = true;
                 break;
             }
         }
@@ -3633,14 +3639,14 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
     }
 
     if (sortDataPoses.size() > 0) //尚有问题
-                                  // sortResultByValue(mallocedMemory, sortDataPoses, params, type);
-        if (cur == 0)
-        {
-            buffer->buffer = NULL;
-            buffer->bufferMalloced = 0;
-            IOBusy = false;
-            return StatusCode::NO_DATA_QUERIED;
-        }
+        sortResultByValue(mallocedMemory, sortDataPoses, params, type);
+    if (cur == 0)
+    {
+        buffer->buffer = NULL;
+        buffer->bufferMalloced = 0;
+        IOBusy = false;
+        return StatusCode::NO_DATA_QUERIED;
+    }
     //动态分配内存
     char typeNum = params->byPath ? typeList.size() : 1; //数据类型总数
     char *data = (char *)malloc(cur + (int)typeNum * 11 + 1);
@@ -3841,7 +3847,6 @@ int PackProcess(pair<char *, long> pack, DB_QueryParams *params, long *cur, vect
                 break;
             }
             default:
-                canCopy = true;
                 break;
             }
         }
@@ -5472,10 +5477,10 @@ int main()
     params.pathCode = code;
     params.valueName = "S2OFF";
     // params.valueName = NULL;
-    params.start = 1650095500000;
-    params.end = 1650175600000;
+    params.start = 1651010750421;
+    params.end = 1651059000000;
     params.order = ASCEND;
-    params.compareType = LT;
+    params.compareType = CMP_NONE;
     params.compareValue = "666";
     params.queryType = LAST;
     params.byPath = 1;
@@ -5487,13 +5492,13 @@ int main()
     // readDataFilesWithTimestamps("", files);
     // Packer::Pack("/",files);
     auto startTime = std::chrono::system_clock::now();
-    DB_QueryByTimespan(&buffer, &params);
+    DB_QueryByTimespan_Single(&buffer, &params);
 
     auto endTime = std::chrono::system_clock::now();
     // free(buffer.buffer);
 
     std::cout << "首次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-
+    free(buffer.buffer);
     // startTime = std::chrono::system_clock::now();
     // DB_QueryWholeFile_MultiThread(&buffer, &params);
 
@@ -5510,6 +5515,18 @@ int main()
     // // DB_QueryLastRecords_Using_Cache(&buffer, &params);
     // // DB_QueryByTimespan_Using_Cache(&buffer, &params);
     // // DB_QueryByTimespan(&buffer, &params);
+    for (int i = 0; i < 10; i++)
+    {
+        startTime = std::chrono::system_clock::now();
+        DB_QueryByTimespan_Single(&buffer, &params);
+
+        endTime = std::chrono::system_clock::now();
+        std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+        // cout << buffer.length << endl;
+        free(buffer.buffer);
+        buffer.length = 0;
+        buffer.bufferMalloced = 0;
+    }
     if (buffer.bufferMalloced)
     {
         char buf[buffer.length];
