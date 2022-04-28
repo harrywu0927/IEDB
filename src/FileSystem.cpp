@@ -28,8 +28,6 @@ using namespace std;
 #ifdef WIN32
 typedef long long int long;
 #endif
-// extern int errno;
-neb::CJsonObject ReadConfig();
 long availableSpace = 1024 * 1024 * 10;
 size_t totalSpace = 0;
 char labelPath[100] = "./";

@@ -1785,7 +1785,13 @@ int DB_GetNormalDataCount_Single(DB_QueryParams *params, long *count)
     }
     return 0;
 }
-
+/**
+ * @brief 线程任务
+ *
+ * @param param
+ * @param pack
+ * @return int
+ */
 int CountSinglePack_Normal(DB_QueryParams *param, pair<char *, long> pack)
 {
     int normal = 0;
@@ -2454,6 +2460,13 @@ int DB_GetAbnormalDataCount_Single(DB_QueryParams *params, long *count)
     return 0;
 }
 
+/**
+ * @brief 线程任务
+ *
+ * @param param
+ * @param pack
+ * @return int
+ */
 int CountSinglePack_Abnormal(DB_QueryParams *param, pair<char *, long> pack)
 {
     int abnormal = 0;
@@ -2852,12 +2865,12 @@ int main()
     params.pathCode = code;
     params.valueName = "S2ON";
     // params.valueName = NULL;
-    params.start = 1650095500000;
+    params.start = 1650105500000;
     params.end = 1650155600000;
     params.order = ODR_NONE;
     params.compareType = CMP_NONE;
     params.compareValue = "666";
-    params.queryType = LAST;
+    params.queryType = TIMESPAN;
     params.byPath = 0;
     params.queryNums = 23456;
     // DB_DataBuffer buffer;
@@ -2881,18 +2894,35 @@ int main()
 
     //     free(buffer.buffer);
     // }
+    long count = 0;
     auto startTime = std::chrono::system_clock::now();
-
-    long count;
-    DB_GetNormalDataCount(&params, &count);
     auto endTime = std::chrono::system_clock::now();
-    std::cout << "第" << 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    cout << count << endl;
-    count = 0;
-    startTime = std::chrono::system_clock::now();
-    DB_GetNormalDataCount(&params, &count);
-    endTime = std::chrono::system_clock::now();
-    std::cout << "第" << 2 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    cout << count << endl;
+    double total = 0;
+    for (int i = 0; i < 10; i++)
+    {
+        startTime = std::chrono::system_clock::now();
+        DB_GetAbnormalDataCount_Single(&params, &count);
+
+        endTime = std::chrono::system_clock::now();
+        std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+        // cout << buffer.length << endl;
+
+        total += (endTime - startTime).count();
+    }
+    cout << "不使用缓存和多线程的平均查询时间:" << total / 10 << endl;
+    total = 0;
+    for (int i = 0; i < 10; i++)
+    {
+        startTime = std::chrono::system_clock::now();
+        DB_GetAbnormalDataCount(&params, &count);
+
+        endTime = std::chrono::system_clock::now();
+        std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+
+        total += (endTime - startTime).count();
+    }
+    cout << "使用缓存和多线程的平均查询时间:" << total / 10 << endl;
+    total = 0;
+    return 0;
     return 0;
 }
