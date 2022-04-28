@@ -327,31 +327,48 @@ int main()
     params.compareValue = "666";
     params.queryType = TIMESPAN;
     params.byPath = 1;
-    params.queryNums = 20000;
+    params.queryNums = 35045;
     DB_DataBuffer buffer;
     buffer.savePath = "/";
+    // DB_QueryByTimespan(&buffer, &params);
+    // if (buffer.bufferMalloced)
+    // {
+    //     char buf[buffer.length];
+    //     memcpy(buf, buffer.buffer, buffer.length);
+    //     cout << buffer.length << endl;
+    //     // for (int i = 0; i < buffer.length; i++)
+    //     // {
+    //     //     cout << (int)buf[i] << " ";
+    //     //     if (i % 11 == 0)
+    //     //         cout << endl;
+    //     // }
+
+    //     free(buffer.buffer);
+    // }
+    // // DB_QueryByFileID(&buffer, &params);
+    // return 0;
     // cout << settings("Pack_Mode") << endl;
     auto startTime = std::chrono::system_clock::now();
     auto endTime = std::chrono::system_clock::now();
     double total = 0;
-    for (int i = 0; i < 10; i++)
-    {
-        startTime = std::chrono::system_clock::now();
-        DB_QueryByTimespan_Old(&buffer, &params);
+    // for (int i = 0; i < 10; i++)
+    // {
+    //     startTime = std::chrono::system_clock::now();
+    //     DB_QueryByTimespan_Old(&buffer, &params);
 
-        endTime = std::chrono::system_clock::now();
-        std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-        free(buffer.buffer);
-        // cout << buffer.length << endl;
-        buffer.length = 0;
-        total += (endTime - startTime).count();
-    }
-    cout << "使用缓存,不使用多线程的平均查询时间:" << total / 10 << endl;
-    total = 0;
+    //     endTime = std::chrono::system_clock::now();
+    //     std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    //     free(buffer.buffer);
+    //     // cout << buffer.length << endl;
+    //     buffer.length = 0;
+    //     total += (endTime - startTime).count();
+    // }
+    // cout << "使用缓存,不使用多线程的平均查询时间:" << total / 10 << endl;
+    // total = 0;
     for (int i = 0; i < 10; i++)
     {
         startTime = std::chrono::system_clock::now();
-        DB_QueryByTimespan(&buffer, &params);
+        DB_QueryByTimespan_Single(&buffer, &params);
 
         endTime = std::chrono::system_clock::now();
         std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;

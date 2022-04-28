@@ -50,6 +50,7 @@ int Template::writeBufferHead(string name, DataType &type, char *buffer)
 
 int Template::GetAllPathsByCode(char pathCode[], vector<PathCode> &pathCodes)
 {
+    pathCodes.clear();
     int level = 5; //路径级数
     for (int i = 10 - 1; i >= 0 && pathCode[i] == 0; i -= 2)
     {
@@ -360,6 +361,79 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
             positions.push_back(pos);
             bytes.push_back(num * schema.second.valueBytes);
             types.push_back(schema.second);
+            pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
+        }
+        else
+        {
+            int num = 1;
+            if (schema.second.isArray)
+            {
+                if (schema.second.valueType == ValueType::IMAGE)
+                {
+
+                    char imgLen[2];
+                    imgLen[0] = buff[pos];
+                    imgLen[1] = buff[pos + 1];
+                    num = (int)converter.ToUInt16(imgLen) + 2;
+                }
+                else
+                    num = schema.second.arrayLen;
+            }
+            pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
+        }
+    }
+    return positions.size() == 0 ? StatusCode::UNKNOWN_PATHCODE : 0;
+}
+
+/**
+ * @brief 根据当前模版模糊寻找指定路径编码的数据在数据文件中的位置，即获取模版中某一路径下所有孩子结点，包含自身
+ * @param pathCode        路径编码
+ * @param positions    数据起始位置
+ * @param buff        文件数据
+ * @param bytes       数据长度
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note    图片数据目前暂时协定前2个字节为图片总长，不包括图片自身
+ */
+int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<long> &positions, vector<long> &bytes)
+{
+    DataTypeConverter converter;
+    long pos = 0;
+    int level = 5; //路径级数
+    for (int i = 10 - 1; i >= 0 && pathCode[i] == 0; i -= 2)
+    {
+        level--;
+    }
+    for (auto const &schema : this->schemas)
+    {
+        bool codeEquals = true;
+        for (size_t k = 0; k < level * 2; k++) //判断路径编码前缀是否相等
+        {
+            if (pathCode[k] != schema.first.code[k])
+            {
+                codeEquals = false;
+            }
+        }
+        if (codeEquals)
+        {
+            int num = 1;
+            if (schema.second.isArray)
+            {
+                if (schema.second.valueType == ValueType::IMAGE)
+                {
+
+                    char imgLen[2];
+                    imgLen[0] = buff[pos];
+                    imgLen[1] = buff[pos + 1];
+                    num = (int)converter.ToUInt16(imgLen);
+                    pos += 2;
+                }
+                else
+                    num = schema.second.arrayLen;
+            }
+            positions.push_back(pos);
+            bytes.push_back(num * schema.second.valueBytes);
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
         }
         else

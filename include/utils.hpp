@@ -143,9 +143,9 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine);
 
 int sysOpen(char path[]);
 
-int DB_QueryByTimespan_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params);
+// int DB_QueryByTimespan_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params);
 
-int DB_QueryByTimespan_Old(DB_DataBuffer *buffer, DB_QueryParams *params);
+int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params);
 
 int DB_QueryWholeFile_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params);
 
@@ -274,6 +274,8 @@ public:
     int FindDatatypePosByCode(char pathCode[], char buff[], long &position, long &bytes, DataType &type);
 
     int FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<long> &positions, vector<long> &bytes, vector<DataType> &types);
+
+    int FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<long> &positions, vector<long> &bytes);
 
     int FindDatatypePosByName(const char *name, char buff[], long &position, long &bytes);
 

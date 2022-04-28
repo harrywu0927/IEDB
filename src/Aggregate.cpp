@@ -2845,84 +2845,80 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
     }
     return 0;
 }
-int main()
-{
-    // DataTypeConverter converter;
-    DB_QueryParams params;
-    params.pathToLine = "JinfeiSixteen";
-    params.fileID = "JinfeiSixteen15";
-    char code[10];
-    code[0] = (char)0;
-    code[1] = (char)1;
-    code[2] = (char)0;
-    code[3] = (char)0;
-    code[4] = 0;
-    code[5] = (char)0;
-    code[6] = 0;
-    code[7] = (char)0;
-    code[8] = (char)0;
-    code[9] = (char)0;
-    params.pathCode = code;
-    params.valueName = "S2ON";
-    // params.valueName = NULL;
-    params.start = 1650105500000;
-    params.end = 1650155600000;
-    params.order = ODR_NONE;
-    params.compareType = CMP_NONE;
-    params.compareValue = "666";
-    params.queryType = TIMESPAN;
-    params.byPath = 0;
-    params.queryNums = 23456;
-    // DB_DataBuffer buffer;
-    // DB_AVG(&buffer, &params);
-    // if (buffer.bufferMalloced)
-    // {
-    //     char buf[buffer.length];
-    //     memcpy(buf, buffer.buffer, buffer.length);
-    //     char val[4] = {0};
-    //     float f;
-    //     memcpy(val, buf + 12, 4);
-    //     f = converter.ToFloat(val);
-    //     cout << f << endl;
-    //     cout << buffer.length << endl;
-    //     for (int i = 0; i < buffer.length; i++)
-    //     {
-    //         cout << (int)buf[i] << " ";
-    //         if (i % 11 == 0)
-    //             cout << endl;
-    //     }
+// int main()
+// {
+//     // DataTypeConverter converter;
+//     DB_QueryParams params;
+//     params.pathToLine = "JinfeiSixteen";
+//     params.fileID = "JinfeiSixteen15";
+//     char code[10];
+//     code[0] = (char)0;
+//     code[1] = (char)1;
+//     code[2] = (char)0;
+//     code[3] = (char)0;
+//     code[4] = 0;
+//     code[5] = (char)0;
+//     code[6] = 0;
+//     code[7] = (char)0;
+//     code[8] = (char)0;
+//     code[9] = (char)0;
+//     params.pathCode = code;
+//     params.valueName = "S2ON";
+//     // params.valueName = NULL;
+//     params.start = 1650105500000;
+//     params.end = 1650155600000;
+//     params.order = ODR_NONE;
+//     params.compareType = CMP_NONE;
+//     params.compareValue = "666";
+//     params.queryType = LAST;
+//     params.byPath = 1;
+//     params.queryNums = 23456;
+//     DB_DataBuffer buffer;
+//     DB_AVG(&buffer, &params);
+//     if (buffer.bufferMalloced)
+//     {
+//         char buf[buffer.length];
+//         memcpy(buf, buffer.buffer, buffer.length);
+//         cout << buffer.length << endl;
+//         for (int i = 0; i < buffer.length; i++)
+//         {
+//             cout << (int)buf[i] << " ";
+//             if (i % 11 == 0)
+//                 cout << endl;
+//         }
 
-    //     free(buffer.buffer);
-    // }
-    long count = 0;
-    auto startTime = std::chrono::system_clock::now();
-    auto endTime = std::chrono::system_clock::now();
-    double total = 0;
-    for (int i = 0; i < 10; i++)
-    {
-        startTime = std::chrono::system_clock::now();
-        DB_GetAbnormalDataCount_Single(&params, &count);
+//         free(buffer.buffer);
+//     }
+//     return 0;
+//     long count = 0;
+//     auto startTime = std::chrono::system_clock::now();
+//     auto endTime = std::chrono::system_clock::now();
+//     double total = 0;
+//     for (int i = 0; i < 10; i++)
+//     {
+//         startTime = std::chrono::system_clock::now();
+//         DB_GetAbnormalDataCount_Single(&params, &count);
 
-        endTime = std::chrono::system_clock::now();
-        std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-        // cout << buffer.length << endl;
+//         endTime = std::chrono::system_clock::now();
+//         std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//         // cout << buffer.length << endl;
 
-        total += (endTime - startTime).count();
-    }
-    cout << "不使用缓存和多线程的平均查询时间:" << total / 10 << endl;
-    total = 0;
-    for (int i = 0; i < 10; i++)
-    {
-        startTime = std::chrono::system_clock::now();
-        DB_GetAbnormalDataCount(&params, &count);
+//         total += (endTime - startTime).count();
+//     }
+//     cout << "不使用缓存和多线程的平均查询时间:" << total / 10 << endl;
+//     total = 0;
+//     for (int i = 0; i < 10; i++)
+//     {
+//         startTime = std::chrono::system_clock::now();
+//         DB_GetAbnormalDataCount(&params, &count);
 
-        endTime = std::chrono::system_clock::now();
-        std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//         endTime = std::chrono::system_clock::now();
+//         std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
 
-        total += (endTime - startTime).count();
-    }
-    cout << "使用缓存和多线程的平均查询时间:" << total / 10 << endl;
-    total = 0;
-    return 0;
-    return 0;
-}
+//         total += (endTime - startTime).count();
+//     }
+//     cout << "使用缓存和多线程的平均查询时间:" << total / 10 << endl;
+//     total = 0;
+//     return 0;
+//     return 0;
+// }
