@@ -3924,38 +3924,41 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
     vector<long> sortDataPoses; //按值排序时要比较的数据的偏移量
     vector<PathCode> pathCodes;
     //先对时序在前的包文件检索
-
-    int index = 0;
-    future_status status[maxThreads - 1];
-    future<int> f[maxThreads - 1];
-    for (int j = 0; j < maxThreads - 1; j++)
+    if (selectedPacks.size() > 0)
     {
-        status[j] = future_status::ready;
-    }
-    do
-    {
-        for (int j = 0; j < maxThreads - 1; j++) //留一个线程循环遍历线程集，确认每个线程的运行状态
+        int index = 0;
+        future_status status[maxThreads - 1];
+        future<int> f[maxThreads - 1];
+        for (int j = 0; j < maxThreads - 1; j++)
         {
-            if (status[j] == future_status::ready)
-            {
-                auto pk = packManager.GetPack(selectedPacks[index].first);
-                f[j] = async(std::launch::async, PackProcess, pk, params, &cur, &mallocedMemory, &type, &typeList);
-                status[j] = f[j].wait_for(chrono::milliseconds(1));
-                index++;
-                if (index == selectedPacks.size())
-                    break;
-            }
-            else
-            {
-                status[j] = f[j].wait_for(chrono::milliseconds(1));
-            }
+            status[j] = future_status::ready;
         }
-    } while (index < selectedPacks.size());
-    for (int j = 0; j < maxThreads - 1; j++)
-    {
-        if (status[j] != future_status::ready)
-            f[j].wait();
+        do
+        {
+            for (int j = 0; j < maxThreads - 1; j++) //留一个线程循环遍历线程集，确认每个线程的运行状态
+            {
+                if (status[j] == future_status::ready)
+                {
+                    auto pk = packManager.GetPack(selectedPacks[index].first);
+                    f[j] = async(std::launch::async, PackProcess, pk, params, &cur, &mallocedMemory, &type, &typeList);
+                    status[j] = f[j].wait_for(chrono::milliseconds(1));
+                    index++;
+                    if (index == selectedPacks.size())
+                        break;
+                }
+                else
+                {
+                    status[j] = f[j].wait_for(chrono::milliseconds(1));
+                }
+            }
+        } while (index < selectedPacks.size());
+        for (int j = 0; j < maxThreads - 1; j++)
+        {
+            if (status[j] != future_status::ready)
+                f[j].wait();
+        }
     }
+
     if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
     {
         IOBusy = false;
@@ -5453,7 +5456,7 @@ int main()
 {
     DataTypeConverter converter;
     DB_QueryParams params;
-    params.pathToLine = "JinfeiThirtee";
+    params.pathToLine = "JinfeiTte";
     params.fileID = "JinfeiSixteen15";
     char code[10];
     code[0] = (char)0;

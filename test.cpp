@@ -304,7 +304,7 @@ int main()
     // return 0;
 
     DB_QueryParams params;
-    params.pathToLine = "JinfeiSixteen";
+    params.pathToLine = "JinfeiTte";
     params.fileID = "JinfeiSixteen13455";
     char code[10];
     code[0] = (char)0;
@@ -320,8 +320,8 @@ int main()
     params.pathCode = code;
     params.valueName = "S2OFF";
     // params.valueName = NULL;
-    params.start = 1650095500000;
-    params.end = 1650155600000;
+    params.start = 1651010750421;
+    params.end = 1651059000000;
     params.order = ASCEND;
     params.compareType = CMP_NONE;
     params.compareValue = "666";
@@ -368,7 +368,7 @@ int main()
     for (int i = 0; i < 10; i++)
     {
         startTime = std::chrono::system_clock::now();
-        DB_QueryByTimespan(&buffer, &params);
+        DB_QueryByTimespan_Single(&buffer, &params);
 
         endTime = std::chrono::system_clock::now();
         std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
@@ -379,7 +379,7 @@ int main()
     }
     cout << "使用缓存和多线程的平均查询时间:" << total / 10 << endl;
     total = 0;
-    return 0;
+    // return 0;
     for (int i = 0; i < 10; i++)
     {
         startTime = std::chrono::system_clock::now();
