@@ -3460,7 +3460,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
                 }
                 case DB_CompareType::GE:
                 {
-                    if (compareRes >= 0)
+                    if (compareRes >= 0 || compareRes == 1)
                     {
                         canCopy = true;
                     }
@@ -3468,7 +3468,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
                 }
                 case DB_CompareType::LE:
                 {
-                    if (compareRes <= 0)
+                    if (compareRes <= 0 || compareRes == 1)
                     {
                         canCopy = true;
                     }
@@ -4753,7 +4753,6 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
             mallocedMemory.push_back(make_pair(memory, copyBytes));
             selectedNum++;
         }
-        // free(buff);
         delete[] buff;
         if (selectedNum == params->queryNums)
             break;
@@ -4779,7 +4778,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
             stack<pair<long, tuple<int, long, int>>> filestk;
             for (int i = 0; i < fileNum; i++)
             {
-                typeList.clear();
+
                 long timestamp; //暂时用不到时间戳
                 int readLength, zipType;
                 long dataPos = packReader.Next(readLength, timestamp, zipType);
@@ -4829,7 +4828,10 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
                 if (params->byPath)
                 {
                     char *pathCode = params->pathCode;
-                    err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList, typeList);
+                    if (typeList.size() == 0)
+                        err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList, typeList);
+                    else
+                        err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList);
                     for (int i = 0; i < bytesList.size(); i++)
                     {
                         copyBytes += typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i];
@@ -4845,6 +4847,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
                 {
                     buffer->buffer = NULL;
                     buffer->bufferMalloced = 0;
+                    IOBusy = false;
                     return err;
                 }
                 char copyValue[copyBytes];
@@ -4869,7 +4872,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
                 if (params->valueName != NULL)
                     compareBytes = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type) == 0 ? bytes : 0;
 
-                if (compareBytes != 0 && params->compareType != CMP_NONE) //可比较
+                if (params->compareType != CMP_NONE && compareBytes != 0) //可比较
                 {
                     char value[compareBytes]; //值缓存
                     memcpy(value, buff + pos, compareBytes);
@@ -4957,6 +4960,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
         {
             buffer->buffer = NULL;
             buffer->bufferMalloced = 0;
+            IOBusy = false;
             return StatusCode::BUFFER_FULL;
         }
         //拷贝数据
@@ -5461,7 +5465,7 @@ int main()
 {
     DataTypeConverter converter;
     DB_QueryParams params;
-    params.pathToLine = "JinfeiTte";
+    params.pathToLine = "JinfeiSixteen";
     params.fileID = "JinfeiSixteen15";
     char code[10];
     code[0] = (char)0;
@@ -5480,11 +5484,11 @@ int main()
     params.start = 1651010750421;
     params.end = 1651059000000;
     params.order = ASCEND;
-    params.compareType = CMP_NONE;
+    params.compareType = LT;
     params.compareValue = "666";
     params.queryType = LAST;
     params.byPath = 1;
-    params.queryNums = 22345;
+    params.queryNums = 42334;
     DB_DataBuffer buffer;
     buffer.savePath = "/";
     // cout << settings("Pack_Mode") << endl;
@@ -5492,15 +5496,15 @@ int main()
     // readDataFilesWithTimestamps("", files);
     // Packer::Pack("/",files);
     auto startTime = std::chrono::system_clock::now();
-    DB_QueryByTimespan_Single(&buffer, &params);
+    // DB_QueryByTimespan_Single(&buffer, &params);
 
     auto endTime = std::chrono::system_clock::now();
     // free(buffer.buffer);
 
     std::cout << "首次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    free(buffer.buffer);
-    // startTime = std::chrono::system_clock::now();
-    // DB_QueryWholeFile_MultiThread(&buffer, &params);
+    // free(buffer.buffer);
+    //  startTime = std::chrono::system_clock::now();
+    //  DB_QueryWholeFile_MultiThread(&buffer, &params);
 
     // endTime = std::chrono::system_clock::now();
     // std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
@@ -5518,11 +5522,11 @@ int main()
     for (int i = 0; i < 10; i++)
     {
         startTime = std::chrono::system_clock::now();
-        DB_QueryByTimespan_Single(&buffer, &params);
+        DB_QueryLastRecords(&buffer, &params);
 
         endTime = std::chrono::system_clock::now();
         std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-        // cout << buffer.length << endl;
+        cout << buffer.length << endl;
         free(buffer.buffer);
         buffer.length = 0;
         buffer.bufferMalloced = 0;

@@ -304,7 +304,7 @@ int main()
     // return 0;
 
     DB_QueryParams params;
-    params.pathToLine = "JinfeiTte";
+    params.pathToLine = "JinfeiTweEi";
     params.fileID = "JinfeiSixteen13455";
     char code[10];
     code[0] = (char)0;
@@ -368,7 +368,7 @@ int main()
     for (int i = 0; i < 10; i++)
     {
         startTime = std::chrono::system_clock::now();
-        DB_QueryByTimespan(&buffer, &params);
+        DB_QueryLastRecords(&buffer, &params);
 
         endTime = std::chrono::system_clock::now();
         std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
