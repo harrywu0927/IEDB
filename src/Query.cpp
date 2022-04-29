@@ -3525,6 +3525,8 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
             IOBusy = false;
             return StatusCode::SCHEMA_FILE_NOT_FOUND;
         }
+        if (params->byPath)
+            CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
         //获取数据的偏移量和数据类型
         long pos = 0, bytes = 0;
         vector<long> posList, bytesList;
@@ -3564,7 +3566,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
                 lineCur += curBytes;
             }
             if (params->valueName != NULL)
-                sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, params->pathCode, typeList);
+                sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, pathCodes, typeList);
         }
         else
             memcpy(copyValue, buff + pos, copyBytes);
@@ -3703,7 +3705,6 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
  */
 int PackProcess(pair<char *, long> pack, DB_QueryParams *params, long *cur, vector<tuple<char *, long, long, long>> *mallocedMemory, DataType *type, vector<DataType> *typeList)
 {
-    // vector<tuple<char *, long, long>> mallocedMemory;
     PackFileReader packReader(pack.first, pack.second);
     if (packReader.packBuffer == NULL)
         return StatusCode::DATAFILE_NOT_FOUND;
@@ -5465,7 +5466,7 @@ int main()
 {
     DataTypeConverter converter;
     DB_QueryParams params;
-    params.pathToLine = "JinfeiSixteen";
+    params.pathToLine = "JinfeiTweEi";
     params.fileID = "JinfeiSixteen15";
     char code[10];
     code[0] = (char)0;
@@ -5488,7 +5489,7 @@ int main()
     params.compareValue = "666";
     params.queryType = LAST;
     params.byPath = 1;
-    params.queryNums = 42334;
+    params.queryNums = 43345;
     DB_DataBuffer buffer;
     buffer.savePath = "/";
     // cout << settings("Pack_Mode") << endl;

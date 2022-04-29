@@ -322,8 +322,10 @@ int main()
     // params.valueName = NULL;
     params.start = 1651010750421;
     params.end = 1651059000000;
+    // params.start = 1650093562902;
+    // params.end = 1650163562902;
     params.order = ASCEND;
-    params.compareType = CMP_NONE;
+    params.compareType = LT;
     params.compareValue = "666";
     params.queryType = TIMESPAN;
     params.byPath = 1;
@@ -371,13 +373,13 @@ int main()
         DB_QueryLastRecords(&buffer, &params);
 
         endTime = std::chrono::system_clock::now();
-        std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+        std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
         // cout << buffer.length << endl;
         free(buffer.buffer);
         buffer.length = 0;
         total += (endTime - startTime).count();
     }
-    cout << "使用缓存和多线程的平均查询时间:" << total / 10 << endl;
+    cout << "使用缓存和单线程的平均查询时间:" << total / 10 << endl;
     total = 0;
     // return 0;
     for (int i = 0; i < 10; i++)
@@ -386,7 +388,7 @@ int main()
         DB_QueryByTimespan(&buffer, &params);
 
         endTime = std::chrono::system_clock::now();
-        std::cout << "第" << i + 21 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+        std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
         free(buffer.buffer);
         total += (endTime - startTime).count();
     }
