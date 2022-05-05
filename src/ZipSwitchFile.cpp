@@ -3,6 +3,7 @@ using namespace std;
 
 int ZipSwitchBuf(char *readbuff, char *writebuff, long &writebuff_pos);
 int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writebuff_pos);
+int DB_ZipSwitchFile_MultiThread(const char *ZipTemPath, const char *pathToLine);
 /**
  * @brief 对readbuff里的数据进行压缩，压缩后数据保存在writebuff里，长度为writebuff_pos
  *
@@ -201,11 +202,13 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
  */
 int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
 {
+    IOBusy = true;
     int err;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
     {
         cout << "未加载模板" << endl;
+        IOBusy = false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     DataTypeConverter converter;
@@ -215,6 +218,7 @@ int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
     if (filesWithTime.size() == 0)
     {
         cout << "没有文件！" << endl;
+        IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
     sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
@@ -230,6 +234,7 @@ int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
+            IOBusy = false;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
@@ -265,6 +270,125 @@ int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
             // err = close(fd);
         }
     }
+    IOBusy = false;
+    return err;
+}
+
+int DB_ZipSwitchFile_thread(pair<string,long> filesWithTime,const char *pathToLine)
+{
+
+    int err;
+    DataTypeConverter converter;
+
+    long len;
+    DB_GetFileLengthByPath(const_cast<char *>(filesWithTime.first.c_str()), &len);
+    char readbuff[len];                                                                    //文件内容
+    char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
+    long writebuff_pos = 0;
+
+    if (DB_OpenAndRead(const_cast<char *>(filesWithTime.first.c_str()), readbuff)) //将文件内容读取到readbuff
+    {
+        cout << "未找到文件" << endl;
+        IOBusy = false;
+        return StatusCode::DATAFILE_NOT_FOUND;
+    }
+
+    ZipSwitchBuf(readbuff, writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
+
+    if (writebuff_pos >= len) //表明数据没有被压缩,不做处理
+    {
+        cout << filesWithTime.first + "文件数据没有被压缩!" << endl;
+        // return 1;//1表示数据没有被压缩
+    }
+    else
+    {
+        DB_DeleteFile(const_cast<char *>(filesWithTime.first.c_str())); //删除原文件
+        long fp;
+        string finalpath = filesWithTime.first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
+        //创建新文件并写入
+        err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+        if (err == 0)
+        {
+            if (writebuff_pos != 0)
+                // err = DB_Write(fp, writebuff, writebuff_pos);
+                err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
+            if (err == 1)
+            {
+                err = DB_Close(fp);
+            }
+        }
+    }
+    
+    return err;
+}
+
+int DB_ZipSwitchFile_MultiThread(const char *ZipTemPath, const char *pathToLine)
+{
+    IOBusy = true;
+    int err;
+    err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
+    if (err)
+    {
+        cout << "未加载模板" << endl;
+        IOBusy = false;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
+    DataTypeConverter converter;
+
+    vector<pair<string, long>> filesWithTime;
+    readIDBFilesWithTimestamps(pathToLine, filesWithTime); //获取所有.idb文件，并带有时间戳
+    if (filesWithTime.size() == 0)
+    {
+        cout << "没有文件！" << endl;
+        IOBusy = false;
+        return StatusCode::DATAFILE_NOT_FOUND;
+    }
+    sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
+
+    if(filesWithTime.size()<100)
+    {
+        err = DB_ZipSwitchFile(ZipTemPath,pathToLine);
+        return err;
+    }
+    maxThreads = 8;
+    if(maxThreads<=2)
+    {
+        err = DB_ZipSwitchFile(ZipTemPath,pathToLine);
+        return err;
+    }
+    cout<<maxThreads<<endl;
+    int index = 0;
+    future_status status[maxThreads - 1];
+    future<int> f[maxThreads - 1];
+    int k=0;
+    for (int j = 0; j < maxThreads - 1 && index < filesWithTime.size() && k<filesWithTime.size(); j++)
+    {
+        f[j] = async(std::launch::async, DB_ZipSwitchFile_thread, filesWithTime[k], pathToLine);
+        status[j] = f[j].wait_for(chrono::milliseconds(1));
+        k++;
+        index++;
+    }
+    while (index < filesWithTime.size())
+    {
+        for (int j = 0; j < maxThreads - 1; j++) //留一个线程循环遍历线程集，确认每个线程的运行状态
+        {
+            if (status[j] == future_status::ready)
+            {
+                f[j] = async(std::launch::async, DB_ZipSwitchFile_thread, filesWithTime[k], pathToLine);
+                status[j] = f[j].wait_for(chrono::milliseconds(1));
+                index++;
+                k++;
+                if (index == filesWithTime.size())
+                    break;
+            }
+            else
+            {
+                status[j] = f[j].wait_for(chrono::milliseconds(1));
+            }
+        }
+    }
+
+    IOBusy = false;
     return err;
 }
 
@@ -278,11 +402,13 @@ int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
  */
 int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
 {
+    IOBusy = true;
     int err = 0;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
     {
         cout << "未加载模板" << endl;
+        IOBusy = false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     DataTypeConverter converter;
@@ -292,6 +418,7 @@ int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
     if (filesWithTime.size() == 0)
     {
         cout << "没有文件！" << endl;
+        IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
     sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
@@ -307,6 +434,7 @@ int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
+            IOBusy = false;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
@@ -333,6 +461,7 @@ int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
         //     return errno;
         // err = close(fd);
     }
+    IOBusy = false;
     return err;
 }
 
@@ -412,6 +541,7 @@ int DB_ZipRecvSwitchBuff(const char *ZipTemPath, const char *filepath, char *buf
  */
 int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
 {
+    IOBusy = true;
     params->ZipType = TIME_SPAN;
     int err = CheckZipParams(params);
     if (err != 0)
@@ -422,6 +552,7 @@ int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
     if (filesWithTime.size() == 0)
     {
         cout << "没有文件！" << endl;
+        IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
 
@@ -436,6 +567,7 @@ int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
     if (selectedFiles.size() == 0)
     {
         cout << "没有这个时间段的文件！" << endl;
+        IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
     sortByTime(selectedFiles, TIME_ASC);
@@ -444,6 +576,7 @@ int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
     if (err)
     {
         cout << "未加载模板" << endl;
+        IOBusy = false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     DataTypeConverter converter;
@@ -459,6 +592,7 @@ int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
+            IOBusy = false;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
@@ -488,6 +622,7 @@ int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
             }
         }
     }
+    IOBusy = false;
     return err;
 }
 
@@ -500,6 +635,7 @@ int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
  */
 int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
 {
+    IOBusy = true;
     params->ZipType = TIME_SPAN;
     int err = CheckZipParams(params);
     if (err != 0)
@@ -510,6 +646,7 @@ int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
     if (filesWithTime.size() == 0)
     {
         cout << "没有文件！" << endl;
+        IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
 
@@ -524,6 +661,7 @@ int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
     if (selectedFiles.size() == 0)
     {
         cout << "没有这个时间段的文件！" << endl;
+        IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
     sortByTime(selectedFiles, TIME_ASC);
@@ -532,6 +670,7 @@ int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
     if (err)
     {
         cout << "未加载模板" << endl;
+        IOBusy = false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     DataTypeConverter converter;
@@ -547,6 +686,7 @@ int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
+            IOBusy = false;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
@@ -567,6 +707,7 @@ int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
             }
         }
     }
+    IOBusy = false;
     return err;
 }
 
@@ -766,7 +907,33 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
 }
 
 // int main()
-// {
-//     DB_ReZipSwitchFile("jinfei", "jinfei");
+// {   
+//     // long len;
+//     // DB_GetFileLengthByPath("/jinfei91_2022-4-1-19-28-49-807.idb",&len);
+//     // cout<<len<<endl;
+//     // char buff[len];
+//     // DB_OpenAndRead("/jinfei91_2022-4-1-19-28-49-807.idb",buff);
+//     // DB_DataBuffer buffer;
+//     // buffer.buffer=buff;
+//     // buffer.length=len;
+//     // buffer.savePath="jinfei";
+//     // for(int i=0;i<5000;i++)
+//     // {
+//     //     DB_InsertRecord(&buffer,0);
+//     // }
+//     int i=0,j=0,k=0;
+//     auto startTime = std::chrono::system_clock::now();
+//     DB_ZipSwitchFile("jinfei","jinfei");
+//     auto endTime = std::chrono::system_clock::now();
+//     std::cout << "单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     startTime = std::chrono::system_clock::now();
+//     DB_ReZipSwitchFile("jinfei","jinfei");
+//     endTime = std::chrono::system_clock::now();
+//     std::cout << "单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     startTime = std::chrono::system_clock::now();
+//     DB_ZipSwitchFile_MultiThread("jinfei","jinfei");
+//     endTime = std::chrono::system_clock::now();
+//     std::cout << "多线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     DB_ReZipSwitchFile("jinfei","jinfei");
 //     return 0;
 // }

@@ -850,13 +850,17 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
             memcpy(writebuff + writebuff_pos, zipPosNum, 2);
             writebuff_pos += 2;
 
-            //暂定２个字节的图片长度
+            //暂定图片前面有2字节长度，2字节宽度和2字节通道
             char length[2] = {0};
             memcpy(length, readbuff + readbuff_pos, 2);
             uint16_t imageLength = converter.ToUInt16(length);
-            readbuff_pos += 2;
-            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2); //图片长度也存
-            writebuff_pos += 2;
+            char width[2] = {0};
+            memcpy(width, readbuff + readbuff_pos + 2, 2);
+            uint16_t imageWidth = converter.ToUInt16(width);
+            char channel[2] = {0};
+            memcpy(channel, readbuff + readbuff_pos + 4, 2);
+            uint16_t imageChannel = converter.ToUInt16(channel);
+            uint32_t imageSize = imageChannel * imageLength * imageWidth;
 
             if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带有时间戳
             {
@@ -866,9 +870,13 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 memcpy(writebuff + writebuff_pos, zipType, 1);
                 writebuff_pos += 1;
 
-                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, imageLength + 8);
-                writebuff_pos += imageLength + 8;
-                readbuff_pos += imageLength + 8;
+                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 6); //存储图片的长度、宽度、通道
+                readbuff_pos += 6;
+                writebuff_pos += 6;
+
+                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, imageSize + 8);
+                writebuff_pos += imageSize + 8;
+                readbuff_pos += imageSize + 8;
             }
             else
             {
@@ -878,9 +886,13 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 memcpy(writebuff + writebuff_pos, zipType, 1);
                 writebuff_pos += 1;
 
-                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, imageLength);
-                writebuff_pos += imageLength;
-                readbuff_pos += imageLength;
+                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 6); //存储图片的长度、宽度、通道
+                readbuff_pos += 6;
+                writebuff_pos += 6;
+
+                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, imageSize);
+                writebuff_pos += imageSize;
+                readbuff_pos += imageSize;
             }
         }
     }
@@ -1651,28 +1663,38 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
             if (posCmp == i) //是未压缩数据的编号
             {
                 readbuff_pos += 2;
-                //暂定２个字节的图片长度
+                //暂定图片之前有2字节的长度，2字节的宽度和2字节的通道
                 char length[2] = {0};
-                memcpy(length, readbuff + readbuff_pos, 2);
+                memcpy(length, readbuff + readbuff_pos+1, 2);
                 uint16_t imageLength = converter.ToUInt16(length);
-
-                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2); //图片长度也存
-                writebuff_pos += 2;
-                readbuff_pos += 3;
+                char width[2] = {0};
+                memcpy(width, readbuff + readbuff_pos+3, 2);
+                uint16_t imageWidth = converter.ToUInt16(width);
+                char channel[2] = {0};
+                memcpy(channel, readbuff + readbuff_pos+5, 2);
+                uint16_t imageChannel = converter.ToUInt16(channel);
+                uint32_t imageSize = imageChannel * imageLength * imageWidth;
+                readbuff_pos+=1;
 
                 if (readbuff[readbuff_pos - 1] == (char)2) //既有数据又有数据
                 {
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 6); //存储图片的长度、宽度、通道
+                    readbuff_pos += 6;
+                    writebuff_pos += 6;
                     //存储图片
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, imageLength + 8);
-                    writebuff_pos += imageLength + 8;
-                    readbuff_pos += imageLength + 8;
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, imageSize + 8);
+                    writebuff_pos += imageSize + 8;
+                    readbuff_pos += imageSize + 8;
                 }
                 else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
                 {
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 6); //存储图片的长度、宽度、通道
+                    readbuff_pos += 6;
+                    writebuff_pos += 6;
                     //存储图片
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, imageLength);
-                    writebuff_pos += imageLength;
-                    readbuff_pos += imageLength;
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, imageSize);
+                    writebuff_pos += imageSize;
+                    readbuff_pos += imageSize;
                 }
                 else
                 {
@@ -1705,11 +1727,13 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
  */
 int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
 {
+    IOBusy=true;
     int err = 0;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
     {
         cout << "未加载模板" << endl;
+        IOBusy=false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
 
@@ -1718,6 +1742,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
     if (filesWithTime.size() == 0)
     {
         cout << "没有文件！" << endl;
+        IOBusy=false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
     sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
@@ -1733,6 +1758,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
+            IOBusy=false;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
         long writebuff_pos = 0;
@@ -1769,6 +1795,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
             // err = close(fd);
         }
     }
+    IOBusy=false;
     return err;
 }
 
@@ -1782,11 +1809,13 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
  */
 int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
 {
+    IOBusy=true;
     int err = 0;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
     {
         cout << "未加载模板" << endl;
+        IOBusy=false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     DataTypeConverter converter;
@@ -1796,6 +1825,7 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
     if (filesWithTime.size() == 0)
     {
         cout << "没有文件！" << endl;
+        IOBusy=false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
     sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
@@ -1811,6 +1841,7 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
+            IOBusy=false;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
@@ -1837,6 +1868,7 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
         //     return errno;
         // err = close(fd);
     }
+    IOBusy=false;
     return err;
 }
 
@@ -1915,6 +1947,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
  */
 int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
 {
+    IOBusy=true;
     params->ZipType = TIME_SPAN;
     int err = CheckZipParams(params);
     if (err != 0)
@@ -1925,6 +1958,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
     if (filesWithTime.size() == 0)
     {
         cout << "没有文件！" << endl;
+        IOBusy=false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
 
@@ -1939,6 +1973,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
     if (selectedFiles.size() == 0)
     {
         cout << "没有这个时间段的文件！" << endl;
+        IOBusy=false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
     sortByTime(selectedFiles, TIME_ASC);
@@ -1947,6 +1982,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
     if (err)
     {
         cout << "未加载模板" << endl;
+        IOBusy=false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     DataTypeConverter converter;
@@ -1962,6 +1998,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
+            IOBusy=false;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
@@ -1991,6 +2028,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
             }
         }
     }
+    IOBusy=false;
     return err;
 }
 
@@ -2003,6 +2041,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
  */
 int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
 {
+    IOBusy=true;
     params->ZipType = TIME_SPAN;
     int err = CheckZipParams(params);
     if (err != 0)
@@ -2013,6 +2052,7 @@ int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
     if (filesWithTime.size() == 0)
     {
         cout << "没有文件！" << endl;
+        IOBusy=false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
 
@@ -2027,6 +2067,7 @@ int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
     if (selectedFiles.size() == 0)
     {
         cout << "没有这个时间段的文件！" << endl;
+        IOBusy=false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
     sortByTime(selectedFiles, TIME_ASC);
@@ -2035,6 +2076,7 @@ int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
     if (err)
     {
         cout << "未加载模板" << endl;
+        IOBusy=false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     DataTypeConverter converter;
@@ -2050,6 +2092,7 @@ int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
+            IOBusy=false;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
@@ -2070,6 +2113,7 @@ int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
             }
         }
     }
+    IOBusy=false;
     return err;
 }
 

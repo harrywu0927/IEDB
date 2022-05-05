@@ -1851,16 +1851,25 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
             {
                 readbuff_pos += 2;
                 //暂定２个字节的图片长度
+                readbuff_pos += 2;
+                //暂定图片之前有2字节的长度，2字节的宽度和2字节的通道
                 char length[2] = {0};
-                memcpy(length, buff + readbuff_pos, 2);
+                memcpy(length, buff + readbuff_pos+1, 2);
                 uint16_t imageLength = converter.ToUInt16(length);
-
-                memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 2); //图片长度也存
-                writebuff_pos += 2;
-                readbuff_pos += 3;
+                char width[2] = {0};
+                memcpy(width, buff + readbuff_pos+3, 2);
+                uint16_t imageWidth = converter.ToUInt16(width);
+                char channel[2] = {0};
+                memcpy(channel, buff + readbuff_pos+5, 2);
+                uint16_t imageChannel = converter.ToUInt16(channel);
+                uint32_t imageSize = imageChannel * imageLength * imageWidth;
+                readbuff_pos+=1;
 
                 if (buff[readbuff_pos - 1] == (char)2) //既有数据又有数据
                 {
+                    memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 6); //存储图片的长度、宽度、通道
+                    readbuff_pos += 6;
+                    writebuff_pos += 6;
                     //存储图片
                     memcpy(writebuff + writebuff_pos, buff + readbuff_pos, imageLength + 8);
                     writebuff_pos += imageLength + 8;
@@ -1868,6 +1877,9 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                 }
                 else if (buff[readbuff_pos - 1] == (char)0) //只有数据
                 {
+                    memcpy(writebuff + writebuff_pos, buff + readbuff_pos, 6); //存储图片的长度、宽度、通道
+                    readbuff_pos += 6;
+                    writebuff_pos += 6;
                     //存储图片
                     memcpy(writebuff + writebuff_pos, buff + readbuff_pos, imageLength);
                     writebuff_pos += imageLength;

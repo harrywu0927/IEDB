@@ -1434,11 +1434,13 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
  */
 int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
 {
+    IOBusy=true;
     int err;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
     {
         cout << "未加载模板" << endl;
+        IOBusy=false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
 
@@ -1447,6 +1449,7 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
     if (filesWithTime.size() == 0)
     {
         cout << "没有文件！" << endl;
+        IOBusy=false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
     sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
@@ -1464,6 +1467,7 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
+            IOBusy=false;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
@@ -1499,6 +1503,7 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
             // err = close(fd);
         }
     }
+    IOBusy=false;
     return err;
 }
 
@@ -1512,11 +1517,13 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
  */
 int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
 {
+    IOBusy=true;
     int err = 0;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
     {
         cout << "未加载模板" << endl;
+        IOBusy=false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     DataTypeConverter converter;
@@ -1526,6 +1533,7 @@ int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
     if (filesWithTime.size() == 0)
     {
         cout << "没有文件！" << endl;
+        IOBusy=false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
     sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
@@ -1541,6 +1549,7 @@ int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
+            IOBusy=false;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
@@ -1567,6 +1576,7 @@ int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
         //     return errno;
         // err = close(fd);
     }
+    IOBusy=false;
     return err;
 }
 
@@ -1646,6 +1656,7 @@ int DB_ZipRecvAnalogFile(const char *ZipTempPath, const char *filepath, char *bu
  */
 int DB_ZipAnalogFileByTimeSpan(struct DB_ZipParams *params)
 {
+    IOBusy=true;
     params->ZipType = TIME_SPAN;
     int err = CheckZipParams(params);
     if (err != 0)
@@ -1656,6 +1667,7 @@ int DB_ZipAnalogFileByTimeSpan(struct DB_ZipParams *params)
     if (filesWithTime.size() == 0)
     {
         cout << "没有文件！" << endl;
+        IOBusy=false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
 
@@ -1670,6 +1682,7 @@ int DB_ZipAnalogFileByTimeSpan(struct DB_ZipParams *params)
     if (selectedFiles.size() == 0)
     {
         cout << "没有这个时间段的文件！" << endl;
+        IOBusy=false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
     sortByTime(selectedFiles, TIME_ASC);
@@ -1678,6 +1691,7 @@ int DB_ZipAnalogFileByTimeSpan(struct DB_ZipParams *params)
     if (err)
     {
         cout << "未加载模板" << endl;
+        IOBusy=false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     DataTypeConverter converter;
@@ -1695,6 +1709,7 @@ int DB_ZipAnalogFileByTimeSpan(struct DB_ZipParams *params)
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
+            IOBusy=false;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
@@ -1724,6 +1739,7 @@ int DB_ZipAnalogFileByTimeSpan(struct DB_ZipParams *params)
             }
         }
     }
+    IOBusy=false;
     return err;
 }
 
@@ -1736,6 +1752,7 @@ int DB_ZipAnalogFileByTimeSpan(struct DB_ZipParams *params)
  */
 int DB_ReZipAnalogFileByTimeSpan(struct DB_ZipParams *params)
 {
+    IOBusy=true;
     params->ZipType = TIME_SPAN;
     int err = CheckZipParams(params);
     if (err != 0)
@@ -1746,6 +1763,7 @@ int DB_ReZipAnalogFileByTimeSpan(struct DB_ZipParams *params)
     if (filesWithTime.size() == 0)
     {
         cout << "没有文件！" << endl;
+        IOBusy=false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
 
@@ -1760,6 +1778,7 @@ int DB_ReZipAnalogFileByTimeSpan(struct DB_ZipParams *params)
     if (selectedFiles.size() == 0)
     {
         cout << "没有这个时间段的文件！" << endl;
+        IOBusy=false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
     sortByTime(selectedFiles, TIME_ASC);
@@ -1768,6 +1787,7 @@ int DB_ReZipAnalogFileByTimeSpan(struct DB_ZipParams *params)
     if (err)
     {
         cout << "未加载模板" << endl;
+        IOBusy=false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
 
@@ -1784,6 +1804,7 @@ int DB_ReZipAnalogFileByTimeSpan(struct DB_ZipParams *params)
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
+            IOBusy=false;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
@@ -1804,6 +1825,7 @@ int DB_ReZipAnalogFileByTimeSpan(struct DB_ZipParams *params)
             }
         }
     }
+    IOBusy=false;
     return err;
 }
 
