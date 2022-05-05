@@ -39,18 +39,19 @@ void *checkTime(void *ptr)
 }
 void *checkSettings(void *ptr)
 {
-    FILE *fp = fopen("settings.json", "r+");
 
     while (1)
     {
         while (IOBusy)
         {
         }
+        FILE *fp = fopen("settings.json", "r+");
         fseek(fp, 0, SEEK_END);
         int len = ftell(fp);
         fseek(fp, 0, SEEK_SET);
         char buff[len];
         fread(buff, len, 1, fp);
+        fclose(fp);
         string str = buff;
         string contents(str);
         neb::CJsonObject tmp(contents);

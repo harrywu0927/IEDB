@@ -321,7 +321,7 @@ int main()
     params.valueName = "S2OFF";
     // params.valueName = NULL;
     params.start = 1651010750421;
-    params.end = 1651059000000;
+    params.end = 1651189000000;
     // params.start = 1650093562902;
     // params.end = 1650163562902;
     params.order = ASCEND;
@@ -331,7 +331,13 @@ int main()
     params.byPath = 1;
     params.queryNums = 35045;
     DB_DataBuffer buffer;
-    buffer.savePath = "/";
+    buffer.savePath = "JinfeiTTE";
+    char x[3] = {'1', '2', '3'};
+    buffer.buffer = x;
+    buffer.length = 3;
+    DB_InsertRecord(&buffer, 0);
+    sleep(100);
+    return 0;
     // DB_QueryByTimespan(&buffer, &params);
     // if (buffer.bufferMalloced)
     // {
@@ -370,7 +376,7 @@ int main()
     for (int i = 0; i < 10; i++)
     {
         startTime = std::chrono::system_clock::now();
-        DB_QueryLastRecords(&buffer, &params);
+        DB_QueryByTimespan_Single(&buffer, &params);
 
         endTime = std::chrono::system_clock::now();
         std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;

@@ -4403,7 +4403,6 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
     if (selectedPacks.size() > 0)
     {
         int index = 0;
-        maxThreads = 9;
         future_status status[maxThreads - 1];
         future<int> f[maxThreads - 1];
         for (int j = 0; j < maxThreads - 1; j++)
