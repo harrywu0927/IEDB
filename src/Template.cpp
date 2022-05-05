@@ -365,7 +365,7 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
                     memcpy(width, buff + pos, 2);
                     pos += 2;
                     memcpy(channels, buff + pos, 2);
-                    num = (int)converter.ToUInt16_m(length) * (int)converter.ToUInt16_m(width) * (int)converter.ToUInt16_m(channels);
+                    num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels);
                 }
                 else
                     num = schema.second.arrayLen;
