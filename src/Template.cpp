@@ -208,11 +208,14 @@ int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
-                    char imgLen[2];
-                    imgLen[0] = buff[pos];
-                    imgLen[1] = buff[pos + 1];
-                    num = (int)converter.ToUInt16(imgLen);
-                    position += 2;
+                    char length[2], width[2], channels[2];
+                    memcpy(length, buff + pos, 2);
+                    pos += 2;
+                    memcpy(width, buff + pos, 2);
+                    pos += 2;
+                    memcpy(channels, buff + pos, 2);
+                    num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels);
+                    position += 6;
                 }
                 else
                     num = schema.second.arrayLen;
@@ -227,10 +230,13 @@ int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
-                    char imgLen[2];
-                    imgLen[0] = buff[pos];
-                    imgLen[1] = buff[pos + 1];
-                    num = (int)converter.ToUInt16(imgLen) + 2;
+                    char length[2], width[2], channels[2];
+                    memcpy(length, buff + pos, 2);
+                    pos += 2;
+                    memcpy(width, buff + pos, 2);
+                    pos += 2;
+                    memcpy(channels, buff + pos, 2);
+                    num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels) + 2;
                 }
                 else
                     num = schema.second.arrayLen;
@@ -275,11 +281,14 @@ int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
-                    char imgLen[2];
-                    imgLen[0] = buff[pos];
-                    imgLen[1] = buff[pos + 1];
-                    num = (int)converter.ToUInt16(imgLen);
-                    position += 2;
+                    char length[2], width[2], channels[2];
+                    memcpy(length, buff + pos, 2);
+                    pos += 2;
+                    memcpy(width, buff + pos, 2);
+                    pos += 2;
+                    memcpy(channels, buff + pos, 2);
+                    num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels);
+                    position += 6;
                 }
                 else
                     num = schema.second.arrayLen;
@@ -295,11 +304,13 @@ int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
-
-                    char imgLen[2];
-                    imgLen[0] = buff[pos];
-                    imgLen[1] = buff[pos + 1];
-                    num = (int)converter.ToUInt16(imgLen) + 2;
+                    char length[2], width[2], channels[2];
+                    memcpy(length, buff + pos, 2);
+                    pos += 2;
+                    memcpy(width, buff + pos, 2);
+                    pos += 2;
+                    memcpy(channels, buff + pos, 2);
+                    num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels) + 2;
                 }
                 else
                     num = schema.second.arrayLen;
@@ -348,17 +359,18 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
-
-                    char imgLen[2];
-                    imgLen[0] = buff[pos];
-                    imgLen[1] = buff[pos + 1];
-                    num = (int)converter.ToUInt16(imgLen);
+                    char length[2], width[2], channels[2];
+                    memcpy(length, buff + pos, 2);
                     pos += 2;
+                    memcpy(width, buff + pos, 2);
+                    pos += 2;
+                    memcpy(channels, buff + pos, 2);
+                    num = (int)converter.ToUInt16_m(length) * (int)converter.ToUInt16_m(width) * (int)converter.ToUInt16_m(channels);
                 }
                 else
                     num = schema.second.arrayLen;
             }
-            positions.push_back(pos);
+            positions.push_back(pos + 2);
             bytes.push_back(num * schema.second.valueBytes);
             types.push_back(schema.second);
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
@@ -370,11 +382,13 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
-
-                    char imgLen[2];
-                    imgLen[0] = buff[pos];
-                    imgLen[1] = buff[pos + 1];
-                    num = (int)converter.ToUInt16(imgLen) + 2;
+                    char length[2], width[2], channels[2];
+                    memcpy(length, buff + pos, 2);
+                    pos += 2;
+                    memcpy(width, buff + pos, 2);
+                    pos += 2;
+                    memcpy(channels, buff + pos, 2);
+                    num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels) + 2;
                 }
                 else
                     num = schema.second.arrayLen;
@@ -422,17 +436,18 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
-
-                    char imgLen[2];
-                    imgLen[0] = buff[pos];
-                    imgLen[1] = buff[pos + 1];
-                    num = (int)converter.ToUInt16(imgLen);
+                    char length[2], width[2], channels[2];
+                    memcpy(length, buff + pos, 2);
                     pos += 2;
+                    memcpy(width, buff + pos, 2);
+                    pos += 2;
+                    memcpy(channels, buff + pos, 2);
+                    num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels);
                 }
                 else
                     num = schema.second.arrayLen;
             }
-            positions.push_back(pos);
+            positions.push_back(pos + 2);
             bytes.push_back(num * schema.second.valueBytes);
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
         }
@@ -443,11 +458,13 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
-
-                    char imgLen[2];
-                    imgLen[0] = buff[pos];
-                    imgLen[1] = buff[pos + 1];
-                    num = (int)converter.ToUInt16(imgLen) + 2;
+                    char length[2], width[2], channels[2];
+                    memcpy(length, buff + pos, 2);
+                    pos += 2;
+                    memcpy(width, buff + pos, 2);
+                    pos += 2;
+                    memcpy(channels, buff + pos, 2);
+                    num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels) + 2;
                 }
                 else
                     num = schema.second.arrayLen;
@@ -489,12 +506,14 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
-
-                    char imgLen[2];
-                    imgLen[0] = buff[pos];
-                    imgLen[1] = buff[pos + 1];
-                    num = (int)converter.ToUInt16(imgLen);
-                    position += 2;
+                    char length[2], width[2], channels[2];
+                    memcpy(length, buff + pos, 2);
+                    pos += 2;
+                    memcpy(width, buff + pos, 2);
+                    pos += 2;
+                    memcpy(channels, buff + pos, 2);
+                    num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels);
+                    position += 6;
                 }
                 else
                     num = schema.second.arrayLen;
@@ -509,11 +528,13 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
-
-                    char imgLen[2];
-                    imgLen[0] = buff[pos];
-                    imgLen[1] = buff[pos + 1];
-                    num = (int)converter.ToUInt16(imgLen) + 2;
+                    char length[2], width[2], channels[2];
+                    memcpy(length, buff + pos, 2);
+                    pos += 2;
+                    memcpy(width, buff + pos, 2);
+                    pos += 2;
+                    memcpy(channels, buff + pos, 2);
+                    num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels) + 2;
                 }
                 else
                     num = schema.second.arrayLen;
@@ -556,12 +577,14 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
-
-                    char imgLen[2];
-                    imgLen[0] = buff[pos];
-                    imgLen[1] = buff[pos + 1];
-                    num = (int)converter.ToUInt16(imgLen);
-                    position += 2;
+                    char length[2], width[2], channels[2];
+                    memcpy(length, buff + pos, 2);
+                    pos += 2;
+                    memcpy(width, buff + pos, 2);
+                    pos += 2;
+                    memcpy(channels, buff + pos, 2);
+                    num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels);
+                    position += 6;
                 }
                 else
                     num = schema.second.arrayLen;
@@ -577,11 +600,13 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
-
-                    char imgLen[2];
-                    imgLen[0] = buff[pos];
-                    imgLen[1] = buff[pos + 1];
-                    num = (int)converter.ToUInt16(imgLen) + 2;
+                    char length[2], width[2], channels[2];
+                    memcpy(length, buff + pos, 2);
+                    pos += 2;
+                    memcpy(width, buff + pos, 2);
+                    pos += 2;
+                    memcpy(channels, buff + pos, 2);
+                    num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels) + 2;
                 }
                 else
                     num = schema.second.arrayLen;

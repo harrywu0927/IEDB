@@ -4632,6 +4632,450 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 }
 
 /**
+ * @brief 线程任务，处理单个包
+ *
+ * @param pack 包的内存地址-长度对
+ * @param params 查询参数
+ * @param cur 当前已分配的内存总长度，临界资源，需要加线程互斥锁
+ * @param mallocedMemory 已分配的内存地址-长度-排序值偏移量-时间戳元组，临界资源，需要加线程互斥锁
+ * @param type  排序值的数据类型
+ * @param typeList 选中的数据类型列表
+ * @return int
+ */
+// int PackProcess_New(DB_QueryParams *params, atomic<long> *cur, vector<tuple<char *, long, long, long>> *mallocedMemory, DataType *type, vector<DataType> *typeList)
+// {
+//     PackFileReader packReader(pack.first, pack.second);
+//     if (packReader.packBuffer == NULL)
+//         return StatusCode::DATAFILE_NOT_FOUND;
+//     int fileNum;
+//     string templateName;
+//     packReader.ReadPackHead(fileNum, templateName);
+//     if (TemplateManager::CheckTemplate(templateName) != 0)
+//         return StatusCode::SCHEMA_FILE_NOT_FOUND;
+//     vector<PathCode> pathCodes;
+//     if (params->byPath)
+//     {
+//         CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
+//     }
+
+//     for (int i = 0; i < fileNum; i++)
+//     {
+//         long timestamp;
+//         int readLength, zipType;
+//         long dataPos = packReader.Next(readLength, timestamp, zipType);
+//         if (timestamp < params->start || timestamp > params->end) //在时间区间外
+//             continue;
+//         char *buff = new char[CurrentTemplate.totalBytes];
+//         switch (zipType)
+//         {
+//         case 0:
+//         {
+//             memcpy(buff, packReader.packBuffer + dataPos, readLength);
+//             break;
+//         }
+//         case 1:
+//         {
+//             ReZipBuff(buff, readLength, params->pathToLine);
+//             break;
+//         }
+//         case 2:
+//         {
+//             memcpy(buff, packReader.packBuffer + dataPos, readLength);
+//             ReZipBuff(buff, readLength, params->pathToLine);
+//             break;
+//         }
+//         default:
+//             delete[] buff;
+//             continue;
+//             break;
+//         }
+//         //获取数据的偏移量和数据类型
+//         long pos = 0, bytes = 0;
+//         vector<long> posList, bytesList;
+//         long copyBytes = 0;
+//         int err;
+//         if (params->byPath)
+//         {
+//             char *pathCode = params->pathCode;
+//             if (typeList->size() == 0)
+//                 err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList, *typeList);
+//             else
+//                 err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList);
+//             for (int i = 0; i < bytesList.size(); i++)
+//             {
+//                 copyBytes += typeList->at(i).hasTime ? bytesList[i] + 8 : bytesList[i];
+//             }
+//         }
+//         else
+//         {
+//             err = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, *type);
+//             copyBytes = type->hasTime ? bytes + 8 : bytes;
+//         }
+//         if (err != 0)
+//         {
+//             continue;
+//         }
+
+//         char copyValue[copyBytes]; //将要拷贝的数值
+//         long sortPos = 0;
+//         int compareBytes = 0;
+//         if (params->byPath)
+//         {
+//             int lineCur = 0; //记录此行当前写位置
+//             for (int i = 0; i < bytesList.size(); i++)
+//             {
+//                 int curBytes = typeList->at(i).hasTime ? bytesList[i] + 8 : bytesList[i];
+//                 memcpy(copyValue + lineCur, buff + posList[i], curBytes);
+//                 lineCur += curBytes;
+//             }
+//             if (params->valueName != NULL) //此处，若编码为精确搜索，而又输入了不同的变量名，FindSortPosFromSelectedData将返回0
+//             {
+//                 sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, pathCodes, *typeList);
+//                 compareBytes = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, *type) == 0 ? bytes : 0;
+//             }
+//         }
+//         else
+//         {
+//             memcpy(copyValue, buff + pos, copyBytes);
+//             compareBytes = bytes;
+//         }
+
+//         bool canCopy = false;
+//         if (params->compareType != CMP_NONE && compareBytes != 0) //可比较
+//         {
+//             char value[compareBytes]; //数值
+//             memcpy(value, buff + pos, compareBytes);
+
+//             //根据比较结果决定是否加入结果集
+//             int compareRes = DataType::CompareValue(*type, value, params->compareValue);
+//             switch (params->compareType)
+//             {
+//             case DB_CompareType::GT:
+//             {
+//                 if (compareRes > 0)
+//                 {
+//                     canCopy = true;
+//                 }
+//                 break;
+//             }
+//             case DB_CompareType::LT:
+//             {
+//                 if (compareRes < 0)
+//                 {
+//                     canCopy = true;
+//                 }
+//                 break;
+//             }
+//             case DB_CompareType::GE:
+//             {
+//                 if (compareRes >= 0)
+//                 {
+//                     canCopy = true;
+//                 }
+//                 break;
+//             }
+//             case DB_CompareType::LE:
+//             {
+//                 if (compareRes <= 0)
+//                 {
+//                     canCopy = true;
+//                 }
+//                 break;
+//             }
+//             case DB_CompareType::EQ:
+//             {
+//                 if (compareRes == 0)
+//                 {
+//                     canCopy = true;
+//                 }
+//                 break;
+//             }
+//             default:
+//                 break;
+//             }
+//         }
+//         else //不可比较，直接拷贝此数据
+//             canCopy = true;
+//         if (canCopy) //需要此数据
+//         {
+//             char *memory = new (std::nothrow) char[copyBytes];
+//             if (memory == nullptr)
+//             {
+//                 cout << "memory null" << endl;
+//             }
+//             else
+//             {
+//                 memcpy(memory, copyValue, copyBytes);
+//                 *cur += copyBytes;
+//                 auto t = make_tuple(memory, copyBytes, sortPos, timestamp);
+//                 memMutex.lock();
+//                 mallocedMemory->push_back(t);
+//                 memMutex.unlock();
+//             }
+//         }
+//         delete[] buff;
+//     }
+
+//     return 0;
+// }
+
+/**
+ * @brief 根据给定的时间段和路径编码或变量名在某一产线文件夹下的数据文件中查询数据，可比较数据大小筛选，可按照时间
+ *          将结果升序或降序排序，数据存放在新开辟的缓冲区buffer中
+ * @param buffer    数据缓冲区
+ * @param params    查询请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note   支持idb文件和pak文件混合查询,此处默认pak文件中的时间均早于idb和idbzip文件！！
+ */
+int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
+{
+    IOBusy = true;
+    if (maxThreads <= 2) //线程数量<=2时，多线程已无必要
+    {
+        return DB_QueryByTimespan_Single(buffer, params);
+    }
+    //确认当前模版
+    if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    if (params->byPath)
+    {
+        vector<PathCode> vec;
+        CurrentTemplate.GetAllPathsByCode(params->pathCode, vec);
+        if (vec.size() == 1)
+            return DB_QueryByTimespan_Single(buffer, params);
+    }
+    int check = CheckQueryParams(params);
+    if (check != 0)
+    {
+        IOBusy = false;
+        return check;
+    }
+    vector<pair<string, long>> filesWithTime, selectedFiles;
+    auto selectedPacks = packManager.GetPacksByTime(params->pathToLine, params->start, params->end);
+    //获取每个数据文件，并带有时间戳
+    readDataFilesWithTimestamps(params->pathToLine, filesWithTime);
+
+    //筛选落入时间区间内的文件
+    for (auto &file : filesWithTime)
+    {
+        if (file.second >= params->start && file.second <= params->end)
+        {
+            selectedFiles.push_back(make_pair(file.first, file.second));
+        }
+    }
+
+    vector<tuple<char *, long, long, long>> mallocedMemory; //当前已分配的内存地址-长度-排序值偏移-时间戳元组
+    atomic<long> cur(0);                                    //已选择的数据总长
+    // atomic<vector<tuple<char *, long, long, long>>> mallocedMemory;
+    DataType type;
+    vector<DataType> typeList, selectedTypes;
+    vector<long> sortDataPoses; //按值排序时要比较的数据的偏移量
+    vector<PathCode> pathCodes;
+    //先对时序在前的包文件检索
+    if (selectedPacks.size() > 0)
+    {
+        atomic<int> index(0);
+    }
+
+    if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+    {
+        IOBusy = false;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
+    if (params->byPath)
+        CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
+    //对时序在后的普通文件检索
+    for (auto &file : selectedFiles)
+    {
+        // typeList.clear();
+        long len;
+
+        if (file.first.find(".idbzip") != string::npos)
+        {
+            DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+        }
+        else if (file.first.find("idb") != string::npos)
+        {
+            DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+        }
+        char *buff = new char[CurrentTemplate.totalBytes];
+        DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+        if (file.first.find(".idbzip") != string::npos)
+        {
+            ReZipBuff(buff, (int &)len, params->pathToLine);
+        }
+
+        //获取数据的偏移量和数据类型
+        long pos = 0, bytes = 0;
+        vector<long> posList, bytesList;
+        long copyBytes = 0;
+        int err;
+        if (params->byPath)
+        {
+            char *pathCode = params->pathCode;
+            if (typeList.size() == 0)
+                err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList, typeList);
+            else
+                err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList);
+            for (int i = 0; i < bytesList.size(); i++)
+            {
+                copyBytes += typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i];
+            }
+        }
+        else
+        {
+            err = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type);
+            copyBytes = type.hasTime ? bytes + 8 : bytes;
+        }
+        if (err != 0)
+        {
+            continue;
+        }
+
+        char copyValue[copyBytes]; //将要拷贝的数值
+        long sortPos = 0;
+        int compareBytes = 0;
+        if (params->byPath)
+        {
+            int lineCur = 0; //记录此行当前写位置
+            for (int i = 0; i < bytesList.size(); i++)
+            {
+                int curBytes = typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i];
+                memcpy(copyValue + lineCur, buff + posList[i], curBytes);
+                lineCur += curBytes;
+            }
+            if (params->valueName != NULL)
+            {
+                sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, pathCodes, typeList);
+                compareBytes = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type) == 0 ? bytes : 0;
+            }
+        }
+        else
+        {
+            memcpy(copyValue, buff + pos, copyBytes);
+            compareBytes = bytes;
+        }
+
+        bool canCopy = false;
+        if (params->compareType != CMP_NONE && compareBytes != 0) //可比较
+        {
+            char value[compareBytes]; //数值
+            memcpy(value, buff + pos, compareBytes);
+            //根据比较结果决定是否加入结果集
+            int compareRes = DataType::CompareValue(type, value, params->compareValue);
+            switch (params->compareType)
+            {
+            case DB_CompareType::GT:
+            {
+                if (compareRes > 0)
+                {
+                    canCopy = true;
+                }
+                break;
+            }
+            case DB_CompareType::LT:
+            {
+                if (compareRes < 0)
+                {
+                    canCopy = true;
+                }
+                break;
+            }
+            case DB_CompareType::GE:
+            {
+                if (compareRes >= 0)
+                {
+                    canCopy = true;
+                }
+                break;
+            }
+            case DB_CompareType::LE:
+            {
+                if (compareRes <= 0)
+                {
+                    canCopy = true;
+                }
+                break;
+            }
+            case DB_CompareType::EQ:
+            {
+                if (compareRes == 0)
+                {
+                    canCopy = true;
+                }
+                break;
+            }
+            default:
+                canCopy = true;
+                break;
+            }
+        }
+        else //不可比较，直接拷贝此数据
+            canCopy = true;
+        if (canCopy) //需要此数据
+        {
+            char *memory = new char[copyBytes];
+            memcpy(memory, copyValue, copyBytes);
+            cur += copyBytes;
+            mallocedMemory.push_back(make_tuple(memory, copyBytes, sortPos, file.second));
+        }
+        delete[] buff;
+    }
+
+    sortResult(mallocedMemory, params, type);
+    if (cur == 0)
+    {
+        buffer->buffer = NULL;
+        buffer->bufferMalloced = 0;
+        IOBusy = false;
+        return StatusCode::NO_DATA_QUERIED;
+    }
+    //动态分配内存
+    char typeNum = params->byPath ? typeList.size() : 1; //数据类型总数
+    char *data = (char *)malloc(cur + (int)typeNum * 11 + 1);
+    int startPos;                                                                  //数据区起始位置
+    if (!params->byPath)                                                           //根据变量名查询，仅单个变量
+        startPos = CurrentTemplate.writeBufferHead(params->valueName, type, data); //写入缓冲区头，获取数据区起始位置
+    else                                                                           //根据路径编码查询，可能有多个变量
+        startPos = CurrentTemplate.writeBufferHead(params->pathCode, typeList, data);
+    if (data == NULL)
+    {
+        buffer->buffer = NULL;
+        buffer->bufferMalloced = 0;
+        IOBusy = false;
+        return StatusCode::BUFFER_FULL;
+    }
+    //拷贝数据
+    cur = 0;
+    if (params->order == TIME_DSC) //时间降序，从内存地址集中反向拷贝
+    {
+        for (int i = mallocedMemory.size() - 1; i >= 0; i--)
+        {
+            memcpy(data + cur + startPos, get<0>(mallocedMemory[i]), get<1>(mallocedMemory[i]));
+            delete[] get<0>(mallocedMemory[i]);
+            cur += get<1>(mallocedMemory[i]);
+        }
+    }
+    else //否则按照默认顺序升序排列即可
+    {
+        for (auto &mem : mallocedMemory)
+        {
+            memcpy(data + cur + startPos, get<0>(mem), get<1>(mem));
+            delete[] get<0>(mem);
+            cur += get<1>(mem);
+        }
+    }
+
+    buffer->bufferMalloced = 1;
+    buffer->buffer = data;
+    buffer->length = cur + startPos;
+    IOBusy = false;
+    return 0;
+}
+
+/**
  * @brief 根据路径编码或变量名在某一产线文件夹下的数据文件中查询指定条数最新的数据，
  *          数据存放在新开辟的缓冲区buffer中
  * @param buffer    数据缓冲区
@@ -5953,7 +6397,7 @@ int main()
 {
     DataTypeConverter converter;
     DB_QueryParams params;
-    params.pathToLine = "JinfeiSixteen";
+    params.pathToLine = "RobotDataFive";
     params.fileID = "JinfeiSixteen15";
     char code[10];
     code[0] = (char)0;
@@ -5967,16 +6411,16 @@ int main()
     code[8] = (char)0;
     code[9] = (char)0;
     params.pathCode = code;
-    params.valueName = "S2OFF";
+    params.valueName = "S1L1A10";
     // params.valueName = NULL;
-    params.start = 1650010750421;
-    params.end = 1650169000000;
+    params.start = 1651240750421;
+    params.end = 1651269000000;
     params.order = ASCEND;
-    params.compareType = LT;
+    params.compareType = CMP_NONE;
     params.compareValue = "666";
     params.queryType = LAST;
-    params.byPath = 1;
-    params.queryNums = 43345;
+    params.byPath = 0;
+    params.queryNums = 10;
     DB_DataBuffer buffer;
     buffer.savePath = "/";
     // cout << settings("Pack_Mode") << endl;
@@ -5988,7 +6432,7 @@ int main()
 
     auto endTime = std::chrono::system_clock::now();
     // free(buffer.buffer);
-
+    TemplateManager::CheckTemplate("RobotData");
     std::cout << "首次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
     // free(buffer.buffer);
     //  startTime = std::chrono::system_clock::now();
@@ -6007,61 +6451,61 @@ int main()
     // // DB_QueryLastRecords_Using_Cache(&buffer, &params);
     // // DB_QueryByTimespan_Using_Cache(&buffer, &params);
     // // DB_QueryByTimespan(&buffer, &params);
-    for (int i = 0; i < 10; i++)
-    {
-        startTime = std::chrono::system_clock::now();
-        DB_QueryByTimespan_NonAtomic(&buffer, &params);
+    // for (int i = 0; i < 10; i++)
+    // {
+    //     startTime = std::chrono::system_clock::now();
+    //     DB_QueryLastRecords(&buffer, &params);
 
-        endTime = std::chrono::system_clock::now();
-        std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-        cout << buffer.length << endl;
-        free(buffer.buffer);
-        buffer.length = 0;
-        buffer.bufferMalloced = 0;
-    }
-    for (int i = 0; i < 10; i++)
-    {
-        startTime = std::chrono::system_clock::now();
-        DB_QueryByTimespan(&buffer, &params);
+    //     endTime = std::chrono::system_clock::now();
+    //     std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    //     cout << buffer.length << endl;
+    //     free(buffer.buffer);
+    //     buffer.length = 0;
+    //     buffer.bufferMalloced = 0;
+    // }
+    // for (int i = 0; i < 10; i++)
+    // {
+    //     startTime = std::chrono::system_clock::now();
+    //     DB_QueryByTimespan(&buffer, &params);
 
-        endTime = std::chrono::system_clock::now();
-        std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-        cout << buffer.length << endl;
-        free(buffer.buffer);
-        buffer.length = 0;
-        buffer.bufferMalloced = 0;
-    }
-    if (buffer.bufferMalloced)
-    {
-        char buf[buffer.length];
-        memcpy(buf, buffer.buffer, buffer.length);
-        cout << buffer.length << endl;
-        // for (int i = 0; i < buffer.length; i++)
-        // {
-        //     cout << (int)buf[i] << " ";
-        //     if (i % 11 == 0)
-        //         cout << endl;
-        // }
-
-        free(buffer.buffer);
-    }
-    // buffer.bufferMalloced = 0;
-    // DB_QueryByFileID(&buffer, &params);
-
+    //     endTime = std::chrono::system_clock::now();
+    //     std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    //     cout << buffer.length << endl;
+    //     free(buffer.buffer);
+    //     buffer.length = 0;
+    //     buffer.bufferMalloced = 0;
+    // }
     // if (buffer.bufferMalloced)
     // {
     //     char buf[buffer.length];
     //     memcpy(buf, buffer.buffer, buffer.length);
     //     cout << buffer.length << endl;
-    //     for (int i = 0; i < buffer.length; i++)
-    //     {
-    //         cout << (int)buf[i] << " ";
-    //         if (i % 11 == 0)
-    //             cout << endl;
-    //     }
+    //     // for (int i = 0; i < buffer.length; i++)
+    //     // {
+    //     //     cout << (int)buf[i] << " ";
+    //     //     if (i % 11 == 0)
+    //     //         cout << endl;
+    //     // }
 
     //     free(buffer.buffer);
     // }
+    // buffer.bufferMalloced = 0;
+    DB_QueryLastRecords(&buffer, &params);
+
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
+
+        free(buffer.buffer);
+    }
     // buffer.buffer = NULL;
     return 0;
 }

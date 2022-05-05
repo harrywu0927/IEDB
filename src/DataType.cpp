@@ -139,16 +139,18 @@ int DataType::GetDataTypeFromStr(char dataType[], DataType &type)
         vector<string> arr = StringSplit(const_cast<char *>(dtype.c_str()), " ");
         type.valueType = JudgeValueType(arr[2]); //数组的值类型
 
-        if (type.valueType == ValueType::USINT)
-        {
-            type.valueType = ValueType::IMAGE;
-        }
-
         //获取数组长度
         arr[0][arr[0].length() - 1] = '\0';
         vector<string> vec = DataType::StringSplit(const_cast<char *>(arr[0].c_str()), "..");
         type.arrayLen = atoi(const_cast<char *>(vec[1].c_str()));
         type.valueBytes = GetValueBytes(type.valueType);
+        return 0;
+    }
+    else if (dtype.find("IMAGE") != string::npos)
+    {
+        type.isArray = true;
+        type.valueType = ValueType::IMAGE;
+        type.valueBytes = 1;
         return 0;
     }
     else

@@ -350,7 +350,8 @@ public:
             i += 30;
             memcpy(dataType, buf + i, 30);
             i += 30;
-            char timeFlag = buf[++i];
+            char timeFlag;
+            memcpy(&timeFlag, buf + i++, 1);
             memcpy(pathEncode, buf + i, 10);
             i += 10;
             vector<string> paths;

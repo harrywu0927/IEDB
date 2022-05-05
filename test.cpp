@@ -304,7 +304,7 @@ int main()
     // return 0;
 
     DB_QueryParams params;
-    params.pathToLine = "JinfeiTweEi";
+    params.pathToLine = "RobotDataFive";
     params.fileID = "JinfeiSixteen13455";
     char code[10];
     code[0] = (char)0;
@@ -318,43 +318,43 @@ int main()
     code[8] = (char)0;
     code[9] = (char)0;
     params.pathCode = code;
-    params.valueName = "S2OFF";
+    params.valueName = "S1L1A10";
     // params.valueName = NULL;
-    params.start = 1651010750421;
-    params.end = 1651189000000;
+    params.start = 1651240750421;
+    params.end = 1651269000000;
     // params.start = 1650093562902;
     // params.end = 1650163562902;
     params.order = ASCEND;
     params.compareType = LT;
     params.compareValue = "666";
-    params.queryType = TIMESPAN;
+    params.queryType = LAST;
     params.byPath = 1;
-    params.queryNums = 35045;
+    params.queryNums = 10;
     DB_DataBuffer buffer;
     buffer.savePath = "JinfeiTTE";
-    char x[3] = {'1', '2', '3'};
-    buffer.buffer = x;
-    buffer.length = 3;
-    DB_InsertRecord(&buffer, 0);
-    sleep(100);
-    return 0;
-    // DB_QueryByTimespan(&buffer, &params);
-    // if (buffer.bufferMalloced)
-    // {
-    //     char buf[buffer.length];
-    //     memcpy(buf, buffer.buffer, buffer.length);
-    //     cout << buffer.length << endl;
-    //     // for (int i = 0; i < buffer.length; i++)
-    //     // {
-    //     //     cout << (int)buf[i] << " ";
-    //     //     if (i % 11 == 0)
-    //     //         cout << endl;
-    //     // }
-
-    //     free(buffer.buffer);
-    // }
-    // // DB_QueryByFileID(&buffer, &params);
+    // char x[3] = {'1', '2', '3'};
+    // buffer.buffer = x;
+    // buffer.length = 3;
+    // DB_InsertRecord(&buffer, 0);
+    // sleep(100);
     // return 0;
+    DB_QueryLastRecords(&buffer, &params);
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        // for (int i = 0; i < buffer.length; i++)
+        // {
+        //     cout << (int)buf[i] << " ";
+        //     if (i % 11 == 0)
+        //         cout << endl;
+        // }
+
+        free(buffer.buffer);
+    }
+    // // DB_QueryByFileID(&buffer, &params);
+    return 0;
     // cout << settings("Pack_Mode") << endl;
     auto startTime = std::chrono::system_clock::now();
     auto endTime = std::chrono::system_clock::now();
@@ -376,7 +376,7 @@ int main()
     for (int i = 0; i < 10; i++)
     {
         startTime = std::chrono::system_clock::now();
-        DB_QueryByTimespan_Single(&buffer, &params);
+        DB_QueryByTimespan(&buffer, &params);
 
         endTime = std::chrono::system_clock::now();
         std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;

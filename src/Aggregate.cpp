@@ -1132,7 +1132,6 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
                 sqrSum += powf(v - avg, 2);
             }
             float res = sqrtf(sqrSum / (float)rows);
-            cout << "std:" << res << endl;
             memcpy(newBuffer + newBufCur, &res, 4);
             newBufCur += 4;
             break;
