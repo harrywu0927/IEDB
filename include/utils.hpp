@@ -151,6 +151,15 @@ int DB_QueryWholeFile_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 int DB_QueryWholeFile_Single(DB_DataBuffer *buffer, DB_QueryParams *params);
 
+int DB_ZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine);
+
+int DB_ZipSwitchFile_MultiThread(const char *ZipTemPath, const char *pathToLine);
+
+int DB_ReZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine);
+
+int DB_ReZipSwitchFile_MultiThread(const char *ZipTemPath, const char *pathToLine);
+
+
 // int DB_QueryLastRecords_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params);
 
 // int DB_QueryByTimespan_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params);
