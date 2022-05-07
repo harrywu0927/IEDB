@@ -82,6 +82,42 @@ pair<char *, long> PackManager::GetPackByID(string pathToLine, string fileID)
 }
 
 /**
+ * @brief 根据文件ID范围获取包
+ *
+ * @param pathToLine
+ * @param fileID
+ * @return pair<char *, long>
+ */
+vector<pair<char *, long>> PackManager::GetPackByIDs(string pathToLine, string fileID, int num)
+{
+    while (pathToLine[0] == '/')
+        pathToLine.erase(0);
+    while (pathToLine.back() == '/')
+        pathToLine.pop_back();
+    string startNum = "", endNum = "";
+    for (int i = 0; i < fileID.length(); i++)
+    {
+        if (isdigit(fileID[i]))
+        {
+            startNum += fileID[i];
+        }
+    }
+    int start = atoi(startNum.c_str());
+    int end = start + num;
+    vector<pair<char *, long>> res;
+    for (auto &pack : allPacks[pathToLine])
+    {
+        if ((start >= std::get<0>(fileIDManager.fidIndex[pack.first]) && start <= std::get<1>(fileIDManager.fidIndex[pack.first])) || (end >= std::get<0>(fileIDManager.fidIndex[pack.first]) && end <= std::get<1>(fileIDManager.fidIndex[pack.first])) || (start <= std::get<0>(fileIDManager.fidIndex[pack.first]) && end >= std::get<1>(fileIDManager.fidIndex[pack.first])))
+        {
+            res.push_back(GetPack(pack.first));
+        }
+    }
+    if (res.size() == 0)
+        res.push_back({NULL, 0});
+    return res;
+}
+
+/**
  * @brief put
  *
  * @param path 包的路径

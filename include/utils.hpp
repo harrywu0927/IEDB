@@ -159,7 +159,6 @@ int DB_ReZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t
 
 int DB_ReZipSwitchFile_MultiThread(const char *ZipTemPath, const char *pathToLine);
 
-
 // int DB_QueryLastRecords_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params);
 
 // int DB_QueryByTimespan_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params);
@@ -467,7 +466,7 @@ public:
     PackFileReader(char *buffer, long length)
     {
         packBuffer = buffer;
-        buffer = NULL;
+        // buffer = NULL;
         packLength = length;
         curPos = 24;
         usingcache = true;
@@ -597,6 +596,8 @@ public:
     pair<string, pair<char *, long>> GetLastPack(string pathToLine, int index);
 
     pair<char *, long> GetPackByID(string pathToLine, string fileID);
+
+    vector<pair<char *, long>> GetPackByIDs(string pathToLine, string fileID, int num);
 
     void ModifyCacheCapacity(int memcap)
     {
