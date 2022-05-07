@@ -9,7 +9,7 @@ int timerStarted = false;
 bool IOBusy = false;
 void *checkTime(void *ptr)
 {
-    cout << "Timer created!" << endl;
+    // cout << "Timer created!" << endl;
     timerStarted = true;
     long interval = atol(settings("Pack_Interval").c_str());
     while (1)
@@ -56,9 +56,9 @@ void *checkSettings(void *ptr)
         string contents(str);
         neb::CJsonObject tmp(contents);
         settings = tmp;
-        cout << settings("Filename_Label") << endl;
-        cout << settings("FileOverFlowMode") << endl;
-        cout << settings("Pack_Cache_Size") << endl;
+        // cout << settings("Filename_Label") << endl;
+        // cout << settings("FileOverFlowMode") << endl;
+        // cout << settings("Pack_Cache_Size") << endl;
         sleep(3);
         // this_thread::sleep_for(chrono::seconds(3));
     }

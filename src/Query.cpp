@@ -64,6 +64,8 @@ int DB_UnloadSchema(const char *pathToUnset)
  */
 int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, vector<long> &poses, DB_QueryParams *params, DataType &type)
 {
+    if (type.isArray || type.valueType == ValueType::IMAGE)
+        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     vector<pair<pair<char *, long>, long>> memAndPos; //使数据偏移与内存-长度对建立关联
     for (int i = 0; i < poses.size(); i++)
     {
@@ -167,6 +169,8 @@ int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, vector<long> &
  */
 int sortResult(vector<tuple<char *, long, long, long>> &mallocedMemory, DB_QueryParams *params, DataType &type)
 {
+    if (type.isArray || type.valueType == ValueType::IMAGE)
+        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     switch (params->order)
     {
     case ASCEND: //升序
@@ -4643,22 +4647,29 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
  * @param typeList 选中的数据类型列表
  * @return int
  */
-int PackProcess_New(DB_QueryParams *params, atomic<long> *cur, atomic<int> *index, vector<pair<string, tuple<long, long>>> *selectedPacks, vector<tuple<char *, long, long, long>> *mallocedMemory, DataType *type, vector<DataType> *typeList)
+int PackProcess_New(DB_QueryParams *params, atomic<long> *cur, atomic<int> *index, vector<int> *complete, int threadIndex, vector<pair<string, tuple<long, long>>> *selectedPacks, vector<tuple<char *, long, long, long>> *mallocedMemory, DataType *type)
 {
-    while (*index < selectedPacks->size())
+    while (1)
     {
         indexMutex.lock();
+        if (*index >= selectedPacks->size())
+        {
+            indexMutex.unlock();
+            complete->at(threadIndex) = 1;
+            return 1;
+        }
         auto pack = packManager.GetPack(selectedPacks->at(*index).first);
-        *index++;
+        *index += 1;
         indexMutex.unlock();
+        vector<DataType> typeList;
         PackFileReader packReader(pack.first, pack.second);
         if (packReader.packBuffer == NULL)
-            return StatusCode::DATAFILE_NOT_FOUND;
+            return 1;
         int fileNum;
         string templateName;
         packReader.ReadPackHead(fileNum, templateName);
         if (TemplateManager::CheckTemplate(templateName) != 0)
-            return StatusCode::SCHEMA_FILE_NOT_FOUND;
+            return 1;
         vector<PathCode> pathCodes;
         if (params->byPath)
         {
@@ -4704,13 +4715,13 @@ int PackProcess_New(DB_QueryParams *params, atomic<long> *cur, atomic<int> *inde
             if (params->byPath)
             {
                 char *pathCode = params->pathCode;
-                if (typeList->size() == 0)
-                    err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList, *typeList);
+                if (typeList.size() == 0)
+                    err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList, typeList);
                 else
                     err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList);
                 for (int i = 0; i < bytesList.size(); i++)
                 {
-                    copyBytes += typeList->at(i).hasTime ? bytesList[i] + 8 : bytesList[i];
+                    copyBytes += typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i];
                 }
             }
             else
@@ -4731,13 +4742,13 @@ int PackProcess_New(DB_QueryParams *params, atomic<long> *cur, atomic<int> *inde
                 int lineCur = 0; //记录此行当前写位置
                 for (int i = 0; i < bytesList.size(); i++)
                 {
-                    int curBytes = typeList->at(i).hasTime ? bytesList[i] + 8 : bytesList[i];
+                    int curBytes = typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i];
                     memcpy(copyValue + lineCur, buff + posList[i], curBytes);
                     lineCur += curBytes;
                 }
                 if (params->valueName != NULL) //此处，若编码为精确搜索，而又输入了不同的变量名，FindSortPosFromSelectedData将返回0
                 {
-                    sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, pathCodes, *typeList);
+                    sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, pathCodes, typeList);
                     compareBytes = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, *type) == 0 ? bytes : 0;
                 }
             }
@@ -4823,8 +4834,7 @@ int PackProcess_New(DB_QueryParams *params, atomic<long> *cur, atomic<int> *inde
             delete[] buff;
         }
     }
-
-    return 0;
+    // complete->at(threadIndex) = 1;
 }
 
 /**
@@ -4881,25 +4891,28 @@ int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
     vector<DataType> typeList, selectedTypes;
     vector<long> sortDataPoses; //按值排序时要比较的数据的偏移量
     vector<PathCode> pathCodes;
+    typeList = CurrentTemplate.GetAllTypes(params->pathCode);
     //先对时序在前的包文件检索
     if (selectedPacks.size() > 0)
     {
         atomic<int> index(0);
-        future_status status[maxThreads - 1];
-        future<int> f[maxThreads - 1];
-        for (int j = 0; j < maxThreads - 1; j++)
+        future<int> threads[maxThreads - 2];
+        future_status status[maxThreads - 2];
+        vector<int> complete(maxThreads - 2, 0);
+        for (int j = 0; j < maxThreads - 2; j++)
         {
             status[j] = future_status::ready;
         }
-        for (int j = 0; j < maxThreads - 1 && j < selectedPacks.size(); j++)
+        for (int j = 0; j < maxThreads - 2 && j < selectedPacks.size(); j++)
         {
-            f[j] = async(std::launch::async, PackProcess_New, params, &cur, &index, &selectedPacks, &mallocedMemory, &type, &typeList);
-            status[j] = f[j].wait_for(chrono::milliseconds(1));
+            int threadIndex = j;
+            threads[j] = async(PackProcess_New, params, &cur, &index, &complete, threadIndex, &selectedPacks, &mallocedMemory, &type);
+            status[j] = threads[j].wait_for(chrono::milliseconds(1));
         }
-        for (int j = 0; j < maxThreads - 1 && j < selectedPacks.size(); j++)
+        for (int j = 0; j < maxThreads - 2 && j < selectedPacks.size(); j++)
         {
             if (status[j] != future_status::ready)
-                f[j].wait();
+                threads[j].wait();
         }
     }
 
@@ -5047,7 +5060,6 @@ int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
         }
         delete[] buff;
     }
-
     sortResult(mallocedMemory, params, type);
     if (cur == 0)
     {
@@ -5091,7 +5103,6 @@ int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
             cur += get<1>(mem);
         }
     }
-
     buffer->bufferMalloced = 1;
     buffer->buffer = data;
     buffer->length = cur + startPos;
@@ -6421,7 +6432,7 @@ int main()
 {
     DataTypeConverter converter;
     DB_QueryParams params;
-    params.pathToLine = "RobotDataFive";
+    params.pathToLine = "JinfeiThirtee";
     params.fileID = "JinfeiSixteen15";
     char code[10];
     code[0] = (char)0;
@@ -6438,7 +6449,7 @@ int main()
     params.valueName = "S1OFF";
     // params.valueName = NULL;
     params.start = 0;
-    params.end = 1651269000000;
+    params.end = 1751269000000;
     params.order = ASCEND;
     params.compareType = CMP_NONE;
     params.compareValue = "666";
@@ -6478,7 +6489,7 @@ int main()
     // for (int i = 0; i < 10; i++)
     // {
     //     startTime = std::chrono::system_clock::now();
-    //     DB_QueryLastRecords(&buffer, &params);
+    //     DB_QueryByTimespan(&buffer, &params);
 
     //     endTime = std::chrono::system_clock::now();
     //     std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
@@ -6487,49 +6498,61 @@ int main()
     //     buffer.length = 0;
     //     buffer.bufferMalloced = 0;
     // }
-    // for (int i = 0; i < 10; i++)
-    // {
-    //     startTime = std::chrono::system_clock::now();
-    //     DB_QueryLastRecords(&buffer, &params);
+    for (int i = 0; i < 10; i++)
+    {
+        startTime = std::chrono::system_clock::now();
+        DB_QueryByTimespan(&buffer, &params);
 
-    //     endTime = std::chrono::system_clock::now();
-    //     std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    //     cout << buffer.length << endl;
-    //     free(buffer.buffer);
-    //     buffer.length = 0;
-    //     buffer.bufferMalloced = 0;
-    // }
-    // if (buffer.bufferMalloced)
-    // {
-    //     char buf[buffer.length];
-    //     memcpy(buf, buffer.buffer, buffer.length);
-    //     cout << buffer.length << endl;
-    //     // for (int i = 0; i < buffer.length; i++)
-    //     // {
-    //     //     cout << (int)buf[i] << " ";
-    //     //     if (i % 11 == 0)
-    //     //         cout << endl;
-    //     // }
+        endTime = std::chrono::system_clock::now();
+        std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+        // cout << buffer.length << endl;
+        free(buffer.buffer);
+        buffer.length = 0;
+        buffer.bufferMalloced = 0;
+    }
+    for (int i = 0; i < 10; i++)
+    {
+        startTime = std::chrono::system_clock::now();
+        DB_QueryByTimespan_New(&buffer, &params);
 
-    //     free(buffer.buffer);
-    // }
-    // buffer.bufferMalloced = 0;
-    DB_QueryLastRecords(&buffer, &params);
-
+        endTime = std::chrono::system_clock::now();
+        std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+        // cout << buffer.length << endl;
+        free(buffer.buffer);
+        buffer.length = 0;
+        buffer.bufferMalloced = 0;
+    }
     if (buffer.bufferMalloced)
     {
         char buf[buffer.length];
         memcpy(buf, buffer.buffer, buffer.length);
         cout << buffer.length << endl;
-        for (int i = 0; i < buffer.length; i++)
-        {
-            cout << (int)buf[i] << " ";
-            if (i % 11 == 0)
-                cout << endl;
-        }
+        // for (int i = 0; i < buffer.length; i++)
+        // {
+        //     cout << (int)buf[i] << " ";
+        //     if (i % 11 == 0)
+        //         cout << endl;
+        // }
 
         free(buffer.buffer);
     }
+    // buffer.bufferMalloced = 0;
+    // DB_QueryLastRecords(&buffer, &params);
+
+    // if (buffer.bufferMalloced)
+    // {
+    //     char buf[buffer.length];
+    //     memcpy(buf, buffer.buffer, buffer.length);
+    //     cout << buffer.length << endl;
+    //     for (int i = 0; i < buffer.length; i++)
+    //     {
+    //         cout << (int)buf[i] << " ";
+    //         if (i % 11 == 0)
+    //             cout << endl;
+    //     }
+
+    //     free(buffer.buffer);
+    // }
     // buffer.buffer = NULL;
     return 0;
 }

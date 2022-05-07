@@ -617,6 +617,32 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
     return StatusCode::UNKNOWN_VARIABLE_NAME;
 }
 
+vector<DataType> Template::GetAllTypes(char *pathCode)
+{
+    vector<DataType> res;
+    int level = 5; //路径级数
+    for (int i = 10 - 1; i >= 0 && pathCode[i] == 0; i -= 2)
+    {
+        level--;
+    }
+    for (auto const &schema : this->schemas)
+    {
+        bool codeEquals = true;
+        for (size_t k = 0; k < level * 2; k++) //判断路径编码前缀是否相等
+        {
+            if (pathCode[k] != schema.first.code[k])
+            {
+                codeEquals = false;
+            }
+        }
+        if (codeEquals)
+        {
+            res.push_back(schema.second);
+        }
+    }
+    return res;
+}
+
 // int TemplateManager::SetTemplate(const char *path)
 // {
 //     // UnsetTemplate(path);

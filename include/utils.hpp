@@ -291,6 +291,7 @@ public:
     long FindSortPosFromSelectedData(vector<long> &bytesList, string name, vector<PathCode> &pathCodes, vector<DataType> &typeList);
 
     long GetTotalBytes();
+    vector<DataType> GetAllTypes(char *pathCode);
 };
 
 int getBufferDataPos(vector<DataType> &typeList, int num);
