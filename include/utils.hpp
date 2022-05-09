@@ -149,13 +149,15 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params);
 
 int DB_QueryWholeFile_Single(DB_DataBuffer *buffer, DB_QueryParams *params);
 
-int DB_ZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine);
+//原单线程压缩还原函数
+int DB_ZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine);
 
-int DB_ZipSwitchFile_MultiThread(const char *ZipTemPath, const char *pathToLine);
+int DB_ReZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine);
 
-int DB_ReZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine);
+int DB_ZipSwitchFileByTimeSpan_Single(struct DB_ZipParams *params);
 
-int DB_ReZipSwitchFile_MultiThread(const char *ZipTemPath, const char *pathToLine);
+int DB_ReZipSwitchFileByTimeSpan_Single(struct DB_ZipParams *params);
+
 
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);
