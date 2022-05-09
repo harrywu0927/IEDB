@@ -239,6 +239,8 @@ int get_procmeminfo(MEM_OCCUPY *lpMemory)
 #endif
 int main()
 {
+    Packer::RePack("JinfeiSeven");
+    return 0;
     // fd_set set;
     // thread th1(checkSettings);
     // th1.detach();

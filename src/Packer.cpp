@@ -226,7 +226,8 @@ int Packer::RePack(string pathToLine)
                 continue;
             }
             memcpy(buffer, &newFileNum, 4);
-            memcpy(buffer + 4, lastTemName.c_str(), lastTemName.length());
+            lastTemName.resize(20, 0);
+            memcpy(buffer + 4, lastTemName.c_str(), 20);
             string newPackPath = pathToLine + "/" + to_string(newStart) + "-" + to_string(newEnd) + ".pak";
             long fp;
             char mode[2] = {'w', 'b'};
@@ -398,6 +399,6 @@ void PackFileReader::ReadPackHead(int &fileNum, string &templateName)
 // int main()
 // {
 //     cout << settings("Filename_Label") << endl;
-//     // int err = Packer::RePack("JinfeiSixteen");
+//     int err = Packer::RePack("JinfeiSeven");
 //     return 0;
 // }
