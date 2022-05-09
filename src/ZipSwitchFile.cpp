@@ -249,7 +249,8 @@ int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
             long fp;
             string finalpath = filesWithTime[fileNum].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
             //创建新文件并写入
-            err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+            char mode[2] = {'w', 'b'};
+            err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
             if (err == 0)
             {
                 if (writebuff_pos != 0)
@@ -303,7 +304,8 @@ int DB_ZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t b
             long fp;
             string finalpath = filesWithTime[i].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
             //创建新文件并写入
-            err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+            char mode[2] = {'w', 'b'};
+            err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
             if (err == 0)
             {
                 if (writebuff_pos != 0)
@@ -426,7 +428,8 @@ int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
         long fp;
         string finalpath = filesWithTime[fileNum].first.substr(0, filesWithTime[fileNum].first.length() - 3); //去掉后缀的zip
         //创建新文件并写入
-        err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+        char mode[2] = {'w', 'b'};
+        err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
         if (err == 0)
         {
             // err = DB_Write(fp, writebuff, writebuff_pos);
@@ -472,7 +475,8 @@ int DB_ReZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t
         long fp;
         string finalpath = filesWithTime[i].first.substr(0, filesWithTime[i].first.length() - 3); //去掉后缀的zip
         //创建新文件并写入
-        err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+        char mode[2] = {'w', 'b'};
+        err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
         if (err == 0)
         {
             err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
@@ -685,7 +689,8 @@ int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
             long fp;
             string finalpath = selectedFiles[fileNum].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
             //创建新文件并写入
-            err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+            char mode[2] = {'w', 'b'};
+            err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
             if (err == 0)
             {
                 if (writebuff_pos != 0)
@@ -733,7 +738,8 @@ int DB_ZipSwitchFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, 
             long fp;
             string finalpath = selectedFiles[fileNum].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
             //创建新文件并写入
-            err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+            char mode[2] = {'w', 'b'};
+            err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
             if (err == 0)
             {
                 if (writebuff_pos != 0)
@@ -896,7 +902,8 @@ int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
         long fp;
         string finalpath = selectedFiles[fileNum].first.substr(0, selectedFiles[fileNum].first.length() - 3); //去掉后缀的zip
         //创建新文件并写入
-        err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+        char mode[2] = {'w', 'b'};
+        err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
         if (err == 0)
         {
             err = DB_Write(fp, writebuff, writebuff_pos);
@@ -936,7 +943,8 @@ int DB_ReZipSwitchFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles
         long fp;
         string finalpath = selectedFiles[fileNum].first.substr(0, selectedFiles[fileNum].first.length() - 3); //去掉后缀的zip
         //创建新文件并写入
-        err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+        char mode[2] = {'w', 'b'};
+        err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
         if (err == 0)
         {
             err = DB_Write(fp, writebuff, writebuff_pos);
@@ -1114,7 +1122,8 @@ int DB_ZipSwitchFileByFileID(struct DB_ZipParams *params)
                 long fp;
                 string finalpath = file.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
                 //创建新文件并写入
-                err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+                char mode[2] = {'w', 'b'};
+                err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
                 if (err == 0)
                 {
                     if (writebuff_pos != 0)
@@ -1207,7 +1216,8 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
             long fp;
             string finalpath = file.substr(0, file.length() - 3); //去掉后缀的zip
             //创建新文件并写入
-            err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+            char mode[2] = {'w', 'b'};
+            err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
             if (err == 0)
             {
                 err = DB_Write(fp, writebuff, writebuff_pos);

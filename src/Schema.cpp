@@ -121,7 +121,8 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 
     //打开文件并追加写入
     long fp;
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "ab+", &fp);
+    char mode[3] = {'a', 'b', '+'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         err = DB_Write(fp, writeBuf, 71);
@@ -252,8 +253,8 @@ int DB_AddNodeToSchema_new(struct DB_TreeNodeParams *TreeParams)
     sprintf(appendNum, "%d", temNum);
     temPath = TreeParams->pathToLine;
     temPath.append("/").append(TreeParams->pathToLine).append(appendNum).append(".tem");
-
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb", &fp);
+    char mode[2] = {'w', 'b'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         err = DB_Write(fp, readBuf, len + 71);
@@ -379,7 +380,7 @@ int DB_AddNodeToSchema_mkdir(struct DB_TreeNodeParams *TreeParams)
     long fp;
     temPath = TreeParams->pathToLine;
     vector<string> dirs;
-    readAllDirs(dirs,settings("Filename_Label").c_str());
+    readAllDirs(dirs, settings("Filename_Label").c_str());
     int dirNum = dirs.size() + 1;
     char appendNum[4];
     sprintf(appendNum, "%d", dirNum);
@@ -389,10 +390,11 @@ int DB_AddNodeToSchema_mkdir(struct DB_TreeNodeParams *TreeParams)
     strcpy(finalPath, settings("Filename_Label").c_str());
     strcat(finalPath, "/");
     strcat(finalPath, const_cast<char *>(temPath.c_str()));
-    mkdir(finalPath,0777);
+    mkdir(finalPath, 0777);
 
     temPath.append("/").append(TreeParams->pathToLine).append(appendNum).append(".tem");
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb", &fp);
+    char mode[3] = {'w', 'b'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         err = DB_Write(fp, readBuf, len + 71);
@@ -551,7 +553,8 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
 
     //打开文件并覆盖写入
     long fp;
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
+    char mode[3] = {'w', 'b', '+'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         err = DB_Write(fp, readBuf, len);
@@ -709,7 +712,8 @@ int DB_UpdateNodeToSchema_new(struct DB_TreeNodeParams *TreeParams, struct DB_Tr
     sprintf(appendNum, "%d", temNum);
     temPath = TreeParams->pathToLine;
     temPath.append("/").append(TreeParams->pathToLine).append(appendNum).append(".tem");
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
+    char mode[3] = {'w', 'b', '+'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         err = DB_Write(fp, readBuf, len);
@@ -866,10 +870,11 @@ int DB_UpdateNodeToSchema_mkdir(struct DB_TreeNodeParams *TreeParams, struct DB_
     strcpy(finalPath, settings("Filename_Label").c_str());
     strcat(finalPath, "/");
     strcat(finalPath, const_cast<char *>(temPath.c_str()));
-    mkdir(finalPath,0777);
+    mkdir(finalPath, 0777);
 
     temPath.append("/").append(newTreeParams->pathToLine).append(".tem");
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
+    char mode[3] = {'w', 'b', '+'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         err = DB_Write(fp, readBuf, len);
@@ -945,7 +950,8 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 
     //打开文件并覆盖写入删除节点后的信息
     long fp;
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
+    char mode[3] = {'w', 'b', '+'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         if (len - 71 != 0)
@@ -1023,7 +1029,8 @@ int DB_DeleteNodeToSchema_new(struct DB_TreeNodeParams *TreeParams)
     sprintf(appendNum, "%d", temNum);
     temPath = TreeParams->pathToLine;
     temPath.append("/").append(TreeParams->pathToLine).append(appendNum).append(".tem");
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
+    char mode[3] = {'w', 'b', '+'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         if (len - 71 != 0)
@@ -1096,7 +1103,7 @@ int DB_DeleteNodeToSchema_mkdir(struct DB_TreeNodeParams *TreeParams)
     long fp;
     temPath = TreeParams->pathToLine;
     vector<string> dirs;
-    readAllDirs(dirs,settings("Filename_Label").c_str());
+    readAllDirs(dirs, settings("Filename_Label").c_str());
     int dirNum = dirs.size() + 1;
     char appendNum[4];
     sprintf(appendNum, "%d", dirNum);
@@ -1106,10 +1113,11 @@ int DB_DeleteNodeToSchema_mkdir(struct DB_TreeNodeParams *TreeParams)
     strcpy(finalPath, settings("Filename_Label").c_str());
     strcat(finalPath, "/");
     strcat(finalPath, const_cast<char *>(temPath.c_str()));
-    mkdir(finalPath,0777);
+    mkdir(finalPath, 0777);
 
     temPath.append("/").append(TreeParams->pathToLine).append(appendNum).append(".tem");
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
+    char mode[3] = {'w', 'b', '+'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         if (len - 71 != 0)
@@ -1399,7 +1407,8 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 
     //打开文件并追加写入
     long fp;
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "ab+", &fp);
+    char mode[3] = {'a', 'b', '+'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         err = DB_Write(fp, writeBuf, 91);
@@ -1689,7 +1698,8 @@ int DB_AddNodeToZipSchema_new(struct DB_ZipNodeParams *ZipParams)
     sprintf(appendNum, "%d", ziptemNum);
     temPath = ZipParams->pathToLine;
     temPath.append("/").append(ZipParams->pathToLine).append(appendNum).append(".ziptem");
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb", &fp);
+    char mode[3] = {'w', 'b'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         err = DB_Write(fp, writeBuf, 91);
@@ -1973,7 +1983,7 @@ int DB_AddNodeToZipSchema_mkdir(struct DB_ZipNodeParams *ZipParams)
     //创建一个新的.ziptem文件，根据当前已存在的压缩模板数量进行编号
     long fp;
     vector<string> dirs;
-    readAllDirs(dirs,settings("Filename_Label").c_str());
+    readAllDirs(dirs, settings("Filename_Label").c_str());
     int dirNum = dirs.size() + 1;
     char appendNum[4];
     sprintf(appendNum, "%d", dirNum);
@@ -1984,10 +1994,11 @@ int DB_AddNodeToZipSchema_mkdir(struct DB_ZipNodeParams *ZipParams)
     strcpy(finalPath, settings("Filename_Label").c_str());
     strcat(finalPath, "/");
     strcat(finalPath, const_cast<char *>(temPath.c_str()));
-    mkdir(finalPath,0777);
+    mkdir(finalPath, 0777);
 
     temPath.append("/").append(ZipParams->pathToLine).append(appendNum).append(".ziptem");
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb", &fp);
+    char mode[3] = {'w', 'b'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         err = DB_Write(fp, writeBuf, 91);
@@ -2295,7 +2306,8 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
 
     //打开文件并覆盖写入
     long fp;
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
+    char mode[3] = {'w', 'b', '+'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         err = DB_Write(fp, readBuf, len);
@@ -2602,7 +2614,8 @@ int DB_UpdateNodeToZipSchema_new(struct DB_ZipNodeParams *ZipParams, struct DB_Z
     sprintf(appendNum, "%d", ziptemNum);
     temPath = ZipParams->pathToLine;
     temPath.append("/").append(ZipParams->pathToLine).append(appendNum).append(".ziptem");
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
+    char mode[3] = {'w', 'b', '+'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         err = DB_Write(fp, readBuf, len);
@@ -2907,10 +2920,11 @@ int DB_UpdateNodeToZipSchema_mkdir(struct DB_ZipNodeParams *ZipParams, struct DB
     strcpy(finalPath, settings("Filename_Label").c_str());
     strcat(finalPath, "/");
     strcat(finalPath, const_cast<char *>(temPath.c_str()));
-    mkdir(finalPath,0777);
+    mkdir(finalPath, 0777);
 
     temPath.append("/").append(newZipParams->pathToLine).append(".ziptem");
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
+    char mode[3] = {'w', 'b', '+'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         err = DB_Write(fp, readBuf, len);
@@ -2978,7 +2992,8 @@ int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 
     //打开文件并覆盖写入
     long fp;
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
+    char mode[3] = {'w', 'b', '+'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         if (len - 91 != 0)
@@ -3048,7 +3063,8 @@ int DB_DeleteNodeToZipSchema_new(struct DB_ZipNodeParams *ZipParams)
     sprintf(appendNum, "%d", ziptemNum);
     temPath = ZipParams->pathToLine;
     temPath.append("/").append(ZipParams->pathToLine).append(appendNum).append(".ziptem");
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
+    char mode[3] = {'w', 'b', '+'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         if (len - 91 != 0)
@@ -3112,7 +3128,7 @@ int DB_DeleteNodeToZipSchema_mkdir(struct DB_ZipNodeParams *ZipParams)
     //创建新的文件夹存放修改后的压缩模板
     long fp;
     vector<string> dirs;
-    readAllDirs(dirs,settings("Filename_Label").c_str());
+    readAllDirs(dirs, settings("Filename_Label").c_str());
     int dirNum = dirs.size() + 1;
     char appendNum[4];
     sprintf(appendNum, "%d", dirNum);
@@ -3123,10 +3139,11 @@ int DB_DeleteNodeToZipSchema_mkdir(struct DB_ZipNodeParams *ZipParams)
     strcpy(finalPath, settings("Filename_Label").c_str());
     strcat(finalPath, "/");
     strcat(finalPath, const_cast<char *>(temPath.c_str()));
-    mkdir(finalPath,0777);
+    mkdir(finalPath, 0777);
 
     temPath.append("/").append(ZipParams->pathToLine).append(appendNum).append(".ziptem");
-    err = DB_Open(const_cast<char *>(temPath.c_str()), "wb+", &fp);
+    char mode[3] = {'w', 'b', '+'};
+    err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
         if (len - 91 != 0)

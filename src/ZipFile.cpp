@@ -1665,16 +1665,16 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                 readbuff_pos += 2;
                 //暂定图片之前有2字节的长度，2字节的宽度和2字节的通道
                 char length[2] = {0};
-                memcpy(length, readbuff + readbuff_pos+1, 2);
+                memcpy(length, readbuff + readbuff_pos + 1, 2);
                 uint16_t imageLength = converter.ToUInt16(length);
                 char width[2] = {0};
-                memcpy(width, readbuff + readbuff_pos+3, 2);
+                memcpy(width, readbuff + readbuff_pos + 3, 2);
                 uint16_t imageWidth = converter.ToUInt16(width);
                 char channel[2] = {0};
-                memcpy(channel, readbuff + readbuff_pos+5, 2);
+                memcpy(channel, readbuff + readbuff_pos + 5, 2);
                 uint16_t imageChannel = converter.ToUInt16(channel);
                 uint32_t imageSize = imageChannel * imageLength * imageWidth;
-                readbuff_pos+=1;
+                readbuff_pos += 1;
 
                 if (readbuff[readbuff_pos - 1] == (char)2) //既有数据又有数据
                 {
@@ -1727,13 +1727,13 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
  */
 int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
 {
-    IOBusy=true;
+    IOBusy = true;
     int err = 0;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
     {
         cout << "未加载模板" << endl;
-        IOBusy=false;
+        IOBusy = false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
 
@@ -1742,7 +1742,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
     if (filesWithTime.size() == 0)
     {
         cout << "没有文件！" << endl;
-        IOBusy=false;
+        IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
     sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
@@ -1758,7 +1758,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
-            IOBusy=false;
+            IOBusy = false;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
         long writebuff_pos = 0;
@@ -1776,7 +1776,8 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
             long fp;
             string finalpath = filesWithTime[fileNum].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
             //创建新文件并写入
-            err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+            char mode[2] = {'w', 'b'};
+            err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
             if (err == 0)
             {
                 if (writebuff_pos != 0)
@@ -1795,7 +1796,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
             // err = close(fd);
         }
     }
-    IOBusy=false;
+    IOBusy = false;
     return err;
 }
 
@@ -1809,13 +1810,13 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
  */
 int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
 {
-    IOBusy=true;
+    IOBusy = true;
     int err = 0;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
     {
         cout << "未加载模板" << endl;
-        IOBusy=false;
+        IOBusy = false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     DataTypeConverter converter;
@@ -1825,7 +1826,7 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
     if (filesWithTime.size() == 0)
     {
         cout << "没有文件！" << endl;
-        IOBusy=false;
+        IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
     sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
@@ -1841,7 +1842,7 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
-            IOBusy=false;
+            IOBusy = false;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
@@ -1851,7 +1852,8 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
         long fp;
         string finalpath = filesWithTime[fileNum].first.substr(0, filesWithTime[fileNum].first.length() - 3); //去掉后缀的zip
         //创建新文件并写入
-        err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+        char mode[2] = {'w', 'b'};
+        err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
         if (err == 0)
         {
             // err = DB_Write(fp, writebuff, writebuff_pos);
@@ -1868,7 +1870,7 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
         //     return errno;
         // err = close(fd);
     }
-    IOBusy=false;
+    IOBusy = false;
     return err;
 }
 
@@ -1947,7 +1949,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
  */
 int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
 {
-    IOBusy=true;
+    IOBusy = true;
     params->ZipType = TIME_SPAN;
     int err = CheckZipParams(params);
     if (err != 0)
@@ -1958,7 +1960,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
     if (filesWithTime.size() == 0)
     {
         cout << "没有文件！" << endl;
-        IOBusy=false;
+        IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
 
@@ -1973,7 +1975,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
     if (selectedFiles.size() == 0)
     {
         cout << "没有这个时间段的文件！" << endl;
-        IOBusy=false;
+        IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
     sortByTime(selectedFiles, TIME_ASC);
@@ -1982,7 +1984,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
     if (err)
     {
         cout << "未加载模板" << endl;
-        IOBusy=false;
+        IOBusy = false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     DataTypeConverter converter;
@@ -1998,7 +2000,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
-            IOBusy=false;
+            IOBusy = false;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
@@ -2015,7 +2017,8 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
             long fp;
             string finalpath = selectedFiles[fileNum].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
             //创建新文件并写入
-            err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+            char mode[2] = {'w', 'b'};
+            err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
             if (err == 0)
             {
                 if (writebuff_pos != 0)
@@ -2028,7 +2031,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
             }
         }
     }
-    IOBusy=false;
+    IOBusy = false;
     return err;
 }
 
@@ -2041,7 +2044,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
  */
 int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
 {
-    IOBusy=true;
+    IOBusy = true;
     params->ZipType = TIME_SPAN;
     int err = CheckZipParams(params);
     if (err != 0)
@@ -2052,7 +2055,7 @@ int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
     if (filesWithTime.size() == 0)
     {
         cout << "没有文件！" << endl;
-        IOBusy=false;
+        IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
 
@@ -2067,7 +2070,7 @@ int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
     if (selectedFiles.size() == 0)
     {
         cout << "没有这个时间段的文件！" << endl;
-        IOBusy=false;
+        IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
     sortByTime(selectedFiles, TIME_ASC);
@@ -2076,7 +2079,7 @@ int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
     if (err)
     {
         cout << "未加载模板" << endl;
-        IOBusy=false;
+        IOBusy = false;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     DataTypeConverter converter;
@@ -2092,7 +2095,7 @@ int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
             cout << "未找到文件" << endl;
-            IOBusy=false;
+            IOBusy = false;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
@@ -2102,7 +2105,8 @@ int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
         long fp;
         string finalpath = selectedFiles[fileNum].first.substr(0, selectedFiles[fileNum].first.length() - 3); //去掉后缀的zip
         //创建新文件并写入
-        err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+        char mode[2] = {'w', 'b'};
+        err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
         if (err == 0)
         {
             err = DB_Write(fp, writebuff, writebuff_pos);
@@ -2113,7 +2117,7 @@ int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
             }
         }
     }
-    IOBusy=false;
+    IOBusy = false;
     return err;
 }
 
@@ -2203,7 +2207,8 @@ int DB_ZipFileByFileID(struct DB_ZipParams *params)
                 long fp;
                 string finalpath = file.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
                 //创建新文件并写入
-                err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+                char mode[2] = {'w', 'b'};
+                err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
                 if (err == 0)
                 {
                     if (writebuff_pos != 0)
@@ -2296,7 +2301,8 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
             long fp;
             string finalpath = file.substr(0, file.length() - 3); //去掉后缀的zip
             //创建新文件并写入
-            err = DB_Open(const_cast<char *>(finalpath.c_str()), "wb", &fp);
+            char mode[2] = {'w', 'b'};
+            err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
             if (err == 0)
             {
                 err = DB_Write(fp, writebuff, writebuff_pos);

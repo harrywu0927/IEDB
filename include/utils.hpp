@@ -143,11 +143,9 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine);
 
 int sysOpen(char path[]);
 
-// int DB_QueryByTimespan_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params);
-
 int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params);
 
-int DB_QueryWholeFile_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params);
+// int DB_QueryWholeFile_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params);
 
 int DB_QueryWholeFile_Single(DB_DataBuffer *buffer, DB_QueryParams *params);
 
@@ -159,11 +157,6 @@ int DB_ReZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t
 
 int DB_ReZipSwitchFile_MultiThread(const char *ZipTemPath, const char *pathToLine);
 
-// int DB_QueryLastRecords_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params);
-
-// int DB_QueryByTimespan_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params);
-// int DB_QueryByFileID_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params);
-// int DB_QueryWholeFile_Using_Cache(DB_DataBuffer *buffer, DB_QueryParams *params);
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);
 
