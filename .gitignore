@@ -49,6 +49,7 @@ src/main
 src/utils
 src/Query
 src/ZipSwitchFile
+src/ZipAnalogFile
 /.vscode/*
 *.json
 *.dat
