@@ -2235,87 +2235,87 @@ int DB_ReZipAnalogFileByFileID(struct DB_ZipParams *params)
     return err;
 }
 
-int main()
-{
-    sleep(3);
-    std::cout<<"start 模拟量文件 单线程压缩"<<std::endl;
-    auto startTime = std::chrono::system_clock::now();
-    DB_ZipAnalogFile("jinfei","jinfei");
-    auto endTime = std::chrono::system_clock::now();
-    std::cout << "模拟量文件 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    std::cout<<"end 模拟量文件 单线程压缩"<<std::endl<<std::endl;
+// int main()
+// {
+//     sleep(3);
+//     std::cout<<"start 模拟量文件 单线程压缩"<<std::endl;
+//     auto startTime = std::chrono::system_clock::now();
+//     DB_ZipAnalogFile("jinfei","jinfei");
+//     auto endTime = std::chrono::system_clock::now();
+//     std::cout << "模拟量文件 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     std::cout<<"end 模拟量文件 单线程压缩"<<std::endl<<std::endl;
 
-    sleep(3);
-    std::cout<<"start 模拟量文件 单线程还原"<<std::endl;
-    startTime = std::chrono::system_clock::now();
-    DB_ReZipAnalogFile("jinfei","jinfei");
-    endTime = std::chrono::system_clock::now();
-    std::cout << "模拟量文件 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    std::cout<<"end 模拟量文件 单线程还原"<<std::endl<<std::endl;
+//     sleep(3);
+//     std::cout<<"start 模拟量文件 单线程还原"<<std::endl;
+//     startTime = std::chrono::system_clock::now();
+//     DB_ReZipAnalogFile("jinfei","jinfei");
+//     endTime = std::chrono::system_clock::now();
+//     std::cout << "模拟量文件 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     std::cout<<"end 模拟量文件 单线程还原"<<std::endl<<std::endl;
 
-    sleep(3);
-    std::cout<<"start 模拟量文件 多线程压缩"<<std::endl;
-    startTime = std::chrono::system_clock::now();
-    DB_ZipAnalogFile_MultiThread("jinfei", "jinfei");
-    endTime = std::chrono::system_clock::now();
-    std::cout << "模拟量文件 多线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    std::cout<<"end 模拟量文件 多线程压缩"<<std::endl<<std::endl;
+//     sleep(3);
+//     std::cout<<"start 模拟量文件 多线程压缩"<<std::endl;
+//     startTime = std::chrono::system_clock::now();
+//     DB_ZipAnalogFile_MultiThread("jinfei", "jinfei");
+//     endTime = std::chrono::system_clock::now();
+//     std::cout << "模拟量文件 多线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     std::cout<<"end 模拟量文件 多线程压缩"<<std::endl<<std::endl;
 
-    sleep(3);
-    std::cout<<"start 模拟量文件 多线程还原"<<std::endl;
-    startTime = std::chrono::system_clock::now();
-    DB_ReZipAnalogFile_MultiThread("jinfei", "jinfei");
-    endTime = std::chrono::system_clock::now();
-    std::cout << "模拟量文件 多线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    std::cout<<"end 模拟量文件 多线程还原"<<std::endl<<std::endl;
+//     sleep(3);
+//     std::cout<<"start 模拟量文件 多线程还原"<<std::endl;
+//     startTime = std::chrono::system_clock::now();
+//     DB_ReZipAnalogFile_MultiThread("jinfei", "jinfei");
+//     endTime = std::chrono::system_clock::now();
+//     std::cout << "模拟量文件 多线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     std::cout<<"end 模拟量文件 多线程还原"<<std::endl<<std::endl;
 
-    struct tm t;
-    t.tm_year = atoi("2022") - 1900;
-    t.tm_mon = atoi("5") - 1;
-    t.tm_mday = atoi("7");
-    t.tm_hour = atoi("15");
-    t.tm_min = atoi("0");
-    t.tm_sec = atoi("0");
-    t.tm_isdst = -1; //不设置夏令时
-    time_t seconds = mktime(&t);
-    int ms = atoi("0");
-    long start = seconds * 1000 + ms;
-    cout<<start<<endl;
-    // DB_ZipParams zipParam;
-    // zipParam.pathToLine = "jinfei/";
-    // zipParam.start = 1651903200000;
-    // zipParam.end = 1651906800000;
+//     struct tm t;
+//     t.tm_year = atoi("2022") - 1900;
+//     t.tm_mon = atoi("5") - 1;
+//     t.tm_mday = atoi("7");
+//     t.tm_hour = atoi("15");
+//     t.tm_min = atoi("0");
+//     t.tm_sec = atoi("0");
+//     t.tm_isdst = -1; //不设置夏令时
+//     time_t seconds = mktime(&t);
+//     int ms = atoi("0");
+//     long start = seconds * 1000 + ms;
+//     cout<<start<<endl;
+//     // DB_ZipParams zipParam;
+//     // zipParam.pathToLine = "jinfei/";
+//     // zipParam.start = 1651903200000;
+//     // zipParam.end = 1651906800000;
 
-    // sleep(3);
-    // std::cout<<"start 开关量文件按时间段 单线程压缩"<<std::endl;
-    // auto startTime = std::chrono::system_clock::now();
-    // DB_ZipSwitchFileByTimeSpan_Single(&zipParam);
-    // auto endTime = std::chrono::system_clock::now();
-    // std::cout << "开关量文件按时间段 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    // std::cout<<"end 开关量文件按时间段 单线程压缩"<<std::endl<<std::endl;
+//     // sleep(3);
+//     // std::cout<<"start 开关量文件按时间段 单线程压缩"<<std::endl;
+//     // auto startTime = std::chrono::system_clock::now();
+//     // DB_ZipSwitchFileByTimeSpan_Single(&zipParam);
+//     // auto endTime = std::chrono::system_clock::now();
+//     // std::cout << "开关量文件按时间段 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     // std::cout<<"end 开关量文件按时间段 单线程压缩"<<std::endl<<std::endl;
 
-    // sleep(3);
-    // std::cout<<"start 开关量文件按时间段 单线程还原"<<std::endl;
-    // startTime = std::chrono::system_clock::now();
-    // DB_ReZipSwitchFileByTimeSpan_Single(&zipParam);
-    // endTime = std::chrono::system_clock::now();
-    // std::cout << "开关量文件按时间段 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    // std::cout<<"end 开关量文件按时间段 单线程还原"<<std::endl<<std::endl;
+//     // sleep(3);
+//     // std::cout<<"start 开关量文件按时间段 单线程还原"<<std::endl;
+//     // startTime = std::chrono::system_clock::now();
+//     // DB_ReZipSwitchFileByTimeSpan_Single(&zipParam);
+//     // endTime = std::chrono::system_clock::now();
+//     // std::cout << "开关量文件按时间段 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     // std::cout<<"end 开关量文件按时间段 单线程还原"<<std::endl<<std::endl;
 
-    // sleep(3);
-    // std::cout<<"start 开关量文件按时间段 多线程压缩"<<std::endl;
-    // startTime = std::chrono::system_clock::now();
-    // DB_ZipSwitchFileByTimeSpan(&zipParam);
-    // endTime = std::chrono::system_clock::now();
-    // std::cout << "开关量文件按时间段 多线程时间段压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    // std::cout<<"end 开关量文件按时间段 多线程压缩"<<std::endl<<std::endl;
+//     // sleep(3);
+//     // std::cout<<"start 开关量文件按时间段 多线程压缩"<<std::endl;
+//     // startTime = std::chrono::system_clock::now();
+//     // DB_ZipSwitchFileByTimeSpan(&zipParam);
+//     // endTime = std::chrono::system_clock::now();
+//     // std::cout << "开关量文件按时间段 多线程时间段压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     // std::cout<<"end 开关量文件按时间段 多线程压缩"<<std::endl<<std::endl;
 
-    // sleep(3);
-    // std::cout<<"start 开关量文件按时间段 多线程还原"<<std::endl;
-    // startTime = std::chrono::system_clock::now();
-    // DB_ReZipSwitchFileByTimeSpan(&zipParam);
-    // endTime = std::chrono::system_clock::now();
-    // std::cout << "开关量文件按时间段 多线程时间段还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    // std::cout<<"end 开关量文件按时间段 多线程还原"<<std::endl<<std::endl;
-    // return 0;
-}
+//     // sleep(3);
+//     // std::cout<<"start 开关量文件按时间段 多线程还原"<<std::endl;
+//     // startTime = std::chrono::system_clock::now();
+//     // DB_ReZipSwitchFileByTimeSpan(&zipParam);
+//     // endTime = std::chrono::system_clock::now();
+//     // std::cout << "开关量文件按时间段 多线程时间段还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     // std::cout<<"end 开关量文件按时间段 多线程还原"<<std::endl<<std::endl;
+//     // return 0;
+// }
