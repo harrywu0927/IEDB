@@ -286,8 +286,11 @@ int DB_ZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t b
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[i].first.c_str()), &len);
-        char readbuff[len];                                                                    //文件内容
-        char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
+        
+        char *readbuff = new char[len];
+        char *writebuff = new char[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()];
+        // char readbuff[len];                                                                    //文件内容
+        // char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[i].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -321,6 +324,8 @@ int DB_ZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t b
                 }
             }
         }
+        delete[] readbuff;
+        delete[] writebuff;
         cout << i << endl;
     }
     return err;
@@ -332,7 +337,7 @@ int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如直接使用单线程
     {
-        err = DB_ZipSwitchFile(ZipTemPath, pathToLine);
+        err = DB_ZipSwitchFile_Single(ZipTemPath, pathToLine);
         return err;
     }
 
@@ -357,7 +362,7 @@ int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
     if (filesWithTime.size() < 1000)
     {
         IOBusy = false;
-        err = DB_ZipSwitchFile(ZipTemPath, pathToLine);
+        err = DB_ZipSwitchFile_Single(ZipTemPath, pathToLine);
         return err;
     }
     sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
@@ -465,8 +470,11 @@ int DB_ReZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[i].first.c_str()), &len);
-        char readbuff[len];                            //文件内容
-        char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
+
+        char *readbuff = new char[len];
+        char *writebuff = new char[CurrentZipTemplate.totalBytes];
+        // char readbuff[len];                            //文件内容
+        // char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[i].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -492,6 +500,8 @@ int DB_ReZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t
                 err = DB_Close(fp);
             }
         }
+        delete[] readbuff;
+        delete[] writebuff;
         cout << i << endl;
     }
     return err;
@@ -503,7 +513,7 @@ int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如使用单线程
     {
-        err = DB_ReZipSwitchFile(ZipTemPath, pathToLine);
+        err = DB_ReZipSwitchFile_Single(ZipTemPath, pathToLine);
         return err;
     }
 
@@ -530,7 +540,7 @@ int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
     if (filesWithTime.size() < 1000)
     {
         IOBusy = false;
-        err = DB_ReZipSwitchFile(ZipTemPath, pathToLine);
+        err = DB_ReZipSwitchFile_Single(ZipTemPath, pathToLine);
         return err;
     }
 
@@ -774,7 +784,7 @@ int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如使用单线程
     {
-        err = DB_ZipSwitchFileByTimeSpan(params);
+        err = DB_ZipSwitchFileByTimeSpan_Single(params);
         return err;
     }
 
@@ -802,6 +812,11 @@ int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
         cout << "没有这个时间段的文件！" << endl;
         IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
+    }
+    if(selectedFiles.size()<1000)
+    {
+        IOBusy=false;
+        err = DB_ZipSwitchFileByTimeSpan_Single(params);
     }
     sortByTime(selectedFiles, TIME_ASC);
 
@@ -978,7 +993,7 @@ int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如使用单线程
     {
-        err = DB_ReZipSwitchFileByTimeSpan(params);
+        err = DB_ReZipSwitchFileByTimeSpan_Single(params);
         return err;
     }
 
@@ -1006,6 +1021,12 @@ int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
         cout << "没有这个时间段的文件！" << endl;
         IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
+    }
+    if(selectedFiles.size()<1000)
+    {
+        IOBusy=false;
+        err = DB_ReZipSwitchFileByTimeSpan_Single(params);
+        return err;
     }
     sortByTime(selectedFiles, TIME_ASC);
 
@@ -1261,36 +1282,36 @@ int main()
     sleep(3);
     std::cout << "start 单线程压缩" << std::endl;
     auto startTime = std::chrono::system_clock::now();
-    DB_ZipSwitchFile_Single("jinfei", "jinfei");
+    //DB_ZipSwitchFile_Single("jinfei", "jinfei");
     auto endTime = std::chrono::system_clock::now();
     std::cout << "单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
     std::cout << "end 单线程压缩" << std::endl
               << std::endl;
 
+    // sleep(3);
+    // std::cout << "start 单线程还原" << std::endl;
+    // startTime = std::chrono::system_clock::now();
+    // DB_ReZipSwitchFile_Single("jinfei", "jinfei");
+    // endTime = std::chrono::system_clock::now();
+    // std::cout << "单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // std::cout << "end 单线程还原" << std::endl
+    //           << std::endl;
+
     sleep(3);
-    std::cout << "start 单线程还原" << std::endl;
+    std::cout<<"start 多线程压缩"<<std::endl;
     startTime = std::chrono::system_clock::now();
-    DB_ReZipSwitchFile_Single("jinfei", "jinfei");
+    DB_ZipSwitchFile("jinfei", "jinfei");
     endTime = std::chrono::system_clock::now();
-    std::cout << "单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    std::cout << "end 单线程还原" << std::endl
-              << std::endl;
+    std::cout << "多线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    std::cout<<"end 多线程压缩"<<std::endl<<std::endl;
 
-    // sleep(3);
-    // std::cout<<"start 多线程压缩"<<std::endl;
-    // startTime = std::chrono::system_clock::now();
-    // DB_ZipSwitchFile_MultiThread("jinfei", "jinfei");
-    // endTime = std::chrono::system_clock::now();
-    // std::cout << "多线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    // std::cout<<"end 多线程压缩"<<std::endl<<std::endl;
-
-    // sleep(3);
-    // std::cout<<"start 多线程还原"<<std::endl;
-    // startTime = std::chrono::system_clock::now();
-    // DB_ReZipSwitchFile_MultiThread("jinfei", "jinfei");
-    // endTime = std::chrono::system_clock::now();
-    // std::cout << "多线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    // std::cout<<"end 多线程还原"<<std::endl<<std::endl;
+    sleep(3);
+    std::cout<<"start 多线程还原"<<std::endl;
+    startTime = std::chrono::system_clock::now();
+    DB_ReZipSwitchFile("jinfei", "jinfei");
+    endTime = std::chrono::system_clock::now();
+    std::cout << "多线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    std::cout<<"end 多线程还原"<<std::endl<<std::endl;
 
     // struct tm t;
     // t.tm_year = atoi("2022") - 1900;
@@ -1309,22 +1330,22 @@ int main()
     zipParam.start = 1651903200000;
     zipParam.end = 1651906800000;
 
-    sleep(3);
-    std::cout << "start 多线程压缩" << std::endl;
-    startTime = std::chrono::system_clock::now();
-    DB_ZipSwitchFileByTimeSpan(&zipParam);
-    endTime = std::chrono::system_clock::now();
-    std::cout << "多线程时间段压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    std::cout << "end 多线程压缩" << std::endl
-              << std::endl;
+    // sleep(3);
+    // std::cout << "start 多线程压缩" << std::endl;
+    // startTime = std::chrono::system_clock::now();
+    // DB_ZipSwitchFileByTimeSpan(&zipParam);
+    // endTime = std::chrono::system_clock::now();
+    // std::cout << "多线程时间段压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // std::cout << "end 多线程压缩" << std::endl
+    //           << std::endl;
 
-    sleep(3);
-    std::cout << "start 多线程还原" << std::endl;
-    startTime = std::chrono::system_clock::now();
-    DB_ReZipSwitchFileByTimeSpan(&zipParam);
-    endTime = std::chrono::system_clock::now();
-    std::cout << "多线程时间段还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    std::cout << "end 多线程还原" << std::endl
-              << std::endl;
+    // sleep(3);
+    // std::cout << "start 多线程还原" << std::endl;
+    // startTime = std::chrono::system_clock::now();
+    // DB_ReZipSwitchFileByTimeSpan(&zipParam);
+    // endTime = std::chrono::system_clock::now();
+    // std::cout << "多线程时间段还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // std::cout << "end 多线程还原" << std::endl
+    //           << std::endl;
     return 0;
 }

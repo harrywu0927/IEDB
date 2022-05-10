@@ -3,6 +3,9 @@ using namespace std;
 
 int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos);
 int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writebuff_pos);
+int DB_ZipAnalogFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,uint16_t num ,const char *pathToLine);
+int DB_ReZipAnalogFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,uint16_t num, const char *pathToLine);
+
 /**
  * @brief 对readbuff里的数据进行压缩，压缩后数据保存在writebuff里，长度为writebuff_pos
  *
@@ -1508,6 +1511,112 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
     return err;
 }
 
+int DB_ZipAnalogFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,uint16_t num ,const char *pathToLine)
+{
+    int err;
+
+    for (auto fileNum = begin; fileNum < num; fileNum++) //循环以给每个.idb文件进行压缩处理
+    {
+        long len;
+        DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[fileNum].first.c_str()), &len);
+        char readbuff[len];                                                                    //文件内容
+        char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
+        long writebuff_pos = 0;
+
+        if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
+        {
+            cout << "未找到文件" << endl;
+            IOBusy = false;
+            return StatusCode::DATAFILE_NOT_FOUND;
+        }
+
+        ZipAnalogBuf(readbuff, writebuff, writebuff_pos);
+
+        if (writebuff_pos >= len) //表明数据没有被压缩,不做处理
+        {
+            cout << filesWithTime[fileNum].first + "文件数据没有被压缩!" << endl;
+            // return 1;//1表示数据没有被压缩
+        }
+        else
+        {
+            DB_DeleteFile(const_cast<char *>(filesWithTime[fileNum].first.c_str())); //删除原文件
+            long fp;
+            string finalpath = filesWithTime[fileNum].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
+            //创建新文件并写入
+            char mode[2] = {'w', 'b'};
+            err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
+            if (err == 0)
+            {
+                if (writebuff_pos != 0)
+                    err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
+                if (err == 1)
+                {
+                    err = DB_Close(fp);
+                }
+            }
+        }
+    }
+    IOBusy = false;
+    return err;
+}
+
+int DB_ZipAnalogFile_MultiThread(const char *ZipTemPath, const char *pathToLine)
+{
+    int err;
+    maxThreads = thread::hardware_concurrency();
+    if (maxThreads <= 2) //如果内核数小于等于2则不如直接使用单线程
+    {
+        err = DB_ZipAnalogFile(ZipTemPath, pathToLine);
+        return err;
+    }
+
+    IOBusy = true;
+    
+    err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
+    if (err)
+    {
+        cout << "未加载模板" << endl;
+        IOBusy = false;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
+
+    vector<pair<string, long>> filesWithTime;
+    readIDBFilesWithTimestamps(pathToLine, filesWithTime); //获取所有.idb文件，并带有时间戳
+    if (filesWithTime.size() == 0)
+    {
+        cout << "没有文件！" << endl;
+        IOBusy = false;
+        return StatusCode::DATAFILE_NOT_FOUND;
+    }
+    if (filesWithTime.size() < 1000)
+    {
+        IOBusy = false;
+        err = DB_ZipAnalogFile(ZipTemPath, pathToLine);
+        return err;
+    }
+    sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
+
+    uint16_t singleThreadFileNum = filesWithTime.size() / maxThreads;
+    future_status status[maxThreads];
+    future<int> f[maxThreads];
+    uint16_t begin = 0;
+    for (int j = 0; j < maxThreads - 1; j++) //循环开启多线程
+    {
+        f[j] = async(std::launch::async, DB_ZipAnalogFile_thread, filesWithTime, begin, singleThreadFileNum * (j + 1), pathToLine);
+        begin += singleThreadFileNum;
+        status[j] = f[j].wait_for(chrono::milliseconds(1));
+    }
+    f[maxThreads - 1] = async(std::launch::async, DB_ZipAnalogFile_thread, filesWithTime, begin, filesWithTime.size(), pathToLine);
+    status[maxThreads - 1] = f[maxThreads - 1].wait_for(chrono::milliseconds(1));
+    for (int j = 0; j < maxThreads - 1; j++) //等待所有线程结束
+    {
+        f[j].wait();
+    }
+
+    IOBusy = false;
+    return err;
+}
+
 /**
  * @brief 还原被压缩的模拟量文件返回原状态
  *
@@ -1578,6 +1687,102 @@ int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
         //     return errno;
         // err = close(fd);
     }
+    IOBusy = false;
+    return err;
+}
+
+int DB_ReZipAnalogFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,uint16_t num, const char *pathToLine)
+{
+    int err = 0;
+
+    for (size_t fileNum = begin; fileNum < num; fileNum++)
+    {
+        long len;
+        DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[fileNum].first.c_str()), &len);
+        char readbuff[len];                            //文件内容
+        char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
+        long writebuff_pos = 0;
+
+        if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
+        {
+            cout << "未找到文件" << endl;
+            IOBusy = false;
+            return StatusCode::DATAFILE_NOT_FOUND;
+        }
+
+        ReZipAnalogBuf(readbuff, len, writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
+
+        DB_DeleteFile(const_cast<char *>(filesWithTime[fileNum].first.c_str())); //删除原文件
+        long fp;
+        string finalpath = filesWithTime[fileNum].first.substr(0, filesWithTime[fileNum].first.length() - 3); //去掉后缀的zip
+        //创建新文件并写入
+        char mode[2] = {'w', 'b'};
+        err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
+        if (err == 0)
+        {
+            // err = DB_Write(fp, writebuff, writebuff_pos);
+            err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
+            if (err == 1)
+            {
+                err = DB_Close(fp);
+            }
+        }
+    }
+    IOBusy = false;
+    return err;
+}
+
+int DB_ReZipAnalogFile_MultiThread(const char *ZipTemPath, const char *pathToLine)
+{
+    int err = 0;
+    maxThreads = thread::hardware_concurrency();
+    if (maxThreads <= 2) //如果内核数小于等于2则不如直接使用单线程
+    {
+        err = DB_ZipAnalogFile(ZipTemPath, pathToLine);
+        return err;
+    }
+    IOBusy = true;
+    err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
+    if (err)
+    {
+        cout << "未加载模板" << endl;
+        IOBusy = false;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
+
+    vector<pair<string, long>> filesWithTime;
+    readIDBZIPFilesWithTimestamps(pathToLine, filesWithTime); //获取所有.idbzip文件，并带有时间戳
+    if (filesWithTime.size() == 0)
+    {
+        cout << "没有文件！" << endl;
+        IOBusy = false;
+        return StatusCode::DATAFILE_NOT_FOUND;
+    }
+    if (filesWithTime.size() < 1000)
+    {
+        IOBusy = false;
+        err = DB_ZipAnalogFile(ZipTemPath, pathToLine);
+        return err;
+    }
+    sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
+
+    uint16_t singleThreadFileNum = filesWithTime.size() / maxThreads;
+    future_status status[maxThreads];
+    future<int> f[maxThreads];
+    uint16_t begin = 0;
+    for (int j = 0; j < maxThreads - 1; j++) //循环开启多线程
+    {
+        f[j] = async(std::launch::async, DB_ReZipAnalogFile_thread, filesWithTime, begin, singleThreadFileNum * (j + 1), pathToLine);
+        begin += singleThreadFileNum;
+        status[j] = f[j].wait_for(chrono::milliseconds(1));
+    }
+    f[maxThreads - 1] = async(std::launch::async, DB_ReZipAnalogFile_thread, filesWithTime, begin, filesWithTime.size(), pathToLine);
+    status[maxThreads - 1] = f[maxThreads - 1].wait_for(chrono::milliseconds(1));
+    for (int j = 0; j < maxThreads - 1; j++) //等待所有线程结束
+    {
+        f[j].wait();
+    }
+
     IOBusy = false;
     return err;
 }
@@ -2028,4 +2233,89 @@ int DB_ReZipAnalogFileByFileID(struct DB_ZipParams *params)
         }
     }
     return err;
+}
+
+int main()
+{
+    sleep(3);
+    std::cout<<"start 模拟量文件 单线程压缩"<<std::endl;
+    auto startTime = std::chrono::system_clock::now();
+    DB_ZipAnalogFile("jinfei","jinfei");
+    auto endTime = std::chrono::system_clock::now();
+    std::cout << "模拟量文件 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    std::cout<<"end 模拟量文件 单线程压缩"<<std::endl<<std::endl;
+
+    sleep(3);
+    std::cout<<"start 模拟量文件 单线程还原"<<std::endl;
+    startTime = std::chrono::system_clock::now();
+    DB_ReZipAnalogFile("jinfei","jinfei");
+    endTime = std::chrono::system_clock::now();
+    std::cout << "模拟量文件 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    std::cout<<"end 模拟量文件 单线程还原"<<std::endl<<std::endl;
+
+    sleep(3);
+    std::cout<<"start 模拟量文件 多线程压缩"<<std::endl;
+    startTime = std::chrono::system_clock::now();
+    DB_ZipAnalogFile_MultiThread("jinfei", "jinfei");
+    endTime = std::chrono::system_clock::now();
+    std::cout << "模拟量文件 多线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    std::cout<<"end 模拟量文件 多线程压缩"<<std::endl<<std::endl;
+
+    sleep(3);
+    std::cout<<"start 模拟量文件 多线程还原"<<std::endl;
+    startTime = std::chrono::system_clock::now();
+    DB_ReZipAnalogFile_MultiThread("jinfei", "jinfei");
+    endTime = std::chrono::system_clock::now();
+    std::cout << "模拟量文件 多线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    std::cout<<"end 模拟量文件 多线程还原"<<std::endl<<std::endl;
+
+    struct tm t;
+    t.tm_year = atoi("2022") - 1900;
+    t.tm_mon = atoi("5") - 1;
+    t.tm_mday = atoi("7");
+    t.tm_hour = atoi("15");
+    t.tm_min = atoi("0");
+    t.tm_sec = atoi("0");
+    t.tm_isdst = -1; //不设置夏令时
+    time_t seconds = mktime(&t);
+    int ms = atoi("0");
+    long start = seconds * 1000 + ms;
+    cout<<start<<endl;
+    // DB_ZipParams zipParam;
+    // zipParam.pathToLine = "jinfei/";
+    // zipParam.start = 1651903200000;
+    // zipParam.end = 1651906800000;
+
+    // sleep(3);
+    // std::cout<<"start 开关量文件按时间段 单线程压缩"<<std::endl;
+    // auto startTime = std::chrono::system_clock::now();
+    // DB_ZipSwitchFileByTimeSpan_Single(&zipParam);
+    // auto endTime = std::chrono::system_clock::now();
+    // std::cout << "开关量文件按时间段 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // std::cout<<"end 开关量文件按时间段 单线程压缩"<<std::endl<<std::endl;
+
+    // sleep(3);
+    // std::cout<<"start 开关量文件按时间段 单线程还原"<<std::endl;
+    // startTime = std::chrono::system_clock::now();
+    // DB_ReZipSwitchFileByTimeSpan_Single(&zipParam);
+    // endTime = std::chrono::system_clock::now();
+    // std::cout << "开关量文件按时间段 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // std::cout<<"end 开关量文件按时间段 单线程还原"<<std::endl<<std::endl;
+
+    // sleep(3);
+    // std::cout<<"start 开关量文件按时间段 多线程压缩"<<std::endl;
+    // startTime = std::chrono::system_clock::now();
+    // DB_ZipSwitchFileByTimeSpan(&zipParam);
+    // endTime = std::chrono::system_clock::now();
+    // std::cout << "开关量文件按时间段 多线程时间段压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // std::cout<<"end 开关量文件按时间段 多线程压缩"<<std::endl<<std::endl;
+
+    // sleep(3);
+    // std::cout<<"start 开关量文件按时间段 多线程还原"<<std::endl;
+    // startTime = std::chrono::system_clock::now();
+    // DB_ReZipSwitchFileByTimeSpan(&zipParam);
+    // endTime = std::chrono::system_clock::now();
+    // std::cout << "开关量文件按时间段 多线程时间段还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // std::cout<<"end 开关量文件按时间段 多线程还原"<<std::endl<<std::endl;
+    // return 0;
 }
