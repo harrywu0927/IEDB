@@ -321,6 +321,7 @@ int DB_ZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t b
                 }
             }
         }
+        cout << i << endl;
     }
     return err;
 }
@@ -491,6 +492,7 @@ int DB_ReZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t
                 err = DB_Close(fp);
             }
         }
+        cout << i << endl;
     }
     return err;
 }
