@@ -423,8 +423,10 @@ int DB_ReZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[fileNum].first.c_str()), &len);
-        char readbuff[len];                            //文件内容
-        char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
+        char *readbuff = new char[len];
+        char *writebuff = new char[CurrentZipTemplate.totalBytes];
+        // char readbuff[len];                            //文件内容
+        // char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -451,7 +453,8 @@ int DB_ReZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
                 err = DB_Close(fp);
             }
         }
-
+        delete[] readbuff;
+        delete[] writebuff;
         // int fd = sysOpen(const_cast<char *>(finalpath.c_str()));
         // err = write(fd, writebuff, writebuff_pos);
         // if (err == -1)
@@ -684,8 +687,10 @@ int DB_ZipSwitchFileByTimeSpan_Single(struct DB_ZipParams *params)
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[fileNum].first.c_str()), &len);
-        char readbuff[len];                                                                    //文件内容
-        char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
+        char *readbuff = new char[len];
+        char *writebuff = new char[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()];
+        // char readbuff[len];                                                                    //文件内容
+        // char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -721,6 +726,8 @@ int DB_ZipSwitchFileByTimeSpan_Single(struct DB_ZipParams *params)
                 }
             }
         }
+        delete[] readbuff;
+        delete[] writebuff;
     }
     IOBusy = false;
     return err;
