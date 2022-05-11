@@ -6,7 +6,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
 int DB_ZipAnalogFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine);
 int DB_ReZipAnalogFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine);
 
-mutex openMutex;
+mutex openAnalogMutex;
 /**
  * @brief 对readbuff里的数据进行压缩，压缩后数据保存在writebuff里，长度为writebuff_pos
  *
@@ -1549,7 +1549,7 @@ int DB_ZipAnalogFile_thread(vector<pair<string, long>> filesWithTime, uint16_t b
             //创建新文件并写入
             char mode[2] = {'w', 'b'};
 
-            // openMutex.lock();
+            // openAnalogMutex.lock();
             err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
             if (err == 0)
             {
@@ -1560,7 +1560,7 @@ int DB_ZipAnalogFile_thread(vector<pair<string, long>> filesWithTime, uint16_t b
                     err = DB_Close(fp);
                 }
             }
-            // openMutex.unlock();
+            // openAnalogMutex.unlock();
         }
         delete[] readbuff;
         delete[] writebuff;
@@ -1734,7 +1734,7 @@ int DB_ReZipAnalogFile_thread(vector<pair<string, long>> filesWithTime, uint16_t
         //创建新文件并写入
         char mode[2] = {'w', 'b'};
 
-        // openMutex.lock();
+        // openAnalogMutex.lock();
         err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
         if (err == 0)
         {
@@ -1745,7 +1745,7 @@ int DB_ReZipAnalogFile_thread(vector<pair<string, long>> filesWithTime, uint16_t
                 err = DB_Close(fp);
             }
         }
-        // openMutex.unlock();
+        // openAnalogMutex.unlock();
         delete[] readbuff;
         delete[] writebuff;
     }
