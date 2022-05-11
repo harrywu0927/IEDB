@@ -6928,6 +6928,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
         {
             vector<pair<string, long>> dataFiles;
             readDataFilesWithTimestamps(params->pathToLine, dataFiles);
+            sortByTime(dataFiles, TIME_ASC);
             for (auto &file : dataFiles)
             {
                 if (scanNum == params->queryNums)
@@ -6955,7 +6956,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
                     long copyBytes = 0;
                     int err;
                     DataType type;
-                    vector<DataType> typeList;
+
                     char *pathCode;
                     if (params->byPath)
                     {
@@ -7122,13 +7123,13 @@ int main()
     Py_Initialize();
     DataTypeConverter converter;
     DB_QueryParams params;
-    params.pathToLine = "JinfeiSeven";
-    params.fileID = "JinfeiSeven5";
+    params.pathToLine = "RobotDataFive";
+    params.fileID = "RobotDataFive5";
     char code[10];
     code[0] = (char)0;
     code[1] = (char)1;
     code[2] = (char)0;
-    code[3] = (char)0;
+    code[3] = (char)1;
     code[4] = 0;
     code[5] = (char)0;
     code[6] = 0;
@@ -7136,7 +7137,7 @@ int main()
     code[8] = (char)0;
     code[9] = (char)0;
     params.pathCode = code;
-    params.valueName = "S1OFF";
+    params.valueName = "S1L1A11";
     // params.valueName = NULL;
     params.start = 0;
     params.end = 1751269000000;
@@ -7144,8 +7145,8 @@ int main()
     params.compareType = CMP_NONE;
     params.compareValue = "666";
     params.queryType = FILEID;
-    params.byPath = 0;
-    params.queryNums = 200000;
+    params.byPath = 1;
+    params.queryNums = 20;
     DB_DataBuffer buffer;
     buffer.savePath = "/";
     // cout << settings("Pack_Mode") << endl;
@@ -7240,22 +7241,22 @@ int main()
     //     free(buffer.buffer);
     // }
     // buffer.bufferMalloced = 0;
-    // DB_QueryWholeFile(&buffer, &params);
+    DB_QueryByFileID(&buffer, &params);
 
-    // if (buffer.bufferMalloced)
-    // {
-    //     char buf[buffer.length];
-    //     memcpy(buf, buffer.buffer, buffer.length);
-    //     cout << buffer.length << endl;
-    //     for (int i = 0; i < buffer.length; i++)
-    //     {
-    //         cout << (int)buf[i] << " ";
-    //         if (i % 11 == 0)
-    //             cout << endl;
-    //     }
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
 
-    //     free(buffer.buffer);
-    // }
+        free(buffer.buffer);
+    }
     // buffer.buffer = NULL;
     return 0;
 }
