@@ -239,7 +239,10 @@ int get_procmeminfo(MEM_OCCUPY *lpMemory)
 #endif
 int main()
 {
-    Packer::RePack("JinfeiSeven");
+    Py_Initialize();
+    PyObject *obj;
+    obj = PyList_New(10);
+    Py_Finalize();
     return 0;
     // fd_set set;
     // thread th1(checkSettings);
