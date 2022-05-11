@@ -3,9 +3,10 @@ using namespace std;
 
 int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos);
 int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writebuff_pos);
-int DB_ZipAnalogFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,uint16_t num ,const char *pathToLine);
-int DB_ReZipAnalogFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,uint16_t num, const char *pathToLine);
+int DB_ZipAnalogFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine);
+int DB_ReZipAnalogFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine);
 
+mutex openMutex;
 /**
  * @brief 对readbuff里的数据进行压缩，压缩后数据保存在writebuff里，长度为writebuff_pos
  *
@@ -1457,14 +1458,14 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
     }
     sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
 
-    DataTypeConverter converter;
-
     for (size_t fileNum = 0; fileNum < filesWithTime.size(); fileNum++) //循环以给每个.idb文件进行压缩处理
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[fileNum].first.c_str()), &len);
-        char readbuff[len];                                                                    //文件内容
-        char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
+        char *readbuff = new char[len];
+        char *writebuff = new char[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()];
+        // char readbuff[len];                                                                    //文件内容
+        // char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -1499,7 +1500,8 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                     err = DB_Close(fp);
                 }
             }
-
+            delete[] readbuff;
+            delete[] writebuff;
             // int fd = sysOpen(const_cast<char *>(finalpath.c_str()));
             // err = write(fd, writebuff, writebuff_pos);
             // if (err == -1)
@@ -1511,7 +1513,7 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
     return err;
 }
 
-int DB_ZipAnalogFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,uint16_t num ,const char *pathToLine)
+int DB_ZipAnalogFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine)
 {
     int err;
 
@@ -1519,8 +1521,10 @@ int DB_ZipAnalogFile_thread(vector<pair<string,long>> filesWithTime,uint16_t beg
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[fileNum].first.c_str()), &len);
-        char readbuff[len];                                                                    //文件内容
-        char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
+        char *readbuff = new char[len];
+        char *writebuff = new char[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()];
+        // char readbuff[len];                                                                    //文件内容
+        // char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -1544,6 +1548,8 @@ int DB_ZipAnalogFile_thread(vector<pair<string,long>> filesWithTime,uint16_t beg
             string finalpath = filesWithTime[fileNum].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
             //创建新文件并写入
             char mode[2] = {'w', 'b'};
+
+            // openMutex.lock();
             err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
             if (err == 0)
             {
@@ -1554,7 +1560,10 @@ int DB_ZipAnalogFile_thread(vector<pair<string,long>> filesWithTime,uint16_t beg
                     err = DB_Close(fp);
                 }
             }
+            // openMutex.unlock();
         }
+        delete[] readbuff;
+        delete[] writebuff;
     }
     IOBusy = false;
     return err;
@@ -1571,7 +1580,7 @@ int DB_ZipAnalogFile_MultiThread(const char *ZipTemPath, const char *pathToLine)
     }
 
     IOBusy = true;
-    
+
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
     {
@@ -1610,7 +1619,8 @@ int DB_ZipAnalogFile_MultiThread(const char *ZipTemPath, const char *pathToLine)
     status[maxThreads - 1] = f[maxThreads - 1].wait_for(chrono::milliseconds(1));
     for (int j = 0; j < maxThreads - 1; j++) //等待所有线程结束
     {
-        f[j].wait();
+        if (status[j] != future_status::ready)
+            f[j].wait();
     }
 
     IOBusy = false;
@@ -1652,8 +1662,10 @@ int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[fileNum].first.c_str()), &len);
-        char readbuff[len];                            //文件内容
-        char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
+        char *readbuff = new char[len];
+        char *writebuff = new char[CurrentZipTemplate.totalBytes];
+        // char readbuff[len];                            //文件内容
+        // char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -1680,6 +1692,8 @@ int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
                 err = DB_Close(fp);
             }
         }
+        delete[] readbuff;
+        delete[] writebuff;
 
         // int fd = sysOpen(const_cast<char *>(finalpath.c_str()));
         // err = write(fd, writebuff, writebuff_pos);
@@ -1691,7 +1705,7 @@ int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
     return err;
 }
 
-int DB_ReZipAnalogFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,uint16_t num, const char *pathToLine)
+int DB_ReZipAnalogFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine)
 {
     int err = 0;
 
@@ -1699,8 +1713,10 @@ int DB_ReZipAnalogFile_thread(vector<pair<string,long>> filesWithTime,uint16_t b
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[fileNum].first.c_str()), &len);
-        char readbuff[len];                            //文件内容
-        char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
+        char *readbuff = new char[len];
+        char *writebuff = new char[CurrentZipTemplate.totalBytes];
+        // char readbuff[len];                            //文件内容
+        // char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -1717,6 +1733,8 @@ int DB_ReZipAnalogFile_thread(vector<pair<string,long>> filesWithTime,uint16_t b
         string finalpath = filesWithTime[fileNum].first.substr(0, filesWithTime[fileNum].first.length() - 3); //去掉后缀的zip
         //创建新文件并写入
         char mode[2] = {'w', 'b'};
+
+        // openMutex.lock();
         err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
         if (err == 0)
         {
@@ -1727,6 +1745,9 @@ int DB_ReZipAnalogFile_thread(vector<pair<string,long>> filesWithTime,uint16_t b
                 err = DB_Close(fp);
             }
         }
+        // openMutex.unlock();
+        delete[] readbuff;
+        delete[] writebuff;
     }
     IOBusy = false;
     return err;
@@ -1780,7 +1801,8 @@ int DB_ReZipAnalogFile_MultiThread(const char *ZipTemPath, const char *pathToLin
     status[maxThreads - 1] = f[maxThreads - 1].wait_for(chrono::milliseconds(1));
     for (int j = 0; j < maxThreads - 1; j++) //等待所有线程结束
     {
-        f[j].wait();
+        if (status[j] != future_status::ready)
+            f[j].wait();
     }
 
     IOBusy = false;

@@ -232,8 +232,10 @@ int DB_ZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[fileNum].first.c_str()), &len);
-        char readbuff[len];                                                                    //文件内容
-        char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
+        char *readbuff = new char[len];
+        char *writebuff = new char[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()];
+        // char readbuff[len];                                                                    //文件内容
+        // char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -268,7 +270,8 @@ int DB_ZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
                     err = DB_Close(fp);
                 }
             }
-
+            delete[] readbuff;
+            delete[] writebuff;
             // int fd = sysOpen(const_cast<char *>(finalpath.c_str()));
             // err = write(fd, writebuff, writebuff_pos);
             // if (err == -1)
@@ -282,8 +285,8 @@ int DB_ZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
 
 int DB_ZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine)
 {
-
     int err;
+
     for (auto i = begin; i < num; i++)
     {
         long len;
@@ -331,7 +334,6 @@ int DB_ZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t b
         }
         delete[] readbuff;
         delete[] writebuff;
-        // cout << i << endl;
     }
     return err;
 }
@@ -512,7 +514,6 @@ int DB_ReZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t
         openMutex.unlock();
         delete[] readbuff;
         delete[] writebuff;
-        // cout << i << endl;
     }
     return err;
 }
@@ -747,8 +748,10 @@ int DB_ZipSwitchFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, 
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[fileNum].first.c_str()), &len);
-        char readbuff[len];                                                                    //文件内容
-        char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
+        char *readbuff = new char[len];
+        char *writebuff = new char[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()];
+        // char readbuff[len];                                                                    //文件内容
+        // char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -772,6 +775,8 @@ int DB_ZipSwitchFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, 
             string finalpath = selectedFiles[fileNum].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
             //创建新文件并写入
             char mode[2] = {'w', 'b'};
+
+            openMutex.lock();
             err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
             if (err == 0)
             {
@@ -783,7 +788,10 @@ int DB_ZipSwitchFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, 
                     DB_Close(fp);
                 }
             }
+            openMutex.unlock();
         }
+        delete[] readbuff;
+        delete[] writebuff;
     }
     return err;
 }
@@ -863,7 +871,8 @@ int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
     status[maxThreads - 1] = f[maxThreads - 1].wait_for(chrono::milliseconds(1));
     for (int j = 0; j < maxThreads - 1; j++)
     {
-        f[j].wait();
+        if (status[j] != future_status::ready)
+            f[j].wait();
     }
 
     IOBusy = false;
@@ -923,8 +932,10 @@ int DB_ReZipSwitchFileByTimeSpan_Single(struct DB_ZipParams *params)
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[fileNum].first.c_str()), &len);
-        char readbuff[len];                            //文件内容
-        char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
+        char *readbuff = new char[len];
+        char *writebuff = new char[CurrentZipTemplate.totalBytes];
+        // char readbuff[len];                            //文件内容
+        // char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -951,6 +962,8 @@ int DB_ReZipSwitchFileByTimeSpan_Single(struct DB_ZipParams *params)
                 DB_Close(fp);
             }
         }
+        delete[] readbuff;
+        delete[] writebuff;
     }
     IOBusy = false;
     return err;
@@ -964,8 +977,10 @@ int DB_ReZipSwitchFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[fileNum].first.c_str()), &len);
-        char readbuff[len];                            //文件内容
-        char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
+        char *readbuff = new char[len];
+        char *writebuff = new char[CurrentZipTemplate.totalBytes];
+        // char readbuff[len];                            //文件内容
+        // char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -982,6 +997,8 @@ int DB_ReZipSwitchFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles
         string finalpath = selectedFiles[fileNum].first.substr(0, selectedFiles[fileNum].first.length() - 3); //去掉后缀的zip
         //创建新文件并写入
         char mode[2] = {'w', 'b'};
+
+        openMutex.lock();
         err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
         if (err == 0)
         {
@@ -992,6 +1009,9 @@ int DB_ReZipSwitchFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles
                 DB_Close(fp);
             }
         }
+        openMutex.unlock();
+        delete[] readbuff;
+        delete[] writebuff;
     }
     IOBusy = false;
     return err;
@@ -1073,7 +1093,8 @@ int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
     status[maxThreads - 1] = f[maxThreads - 1].wait_for(chrono::milliseconds(1));
     for (int j = 0; j < maxThreads - 1; j++)
     {
-        f[j].wait();
+        if (status[j] != future_status::ready)
+            f[j].wait();
     }
 
     IOBusy = false;
