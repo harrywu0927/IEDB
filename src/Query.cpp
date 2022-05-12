@@ -4756,7 +4756,6 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
         {
             ReZipBuff(buff, (int &)len, params->pathToLine);
         }
-
         //获取数据的偏移量和数据类型
         long pos = 0, bytes = 0;
         vector<long> posList, bytesList;
@@ -6648,7 +6647,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
             {
                 long len; //文件长度
                 DB_GetFileLengthByPath(const_cast<char *>(file.c_str()), &len);
-                char buff[CurrentTemplate.totalBytes];
+                char buff[len];
                 DB_OpenAndRead(const_cast<char *>(file.c_str()), buff);
                 if (file.find(".idbzip") != string::npos)
                 {
@@ -7120,11 +7119,11 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 int main()
 {
-    Py_Initialize();
+    // Py_Initialize();
     DataTypeConverter converter;
     DB_QueryParams params;
-    params.pathToLine = "RobotDataFive";
-    params.fileID = "RobotDataFive5";
+    params.pathToLine = "JinfeiSixteen";
+    params.fileID = "JinfeiSixteen1388";
     char code[10];
     code[0] = (char)0;
     code[1] = (char)1;
@@ -7137,16 +7136,16 @@ int main()
     code[8] = (char)0;
     code[9] = (char)0;
     params.pathCode = code;
-    params.valueName = "S1L1A11";
-    // params.valueName = NULL;
+    // params.valueName = "S1T1A11";
+    params.valueName = "S1ON";
     params.start = 0;
     params.end = 1751269000000;
     params.order = ASCEND;
     params.compareType = CMP_NONE;
     params.compareValue = "666";
     params.queryType = FILEID;
-    params.byPath = 1;
-    params.queryNums = 20;
+    params.byPath = 0;
+    params.queryNums = 10;
     DB_DataBuffer buffer;
     buffer.savePath = "/";
     // cout << settings("Pack_Mode") << endl;

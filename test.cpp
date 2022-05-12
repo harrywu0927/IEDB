@@ -242,6 +242,38 @@ int main()
     Py_Initialize();
     PyObject *obj;
     obj = PyList_New(10);
+    // 指定py文件目录
+    PyRun_SimpleString("import sys");
+    PyRun_SimpleString("sys.path.append('./')");
+
+    PyObject *pname = Py_BuildValue("s", "python");
+    PyObject *numpy = PyImport_ImportModule("numpy");
+    PyObject *mymodule = PyImport_ImportModule("python");
+    PyObject *pValue, *pArgs, *pFunc;
+    if (mymodule != NULL)
+    {
+        // 从模块中获取函数
+        pFunc = PyObject_GetAttrString(mymodule, "multiply");
+        /* pFunc is a new reference */
+
+        if (pFunc && PyCallable_Check(pFunc))
+        {
+            // 创建参数元组
+            pArgs = PyTuple_New(2);
+            for (int i = 0; i < 2; ++i)
+            {
+                // 设置参数值
+                pValue = PyLong_FromLong(i + 10);
+                PyTuple_SetItem(pArgs, i, pValue);
+            }
+            // 函数执行
+            pValue = PyObject_CallObject(pFunc, pArgs);
+            if (pValue != NULL)
+            {
+                // printf("Result of call: %ld\n", PyInt_AsLong(pValue));
+            }
+        }
+    }
     Py_Finalize();
     return 0;
     // fd_set set;

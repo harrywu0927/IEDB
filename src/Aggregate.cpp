@@ -739,6 +739,7 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
     // memcpy(newBuffer, buffer->buffer, startPos);
+    cout << rows << endl;
     long newBufCur = startPos; //在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
@@ -802,6 +803,7 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
             {
                 memcpy(val, column + k * 4, 4);
                 sum += converter.ToUInt32(val);
+                cout << converter.ToUInt32(val) << endl;
             }
             float res = sum / (float)rows;
             cout << res << endl;
@@ -1060,6 +1062,10 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
             }
             float avg = sum / (float)rows;
             float sqrSum = 0;
+            int a[10];
+            Py_Initialize();
+            PyObject *obj = Py_BuildValue("[items]", a);
+            Py_Finalize();
             for (auto &v : vals)
             {
                 sqrSum += powf(v - avg, 2);
@@ -2834,7 +2840,7 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
 // {
 //     // DataTypeConverter converter;
 //     DB_QueryParams params;
-//     params.pathToLine = "JinfeiTweEi";
+//     params.pathToLine = "JinfeiSixteen";
 //     params.fileID = "JinfeiSixteen15";
 //     char code[10];
 //     code[0] = (char)0;
@@ -2848,23 +2854,26 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
 //     code[8] = (char)0;
 //     code[9] = (char)0;
 //     params.pathCode = code;
-//     params.valueName = "S2OFF";
+//     params.valueName = "S1ON";
 //     // params.valueName = NULL;
-//     params.start = 1651105500000;
-//     params.end = 1651165600000;
+//     params.start = 0;
+//     params.end = 1751165600000;
 //     params.order = ODR_NONE;
-//     params.compareType = LT;
+//     params.compareType = CMP_NONE;
 //     params.compareValue = "666";
 //     params.queryType = TIMESPAN;
 //     params.byPath = 0;
 //     params.queryNums = 234;
 //     DB_DataBuffer buffer;
-//     DB_AVG(&buffer, &params);
+//     DB_STD(&buffer, &params);
 //     if (buffer.bufferMalloced)
 //     {
 //         char buf[buffer.length];
 //         memcpy(buf, buffer.buffer, buffer.length);
 //         cout << buffer.length << endl;
+//         float f;
+//         memcpy(&f, buf + 12, 4);
+//         cout << f << endl;
 //         for (int i = 0; i < buffer.length; i++)
 //         {
 //             cout << (int)buf[i] << " ";
