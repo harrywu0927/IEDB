@@ -32,7 +32,7 @@ int main()
     cout << DB_ReadFile(&buffer) << endl;
     buffer.savePath = "jinfeitest";
     auto startTime = std::chrono::system_clock::now();
-
+    cout << "sdfsdfs" << endl;
     for (size_t i = 0; i < 100000; i++)
     {
         DB_InsertRecord(&buffer, 0);

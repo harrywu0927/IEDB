@@ -1,11 +1,11 @@
-# IEDB_STD_Funtions
+# IEDB_STD_Functions
 
 ### 介绍
 装备数据库标准函数
 
 ### Dependency
-#### For Linux:
-```sudo apt install python-dev python3.8-dev```
+#### For Linux(Ubuntu18.04 or later):
+```sudo apt install python3.8-dev```
 #### For macOS:
 ```brew install python@3.9```
 ### 使用说明

@@ -739,7 +739,6 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
     // memcpy(newBuffer, buffer->buffer, startPos);
-    cout << rows << endl;
     long newBufCur = startPos; //在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
@@ -803,10 +802,8 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
             {
                 memcpy(val, column + k * 4, 4);
                 sum += converter.ToUInt32(val);
-                cout << converter.ToUInt32(val) << endl;
             }
             float res = sum / (float)rows;
-            cout << res << endl;
             memcpy(newBuffer + newBufCur, &res, 4);
             newBufCur += 4;
             break;
@@ -948,7 +945,6 @@ int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
     }
     memcpy(newBuffer + newBufCur, res, 4);
     DataTypeConverter converter;
-    cout << "count:" << converter.ToUInt32(res) << endl;
     free(buffer->buffer);
     buffer->buffer = NULL;
     for (int i = 0; i < typeList.size(); i++)
@@ -1330,7 +1326,6 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
                 sqrSum += powf(v - avg, 2);
             }
             float res = sqrSum / (float)rows;
-            cout << "stdev:" << res << endl;
             memcpy(newBuffer + newBufCur, &res, 4);
             newBufCur += 4;
             break;
