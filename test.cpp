@@ -239,43 +239,38 @@ int get_procmeminfo(MEM_OCCUPY *lpMemory)
 #endif
 int main()
 {
-    Py_Initialize();
-    PyObject *obj;
-    obj = PyList_New(10);
-    // 指定py文件目录
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString("sys.path.append('./')");
+    // Py_Initialize();
+    // PyObject *obj;
+    // obj = PyList_New(10);
+    // // 指定py文件目录
+    // PyRun_SimpleString("import sys");
+    // PyRun_SimpleString("sys.path.append('./')");
 
-    PyObject *pname = Py_BuildValue("s", "python");
-    PyObject *numpy = PyImport_ImportModule("numpy");
-    PyObject *mymodule = PyImport_ImportModule("python");
-    PyObject *pValue, *pArgs, *pFunc;
-    if (mymodule != NULL)
-    {
-        // 从模块中获取函数
-        pFunc = PyObject_GetAttrString(mymodule, "multiply");
-        /* pFunc is a new reference */
+    // PyObject *pname = Py_BuildValue("s", "python");
+    // PyObject *numpy = PyImport_ImportModule("numpy");
+    // PyObject *mymodule = PyImport_ImportModule("python");
+    // PyObject *pValue, *pArgs, *pFunc;
+    // if (mymodule != NULL)
+    // {
+    //     // 从模块中获取函数
+    //     pFunc = PyObject_GetAttrString(mymodule, "multiply");
 
-        if (pFunc && PyCallable_Check(pFunc))
-        {
-            // 创建参数元组
-            pArgs = PyTuple_New(2);
-            for (int i = 0; i < 2; ++i)
-            {
-                // 设置参数值
-                pValue = PyLong_FromLong(i + 10);
-                PyTuple_SetItem(pArgs, i, pValue);
-            }
-            // 函数执行
-            pValue = PyObject_CallObject(pFunc, pArgs);
-            if (pValue != NULL)
-            {
-                // printf("Result of call: %ld\n", PyInt_AsLong(pValue));
-            }
-        }
-    }
-    Py_Finalize();
-    return 0;
+    //     if (pFunc && PyCallable_Check(pFunc))
+    //     {
+    //         // 创建参数元组
+    //         pArgs = PyTuple_New(2);
+    //         for (int i = 0; i < 2; ++i)
+    //         {
+    //             // 设置参数值
+    //             pValue = PyLong_FromLong(i + 10);
+    //             PyTuple_SetItem(pArgs, i, pValue);
+    //         }
+    //         // 函数执行
+    //         pValue = PyObject_CallObject(pFunc, pArgs);
+    //     }
+    // }
+    // Py_Finalize();
+    // return 0;
     // fd_set set;
     // thread th1(checkSettings);
     // th1.detach();
@@ -341,8 +336,8 @@ int main()
     // return 0;
 
     DB_QueryParams params;
-    params.pathToLine = "RobotDataFive";
-    params.fileID = "JinfeiSixteen13455";
+    params.pathToLine = "JinfeiSeven";
+    params.fileID = "JinfeiSeven1527006";
     char code[10];
     code[0] = (char)0;
     code[1] = (char)1;
@@ -355,17 +350,17 @@ int main()
     code[8] = (char)0;
     code[9] = (char)0;
     params.pathCode = code;
-    params.valueName = "S1L1A10";
+    params.valueName = "S1ON";
     // params.valueName = NULL;
-    params.start = 1651240750421;
-    params.end = 1651269000000;
+    params.start = 0;
+    params.end = 1751269000000;
     // params.start = 1650093562902;
     // params.end = 1650163562902;
-    params.order = ASCEND;
-    params.compareType = LT;
+    params.order = ODR_NONE;
+    params.compareType = CMP_NONE;
     params.compareValue = "666";
     params.queryType = LAST;
-    params.byPath = 1;
+    params.byPath = 0;
     params.queryNums = 10;
     DB_DataBuffer buffer;
     buffer.savePath = "JinfeiTTE";
@@ -375,26 +370,27 @@ int main()
     // DB_InsertRecord(&buffer, 0);
     // sleep(100);
     // return 0;
-    DB_QueryLastRecords(&buffer, &params);
+    auto startTime = std::chrono::system_clock::now();
+    DB_QueryByFileID(&buffer, &params);
+    auto endTime = std::chrono::system_clock::now();
     if (buffer.bufferMalloced)
     {
         char buf[buffer.length];
         memcpy(buf, buffer.buffer, buffer.length);
         cout << buffer.length << endl;
-        // for (int i = 0; i < buffer.length; i++)
-        // {
-        //     cout << (int)buf[i] << " ";
-        //     if (i % 11 == 0)
-        //         cout << endl;
-        // }
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
 
         free(buffer.buffer);
     }
     // // DB_QueryByFileID(&buffer, &params);
     return 0;
     // cout << settings("Pack_Mode") << endl;
-    auto startTime = std::chrono::system_clock::now();
-    auto endTime = std::chrono::system_clock::now();
+
     double total = 0;
     // for (int i = 0; i < 10; i++)
     // {

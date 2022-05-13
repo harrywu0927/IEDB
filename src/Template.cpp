@@ -370,7 +370,7 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
                 else
                     num = schema.second.arrayLen;
             }
-            positions.push_back(pos + 2);
+            positions.push_back(pos + schema.second.valueType == ValueType::IMAGE ? 2 : 0);
             bytes.push_back(num * schema.second.valueBytes);
             types.push_back(schema.second);
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
