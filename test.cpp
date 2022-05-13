@@ -337,7 +337,7 @@ int main()
 
     DB_QueryParams params;
     params.pathToLine = "JinfeiSeven";
-    params.fileID = "JinfeiSeven1527006";
+    params.fileID = "JinfeiSeven1535073";
     char code[10];
     code[0] = (char)0;
     code[1] = (char)1;
@@ -360,8 +360,8 @@ int main()
     params.compareType = CMP_NONE;
     params.compareValue = "666";
     params.queryType = LAST;
-    params.byPath = 0;
-    params.queryNums = 10;
+    params.byPath = 1;
+    params.queryNums = 2;
     DB_DataBuffer buffer;
     buffer.savePath = "JinfeiTTE";
     // char x[3] = {'1', '2', '3'};

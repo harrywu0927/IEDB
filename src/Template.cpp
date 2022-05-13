@@ -366,11 +366,12 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
                     pos += 2;
                     memcpy(channels, buff + pos, 2);
                     num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels);
+                    pos += 2;
                 }
                 else
                     num = schema.second.arrayLen;
             }
-            positions.push_back(pos + schema.second.valueType == ValueType::IMAGE ? 2 : 0);
+            positions.push_back(pos);
             bytes.push_back(num * schema.second.valueBytes);
             types.push_back(schema.second);
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
@@ -443,11 +444,12 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
                     pos += 2;
                     memcpy(channels, buff + pos, 2);
                     num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels);
+                    pos += 2;
                 }
                 else
                     num = schema.second.arrayLen;
             }
-            positions.push_back(pos + 2);
+            positions.push_back(pos);
             bytes.push_back(num * schema.second.valueBytes);
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
         }
