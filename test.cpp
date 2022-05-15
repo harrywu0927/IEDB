@@ -1,7 +1,7 @@
 #include <iostream>
 #include "include/CassFactoryDB.h"
 #include "include/utils.hpp"
-// #include <numpy/arrayobject.h>
+#include <numpy/arrayobject.h>
 #include <string>
 #include <fstream>
 #include <dirent.h>
@@ -241,23 +241,23 @@ int get_procmeminfo(MEM_OCCUPY *lpMemory)
 
 int main()
 {
-    Py_Initialize();
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString("sys.path.append('./')");
-    PyObject *get_envs_module = PyImport_ImportModule("python");
-    PyObject *get_envs_func = PyObject_GetAttrString(get_envs_module, "LOF");
-    PyObject *func_ret_val = PyObject_CallFunction(get_envs_func, NULL);
-    int list_len = PyObject_Size(func_ret_val); //列表长度40
-    PyObject *list_item = NULL;                 // python类型的列表元素
-    long str_item;                              // c类型的列表元素
-    for (int i = 0; i < list_len; i++)
-    {
-        list_item = PyList_GetItem(func_ret_val, i); //根据下标取出python列表中的元素
-        str_item = PyLong_AsLong(list_item);         //转换为c类型的数据
-        cout << str_item << " ";
-    }
-    Py_Finalize();
-    return 0;
+    // Py_Initialize();
+    // PyRun_SimpleString("import sys");
+    // PyRun_SimpleString("sys.path.append('./')");
+    // PyObject *get_envs_module = PyImport_ImportModule("python");
+    // PyObject *get_envs_func = PyObject_GetAttrString(get_envs_module, "LOF");
+    // PyObject *func_ret_val = PyObject_CallFunction(get_envs_func, NULL);
+    // int list_len = PyObject_Size(func_ret_val); //列表长度40
+    // PyObject *list_item = NULL;                 // python类型的列表元素
+    // long str_item;                              // c类型的列表元素
+    // for (int i = 0; i < list_len; i++)
+    // {
+    //     list_item = PyList_GetItem(func_ret_val, i); //根据下标取出python列表中的元素
+    //     str_item = PyLong_AsLong(list_item);         //转换为c类型的数据
+    //     cout << str_item << " ";
+    // }
+    // Py_Finalize();
+    // return 0;
     Py_Initialize();
 
     PyObject *obj;
@@ -267,14 +267,13 @@ int main()
     PyRun_SimpleString("sys.path.append('./')");
 
     PyObject *pname = Py_BuildValue("s", "testpy");
-    PyObject *numpy = PyImport_ImportModule("numpy");
-    PyObject *mymodule = PyImport_ImportModule("testpy");
+    PyObject *mymodule = PyImport_ImportModule("python");
     PyObject *pValue, *pArgs, *pFunc;
     long res = 0;
     if (mymodule != NULL)
     {
         // 从模块中获取函数
-        pFunc = PyObject_GetAttrString(mymodule, "get_envs");
+        pFunc = PyObject_GetAttrString(mymodule, "LOF");
 
         if (pFunc && PyCallable_Check(pFunc))
         {
@@ -287,8 +286,16 @@ int main()
                 PyTuple_SetItem(pArgs, i, pValue);
             }
             // 函数执行
-            PyObject *ret = PyObject_CallObject(pFunc, pArgs);
-            PyObject *lst = PyList_GetItem(ret, 0);
+            PyObject *ret = PyObject_CallObject(pFunc, NULL);
+            PyObject *item;
+            long val;
+            int len = PyObject_Size(ret);
+            for (int i = 0; i < len; i++)
+            {
+                item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
+                val = PyLong_AsLong(item);     //转换为c类型的数据
+                cout << val << " ";
+            }
             // res = PyLong_AsLong(PyList_GetItem(pValue, 1));
             // cout << pValue->ob_type->tp_name << endl;
         }
