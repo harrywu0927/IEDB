@@ -196,8 +196,6 @@ struct DB_ZipNodeParams
 //往标准模板里添加新的树节点
 int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams);
 
-int DB_AddNodeToSchema(int ttt);
-
 //修改标准模板里的树节点
 int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams);
 
