@@ -68,6 +68,7 @@ struct DB_QueryParams
     enum DB_QueryType queryType;     //查询条件
     enum DB_Order order;             //排列方式
     int queryID;                     //请求ID
+    const char *fileIDend;
 };
 
 //在指定路径下从模版文件(.tem)加载模版
@@ -123,6 +124,27 @@ int DB_COUNT(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
 //平均值
 int DB_AVG(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
+
+//最大值
+int DB_MAX(struct DB_DataBuffer *buffer);
+
+//最小值
+int DB_MIN(struct DB_DataBuffer *buffer);
+
+//标准差
+int DB_STD(struct DB_DataBuffer *buffer);
+
+//方差
+int DB_STDEV(struct DB_DataBuffer *buffer);
+
+//求和
+int DB_SUM(struct DB_DataBuffer *buffer);
+
+//计次数
+int DB_COUNT(struct DB_DataBuffer *buffer);
+
+//平均值
+int DB_AVG(struct DB_DataBuffer *buffer);
 
 //文件打包
 int DB_Pack(const char *pathToLine, int num, int packAll);
