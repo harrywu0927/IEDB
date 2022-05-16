@@ -1,3 +1,4 @@
+from ctypes.wintypes import FLOAT, LONG
 import numpy as np
 import pandas
 # import matplotlib
@@ -12,7 +13,7 @@ def multiply(a, b):
 
 
 def LOF():
-    xx, yy = np.meshgrid(np.linspace(-5, 5, 500), np.linspace(-5, 5, 500))
+    # xx, yy = np.meshgrid(np.linspace(-5, 5, 500), np.linspace(-5, 5, 500))
     # 生成正常（非异常）的训练观察结果
     X = 0.3 * np.random.randn(100, 2)
     X_train = np.r_[X + 2, X - 2]
@@ -63,4 +64,13 @@ def LOF():
     plt.show()
 
 
-LOF()
+def listTest(lst):
+    print(type(lst))
+    nplst = np.array(lst, dtype=LONG)
+    nplst = nplst.reshape(50, 2)
+    print(type(nplst))
+    print(nplst)
+    clf = LocalOutlierFactor()
+    res = clf.fit_predict(nplst)
+    return list(res)
+# LOF()

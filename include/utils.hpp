@@ -175,6 +175,8 @@ int DB_ZipFileByTimeSpan_MultiThread(struct DB_ZipParams *params);
 
 int DB_ReZipFileByTimeSpan_MultiThread(struct DB_ZipParams *params);
 
+int DB_OutlierDetection(struct DB_QueryParams *params);
+
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);
 

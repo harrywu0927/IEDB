@@ -1,7 +1,7 @@
 #include <iostream>
 #include "include/CassFactoryDB.h"
 #include "include/utils.hpp"
-#include <numpy/arrayobject.h>
+// #include <numpy/arrayobject.h>
 #include <string>
 #include <fstream>
 #include <dirent.h>
@@ -36,6 +36,7 @@ using namespace std;
 //         sleep(1);
 //     }
 // }
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 mutex imute, countmute;
 void tk(int n)
 {
@@ -259,34 +260,44 @@ int main()
     // Py_Finalize();
     // return 0;
     Py_Initialize();
+    PyObject *arr = PyList_New(100);
+    PyObject *lstitem;
+    for (int i = 0; i < 100; i++)
+    {
+        lstitem = PyLong_FromLong(i % 20 == 0 ? rand() % 100 : rand() % 10);
+        PyList_SetItem(arr, i, lstitem);
+    }
 
     PyObject *obj;
-    obj = PyList_New(10);
     // 指定py文件目录
     PyRun_SimpleString("import sys");
     PyRun_SimpleString("sys.path.append('./')");
 
-    PyObject *pname = Py_BuildValue("s", "testpy");
-    PyObject *mymodule = PyImport_ImportModule("python");
+    // PyObject *pname = Py_BuildValue("s", "testpy");
+    PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
+    // PyObject *numpy = PyImport_ImportModule("numpy");
+    // PyObject *std = PyObject_GetAttrString(numpy, "fft");
     PyObject *pValue, *pArgs, *pFunc;
     long res = 0;
     if (mymodule != NULL)
     {
         // 从模块中获取函数
-        pFunc = PyObject_GetAttrString(mymodule, "LOF");
+        pFunc = PyObject_GetAttrString(mymodule, "Outliers");
 
         if (pFunc && PyCallable_Check(pFunc))
         {
             // 创建参数元组
             pArgs = PyTuple_New(2);
-            for (int i = 0; i < 2; ++i)
-            {
-                // 设置参数值
-                pValue = PyLong_FromLong(i + 10);
-                PyTuple_SetItem(pArgs, i, pValue);
-            }
+            PyTuple_SetItem(pArgs, 0, arr);
+            PyTuple_SetItem(pArgs, 1, PyLong_FromLong(1));
+            // for (int i = 0; i < 2; ++i)
+            // {
+            //     // 设置参数值
+            //     pValue = PyLong_FromLong(i + 10);
+            //     PyTuple_SetItem(pArgs, i, pValue);
+            // }
             // 函数执行
-            PyObject *ret = PyObject_CallObject(pFunc, NULL);
+            PyObject *ret = PyObject_CallObject(pFunc, pArgs);
             PyObject *item;
             long val;
             int len = PyObject_Size(ret);

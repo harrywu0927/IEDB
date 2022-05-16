@@ -713,7 +713,7 @@ int DB_ZipSwitchFileByTimeSpan_Single(struct DB_ZipParams *params)
             {
                 if (writebuff_pos != 0)
                     err = DB_Write(fp, writebuff, writebuff_pos);
-                err = DB_Close(fp);
+                DB_Close(fp);
             }
         }
         delete[] readbuff;
@@ -927,7 +927,7 @@ int DB_ReZipSwitchFileByTimeSpan_Single(struct DB_ZipParams *params)
         if (err == 0)
         {
             err = DB_Write(fp, writebuff, writebuff_pos);
-            err = DB_Close(fp);
+            DB_Close(fp);
         }
         delete[] readbuff;
         delete[] writebuff;
