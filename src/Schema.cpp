@@ -4,6 +4,12 @@ using namespace std;
 vector<ZipTemplate> ZipTemplates;
 ZipTemplate CurrentZipTemplate;
 
+int DB_AddNodeToSchema(int ttt)
+{
+    cout<<ttt;
+    return 0;
+}
+
 /**
  * @brief 向标准模板添加新节点,暂定直接在尾部追加
  *

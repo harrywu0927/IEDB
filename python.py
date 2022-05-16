@@ -1,5 +1,5 @@
 import numpy as np
-from pandas import MultiIndex
+import pandas
 # import matplotlib
 # import matplotlib.pyplot as plt
 from sklearn.neighbors import LocalOutlierFactor
@@ -30,7 +30,8 @@ def LOF():
     y_pred_outliers = clf.predict(X_outliers)
     n_error_test = y_pred_test[y_pred_test == -1].size
     n_error_outliers = y_pred_outliers[y_pred_outliers == 1].size
-    return y_pred_test
+    print(y_pred_test)
+    return list(y_pred_test)
     # 绘制学习的边界，点和最接近平面的向量
     Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
     Z = Z.reshape(xx.shape)
@@ -62,4 +63,4 @@ def LOF():
     plt.show()
 
 
-# LOF()
+LOF()

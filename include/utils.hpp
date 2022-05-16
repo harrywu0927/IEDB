@@ -159,9 +159,21 @@ int DB_ZipSwitchFileByTimeSpan_Single(struct DB_ZipParams *params);
 
 int DB_ReZipSwitchFileByTimeSpan_Single(struct DB_ZipParams *params);
 
-int DB_ZipAnalogFile_MultiThread(const char *ZipTemPath, const char *pathToLine);
+int DB_ZipAnalogFile_Single(const char *ZipTemPath, const char *pathToLine);
 
-int DB_ReZipAnalogFile_MultiThread(const char *ZipTemPath, const char *pathToLine);
+int DB_ReZipAnalogFile_Single(const char *ZipTemPath, const char *pathToLine);
+
+int DB_ZipAnalogFileByTimeSpan_Single(struct DB_ZipParams *params);
+
+int DB_ReZipAnalogFileByTimeSpan_Single(struct DB_ZipParams *params);
+
+int DB_ZipFile_MultiThread(const char *ZipTemPath, const char *pathToLine);
+
+int DB_ReZipFile_MultiThread(const char *ZipTemPath, const char *pathToLine);
+
+int DB_ZipFileByTimeSpan_MultiThread(struct DB_ZipParams *params);
+
+int DB_ReZipFileByTimeSpan_MultiThread(struct DB_ZipParams *params);
 
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);

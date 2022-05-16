@@ -175,6 +175,7 @@ struct DB_TreeNodeParams
     long endTime;           //结束时间
     int hasTime;            //带８字节时间戳
     const char *pathToLine; //到产线层级的路径
+    char *newPath;
 };
 
 //压缩模板的数据信息
@@ -189,10 +190,13 @@ struct DB_ZipNodeParams
     int arrayLen;
     int hasTime;            //带八字节时间戳
     const char *pathToLine; //到产线层级的路径
+    char *newPath;
 };
 
 //往标准模板里添加新的树节点
 int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams);
+
+int DB_AddNodeToSchema(int ttt);
 
 //修改标准模板里的树节点
 int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams);
