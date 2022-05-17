@@ -260,6 +260,7 @@ public:
     static ValueType::ValueType JudgeValueType(string vType);
     //判断值类型
     static string JudgeValueTypeByNum(int vType);
+    static int JudgeByValueType(ValueType::ValueType vType);
     //获取值类型所占字节数
     static int GetValueBytes(ValueType::ValueType &type);
     //从字符串中获取数据类型

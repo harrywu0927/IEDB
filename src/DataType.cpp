@@ -65,6 +65,46 @@ ValueType::ValueType DataType::JudgeValueType(string vType)
     return ValueType::UNKNOWN;
 }
 
+int DataType::JudgeByValueType(ValueType::ValueType vType)
+{
+    switch (vType)
+    {
+    case ValueType::INT:
+        return 4;
+        break;
+    case ValueType::UINT: 
+        return 1;
+        break;
+    case ValueType::SINT: 
+        return 6;
+        break;
+    case ValueType::USINT: 
+        return 2;
+        break;
+    case ValueType::REAL: 
+        return 8;
+        break;
+    case ValueType::TIME: 
+        return 9;
+        break;
+    case ValueType::DINT: 
+        return 7;
+        break;
+    case ValueType::UDINT: 
+        return 3;
+        break;
+    case ValueType::BOOL:
+        return 5;
+        break;
+    case ValueType::IMAGE:
+        return 10;
+        break;
+    default:
+        return 0;
+        break;
+    }
+}
+
 string DataType::JudgeValueTypeByNum(int vType)
 {
     if (vType == 1)

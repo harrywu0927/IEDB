@@ -56,7 +56,7 @@ int DB_OutlierDetection(DB_QueryParams *params)
     }
     Py_Finalize();
 }
-int main()
-{
-    return 0;
-}
+// int main()
+// {
+//     return 0;
+// }

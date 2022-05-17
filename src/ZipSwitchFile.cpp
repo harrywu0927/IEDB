@@ -1265,7 +1265,7 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
 //     sleep(1);
 //     std::cout << "start 开关量文件 单线程压缩" << std::endl;
 //     auto startTime = std::chrono::system_clock::now();
-//     DB_ZipSwitchFile_Single("JinfeiSeven", "JinfeiSeven");
+//     DB_ZipSwitchFile_Single("JinfeiEleven", "JinfeiEleven");
 //     auto endTime = std::chrono::system_clock::now();
 //     std::cout << "开关量文件 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
 //     std::cout << "end 开关量文件 单线程压缩" << std::endl
@@ -1274,7 +1274,7 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
 //     sleep(1);
 //     std::cout << "start 开关量文件 单线程还原" << std::endl;
 //     startTime = std::chrono::system_clock::now();
-//     //DB_ReZipSwitchFile_Single("JinfeiEleven", "JinfeiEleven");
+//     DB_ReZipSwitchFile_Single("JinfeiEleven", "JinfeiEleven");
 //     endTime = std::chrono::system_clock::now();
 //     std::cout << "开关量文件 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
 //     std::cout << "end 开关量文件 单线程还原" << std::endl

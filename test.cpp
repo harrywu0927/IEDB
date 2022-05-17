@@ -1,7 +1,7 @@
 #include <iostream>
 #include "include/CassFactoryDB.h"
 #include "include/utils.hpp"
-// #include <numpy/arrayobject.h>
+#include <numpy/arrayobject.h>
 #include <string>
 #include <fstream>
 #include <dirent.h>
@@ -242,6 +242,19 @@ int get_procmeminfo(MEM_OCCUPY *lpMemory)
 
 int main()
 {
+    DB_LoadZipSchema("jinfei");
+    DB_ZipNodeParams zipparams;
+    zipparams.pathToLine = "/jinfei";
+    zipparams.valueType = DataType::JudgeByValueType(CurrentZipTemplate.schemas[2].second.valueType);
+    zipparams.hasTime = 1;
+    zipparams.isArrary = 1;
+    zipparams.arrayLen = 100;
+    zipparams.valueName = "S4ON";
+    zipparams.standardValue = "210";
+    zipparams.maxValue = "230";
+    zipparams.minValue = "190";
+    cout<<zipparams.valueType<<endl;
+    return 0;
     // Py_Initialize();
     // PyRun_SimpleString("import sys");
     // PyRun_SimpleString("sys.path.append('./')");
