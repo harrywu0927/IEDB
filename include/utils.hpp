@@ -75,6 +75,7 @@ namespace StatusCode
         ISARRAY_ERROR = 161,             // isArray只能为0或者1
         HASTIME_ERROR = 162,             // hasTime只能为0或者1
         ARRAYLEN_ERROR = 163,            // arrayLen不能小于１
+        DIR_INCLUDE_NUMBER = 164,        //文件夹名包含数字
     };
 }
 namespace ValueType
