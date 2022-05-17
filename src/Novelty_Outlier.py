@@ -4,6 +4,8 @@ from ctypes.wintypes import FLOAT, LONG
 import numpy as np
 from sklearn.neighbors import LocalOutlierFactor
 
+# 离群点检测
+
 
 def Outliers(lst, dimension):
     points = np.array(lst, dtype=LONG)
@@ -20,6 +22,8 @@ def Outliers(lst, dimension):
     else:
         print('输入数组shape有误')
     return
+
+# 奇异点检测
 
 
 def Novelty(lst, dimension):

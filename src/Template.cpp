@@ -645,6 +645,27 @@ vector<DataType> Template::GetAllTypes(char *pathCode)
     return res;
 }
 
+int Template::GetDataTypeByCode(char *pathCode, DataType &type)
+{
+    for (auto const &schema : this->schemas)
+    {
+        bool codeEquals = true;
+        for (size_t k = 0; k < 10; k++) //判断路径编码前缀是否相等
+        {
+            if (pathCode[k] != schema.first.code[k])
+            {
+                codeEquals = false;
+            }
+        }
+        if (codeEquals)
+        {
+            type = schema.second;
+            return 0;
+        }
+    }
+    return StatusCode::UNKNOWN_PATHCODE;
+}
+
 // int TemplateManager::SetTemplate(const char *path)
 // {
 //     // UnsetTemplate(path);

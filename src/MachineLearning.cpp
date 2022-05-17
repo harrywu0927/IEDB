@@ -1,7 +1,13 @@
 #include <utils.hpp>
 
-int DB_OutlierDetection(DB_QueryParams *params)
+int DB_OutlierDetection(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
+    if (!TemplateManager::CheckTemplate(params->pathToLine))
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    auto allTypes = CurrentTemplate.GetAllTypes(params->pathCode);
+    int err = DB_ExecuteQuery(buffer, params);
+    if (err != 0)
+        return err;
     Py_Initialize();
     PyObject *arr = PyList_New(100);
     PyObject *lstitem;
@@ -56,7 +62,7 @@ int DB_OutlierDetection(DB_QueryParams *params)
     }
     Py_Finalize();
 }
-int main()
-{
-    return 0;
-}
+// int main()
+// {
+//     return 0;
+// }
