@@ -4,12 +4,6 @@ using namespace std;
 vector<ZipTemplate> ZipTemplates;
 ZipTemplate CurrentZipTemplate;
 
-int DB_AddNodeToSchema(int ttt)
-{
-    cout<<ttt;
-    return 0;
-}
-
 /**
  * @brief 向标准模板添加新节点,暂定直接在尾部追加
  *
@@ -18,7 +12,7 @@ int DB_AddNodeToSchema(int ttt)
  *         others: StatusCode
  * @note   新节点参数必须齐全，pathToLine pathcode valueNmae hasTime valueType isArray arrayLen
  */
-int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
+int DB_AddNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams)
 {
     int err;
     vector<string> files;
@@ -142,7 +136,7 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 }
 
 //会重新创建一个.tem文件,根据已存在的tem文件数量追加命名
-int DB_AddNodeToSchema_new(struct DB_TreeNodeParams *TreeParams)
+int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
 {
     int err;
     vector<string> files;
@@ -274,7 +268,7 @@ int DB_AddNodeToSchema_new(struct DB_TreeNodeParams *TreeParams)
 }
 
 //会重新创建一个新的文件夹存放添加新节点后的模板
-int DB_AddNodeToSchema_mkdir(struct DB_TreeNodeParams *TreeParams)
+int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 {
     int err;
     vector<string> files;
@@ -382,24 +376,23 @@ int DB_AddNodeToSchema_mkdir(struct DB_TreeNodeParams *TreeParams)
     memcpy(writeBuf + 61, pathCode, 10);
     memcpy(readBuf + len, writeBuf, 71);
 
-    //创建一个新的文件夹存放新的模板
     long fp;
-    temPath = TreeParams->pathToLine;
-    vector<string> dirs;
-    readAllDirs(dirs, settings("Filename_Label").c_str());
-    int dirNum = dirs.size() + 1;
-    char appendNum[4];
-    sprintf(appendNum, "%d", dirNum);
-    temPath.append(appendNum);
+    char mode[3] = {'a', 'b', '+'};
+    if (strcmp(TreeParams->pathToLine, TreeParams->newPath) != 0)
+    {
+        //创建一个新的文件夹存放新的模板
+        temPath = TreeParams->newPath;
 
-    char finalPath[100];
-    strcpy(finalPath, settings("Filename_Label").c_str());
-    strcat(finalPath, "/");
-    strcat(finalPath, const_cast<char *>(temPath.c_str()));
-    mkdir(finalPath, 0777);
+        char finalPath[100];
+        strcpy(finalPath, settings("Filename_Label").c_str());
+        strcat(finalPath, "/");
+        strcat(finalPath, const_cast<char *>(temPath.c_str()));
+        mkdir(finalPath, 0777);
 
-    temPath.append("/").append(TreeParams->pathToLine).append(appendNum).append(".tem");
-    char mode[3] = {'w', 'b'};
+        temPath.append("/").append(TreeParams->newPath).append(".tem");
+        mode[0] = 'w';
+    }
+
     err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
@@ -422,7 +415,7 @@ int DB_AddNodeToSchema_mkdir(struct DB_TreeNodeParams *TreeParams)
  *         others: StatusCode
  * @note   更新节点参数必须齐全，pathToLine pathcode valueNmae hasTime valueType isArray arrayLen
  */
-int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams)
+int DB_UpdateNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams)
 {
     int err;
     vector<string> files;
@@ -574,7 +567,7 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
 }
 
 //创建新的.tem文件，根据目前已存在的模板数量进行编号
-int DB_UpdateNodeToSchema_new(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams)
+int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams)
 {
     int err;
     vector<string> files;
@@ -733,7 +726,7 @@ int DB_UpdateNodeToSchema_new(struct DB_TreeNodeParams *TreeParams, struct DB_Tr
 }
 
 //创建新文件夹存放修改后的.tem文件
-int DB_UpdateNodeToSchema_mkdir(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams)
+int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams)
 {
     int err;
     vector<string> files;
@@ -870,15 +863,19 @@ int DB_UpdateNodeToSchema_mkdir(struct DB_TreeNodeParams *TreeParams, struct DB_
 
     //创建一个新的文件夹来存放修改后的模板
     long fp;
-    temPath = newTreeParams->pathToLine;
+    if (strcmp(TreeParams->pathToLine, newTreeParams->pathToLine) != 0)
+    {
+        temPath = newTreeParams->pathToLine;
 
-    char finalPath[100];
-    strcpy(finalPath, settings("Filename_Label").c_str());
-    strcat(finalPath, "/");
-    strcat(finalPath, const_cast<char *>(temPath.c_str()));
-    mkdir(finalPath, 0777);
+        char finalPath[100];
+        strcpy(finalPath, settings("Filename_Label").c_str());
+        strcat(finalPath, "/");
+        strcat(finalPath, const_cast<char *>(temPath.c_str()));
+        mkdir(finalPath, 0777);
 
-    temPath.append("/").append(newTreeParams->pathToLine).append(".tem");
+        temPath.append("/").append(newTreeParams->pathToLine).append(".tem");
+    }
+
     char mode[3] = {'w', 'b', '+'};
     err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
@@ -900,7 +897,7 @@ int DB_UpdateNodeToSchema_mkdir(struct DB_TreeNodeParams *TreeParams, struct DB_
  * @return　0:success,
  *         others: StatusCode
  */
-int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
+int DB_DeleteNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams)
 {
     int err;
     vector<string> files;
@@ -972,7 +969,7 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 }
 
 //会创建一个新的.tem文件，根据已存在的模板数量进行编号
-int DB_DeleteNodeToSchema_new(struct DB_TreeNodeParams *TreeParams)
+int DB_DeleteNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
 {
     int err;
     vector<string> files;
@@ -1051,7 +1048,7 @@ int DB_DeleteNodeToSchema_new(struct DB_TreeNodeParams *TreeParams)
 }
 
 //会创建一个新的文件夹存放删除模板节点后的模板
-int DB_DeleteNodeToSchema_mkdir(struct DB_TreeNodeParams *TreeParams)
+int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 {
     int err;
     vector<string> files;
@@ -1107,21 +1104,19 @@ int DB_DeleteNodeToSchema_mkdir(struct DB_TreeNodeParams *TreeParams)
 
     //创建新的.tem文件，根据当前已存在的模板文件进行编号
     long fp;
-    temPath = TreeParams->pathToLine;
-    vector<string> dirs;
-    readAllDirs(dirs, settings("Filename_Label").c_str());
-    int dirNum = dirs.size() + 1;
-    char appendNum[4];
-    sprintf(appendNum, "%d", dirNum);
-    temPath.append(appendNum);
+    if(strcmp(TreeParams->pathToLine,TreeParams->newPath)!=0)
+    {
+        //创建一个新的文件夹存放新的模板
+        temPath = TreeParams->newPath;
 
-    char finalPath[100];
-    strcpy(finalPath, settings("Filename_Label").c_str());
-    strcat(finalPath, "/");
-    strcat(finalPath, const_cast<char *>(temPath.c_str()));
-    mkdir(finalPath, 0777);
+        char finalPath[100];
+        strcpy(finalPath, settings("Filename_Label").c_str());
+        strcat(finalPath, "/");
+        strcat(finalPath, const_cast<char *>(temPath.c_str()));
+        mkdir(finalPath, 0777);
 
-    temPath.append("/").append(TreeParams->pathToLine).append(appendNum).append(".tem");
+        temPath.append("/").append(TreeParams->newPath).append(".tem");
+    }
     char mode[3] = {'w', 'b', '+'};
     err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
@@ -1145,7 +1140,7 @@ int DB_DeleteNodeToSchema_mkdir(struct DB_TreeNodeParams *TreeParams)
  *         others: StatusCode
  * @note   新节点参数必须齐全，pathToLine valueNmae hasTime valueType isArray arrayLen standardValue maxValue minValue
  */
-int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
+int DB_AddNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
     vector<string> files;
@@ -1428,7 +1423,7 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 }
 
 //会创建一个新的.ziptem文件，根据已存在的压缩模板文件数量进行编号
-int DB_AddNodeToZipSchema_new(struct DB_ZipNodeParams *ZipParams)
+int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
     vector<string> files;
@@ -1719,7 +1714,7 @@ int DB_AddNodeToZipSchema_new(struct DB_ZipNodeParams *ZipParams)
 }
 
 //会创建一个新的文件夹存放新增节点后的压缩模板
-int DB_AddNodeToZipSchema_mkdir(struct DB_ZipNodeParams *ZipParams)
+int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
     vector<string> files;
@@ -1988,22 +1983,22 @@ int DB_AddNodeToZipSchema_mkdir(struct DB_ZipNodeParams *ZipParams)
 
     //创建一个新的.ziptem文件，根据当前已存在的压缩模板数量进行编号
     long fp;
-    vector<string> dirs;
-    readAllDirs(dirs, settings("Filename_Label").c_str());
-    int dirNum = dirs.size() + 1;
-    char appendNum[4];
-    sprintf(appendNum, "%d", dirNum);
-    temPath = ZipParams->pathToLine;
-    temPath.append(appendNum);
+    char mode[3] = {'a', 'b','+'};
+    if(strcmp(ZipParams->pathToLine,ZipParams->newPath)!=0)
+    {
+        //创建一个新的文件夹存放新的模板
+        temPath = ZipParams->newPath;
 
-    char finalPath[100];
-    strcpy(finalPath, settings("Filename_Label").c_str());
-    strcat(finalPath, "/");
-    strcat(finalPath, const_cast<char *>(temPath.c_str()));
-    mkdir(finalPath, 0777);
+        char finalPath[100];
+        strcpy(finalPath, settings("Filename_Label").c_str());
+        strcat(finalPath, "/");
+        strcat(finalPath, const_cast<char *>(temPath.c_str()));
+        mkdir(finalPath, 0777);
 
-    temPath.append("/").append(ZipParams->pathToLine).append(appendNum).append(".ziptem");
-    char mode[3] = {'w', 'b'};
+        temPath.append("/").append(ZipParams->newPath).append(".ziptem");
+        mode[0] = 'w';
+    }
+
     err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
@@ -2026,7 +2021,7 @@ int DB_AddNodeToZipSchema_mkdir(struct DB_ZipNodeParams *ZipParams)
  *         others: StatusCode
  * @note   更新节点参数必须齐全，pathToLine valueNmae hasTime valueType isArray arrayLen standardValue maxValue minValue
  */
-int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams)
+int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams)
 {
     int err;
     vector<string> files;
@@ -2327,7 +2322,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
 }
 
 //会创建一个新的.ziptem文件，根据当前已存在的压缩模板数量进行编号
-int DB_UpdateNodeToZipSchema_new(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams)
+int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams)
 {
     int err;
     vector<string> files;
@@ -2635,7 +2630,7 @@ int DB_UpdateNodeToZipSchema_new(struct DB_ZipNodeParams *ZipParams, struct DB_Z
 }
 
 //会创建一个新的文件夹来存放修改后的压缩模板
-int DB_UpdateNodeToZipSchema_mkdir(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams)
+int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams)
 {
     int err;
     vector<string> files;
@@ -2921,14 +2916,18 @@ int DB_UpdateNodeToZipSchema_mkdir(struct DB_ZipNodeParams *ZipParams, struct DB
 
     //创建一个新的.ziptem文件，根据当前已存在的压缩模板数量进行编号
     long fp;
-    temPath = newZipParams->pathToLine;
-    char finalPath[100];
-    strcpy(finalPath, settings("Filename_Label").c_str());
-    strcat(finalPath, "/");
-    strcat(finalPath, const_cast<char *>(temPath.c_str()));
-    mkdir(finalPath, 0777);
+    if (strcmp(ZipParams->pathToLine, newZipParams->pathToLine) != 0)
+    {
+        temPath = newZipParams->pathToLine;
+        char finalPath[100];
+        strcpy(finalPath, settings("Filename_Label").c_str());
+        strcat(finalPath, "/");
+        strcat(finalPath, const_cast<char *>(temPath.c_str()));
+        mkdir(finalPath, 0777);
 
-    temPath.append("/").append(newZipParams->pathToLine).append(".ziptem");
+        temPath.append("/").append(newZipParams->pathToLine).append(".ziptem");
+    }
+
     char mode[3] = {'w', 'b', '+'};
     err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
@@ -2950,7 +2949,7 @@ int DB_UpdateNodeToZipSchema_mkdir(struct DB_ZipNodeParams *ZipParams, struct DB
  * @return 0:success,　
  *         others: StatusCode
  */
-int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
+int DB_DeleteNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
     vector<string> files;
@@ -3014,7 +3013,7 @@ int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 }
 
 //新创建一个.ziptem文件，根据已存在压缩模板的数量进行编号
-int DB_DeleteNodeToZipSchema_new(struct DB_ZipNodeParams *ZipParams)
+int DB_DeleteNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
     vector<string> files;
@@ -3085,7 +3084,7 @@ int DB_DeleteNodeToZipSchema_new(struct DB_ZipNodeParams *ZipParams)
 }
 
 //新创建一个文件夹存放修改后的压缩模板
-int DB_DeleteNodeToZipSchema_mkdir(struct DB_ZipNodeParams *ZipParams)
+int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
     vector<string> files;
@@ -3133,21 +3132,19 @@ int DB_DeleteNodeToZipSchema_mkdir(struct DB_ZipNodeParams *ZipParams)
 
     //创建新的文件夹存放修改后的压缩模板
     long fp;
-    vector<string> dirs;
-    readAllDirs(dirs, settings("Filename_Label").c_str());
-    int dirNum = dirs.size() + 1;
-    char appendNum[4];
-    sprintf(appendNum, "%d", dirNum);
-    temPath = ZipParams->pathToLine;
-    temPath.append(appendNum);
+    if(strcmp(ZipParams->pathToLine,ZipParams->newPath)!=0)
+    {
+        //创建一个新的文件夹存放新的模板
+        temPath = ZipParams->newPath;
 
-    char finalPath[100];
-    strcpy(finalPath, settings("Filename_Label").c_str());
-    strcat(finalPath, "/");
-    strcat(finalPath, const_cast<char *>(temPath.c_str()));
-    mkdir(finalPath, 0777);
+        char finalPath[100];
+        strcpy(finalPath, settings("Filename_Label").c_str());
+        strcat(finalPath, "/");
+        strcat(finalPath, const_cast<char *>(temPath.c_str()));
+        mkdir(finalPath, 0777);
 
-    temPath.append("/").append(ZipParams->pathToLine).append(appendNum).append(".ziptem");
+        temPath.append("/").append(ZipParams->newPath).append(".ziptem");
+    }
     char mode[3] = {'w', 'b', '+'};
     err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
@@ -3193,6 +3190,7 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 
 //     DB_TreeNodeParams params;
 //     params.pathToLine = "jinfei";
+//     params.newPath = "jinfeiNew";
 //     char code[10];
 //     code[0] = (char)0;
 //     code[1] = (char)1;
@@ -3211,32 +3209,32 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 //     params.arrayLen = 100;
 //     params.valueName = "S4ON";
 
-//     // DB_TreeNodeParams newTreeParams;
-//     // newTreeParams.pathToLine = "jinfeiTwo";
-//     // char newcode[10];
-//     // newcode[0] = (char)0;
-//     // newcode[1] = (char)1;
-//     // newcode[2] = (char)0;
-//     // newcode[3] = (char)4;
-//     // newcode[4] = 'R';
-//     // newcode[5] = (char)1;
-//     // newcode[6] = 0;
-//     // newcode[7] = (char)0;
-//     // newcode[8] = (char)0;
-//     // newcode[9] = (char)0;
-//     // newTreeParams.pathCode = newcode;
-//     // newTreeParams.valueType = 3;
-//     // newTreeParams.hasTime = 1;
-//     // newTreeParams.isArrary = 1;
-//     // newTreeParams.arrayLen = 100;
-//     // newTreeParams.valueName = "S4ON";
-//     //DB_UpdateNodeToSchema(&params,&newTreeParams);
-//     //DB_UpdateNodeToSchema_new(&params,&newTreeParams);
-//     //DB_UpdateNodeToSchema_mkdir(&params,&newTreeParams);
-//     //DB_AddNodeToSchema(&params);
-//     //DB_AddNodeToSchema_new(&params);
-//     DB_AddNodeToSchema_mkdir(&params);
-//     //DB_DeleteNodeToSchema(&params);
+//     DB_TreeNodeParams newTreeParams;
+//     newTreeParams.pathToLine = "jinfeiTwo";
+//     char newcode[10];
+//     newcode[0] = (char)0;
+//     newcode[1] = (char)1;
+//     newcode[2] = (char)0;
+//     newcode[3] = (char)4;
+//     newcode[4] = 'R';
+//     newcode[5] = (char)1;
+//     newcode[6] = 0;
+//     newcode[7] = (char)0;
+//     newcode[8] = (char)0;
+//     newcode[9] = (char)0;
+//     newTreeParams.pathCode = newcode;
+//     newTreeParams.valueType = 3;
+//     newTreeParams.hasTime = 1;
+//     newTreeParams.isArrary = 1;
+//     newTreeParams.arrayLen = 100;
+//     newTreeParams.valueName = "S4ON";
+//     // DB_UpdateNodeToSchema_old(&params,&newTreeParams);
+//     // DB_UpdateNodeToSchema_MultiTem(&params,&newTreeParams);
+//     // DB_UpdateNodeToSchema(&params,&newTreeParams);
+//     // DB_AddNodeToSchema(&params);
+//     // DB_AddNodeToSchema_new(&params);
+//     DB_AddNodeToSchema(&params);
+//     // DB_DeleteNodeToSchema(&params);
 
 //     // DB_ZipNodeParams params;
 //     // params.pathToLine = "/jinfei";
@@ -3250,17 +3248,17 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 //     // params.minValue = "190";
 //     // DB_AddNodeToZipSchema(&params);
 //     // DB_DeleteNodeToZipSchema(&params);
-//     DB_ZipNodeParams newparams;
-//     newparams.pathToLine = "/jinfeiTwo";
-//     newparams.valueType = 3;
-//     newparams.hasTime = 0;
-//     newparams.isArrary = 0;
-//     newparams.arrayLen = 100;
-//     newparams.valueName = "S4ON";
-//     newparams.standardValue = "12000";
-//     newparams.maxValue = "13000";
-//     newparams.minValue = "11000";
-//     //DB_UpdateNodeToZipSchema(&params,&newparams);
-//     //DB_UpdateNodeToZipSchema_mkdir(&params,&newparams);
+//     // DB_ZipNodeParams newparams;
+//     // newparams.pathToLine = "/jinfeiTwo";
+//     // newparams.valueType = 3;
+//     // newparams.hasTime = 0;
+//     // newparams.isArrary = 0;
+//     // newparams.arrayLen = 100;
+//     // newparams.valueName = "S4ON";
+//     // newparams.standardValue = "12000";
+//     // newparams.maxValue = "13000";
+//     // newparams.minValue = "11000";
+//     // DB_UpdateNodeToZipSchema_old(&params,&newparams);
+//     // DB_UpdateNodeToZipSchema(&params,&newparams);
 //     return 0;
 // }

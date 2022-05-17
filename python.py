@@ -1,6 +1,6 @@
 from ctypes.wintypes import FLOAT, LONG
 import numpy as np
-import pandas
+from pandas import MultiIndex
 # import matplotlib
 # import matplotlib.pyplot as plt
 from sklearn.neighbors import LocalOutlierFactor
