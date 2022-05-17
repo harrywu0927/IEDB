@@ -339,6 +339,8 @@ public:
     long FindSortPosFromSelectedData(vector<long> &bytesList, string name, vector<PathCode> &pathCodes, vector<DataType> &typeList);
 
     long GetTotalBytes();
+
+    int GetDataTypeByCode(char *pathCode, DataType &type);
     vector<DataType> GetAllTypes(char *pathCode);
 };
 

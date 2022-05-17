@@ -63,4 +63,5 @@ src/Schema
 Schema
 test.cpp
 CMakeLists.txt
-/__pycache__
+/__pycache__/*
+src/__pycache__/*

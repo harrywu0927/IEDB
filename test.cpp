@@ -256,76 +256,54 @@ int main()
     cout<<zipparams.valueType<<endl;
     return 0;
     // Py_Initialize();
+    // PyFloat_FromDouble(1.23);
+    // PyObject *arr = PyList_New(100);
+    // PyObject *lstitem;
+    // for (int i = 0; i < 100; i++)
+    // {
+    //     lstitem = PyLong_FromLong(i % 20 == 0 ? rand() % 100 : rand() % 10);
+    //     PyList_SetItem(arr, i, lstitem);
+    //     // PyList_Append(test, lstitem);
+    // }
+
+    // PyObject *obj;
+    // // 指定py文件目录
     // PyRun_SimpleString("import sys");
     // PyRun_SimpleString("sys.path.append('./')");
-    // PyObject *get_envs_module = PyImport_ImportModule("python");
-    // PyObject *get_envs_func = PyObject_GetAttrString(get_envs_module, "LOF");
-    // PyObject *func_ret_val = PyObject_CallFunction(get_envs_func, NULL);
-    // int list_len = PyObject_Size(func_ret_val); //列表长度40
-    // PyObject *list_item = NULL;                 // python类型的列表元素
-    // long str_item;                              // c类型的列表元素
-    // for (int i = 0; i < list_len; i++)
+
+    // // PyObject *pname = Py_BuildValue("s", "testpy");
+    // PyObject *mymodule = PyImport_ImportModule("Statistics");
+    // // PyObject *numpy = PyImport_ImportModule("numpy");
+    // // PyObject *std = PyObject_GetAttrString(numpy, "fft");
+    // PyObject *pValue, *pArgs, *pFunc;
+    // long res = 0;
+    // if (mymodule != NULL)
     // {
-    //     list_item = PyList_GetItem(func_ret_val, i); //根据下标取出python列表中的元素
-    //     str_item = PyLong_AsLong(list_item);         //转换为c类型的数据
-    //     cout << str_item << " ";
+    //     // 从模块中获取函数
+    //     pFunc = PyObject_GetAttrString(mymodule, "printValue");
+
+    //     if (pFunc && PyCallable_Check(pFunc))
+    //     {
+    //         // 创建参数元组
+    //         pArgs = PyTuple_New(1);
+    //         PyTuple_SetItem(pArgs, 0, arr);
+    //         // 函数执行
+    //         PyObject *ret = PyObject_CallObject(pFunc, pArgs);
+    //         PyObject *item;
+    //         long val;
+    //         int len = PyObject_Size(ret);
+    //         for (int i = 0; i < len; i++)
+    //         {
+    //             item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
+    //             val = PyLong_AsLong(item);     //转换为c类型的数据
+    //             cout << val << " ";
+    //         }
+    //         // res = PyLong_AsLong(PyList_GetItem(pValue, 1));
+    //         // cout << pValue->ob_type->tp_name << endl;
+    //     }
     // }
     // Py_Finalize();
     // return 0;
-    Py_Initialize();
-    PyObject *arr = PyList_New(100);
-    PyObject *lstitem;
-    for (int i = 0; i < 100; i++)
-    {
-        lstitem = PyLong_FromLong(i % 20 == 0 ? rand() % 100 : rand() % 10);
-        PyList_SetItem(arr, i, lstitem);
-    }
-
-    PyObject *obj;
-    // 指定py文件目录
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString("sys.path.append('./')");
-
-    // PyObject *pname = Py_BuildValue("s", "testpy");
-    PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
-    // PyObject *numpy = PyImport_ImportModule("numpy");
-    // PyObject *std = PyObject_GetAttrString(numpy, "fft");
-    PyObject *pValue, *pArgs, *pFunc;
-    long res = 0;
-    if (mymodule != NULL)
-    {
-        // 从模块中获取函数
-        pFunc = PyObject_GetAttrString(mymodule, "Outliers");
-
-        if (pFunc && PyCallable_Check(pFunc))
-        {
-            // 创建参数元组
-            pArgs = PyTuple_New(2);
-            PyTuple_SetItem(pArgs, 0, arr);
-            PyTuple_SetItem(pArgs, 1, PyLong_FromLong(1));
-            // for (int i = 0; i < 2; ++i)
-            // {
-            //     // 设置参数值
-            //     pValue = PyLong_FromLong(i + 10);
-            //     PyTuple_SetItem(pArgs, i, pValue);
-            // }
-            // 函数执行
-            PyObject *ret = PyObject_CallObject(pFunc, pArgs);
-            PyObject *item;
-            long val;
-            int len = PyObject_Size(ret);
-            for (int i = 0; i < len; i++)
-            {
-                item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
-                val = PyLong_AsLong(item);     //转换为c类型的数据
-                cout << val << " ";
-            }
-            // res = PyLong_AsLong(PyList_GetItem(pValue, 1));
-            // cout << pValue->ob_type->tp_name << endl;
-        }
-    }
-    Py_Finalize();
-    return 0;
     // fd_set set;
     // thread th1(checkSettings);
     // th1.detach();
@@ -415,8 +393,8 @@ int main()
     params.compareType = CMP_NONE;
     params.compareValue = "666";
     params.queryType = FILEID;
-    params.byPath = 0;
-    params.queryNums = 10000;
+    params.byPath = 1;
+    params.queryNums = 10;
     DB_DataBuffer buffer;
     buffer.savePath = "JinfeiTTE";
     // char x[3] = {'1', '2', '3'};
@@ -426,7 +404,23 @@ int main()
     // sleep(100);
     // return 0;
     auto startTime = std::chrono::system_clock::now();
-    DB_AVG(&buffer, &params);
+    DB_QueryByFileID(&buffer, &params);
+    DB_MAX(&buffer);
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
+
+        free(buffer.buffer);
+    }
+    // DB_MAX(&buffer);
     auto endTime = std::chrono::system_clock::now();
     std::cout << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
     if (buffer.bufferMalloced)
@@ -441,7 +435,7 @@ int main()
         //         cout << endl;
         // }
 
-        free(buffer.buffer);
+        // free(buffer.buffer);
     }
     // DB_QueryByFileID(&buffer, &params);
     return 0;
