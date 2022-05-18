@@ -27,15 +27,6 @@
 #include <sys/sysctl.h>
 #include <sys/types.h>
 using namespace std;
-// void *tick(void *ptr)
-// {
-//     int n = 5;
-//     while (n--)
-//     {
-//         cout << "Hello World!" << endl;
-//         sleep(1);
-//     }
-// }
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 mutex imute, countmute;
 void tk(int n)
@@ -242,131 +233,68 @@ int get_procmeminfo(MEM_OCCUPY *lpMemory)
 
 int main()
 {
-    DB_LoadZipSchema("jinfei");
-    DB_ZipNodeParams zipparams;
-    zipparams.pathToLine = "/jinfei";
-    zipparams.valueType = DataType::JudgeByValueType(CurrentZipTemplate.schemas[2].second.valueType);
-    zipparams.hasTime = 1;
-    zipparams.isArrary = 1;
-    zipparams.arrayLen = 100;
-    zipparams.valueName = "S4ON";
-    zipparams.standardValue = "210";
-    zipparams.maxValue = "230";
-    zipparams.minValue = "190";
-    cout<<zipparams.valueType<<endl;
+    // DB_LoadZipSchema("jinfei");
+    // DB_ZipNodeParams zipparams;
+    // zipparams.pathToLine = "/jinfei";
+    // zipparams.valueType = DataType::JudgeByValueType(CurrentZipTemplate.schemas[2].second.valueType);
+    // zipparams.hasTime = 1;
+    // zipparams.isArrary = 1;
+    // zipparams.arrayLen = 100;
+    // zipparams.valueName = "S4ON";
+    // zipparams.standardValue = "210";
+    // zipparams.maxValue = "230";
+    // zipparams.minValue = "190";
+    // cout<<zipparams.valueType<<endl;
+    // return 0;
+    Py_Initialize();
+    PyObject *arr = PyList_New(100);
+    PyObject *lstitem;
+    for (int i = 0; i < 100; i++)
+    {
+        lstitem = PyLong_FromLong(i % 20 == 0 ? rand() % 100 : rand() % 10);
+        PyList_SetItem(arr, i, lstitem);
+        // PyList_Append(test, lstitem);
+    }
+
+    PyObject *obj;
+    // 指定py文件目录
+    PyRun_SimpleString("import sys");
+    PyRun_SimpleString("sys.path.append('./')");
+
+    // PyObject *pname = Py_BuildValue("s", "testpy");
+    PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
+    // PyObject *numpy = PyImport_ImportModule("numpy");
+    // PyObject *std = PyObject_GetAttrString(numpy, "fft");
+    PyObject *pValue, *pArgs, *pFunc;
+    long res = 0;
+    if (mymodule != NULL)
+    {
+        // 从模块中获取函数
+        pFunc = PyObject_GetAttrString(mymodule, "Outliers");
+
+        if (pFunc && PyCallable_Check(pFunc))
+        {
+            // 创建参数元组
+            pArgs = PyTuple_New(2);
+            PyTuple_SetItem(pArgs, 0, arr);
+            PyTuple_SetItem(pArgs, 1, PyLong_FromLong(1));
+            // 函数执行
+            PyObject *ret = PyObject_CallObject(pFunc, pArgs);
+            PyObject *item;
+            long val;
+            int len = PyObject_Size(ret);
+            for (int i = 0; i < len; i++)
+            {
+                item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
+                val = PyLong_AsLong(item);     //转换为c类型的数据
+                cout << val << " ";
+            }
+            // res = PyLong_AsLong(PyList_GetItem(pValue, 1));
+            // cout << pValue->ob_type->tp_name << endl;
+        }
+    }
+    Py_Finalize();
     return 0;
-    // Py_Initialize();
-    // PyFloat_FromDouble(1.23);
-    // PyObject *arr = PyList_New(100);
-    // PyObject *lstitem;
-    // for (int i = 0; i < 100; i++)
-    // {
-    //     lstitem = PyLong_FromLong(i % 20 == 0 ? rand() % 100 : rand() % 10);
-    //     PyList_SetItem(arr, i, lstitem);
-    //     // PyList_Append(test, lstitem);
-    // }
-
-    // PyObject *obj;
-    // // 指定py文件目录
-    // PyRun_SimpleString("import sys");
-    // PyRun_SimpleString("sys.path.append('./')");
-
-    // // PyObject *pname = Py_BuildValue("s", "testpy");
-    // PyObject *mymodule = PyImport_ImportModule("Statistics");
-    // // PyObject *numpy = PyImport_ImportModule("numpy");
-    // // PyObject *std = PyObject_GetAttrString(numpy, "fft");
-    // PyObject *pValue, *pArgs, *pFunc;
-    // long res = 0;
-    // if (mymodule != NULL)
-    // {
-    //     // 从模块中获取函数
-    //     pFunc = PyObject_GetAttrString(mymodule, "printValue");
-
-    //     if (pFunc && PyCallable_Check(pFunc))
-    //     {
-    //         // 创建参数元组
-    //         pArgs = PyTuple_New(1);
-    //         PyTuple_SetItem(pArgs, 0, arr);
-    //         // 函数执行
-    //         PyObject *ret = PyObject_CallObject(pFunc, pArgs);
-    //         PyObject *item;
-    //         long val;
-    //         int len = PyObject_Size(ret);
-    //         for (int i = 0; i < len; i++)
-    //         {
-    //             item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
-    //             val = PyLong_AsLong(item);     //转换为c类型的数据
-    //             cout << val << " ";
-    //         }
-    //         // res = PyLong_AsLong(PyList_GetItem(pValue, 1));
-    //         // cout << pValue->ob_type->tp_name << endl;
-    //     }
-    // }
-    // Py_Finalize();
-    // return 0;
-    // fd_set set;
-    // thread th1(checkSettings);
-    // th1.detach();
-
-    // std::thread t1(tk,5);
-    // t1.join();
-    // pthread_t pid;
-    // int ret = pthread_create(&pid, NULL, tick, NULL);
-    // if (ret != 0)
-    // {
-    //     cout << "pthread_create error: error_code=" << ret << endl;
-    // }
-    // pthread_exit(NULL);
-
-    // float fl = 1.2345;
-    // char val[4] = {0};
-    // memcpy(val, &fl, 4);
-    // return 0;
-
-    // int maxThreads = thread::hardware_concurrency();
-    // int i = 0;
-    // future_status status[maxThreads - 1];
-    // future<int> f[maxThreads - 1];
-    // for (int j = 0; j < maxThreads - 1; j++)
-    // {
-    //     status[j] = future_status::ready;
-    //     //     f[j] = async(std::launch::async, tick, &i);
-    //     //     status[j] = f[j].wait_for(chrono::milliseconds(0));
-    // }
-    // int count2 = 0;
-    // do
-    // {
-    //     for (int j = 0; j < maxThreads - 1; j++)
-    //     {
-    //         // f[j].wait();
-    //         if (status[j] == future_status::ready)
-    //         {
-    //             // try
-    //             // {
-    //             //     count2 += f[j].get();
-    //             // }
-    //             // catch (const std::exception &e)
-    //             // {
-    //             //     std::cerr << e.what() << '\n';
-    //             // }
-
-    //             f[j] = async(std::launch::async, tick, &i, &count2);
-    //             status[j] = f[j].wait_for(chrono::milliseconds(0));
-    //             // cout << "thread" << j << endl;
-    //         }
-    //         else
-    //         {
-    //             status[j] = f[j].wait_for(chrono::milliseconds(0));
-    //         }
-    //     }
-    // } while (i < 100);
-    // // for (int j = 0; j < maxThreads; j++)
-    // // {
-    // //     f[j].wait();
-    // //     count2 += f[j].get();
-    // // }
-    // cout << "count" << count2 << endl;
-    // return 0;
 
     DB_QueryParams params;
     params.pathToLine = "JinfeiSeven";

@@ -61,6 +61,7 @@ int DB_OutlierDetection(DB_DataBuffer *buffer, DB_QueryParams *params)
         }
     }
     Py_Finalize();
+    return 0;
 }
 // int main()
 // {

@@ -76,6 +76,7 @@ namespace StatusCode
         HASTIME_ERROR = 162,             // hasTime只能为0或者1
         ARRAYLEN_ERROR = 163,            // arrayLen不能小于１
         DIR_INCLUDE_NUMBER = 164,        //文件夹名包含数字
+        AMBIGUOUS_QUERY_PARAMS = 165,    //查询条件有歧义
     };
 }
 namespace ValueType
@@ -640,6 +641,8 @@ public:
     pair<char *, long> GetPackByID(string pathToLine, string fileID);
 
     vector<pair<char *, long>> GetPackByIDs(string pathToLine, string fileID, int num);
+
+    vector<pair<char *, long>> GetPackByIDs(string pathToLine, string fileIDStart, string fileIDEnd);
 
     void ModifyCacheCapacity(int memcap)
     {

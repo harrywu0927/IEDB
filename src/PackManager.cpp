@@ -94,7 +94,7 @@ vector<pair<char *, long>> PackManager::GetPackByIDs(string pathToLine, string f
         pathToLine.erase(0);
     while (pathToLine.back() == '/')
         pathToLine.pop_back();
-    string startNum = "", endNum = "";
+    string startNum = "";
     for (int i = 0; i < fileID.length(); i++)
     {
         if (isdigit(fileID[i]))
@@ -104,6 +104,50 @@ vector<pair<char *, long>> PackManager::GetPackByIDs(string pathToLine, string f
     }
     int start = atoi(startNum.c_str());
     int end = start + num;
+    vector<pair<char *, long>> res;
+    for (auto &pack : allPacks[pathToLine])
+    {
+        if ((start >= std::get<0>(fileIDManager.fidIndex[pack.first]) && start <= std::get<1>(fileIDManager.fidIndex[pack.first])) || (end >= std::get<0>(fileIDManager.fidIndex[pack.first]) && end <= std::get<1>(fileIDManager.fidIndex[pack.first])) || (start <= std::get<0>(fileIDManager.fidIndex[pack.first]) && end >= std::get<1>(fileIDManager.fidIndex[pack.first])))
+        {
+            res.push_back(GetPack(pack.first));
+        }
+    }
+    if (res.size() == 0)
+        res.push_back({NULL, 0});
+    return res;
+}
+
+/**
+ * @brief 根据文件ID范围获取包
+ *
+ * @param pathToLine
+ * @param fileIDStart
+ * @param fileIDEnd
+ * @return pair<char *, long>
+ */
+vector<pair<char *, long>> PackManager::GetPackByIDs(string pathToLine, string fileIDStart, string fileIDEnd)
+{
+    while (pathToLine[0] == '/')
+        pathToLine.erase(0);
+    while (pathToLine.back() == '/')
+        pathToLine.pop_back();
+    string startNum = "", endNum = "";
+    for (int i = 0; i < fileIDStart.length(); i++)
+    {
+        if (isdigit(fileIDStart[i]))
+        {
+            startNum += fileIDStart[i];
+        }
+    }
+    for (int i = 0; i < fileIDEnd.length(); i++)
+    {
+        if (isdigit(fileIDEnd[i]))
+        {
+            endNum += fileIDEnd[i];
+        }
+    }
+    int start = atoi(startNum.c_str());
+    int end = atoi(endNum.c_str());
     vector<pair<char *, long>> res;
     for (auto &pack : allPacks[pathToLine])
     {

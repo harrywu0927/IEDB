@@ -746,6 +746,11 @@ int CheckQueryParams(DB_QueryParams *params)
         {
             return StatusCode::NO_FILEID;
         }
+        if (params->fileID != NULL && params->fileIDend != NULL)
+        {
+            if (params->queryNums != 0 && params->queryNums != 1)
+                return StatusCode::AMBIGUOUS_QUERY_PARAMS;
+        }
         break;
     }
     default:
@@ -1854,16 +1859,16 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
                 readbuff_pos += 2;
                 //暂定图片之前有2字节的长度，2字节的宽度和2字节的通道
                 char length[2] = {0};
-                memcpy(length, buff + readbuff_pos+1, 2);
+                memcpy(length, buff + readbuff_pos + 1, 2);
                 uint16_t imageLength = converter.ToUInt16(length);
                 char width[2] = {0};
-                memcpy(width, buff + readbuff_pos+3, 2);
+                memcpy(width, buff + readbuff_pos + 3, 2);
                 uint16_t imageWidth = converter.ToUInt16(width);
                 char channel[2] = {0};
-                memcpy(channel, buff + readbuff_pos+5, 2);
+                memcpy(channel, buff + readbuff_pos + 5, 2);
                 uint16_t imageChannel = converter.ToUInt16(channel);
                 uint32_t imageSize = imageChannel * imageLength * imageWidth;
-                readbuff_pos+=1;
+                readbuff_pos += 1;
 
                 if (buff[readbuff_pos - 1] == (char)2) //既有数据又有数据
                 {
