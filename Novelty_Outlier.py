@@ -1,6 +1,5 @@
 # Novelty and Outlier Detection
 
-#from ctypes.wintypes import FLOAT, LONG
 import numpy as np
 from sklearn.neighbors import LocalOutlierFactor
 
@@ -23,7 +22,7 @@ def Outliers(lst, dimension):
 
 
 def Novelty(lst, dimension):
-    points = np.array(lst, dtype=LONG)
+    points = np.array(lst)
     if len(lst) % dimension == 0:
         rows = len(lst)/dimension
         points = points.reshape(int(rows), dimension)

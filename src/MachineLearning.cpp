@@ -8,7 +8,8 @@ int DB_OutlierDetection(DB_DataBuffer *buffer, DB_QueryParams *params)
     int err = DB_ExecuteQuery(buffer, params);
     if (err != 0)
         return err;
-    Py_Initialize();
+    if (!Py_IsInitialized())
+        Py_Initialize();
     PyObject *arr = PyList_New(100);
     PyObject *lstitem;
     for (int i = 0; i < 100; i++)
@@ -60,7 +61,6 @@ int DB_OutlierDetection(DB_DataBuffer *buffer, DB_QueryParams *params)
             // cout << pValue->ob_type->tp_name << endl;
         }
     }
-    Py_Finalize();
     return 0;
 }
 // int main()

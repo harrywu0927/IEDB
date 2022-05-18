@@ -167,9 +167,10 @@ void writeStatHead(int typeNum, char *newBuffer, char *buffer)
  */
 int DB_MAX(DB_DataBuffer *buffer)
 {
+    if (!Py_IsInitialized())
+        Py_Initialize();
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
-    Py_Initialize();
     PyObject *arr = ConvertToPyList(buffer);
     if (PyObject_Size(arr) == 0)
     {
@@ -209,7 +210,6 @@ int DB_MAX(DB_DataBuffer *buffer)
             }
         }
     }
-    Py_Finalize();
     free(buffer->buffer);
     buffer->buffer = newBuffer;
     buffer->length = typeNum * 19 + 1;
@@ -227,7 +227,8 @@ int DB_MIN(DB_DataBuffer *buffer)
 {
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
-    Py_Initialize();
+    if (!Py_IsInitialized())
+        Py_Initialize();
     PyObject *arr = ConvertToPyList(buffer);
     if (PyObject_Size(arr) == 0)
     {
@@ -267,7 +268,6 @@ int DB_MIN(DB_DataBuffer *buffer)
             }
         }
     }
-    Py_Finalize();
     free(buffer->buffer);
     buffer->buffer = newBuffer;
     buffer->length = typeNum * 19 + 1;
@@ -285,7 +285,8 @@ int DB_STD(DB_DataBuffer *buffer)
 {
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
-    Py_Initialize();
+    if (!Py_IsInitialized())
+        Py_Initialize();
     PyObject *arr = ConvertToPyList(buffer);
     if (PyObject_Size(arr) == 0)
     {
@@ -325,7 +326,6 @@ int DB_STD(DB_DataBuffer *buffer)
             }
         }
     }
-    Py_Finalize();
     free(buffer->buffer);
     buffer->buffer = newBuffer;
     buffer->length = typeNum * 19 + 1;
@@ -343,7 +343,8 @@ int DB_STDEV(DB_DataBuffer *buffer)
 {
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
-    Py_Initialize();
+    if (!Py_IsInitialized())
+        Py_Initialize();
     PyObject *arr = ConvertToPyList(buffer);
     if (PyObject_Size(arr) == 0)
     {
@@ -383,7 +384,6 @@ int DB_STDEV(DB_DataBuffer *buffer)
             }
         }
     }
-    Py_Finalize();
     free(buffer->buffer);
     buffer->buffer = newBuffer;
     buffer->length = typeNum * 19 + 1;
@@ -401,7 +401,8 @@ int DB_AVG(DB_DataBuffer *buffer)
 {
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
-    Py_Initialize();
+    if (!Py_IsInitialized())
+        Py_Initialize();
     PyObject *arr = ConvertToPyList(buffer);
     if (PyObject_Size(arr) == 0)
     {
@@ -441,7 +442,6 @@ int DB_AVG(DB_DataBuffer *buffer)
             }
         }
     }
-    Py_Finalize();
     free(buffer->buffer);
     buffer->buffer = newBuffer;
     buffer->length = typeNum * 19 + 1;
@@ -457,9 +457,10 @@ int DB_AVG(DB_DataBuffer *buffer)
  */
 int DB_MEDIAN(DB_DataBuffer *buffer)
 {
+    if (!Py_IsInitialized())
+        Py_Initialize();
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
-    Py_Initialize();
     PyObject *arr = ConvertToPyList(buffer);
     if (PyObject_Size(arr) == 0)
     {
@@ -499,7 +500,6 @@ int DB_MEDIAN(DB_DataBuffer *buffer)
             }
         }
     }
-    Py_Finalize();
     free(buffer->buffer);
     buffer->buffer = newBuffer;
     buffer->length = typeNum * 19 + 1;
@@ -515,9 +515,10 @@ int DB_MEDIAN(DB_DataBuffer *buffer)
  */
 int DB_PROD(DB_DataBuffer *buffer)
 {
+    if (!Py_IsInitialized())
+        Py_Initialize();
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
-    Py_Initialize();
     PyObject *arr = ConvertToPyList(buffer);
     if (PyObject_Size(arr) == 0)
     {
@@ -557,7 +558,6 @@ int DB_PROD(DB_DataBuffer *buffer)
             }
         }
     }
-    Py_Finalize();
     free(buffer->buffer);
     buffer->buffer = newBuffer;
     buffer->length = typeNum * 19 + 1;
@@ -574,7 +574,8 @@ int DB_SUM(DB_DataBuffer *buffer)
 {
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
-    Py_Initialize();
+    if (!Py_IsInitialized())
+        Py_Initialize();
     PyObject *arr = ConvertToPyList(buffer);
     if (PyObject_Size(arr) == 0)
     {
@@ -614,43 +615,49 @@ int DB_SUM(DB_DataBuffer *buffer)
             }
         }
     }
-    Py_Finalize();
     free(buffer->buffer);
     buffer->buffer = newBuffer;
     buffer->length = typeNum * 19 + 1;
     return 0;
 }
-// int main()
-// {
-//     DB_QueryParams params;
-//     params.pathToLine = "JinfeiSeven";
-//     params.fileID = "JinfeiSeven1135073";
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)1;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     params.pathCode = code;
-//     params.valueName = "S1ON";
-//     // params.valueName = NULL;
-//     params.start = 0;
-//     params.end = 1650099030250;
-//     // params.start = 1650093562902;
-//     // params.end = 1650163562902;
-//     params.order = ODR_NONE;
-//     params.compareType = CMP_NONE;
-//     params.compareValue = "666";
-//     params.queryType = FILEID;
-//     params.byPath = 1;
-//     params.queryNums = 10;
-//     DB_DataBuffer buffer;
-//     DB_QueryByFileID(&buffer, &params);
-//     DB_MAX(&buffer);
-//     return 0;
-// }
+int main()
+{
+    // Py_Initialize();
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiSeven";
+    params.fileID = "JinfeiSeven1135073";
+    params.fileIDend = NULL;
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)1;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueName = "S1ON";
+    // params.valueName = NULL;
+    params.start = 0;
+    params.end = 1650099030250;
+    // params.start = 1650093562902;
+    // params.end = 1650163562902;
+    params.order = ODR_NONE;
+    params.compareType = CMP_NONE;
+    params.compareValue = "666";
+    params.queryType = FILEID;
+    params.byPath = 1;
+    params.queryNums = 10;
+    DB_DataBuffer buffer;
+    DB_QueryByFileID(&buffer, &params);
+    DB_MAX(&buffer);
+    if (buffer.bufferMalloced)
+        free(buffer.buffer);
+    DB_QueryByFileID(&buffer, &params);
+    DB_MAX(&buffer);
+    Py_Finalize();
+    return 0;
+}
