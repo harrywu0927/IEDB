@@ -3,8 +3,8 @@ using namespace std;
 
 int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos);
 int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_pos);
-int DB_ZipFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,uint16_t num, const char *pathToLine);
-int DB_ReZipFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,uint16_t num, const char *pathToLine);
+int DB_ZipFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine);
+int DB_ReZipFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine);
 int DB_ZipFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine);
 int DB_ReZipFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine);
 
@@ -1724,7 +1724,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
 }
 
 /**
- * @brief 压缩已有的.idb文件,所有数据类型都支持
+ * @brief 按文件夹压缩已有的.idb文件,所有数据类型都支持，单线程
  *
  * @param ZipTemPath 压缩模板路径
  * @param pathToLine .idb文件路径
@@ -1807,7 +1807,17 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
     return err;
 }
 
-int DB_ZipFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,uint16_t num, const char *pathToLine)
+/**
+ * @brief 按文件夹压缩.idb文件，线程函数
+ *
+ * @param filesWithTime 带时间戳的.idb文件
+ * @param begin 文件开始下标
+ * @param num 文件数量
+ * @param pathToLine .idb文件路径
+ * @return 0:success,
+ *          other:StatusCode
+ */
+int DB_ZipFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine)
 {
     int err = 0;
 
@@ -1841,7 +1851,7 @@ int DB_ZipFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,uin
             string finalpath = filesWithTime[fileNum].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
             //创建新文件并写入
             char mode[2] = {'w', 'b'};
-            //openMutex.lock();
+            // openMutex.lock();
             err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
             if (err == 0)
             {
@@ -1849,7 +1859,7 @@ int DB_ZipFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,uin
                     err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
                 err = DB_Close(fp);
             }
-            //openMutex.unlock();
+            // openMutex.unlock();
         }
         delete[] readbuff;
         delete[] writebuff;
@@ -1858,6 +1868,14 @@ int DB_ZipFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,uin
     return err;
 }
 
+/**
+ * @brief 按文件夹压缩已有的.idb文件,所有数据类型都支持，多线程，内核数>2时才有效
+ *
+ * @param ZipTemPath 压缩模板路径
+ * @param pathToLine .idb文件路径
+ * @return  0:success,
+ *          other:StatusCode
+ */
 int DB_ZipFile_MultiThread(const char *ZipTemPath, const char *pathToLine)
 {
     int err;
@@ -1917,7 +1935,7 @@ int DB_ZipFile_MultiThread(const char *ZipTemPath, const char *pathToLine)
 }
 
 /**
- * @brief 还原压缩后的.idb文件为原状态
+ * @brief 还原压缩后的.idb文件为原状态，所有类型都支持，单线程
  *
  * @param ZipTemPath 压缩模板路径
  * @param pathToLine .idbzip压缩文件路径
@@ -1989,10 +2007,20 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
     return err;
 }
 
-int DB_ReZipFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,uint16_t num, const char *pathToLine)
+/**
+ * @brief 按还原文件夹.idbzip文件，线程函数
+ *
+ * @param filesWithTime 带时间戳的.idbzip文件
+ * @param begin 文件开始下标
+ * @param num 文件数量
+ * @param pathToLine .idbzip文件路径
+ * @return 0:success,
+ *          other:StatusCode
+ */
+int DB_ReZipFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine)
 {
     int err = 0;
-   
+
     for (auto fileNum = begin; fileNum < num; fileNum++)
     {
         long len;
@@ -2017,7 +2045,7 @@ int DB_ReZipFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,u
         string finalpath = filesWithTime[fileNum].first.substr(0, filesWithTime[fileNum].first.length() - 3); //去掉后缀的zip
         //创建新文件并写入
         char mode[2] = {'w', 'b'};
-        //openMutex.lock();
+        // openMutex.lock();
         err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
         if (err == 0)
         {
@@ -2025,7 +2053,7 @@ int DB_ReZipFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,u
             err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
             err = DB_Close(fp);
         }
-        //openMutex.unlock();
+        // openMutex.unlock();
         delete[] readbuff;
         delete[] writebuff;
     }
@@ -2033,6 +2061,14 @@ int DB_ReZipFile_thread(vector<pair<string,long>> filesWithTime,uint16_t begin,u
     return err;
 }
 
+/**
+ * @brief 按文件夹还原已有的.idbzip文件,所有数据类型都支持，多线程，内核数>2时才有效
+ *
+ * @param ZipTemPath 压缩模板路径
+ * @param pathToLine .idbzip文件路径
+ * @return  0:success,
+ *          other:StatusCode
+ */
 int DB_ReZipFile_MultiThread(const char *ZipTemPath, const char *pathToLine)
 {
     int err;
@@ -2158,7 +2194,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
 }
 
 /**
- * @brief 根据时间段压缩.idb文件
+ * @brief 根据时间段压缩.idb文件，所有类型都支持，单线程
  *
  * @param params 压缩请求参数
  * @return 0:success,
@@ -2248,10 +2284,20 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
     return err;
 }
 
+/**
+ * @brief 根据时间段压缩.idb文件，所有类型都支持，线程函数
+ *
+ * @param selectedFiles 筛选出符合时间范围内的.idb文件
+ * @param begin 文件开始下标
+ * @param num 文件数量
+ * @param pathToLine .idb文件路径
+ * @return 0:success,
+ *          others: StatusCode
+ */
 int DB_ZipFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine)
 {
     int err = 0;
- 
+
     for (auto fileNum = begin; fileNum < num; fileNum++)
     {
         long len;
@@ -2283,7 +2329,7 @@ int DB_ZipFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16
             string finalpath = selectedFiles[fileNum].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
             //创建新文件并写入
             char mode[2] = {'w', 'b'};
-            //openMutex.lock();
+            // openMutex.lock();
             err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
             if (err == 0)
             {
@@ -2291,7 +2337,7 @@ int DB_ZipFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16
                     err = DB_Write(fp, writebuff, writebuff_pos);
                 DB_Close(fp);
             }
-            //openMutex.unlock();
+            // openMutex.unlock();
         }
         delete[] readbuff;
         delete[] writebuff;
@@ -2300,6 +2346,13 @@ int DB_ZipFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16
     return err;
 }
 
+/**
+ * @brief 根据时间段压缩.idb文件，所有类型都支持，多线程，内核数>2时才有效
+ *
+ * @param params 压缩请求参数
+ * @return 0:success,
+ *          others: StatusCode
+ */
 int DB_ZipFileByTimeSpan_MultiThread(struct DB_ZipParams *params)
 {
     params->ZipType = TIME_SPAN;
@@ -2377,7 +2430,7 @@ int DB_ZipFileByTimeSpan_MultiThread(struct DB_ZipParams *params)
 }
 
 /**
- * @brief 根据时间段还原.idbzip文件
+ * @brief 根据时间段还原.idbzip文件，单线程
  *
  * @param params 压缩请求参数
  * @return 0:success,
@@ -2452,13 +2505,22 @@ int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
         {
             err = DB_Write(fp, writebuff, writebuff_pos);
             err = DB_Close(fp);
-            
         }
     }
     IOBusy = false;
     return err;
 }
 
+/**
+ * @brief 根据时间段还原.idbzip文件，所有类型都支持，线程函数
+ *
+ * @param selectedFiles 筛选出符合时间范围内的.idbzip文件
+ * @param begin 文件开始下标
+ * @param num 文件数量
+ * @param pathToLine .idbzip文件路径
+ * @return 0:success,
+ *          others: StatusCode
+ */
 int DB_ReZipFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine)
 {
     int err = 0;
@@ -2500,6 +2562,13 @@ int DB_ReZipFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint
     return err;
 }
 
+/**
+ * @brief 根据时间段还原.idbzip文件，单线程
+ *
+ * @param params 压缩请求参数
+ * @return 0:success,
+ *          others: StatusCode
+ */
 int DB_ReZipFileByTimeSpan_MultiThread(struct DB_ZipParams *params)
 {
     params->ZipType = TIME_SPAN;

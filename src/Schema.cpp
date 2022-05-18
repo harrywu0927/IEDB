@@ -5,7 +5,7 @@ vector<ZipTemplate> ZipTemplates;
 ZipTemplate CurrentZipTemplate;
 
 /**
- * @brief 向标准模板添加新节点,暂定直接在尾部追加
+ * @brief 向标准模板添加新节点,直接在尾部追加，覆盖原文件
  *
  * @param TreeParams 标准模板参数
  * @return　0:success,
@@ -267,7 +267,15 @@ int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
     return err;
 }
 
-//会重新创建一个新的文件夹存放添加新节点后的模板
+/**
+ * @brief 向标准模板添加新节点,可以指定新文件夹存储修改后的模板
+ *
+ * @param TreeParams 标准模板参数
+ * @return　0:success,
+ *         others: StatusCode
+ * @note   新节点参数必须齐全，pathToLine pathcode valueNmae hasTime valueType isArray arrayLen newPath
+ *         新文件名称里不能包含数字
+ */
 int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 {
     int err;
@@ -418,7 +426,7 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 }
 
 /**
- * @brief 修改标准模板里的树节点,根据编码进行定位和修改
+ * @brief 修改标准模板里的树节点,根据编码进行定位和修改，覆盖原文件
  *
  * @param TreeParams 需要修改的节点
  * @param newTreeParams 需要修改的信息
@@ -736,7 +744,16 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
     return err;
 }
 
-//创建新文件夹存放修改后的.tem文件
+/**
+ * @brief 修改标准模板里的树节点,根据编码进行定位和修改，可以指定新的文件夹存储修改后的模板
+ *
+ * @param TreeParams 需要修改的节点
+ * @param newTreeParams 需要修改的信息
+ * @return　0:success,
+ *         others: StatusCode
+ * @note   更新节点参数必须齐全，pathToLine pathcode valueNmae hasTime valueType isArray arrayLen
+ *         新文件夹名称里不能包含数字
+ */
 int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams)
 {
     int err;
@@ -914,7 +931,7 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
 }
 
 /**
- * @brief 删除标准模板中已存在的节点,根据编码进行定位和删除
+ * @brief 删除标准模板中已存在的节点,根据编码进行定位和删除，覆盖原文件
  *
  * @param TreeParams 标准模板参数
  * @return　0:success,
@@ -1070,7 +1087,14 @@ int DB_DeleteNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
     return err;
 }
 
-//会创建一个新的文件夹存放删除模板节点后的模板
+/**
+ * @brief 删除标准模板中已存在的节点,根据编码进行定位和删除，可以指定新文件夹存储修改后的模板
+ *
+ * @param TreeParams 标准模板参数
+ * @return　0:success,
+ *         others: StatusCode
+ * @note 新文件夹名称里面不能包含数字
+ */
 int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 {
     int err;
@@ -1167,7 +1191,7 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 }
 
 /**
- * @brief 向压缩模板添加新节点，暂定直接在尾部追加
+ * @brief 向压缩模板添加新节点，暂定直接在尾部追加，覆盖原文件
  *
  * @param ZipParams 压缩模板参数
  * @return　0:success,
@@ -1245,7 +1269,7 @@ int DB_AddNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams)
             cout << "数组长度不能小于１" << endl;
             return StatusCode::ARRAYLEN_ERROR;
         }
-        strcpy(valueType, "ARRAY [0..");
+        strcpy(valueType, "ARRAY[0..");
         char s[10];
         sprintf(s, "%d", ZipParams->arrayLen);
         strcat(valueType, s);
@@ -1528,7 +1552,7 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
             cout << "数组长度不能小于１" << endl;
             return StatusCode::ARRAYLEN_ERROR;
         }
-        strcpy(valueType, "ARRAY [0..");
+        strcpy(valueType, "ARRAY[0..");
         char s[10];
         sprintf(s, "%d", ZipParams->arrayLen);
         strcat(valueType, s);
@@ -1747,7 +1771,15 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
     return err;
 }
 
-//会创建一个新的文件夹存放新增节点后的压缩模板
+/**
+ * @brief 向压缩模板添加新节点，暂定直接在尾部追加，可以指定新的文件夹存放修改后的压缩模板
+ *
+ * @param ZipParams 压缩模板参数
+ * @return　0:success,
+ *         others: StatusCode
+ * @note   新节点参数必须齐全，pathToLine valueNmae hasTime valueType isArray arrayLen standardValue maxValue minValue newPath
+ *         新文件夹名称里面不能包含数字
+ */
 int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
@@ -1819,7 +1851,7 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
             cout << "数组长度不能小于１" << endl;
             return StatusCode::ARRAYLEN_ERROR;
         }
-        strcpy(valueType, "ARRAY [0..");
+        strcpy(valueType, "ARRAY[0..");
         char s[10];
         sprintf(s, "%d", ZipParams->arrayLen);
         strcat(valueType, s);
@@ -2058,7 +2090,7 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 }
 
 /**
- * @brief 修改压缩模板里的树节点
+ * @brief 修改压缩模板里的树节点，覆盖原文件
  *
  * @param Zipparams 需要修改的节点
  * @param newZipParams 需要修改的信息
@@ -2155,7 +2187,7 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
             cout << "数组长度不能小于１" << endl;
             return StatusCode::ARRAYLEN_ERROR;
         }
-        strcpy(valueType, "ARRAY [0..");
+        strcpy(valueType, "ARRAY[0..");
         char s[10];
         sprintf(s, "%d", newZipParams->arrayLen);
         strcat(valueType, s);
@@ -2456,7 +2488,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
             cout << "数组长度不能小于１" << endl;
             return StatusCode::ARRAYLEN_ERROR;
         }
-        strcpy(valueType, "ARRAY [0..");
+        strcpy(valueType, "ARRAY[0..");
         char s[10];
         sprintf(s, "%d", newZipParams->arrayLen);
         strcat(valueType, s);
@@ -2674,7 +2706,16 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
     return err;
 }
 
-//会创建一个新的文件夹来存放修改后的压缩模板
+/**
+ * @brief 修改压缩模板里的树节点，可以指定新的文件夹存储修改后的压缩模板
+ *
+ * @param Zipparams 需要修改的节点
+ * @param newZipParams 需要修改的信息
+ * @return　0:success,
+ *         others: StatusCode
+ * @note   更新节点参数必须齐全，pathToLine valueNmae hasTime valueType isArray arrayLen standardValue maxValue minValue
+ *         新文件夹名称里不能包含数字
+ */
 int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams)
 {
     int err;
@@ -2764,7 +2805,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
             cout << "数组长度不能小于１" << endl;
             return StatusCode::ARRAYLEN_ERROR;
         }
-        strcpy(valueType, "ARRAY [0..");
+        strcpy(valueType, "ARRAY[0..");
         char s[10];
         sprintf(s, "%d", newZipParams->arrayLen);
         strcat(valueType, s);
@@ -3001,7 +3042,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
 }
 
 /**
- * @brief 删除压缩模板节点，根据变量名进行定位
+ * @brief 删除压缩模板节点，根据变量名进行定位，覆盖原文件
  *
  * @param ZipParams 压缩模板参数
  * @return 0:success,　
@@ -3141,7 +3182,14 @@ int DB_DeleteNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
     return err;
 }
 
-//新创建一个文件夹存放修改后的压缩模板
+/**
+ * @brief 删除压缩模板节点，根据变量名进行定位，可以指定新的文件夹存放修改后的模板
+ *
+ * @param ZipParams 压缩模板参数
+ * @return 0:success,　
+ *         others: StatusCode
+ * @note 新文件夹名称里面不能包含数字
+ */
 int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
@@ -3253,81 +3301,82 @@ int DB_UnloadZipSchema(const char *pathToUnset)
     return ZipTemplateManager::UnsetZipTemplate(pathToUnset);
 }
 
-// int main()
-// {
-//     // DB_LoadZipSchema("jinfei/");
+int main()
+{
+    // DB_LoadZipSchema("jinfei/");
 
-//     DB_TreeNodeParams params;
-//     params.pathToLine = "jinfei";
-//     params.newPath = "jinfei3";
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)4;
-//     code[4] = 'R';
-//     code[5] = (char)1;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     params.pathCode = code;
-//     params.valueType = 3;
-//     params.hasTime = 0;
-//     params.isArrary = 0;
-//     params.arrayLen = 100;
-//     params.valueName = "S4ON";
+    // DB_TreeNodeParams params;
+    // params.pathToLine = "jinfei";
+    // params.newPath = "jinfei3";
+    // char code[10];
+    // code[0] = (char)0;
+    // code[1] = (char)1;
+    // code[2] = (char)0;
+    // code[3] = (char)4;
+    // code[4] = 'R';
+    // code[5] = (char)1;
+    // code[6] = 0;
+    // code[7] = (char)0;
+    // code[8] = (char)0;
+    // code[9] = (char)0;
+    // params.pathCode = code;
+    // params.valueType = 3;
+    // params.hasTime = 0;
+    // params.isArrary = 0;
+    // params.arrayLen = 100;
+    // params.valueName = "S4ON";
 
-//     DB_TreeNodeParams newTreeParams;
-//     newTreeParams.pathToLine = "jinfeiTwo";
-//     char newcode[10];
-//     newcode[0] = (char)0;
-//     newcode[1] = (char)1;
-//     newcode[2] = (char)0;
-//     newcode[3] = (char)4;
-//     newcode[4] = 'R';
-//     newcode[5] = (char)1;
-//     newcode[6] = 0;
-//     newcode[7] = (char)0;
-//     newcode[8] = (char)0;
-//     newcode[9] = (char)0;
-//     newTreeParams.pathCode = newcode;
-//     newTreeParams.valueType = 3;
-//     newTreeParams.hasTime = 1;
-//     newTreeParams.isArrary = 1;
-//     newTreeParams.arrayLen = 100;
-//     newTreeParams.valueName = "S4ON";
-//     // DB_UpdateNodeToSchema_old(&params,&newTreeParams);
-//     // DB_UpdateNodeToSchema_MultiTem(&params,&newTreeParams);
-//     // DB_UpdateNodeToSchema(&params,&newTreeParams);
-//     // DB_AddNodeToSchema(&params);
-//     // DB_AddNodeToSchema_MultiTem(&params);
-//     DB_AddNodeToSchema(&params);
-//     // DB_DeleteNodeToSchema(&params);
+    // DB_TreeNodeParams newTreeParams;
+    // newTreeParams.pathToLine = "jinfeiTwo";
+    // char newcode[10];
+    // newcode[0] = (char)0;
+    // newcode[1] = (char)1;
+    // newcode[2] = (char)0;
+    // newcode[3] = (char)4;
+    // newcode[4] = 'R';
+    // newcode[5] = (char)1;
+    // newcode[6] = 0;
+    // newcode[7] = (char)0;
+    // newcode[8] = (char)0;
+    // newcode[9] = (char)0;
+    // newTreeParams.pathCode = newcode;
+    // newTreeParams.valueType = 3;
+    // newTreeParams.hasTime = 1;
+    // newTreeParams.isArrary = 1;
+    // newTreeParams.arrayLen = 100;
+    // newTreeParams.valueName = "S4ON";
+    // DB_UpdateNodeToSchema_old(&params,&newTreeParams);
+    // DB_UpdateNodeToSchema_MultiTem(&params,&newTreeParams);
+    // DB_UpdateNodeToSchema(&params,&newTreeParams);
+    // DB_AddNodeToSchema(&params);
+    // DB_AddNodeToSchema_MultiTem(&params);
+    // DB_AddNodeToSchema(&params);
+    // DB_DeleteNodeToSchema(&params);
 
-//     // DB_ZipNodeParams params;
-//     // params.pathToLine = "/jinfei";
-//     // params.valueType = 3;
-//     // params.hasTime = 1;
-//     // params.isArrary = 1;
-//     // params.arrayLen = 100;
-//     // params.valueName = "S4ON";
-//     // params.standardValue = "210";
-//     // params.maxValue = "230";
-//     // params.minValue = "190";
-//     // DB_AddNodeToZipSchema(&params);
-//     // DB_DeleteNodeToZipSchema(&params);
-//     // DB_ZipNodeParams newparams;
-//     // newparams.pathToLine = "/jinfeiTwo";
-//     // newparams.valueType = 3;
-//     // newparams.hasTime = 0;
-//     // newparams.isArrary = 0;
-//     // newparams.arrayLen = 100;
-//     // newparams.valueName = "S4ON";
-//     // newparams.standardValue = "12000";
-//     // newparams.maxValue = "13000";
-//     // newparams.minValue = "11000";
-//     // DB_UpdateNodeToZipSchema_old(&params,&newparams);
-//     // DB_UpdateNodeToZipSchema(&params,&newparams);
-//     return 0;
-// }
+    DB_ZipNodeParams params;
+    params.pathToLine = "/jinfei";
+    params.valueType = 3;
+    params.hasTime = 1;
+    params.isArrary = 1;
+    params.arrayLen = 100;
+    params.valueName = "S1ON";
+    params.standardValue = "210";
+    params.maxValue = "230";
+    params.minValue = "190";
+    // DB_AddNodeToZipSchema(&params);
+    // DB_DeleteNodeToZipSchema(&params);
+    DB_ZipNodeParams newparams;
+    newparams.pathToLine = "/jinfei";
+    newparams.valueType = 3;
+    newparams.hasTime = 0;
+    newparams.isArrary = 0;
+    newparams.arrayLen = 100;
+    newparams.valueName = "S1OFF";
+    newparams.standardValue = "12000";
+    newparams.maxValue = "13000";
+    newparams.minValue = "11000";
+    // DB_UpdateNodeToZipSchema_old(&params,&newparams);
+    DB_UpdateNodeToZipSchema(&params, &params);
+    // DB_UpdateNodeToZipSchema(&newparams,&newparams);
+    return 0;
+}

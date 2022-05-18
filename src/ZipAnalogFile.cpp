@@ -1431,7 +1431,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
 }
 
 /**
- * @brief 压缩接收到只有模拟量类型的.idb文件
+ * @brief 按文件夹压缩只有模拟量类型的.idb文件，单线程
  *
  * @param ZipTemPath 压缩模板路径
  * @param pathToLine 存储文件路径
@@ -1512,6 +1512,16 @@ int DB_ZipAnalogFile_Single(const char *ZipTemPath, const char *pathToLine)
     return err;
 }
 
+/**
+ * @brief 按文件夹压缩模拟量.idb文件，线程函数
+ *
+ * @param filesWithTime 带时间戳的文件
+ * @param begin 文件开始下标
+ * @param num 文件数量
+ * @param pathToLine .idb文件路径
+ * @return 0:success,
+ *          others:StatusCode
+ */
 int DB_ZipAnalogFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine)
 {
     int err;
@@ -1565,6 +1575,14 @@ int DB_ZipAnalogFile_thread(vector<pair<string, long>> filesWithTime, uint16_t b
     return err;
 }
 
+/**
+ * @brief 按文件夹压缩只有模拟量类型的.idb文件，多线程，内核数>２时才有效
+ *
+ * @param ZipTemPath 压缩模板路径
+ * @param pathToLine 存储文件路径
+ * @return  0:success,
+ *          others:StatusCode
+ */
 int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
 {
     int err;
@@ -1624,7 +1642,7 @@ int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
 }
 
 /**
- * @brief 还原被压缩的模拟量文件返回原状态
+ * @brief 还原被压缩的模拟量文件返回原状态，单线程
  *
  * @param ZipTemPath 压缩模板所在目录
  * @param pathToLine 压缩文件所在路径
@@ -1698,6 +1716,16 @@ int DB_ReZipAnalogFile_Single(const char *ZipTemPath, const char *pathToLine)
     return err;
 }
 
+/**
+ * @brief 按文件夹还原模拟量.idbzip文件，线程函数
+ *
+ * @param filesWithTime 带时间戳的文件
+ * @param begin 文件开始下标
+ * @param num 文件数量
+ * @param pathToLine .idbzip文件路径
+ * @return 0:success,
+ *          others:StatusCode
+ */
 int DB_ReZipAnalogFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine)
 {
     int err = 0;
@@ -1743,6 +1771,14 @@ int DB_ReZipAnalogFile_thread(vector<pair<string, long>> filesWithTime, uint16_t
     return err;
 }
 
+/**
+ * @brief 按文件夹还原只有模拟量类型的.idbzip文件，多线程，内核数>２时才有效
+ *
+ * @param ZipTemPath 压缩模板路径
+ * @param pathToLine 存储文件路径
+ * @return  0:success,
+ *          others:StatusCode
+ */
 int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
 {
     int err = 0;
@@ -1867,7 +1903,7 @@ int DB_ZipRecvAnalogFile(const char *ZipTempPath, const char *filepath, char *bu
 }
 
 /**
- * @brief 根据时间段压缩模拟量类型.idb文件
+ * @brief 根据时间段压缩模拟量类型.idb文件，单线程
  *
  * @param params 压缩请求参数
  * @return 0:success,
@@ -1964,6 +2000,16 @@ int DB_ZipAnalogFileByTimeSpan_Single(struct DB_ZipParams *params)
     return err;
 }
 
+/**
+ * @brief 根据时间段压缩模拟量类型.idb文件，线程函数
+ *
+ * @param selectedFiles 筛选出符合时间范围内的.idb文件
+ * @param begin 文件开始下标
+ * @param num 文件数量
+ * @param pathToLine .idb文件路径
+ * @return 0:success,
+ *          others: StatusCode
+ */
 int DB_ZipAnalogFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine)
 {
     int err = 0;
@@ -2016,6 +2062,13 @@ int DB_ZipAnalogFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, 
     return err;
 }
 
+/**
+ * @brief 根据时间段压缩模拟量类型.idb文件，多线程，内核数>２时才有效
+ *
+ * @param params 压缩请求参数
+ * @return 0:success,
+ *          others: StatusCode
+ */
 int DB_ZipAnalogFileByTimeSpan(struct DB_ZipParams *params)
 {
     params->ZipType = TIME_SPAN;
@@ -2093,7 +2146,7 @@ int DB_ZipAnalogFileByTimeSpan(struct DB_ZipParams *params)
 }
 
 /**
- * @brief 根据时间段还原模拟量类型.idbzip文件
+ * @brief 根据时间段还原模拟量类型.idbzip文件，单线程
  *
  * @param params 压缩请求参数
  * @return 0:success,
@@ -2179,6 +2232,16 @@ int DB_ReZipAnalogFileByTimeSpan_Single(struct DB_ZipParams *params)
     return err;
 }
 
+/**
+ * @brief 根据时间段还原模拟量类型.idbzip文件，线程函数
+ *
+ * @param selectedFiles 筛选出符合时间范围内的.idbzip文件
+ * @param begin 文件开始下标
+ * @param num 文件数量
+ * @param pathToLine .idbzip文件路径
+ * @return 0:success,
+ *          others: StatusCode
+ */
 int DB_ReZipAnalogFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine)
 {
     int err = 0;
@@ -2220,6 +2283,13 @@ int DB_ReZipAnalogFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles
     return err;
 }
 
+/**
+ * @brief 根据时间段还原模拟量类型.idbzip文件，多线程，内核数>2时才有效
+ *
+ * @param params 压缩请求参数
+ * @return 0:success,
+ *          others: StatusCode
+ */
 int DB_ReZipAnalogFileByTimeSpan(struct DB_ZipParams *params)
 {
     params->ZipType = TIME_SPAN;

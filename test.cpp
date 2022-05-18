@@ -233,21 +233,16 @@ int get_procmeminfo(MEM_OCCUPY *lpMemory)
 
 int main()
 {
-    // DB_LoadZipSchema("jinfei");
-    // DB_ZipNodeParams zipparams;
-    // zipparams.pathToLine = "/jinfei";
-    // zipparams.valueType = DataType::JudgeByValueType(CurrentZipTemplate.schemas[2].second.valueType);
-    // zipparams.hasTime = 1;
-    // zipparams.isArrary = 1;
-    // zipparams.arrayLen = 100;
-    // zipparams.valueName = "S4ON";
-    // zipparams.standardValue = "210";
-    // zipparams.maxValue = "230";
-    // zipparams.minValue = "190";
-    // cout<<zipparams.valueType<<endl;
-    // return 0;
-    Py_Initialize();
-    PyObject *arr = PyList_New(100);
+    DB_LoadZipSchema("jinfei");
+    DB_ZipNodeParams ZipParams;
+    ZipParams.valueName = const_cast<char *>((CurrentZipTemplate.schemas[0].first).c_str());
+    cout<<1111<<endl;
+    cout<<ZipParams.valueName<<endl;
+    return 0;
+
+     Py_Initialize();
+     PyFloat_FromDouble(1.23);
+     PyObject *arr = PyList_New(100);
     PyObject *lstitem;
     for (int i = 0; i < 100; i++)
     {

@@ -65,6 +65,12 @@ ValueType::ValueType DataType::JudgeValueType(string vType)
     return ValueType::UNKNOWN;
 }
 
+/**
+ * @brief 通过ValueType类型返回对应的枚举值
+ * 
+ * @param vType ValueType::ValueType枚举类型
+ * @return int 数据类型对应的枚举值
+ */
 int DataType::JudgeByValueType(ValueType::ValueType vType)
 {
     switch (vType)
@@ -105,6 +111,12 @@ int DataType::JudgeByValueType(ValueType::ValueType vType)
     }
 }
 
+/**
+ * @brief 通过int类型返回对应的数据类型字符串
+ * 
+ * @param vType ValueType::ValueType的枚举值
+ * @return string 对应的数据类型字符串
+ */
 string DataType::JudgeValueTypeByNum(int vType)
 {
     if (vType == 1)

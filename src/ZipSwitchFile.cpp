@@ -199,7 +199,7 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
 }
 
 /**
- * @brief 压缩只有开关量类型的已有.idb文件
+ * @brief 压缩只有开关量类型的已有.idb文件，单线程压缩
  *
  * @param ZipTemPath 压缩模板路径
  * @param pathToLine .idb文件路径
@@ -280,6 +280,16 @@ int DB_ZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
     return err;
 }
 
+/**
+ * @brief 按文件夹压缩.idb文件，线程函数
+ *
+ * @param filesWithTime 带时间戳的.idb文件
+ * @param begin 文件的开始下标
+ * @param num 文件的数量
+ * @param pathToLine 文件夹路径
+ * @return 0:success,
+ *          others:StatusCode
+ */
 int DB_ZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine)
 {
     int err;
@@ -331,6 +341,14 @@ int DB_ZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t b
     return err;
 }
 
+/**
+ * @brief 多线程按文件夹压缩.idb文件函数，内核数>２时才有效
+ *
+ * @param ZipTemPath 压缩模板路径
+ * @param pathToLine .idb文件路径
+ * @return  0:success,
+ *          others:StatusCode
+ */
 int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
 {
     int err;
@@ -390,7 +408,7 @@ int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
 }
 
 /**
- * @brief 还原压缩后的开关量文件为原状态
+ * @brief 还原压缩后的开关量文件为原状态，单线程
  *
  * @param ZipTemPath 压缩模板路径
  * @param pathToLine .idbzip压缩文件路径
@@ -462,6 +480,16 @@ int DB_ReZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
     return err;
 }
 
+/**
+ * @brief 按文件夹还原.idbzip文件，线程函数
+ *
+ * @param filesWithTime 带时间戳的.idbzip文件
+ * @param begin 文件的开始下标
+ * @param num 文件的数量
+ * @param pathToLine 文件夹路径
+ * @return 0:success,
+ *          others:StatusCode
+ */
 int DB_ReZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine)
 {
     int err = 0;
@@ -504,6 +532,14 @@ int DB_ReZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t
     return err;
 }
 
+/**
+ * @brief 多线程按文件夹还原.idbzip文件函数，内核数>２时才有效
+ *
+ * @param ZipTemPath 压缩模板路径
+ * @param pathToLine .idbzip文件路径
+ * @return  0:success,
+ *          others:StatusCode
+ */
 int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
 {
     int err = 0;
@@ -630,7 +666,7 @@ int DB_ZipRecvSwitchBuff(const char *ZipTemPath, const char *filepath, char *buf
 }
 
 /**
- * @brief 根据时间段压缩开关量类型.idb文件
+ * @brief 根据时间段压缩开关量类型.idb文件，单线程
  *
  * @param params 压缩请求参数
  * @return 0:success,
@@ -723,6 +759,16 @@ int DB_ZipSwitchFileByTimeSpan_Single(struct DB_ZipParams *params)
     return err;
 }
 
+/**
+ * @brief 按时间段压缩.idb文件，线程函数
+ *
+ * @param selectedFiles 筛选后在时间范围内的.idb文件
+ * @param begin 文件的开始下标
+ * @param num 文件的数量
+ * @param pathToLine .idb文件的路径
+ * @return 0:success,
+ *          others: StatusCode
+ */
 int DB_ZipSwitchFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine)
 {
     int err = 0;
@@ -774,6 +820,13 @@ int DB_ZipSwitchFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, 
     return err;
 }
 
+/**
+ * @brief 多线程按时间段压缩.idb文件函数，内核数>２时才有效
+ *
+ * @param params 压缩请求参数
+ * @return 0:success,
+ *          others: StatusCode
+ */
 int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
 {
     params->ZipType = TIME_SPAN;
@@ -851,7 +904,7 @@ int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
 }
 
 /**
- * @brief 根据时间段还原开关量类型.idbzip文件
+ * @brief 根据时间段还原开关量类型.idbzip文件，单线程
  *
  * @param params 还原请求参数
  * @return 0:success,
@@ -936,6 +989,16 @@ int DB_ReZipSwitchFileByTimeSpan_Single(struct DB_ZipParams *params)
     return err;
 }
 
+/**
+ * @brief 按时间段还原.idbzip文件，线程函数
+ *
+ * @param selectedFiles 筛选后在时间范围内的.idbzip文件
+ * @param begin 文件的开始下标
+ * @param num 文件的数量
+ * @param pathToLine .idbzip文件的路径
+ * @return 0:success,
+ *          others: StatusCode
+ */
 int DB_ReZipSwitchFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine)
 {
     int err = 0;
@@ -980,6 +1043,13 @@ int DB_ReZipSwitchFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles
     return err;
 }
 
+/**
+ * @brief 多线程按时间段还原.idbzip文件函数，内核数>２时才有效
+ *
+ * @param params 压缩请求参数
+ * @return 0:success,
+ *          others: StatusCode
+ */
 int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
 {
     params->ZipType = TIME_SPAN;
@@ -1265,7 +1335,7 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
 //     sleep(1);
 //     std::cout << "start 开关量文件 单线程压缩" << std::endl;
 //     auto startTime = std::chrono::system_clock::now();
-//     DB_ZipSwitchFile_Single("JinfeiEleven", "JinfeiEleven");
+//     DB_ZipSwitchFile_Single("jinfei", "jinfei");
 //     auto endTime = std::chrono::system_clock::now();
 //     std::cout << "开关量文件 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
 //     std::cout << "end 开关量文件 单线程压缩" << std::endl
@@ -1274,7 +1344,7 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
 //     sleep(1);
 //     std::cout << "start 开关量文件 单线程还原" << std::endl;
 //     startTime = std::chrono::system_clock::now();
-//     DB_ReZipSwitchFile_Single("JinfeiEleven", "JinfeiEleven");
+//     DB_ReZipSwitchFile_Single("jinfei", "jinfei");
 //     endTime = std::chrono::system_clock::now();
 //     std::cout << "开关量文件 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
 //     std::cout << "end 开关量文件 单线程还原" << std::endl
