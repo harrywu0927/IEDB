@@ -233,12 +233,6 @@ int get_procmeminfo(MEM_OCCUPY *lpMemory)
 
 int main()
 {
-    DB_LoadZipSchema("jinfei");
-    DB_ZipNodeParams ZipParams;
-    ZipParams.valueName = const_cast<char *>((CurrentZipTemplate.schemas[0].first).c_str());
-    cout<<1111<<endl;
-    cout<<ZipParams.valueName<<endl;
-    return 0;
 
      Py_Initialize();
      PyFloat_FromDouble(1.23);

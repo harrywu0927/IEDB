@@ -1,12 +1,12 @@
 # Novelty and Outlier Detection
 
-from ctypes.wintypes import FLOAT, LONG
+#from ctypes.wintypes import FLOAT, LONG
 import numpy as np
 from sklearn.neighbors import LocalOutlierFactor
 
 
 def Outliers(lst, dimension):
-    points = np.array(lst, dtype=LONG)
+    points = np.array(lst)
     neighbors = 20
     if(len(points) < 50):
         neighbors = 5
