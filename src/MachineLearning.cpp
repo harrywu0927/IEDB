@@ -1,32 +1,256 @@
 #include <utils.hpp>
 
-int DB_OutlierDetection(DB_DataBuffer *buffer, DB_QueryParams *params)
+/**
+ * @brief 将查询得到的buffer中的数据提取到python列表中
+ *
+ * @param buffer
+ * @return PyObject*
+ */
+PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer)
+{
+    int typeNum = buffer->buffer[0];
+    vector<DataType> typeList;
+    int recordLength = 0; //每行的长度
+    long bufPos = 0;
+    PyObject *res;
+    for (int i = 0; i < typeNum; i++)
+    {
+        DataType type;
+        char pathCode[10];
+        memcpy(pathCode, buffer->buffer + i * 11 + 2, 10);
+        int err = CurrentTemplate.GetDataTypeByCode(pathCode, type);
+        if (err == 0)
+        {
+            if (type.valueType == ValueType::IMAGE)
+            {
+                res = PyList_New(0);
+                return res;
+            }
+            typeList.push_back(type);
+            recordLength += type.isArray ? type.valueBytes * type.arrayLen : type.valueBytes;
+            recordLength += type.hasTime ? 8 : 0;
+        }
+    }
+    int startPos = typeNum * 11 + 1;
+    long rows = (buffer->length - startPos) / recordLength;
+    int cur = startPos;
+    res = PyList_New(rows);
+    DataTypeConverter converter;
+    for (int i = 0; i < rows; i++)
+    {
+        PyObject *row = PyList_New(0);
+        for (int j = 0; j < typeList.size(); j++)
+        {
+            if (typeList[j].valueType == ValueType::IMAGE)
+                continue;
+            if (!typeList[j].isArray) //标量
+            {
+                long value;
+                double floatvalue;
+                PyObject *obj;
+                switch (typeList[j].valueType)
+                {
+                case ValueType::INT:
+                {
+                    char val[2];
+                    memcpy(val, buffer->buffer + cur, 2);
+                    cur += typeList[j].hasTime ? 10 : 2;
+                    value = converter.ToInt16(val);
+                    obj = PyLong_FromLong(value);
+                    PyList_Append(row, obj);
+                    break;
+                }
+                case ValueType::UINT:
+                {
+                    char val[2];
+                    memcpy(val, buffer->buffer + cur, 2);
+                    cur += typeList[j].hasTime ? 10 : 2;
+                    value = converter.ToUInt16(val);
+                    obj = PyLong_FromLong(value);
+                    PyList_Append(row, obj);
+                    break;
+                }
+                case ValueType::DINT:
+                {
+                    char val[4];
+                    memcpy(val, buffer->buffer + cur, 4);
+                    cur += typeList[j].hasTime ? 12 : 4;
+                    value = converter.ToInt32(val);
+                    obj = PyLong_FromLong(value);
+                    PyList_Append(row, obj);
+                    break;
+                }
+                case ValueType::UDINT:
+                {
+                    char val[4];
+                    memcpy(val, buffer->buffer + cur, 4);
+                    cur += typeList[j].hasTime ? 12 : 4;
+                    value = converter.ToUInt32(val);
+                    obj = PyLong_FromLong(value);
+                    PyList_Append(row, obj);
+                    break;
+                }
+                case ValueType::REAL:
+                {
+                    char val[4];
+                    memcpy(val, buffer->buffer + cur, 4);
+                    cur += typeList[j].hasTime ? 12 : 4;
+                    floatvalue = converter.ToFloat(val);
+                    obj = PyFloat_FromDouble(value);
+                    PyList_Append(row, obj);
+                    break;
+                }
+                case ValueType::TIME:
+                {
+                    char val[4];
+                    memcpy(val, buffer->buffer + cur, 4);
+                    cur += typeList[j].hasTime ? 12 : 4;
+                    value = converter.ToUInt32(val);
+                    obj = PyLong_FromLong(value);
+                    PyList_Append(row, obj);
+                    break;
+                }
+                case ValueType::SINT:
+                {
+                    char val;
+                    value = buffer->buffer[cur++];
+                    cur += typeList[j].hasTime ? 8 : 0;
+                    obj = PyLong_FromLong(value);
+                    PyList_Append(row, obj);
+                    break;
+                }
+                case ValueType::USINT:
+                {
+                    unsigned char val;
+                    val = buffer->buffer[cur++];
+                    value = val;
+                    cur += typeList[j].hasTime ? 8 : 0;
+                    obj = PyLong_FromLong(value);
+                    PyList_Append(row, obj);
+                    break;
+                }
+                default:
+                    break;
+                }
+            }
+            else //数组类型（矢量）
+            {
+                PyObject *arr = PyList_New(typeList[j].arrayLen);
+                long value;
+                double floatvalue;
+                for (int k = 0; k < typeList[j].arrayLen; k++)
+                {
+                    switch (typeList[j].valueType)
+                    {
+                    case ValueType::INT:
+                    {
+                        char val[2];
+                        memcpy(val, buffer->buffer + cur, 2);
+                        cur += 2;
+                        value = converter.ToInt16(val);
+                        PyObject *obj = PyLong_FromLong(value);
+                        PyList_SetItem(arr, k, obj);
+                        break;
+                    }
+                    case ValueType::UINT:
+                    {
+                        char val[2];
+                        memcpy(val, buffer->buffer + cur, 2);
+                        cur += 2;
+                        value = converter.ToUInt16(val);
+                        PyObject *obj = PyLong_FromLong(value);
+                        PyList_SetItem(arr, k, obj);
+                        break;
+                    }
+                    case ValueType::DINT:
+                    {
+                        char val[4];
+                        memcpy(val, buffer->buffer + cur, 4);
+                        cur += 4;
+                        value = converter.ToInt32(val);
+                        PyObject *obj = PyLong_FromLong(value);
+                        PyList_SetItem(arr, k, obj);
+                        break;
+                    }
+                    case ValueType::UDINT:
+                    {
+                        char val[4];
+                        memcpy(val, buffer->buffer + cur, 4);
+                        cur += 4;
+                        value = converter.ToUInt32(val);
+                        PyObject *obj = PyLong_FromLong(value);
+                        PyList_SetItem(arr, k, obj);
+                        break;
+                    }
+                    case ValueType::REAL:
+                    {
+                        char val[4];
+                        memcpy(val, buffer->buffer + cur, 4);
+                        cur += 4;
+                        floatvalue = converter.ToFloat(val);
+                        PyObject *obj = PyLong_FromLong(floatvalue);
+                        PyList_SetItem(arr, k, obj);
+                        break;
+                    }
+                    case ValueType::TIME:
+                    {
+                        char val[4];
+                        memcpy(val, buffer->buffer + cur, 4);
+                        cur += 4;
+                        value = converter.ToUInt32(val);
+                        PyObject *obj = PyLong_FromLong(value);
+                        PyList_SetItem(arr, k, obj);
+                        break;
+                    }
+                    case ValueType::SINT:
+                    {
+                        char val;
+                        value = buffer->buffer[cur++];
+                        PyObject *obj = PyLong_FromLong(value);
+                        PyList_SetItem(arr, k, obj);
+                        break;
+                    }
+                    case ValueType::USINT:
+                    {
+                        unsigned char val;
+                        val = buffer->buffer[cur++];
+                        value = val;
+                        PyObject *obj = PyLong_FromLong(value);
+                        PyList_SetItem(arr, k, obj);
+                        break;
+                    }
+                    default:
+                        break;
+                    }
+                }
+                cur += typeList[j].hasTime ? 8 : 0;
+                PyList_Append(row, arr);
+            }
+        }
+        PyList_SetItem(res, i, row);
+    }
+    return res;
+}
+
+int DB_Outlier_Detection(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     if (!TemplateManager::CheckTemplate(params->pathToLine))
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     auto allTypes = CurrentTemplate.GetAllTypes(params->pathCode);
+    if (allTypes.size() > 1)
+        return StatusCode::ML_TYPE_NOT_SUPPORT;
     int err = DB_ExecuteQuery(buffer, params);
     if (err != 0)
         return err;
     if (!Py_IsInitialized())
         Py_Initialize();
-    PyObject *arr = PyList_New(100);
-    PyObject *lstitem;
-    for (int i = 0; i < 100; i++)
-    {
-        lstitem = PyLong_FromLong(i % 20 == 0 ? rand() % 100 : rand() % 10);
-        PyList_SetItem(arr, i, lstitem);
-    }
+    PyObject *arr;
 
-    PyObject *obj;
     // 指定py文件目录
     PyRun_SimpleString("import sys");
     PyRun_SimpleString("sys.path.append('./')");
 
-    // PyObject *pname = Py_BuildValue("s", "testpy");
     PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
-    // PyObject *numpy = PyImport_ImportModule("numpy");
-    // PyObject *std = PyObject_GetAttrString(numpy, "fft");
     PyObject *pValue, *pArgs, *pFunc;
     long res = 0;
     if (mymodule != NULL)
@@ -40,12 +264,6 @@ int DB_OutlierDetection(DB_DataBuffer *buffer, DB_QueryParams *params)
             pArgs = PyTuple_New(2);
             PyTuple_SetItem(pArgs, 0, arr);
             PyTuple_SetItem(pArgs, 1, PyLong_FromLong(1));
-            // for (int i = 0; i < 2; ++i)
-            // {
-            //     // 设置参数值
-            //     pValue = PyLong_FromLong(i + 10);
-            //     PyTuple_SetItem(pArgs, i, pValue);
-            // }
             // 函数执行
             PyObject *ret = PyObject_CallObject(pFunc, pArgs);
             PyObject *item;
@@ -57,13 +275,40 @@ int DB_OutlierDetection(DB_DataBuffer *buffer, DB_QueryParams *params)
                 val = PyLong_AsLong(item);     //转换为c类型的数据
                 cout << val << " ";
             }
-            // res = PyLong_AsLong(PyList_GetItem(pValue, 1));
-            // cout << pValue->ob_type->tp_name << endl;
         }
     }
     return 0;
 }
-// int main()
-// {
-//     return 0;
-// }
+int main()
+{
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiSeven";
+    params.fileID = "JinfeiSeven1135073";
+    params.fileIDend = NULL;
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)1;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueName = "S1ON";
+    // params.valueName = NULL;
+    params.start = 0;
+    params.end = 1650099030250;
+    // params.start = 1650093562902;
+    // params.end = 1650163562902;
+    params.order = ODR_NONE;
+    params.compareType = CMP_NONE;
+    params.compareValue = "666";
+    params.queryType = FILEID;
+    params.byPath = 1;
+    params.queryNums = 10;
+    DB_DataBuffer buffer;
+    return 0;
+}

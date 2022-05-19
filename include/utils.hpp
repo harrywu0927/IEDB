@@ -77,6 +77,7 @@ namespace StatusCode
         ARRAYLEN_ERROR = 163,            // arrayLen不能小于１
         DIR_INCLUDE_NUMBER = 164,        //文件夹名包含数字
         AMBIGUOUS_QUERY_PARAMS = 165,    //查询条件有歧义
+        ML_TYPE_NOT_SUPPORT = 166,       //不支持的机器学习条件
     };
 }
 namespace ValueType
@@ -203,6 +204,8 @@ int DB_DeleteNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams);
 int DB_DeleteNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams);
 
 int DB_OutlierDetection(struct DB_QueryParams *params);
+
+int DB_NoveltyRegression(struct DB_QueryParams *params);
 
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);

@@ -8,6 +8,8 @@ from sklearn.neighbors import LocalOutlierFactor
 
 
 def Outliers(lst, dimension):
+    print(lst)
+    return
     points = np.array(lst, dtype=LONG)
     neighbors = 20
     if(len(points) < 50):
