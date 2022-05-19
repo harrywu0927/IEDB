@@ -58,4 +58,4 @@ def NoveltyFit(lst):
     minline = np.min(normal)
     maxline = np.max(normal)
     print(maxline, minline)
-    return maxline, minline
+    return float(maxline), float(minline)

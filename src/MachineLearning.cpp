@@ -232,7 +232,7 @@ PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer)
     return res;
 }
 
-int DB_Outlier_Detection(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_OutlierDetection(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
@@ -275,12 +275,17 @@ int DB_Outlier_Detection(DB_DataBuffer *buffer, DB_QueryParams *params)
             PyObject *item;
             long val;
             int len = PyObject_Size(ret);
+            char *res = (char *)malloc(len);
             for (int i = 0; i < len; i++)
             {
                 item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
                 val = PyLong_AsLong(item);     //转换为c类型的数据
-                cout << val << " ";
+                // cout << val << " ";
+                res[i] = (char)val;
             }
+            buffer->length = len;
+            buffer->buffer = res;
+            buffer->bufferMalloced = 1;
         }
     }
     return 0;
@@ -326,15 +331,8 @@ int DB_NoveltyFit(DB_QueryParams *params, double *maxLine, double *minLine)
             // PyTuple_SetItem(pArgs, 1, PyLong_FromLong(dim));
             // 函数执行
             PyObject *ret = PyObject_CallObject(pFunc, pArgs);
-            PyObject *item;
-            long val;
-            // int len = PyObject_Size(ret);
-            // for (int i = 0; i < len; i++)
-            // {
-            //     item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
-            //     val = PyLong_AsLong(item);     //转换为c类型的数据
-            //     cout << val << " ";
-            // }
+            *maxLine = PyFloat_AsDouble(PyTuple_GetItem(ret, 0)); //转换为c类型的数据
+            *minLine = PyFloat_AsDouble(PyTuple_GetItem(ret, 1));
         }
     }
     return 0;

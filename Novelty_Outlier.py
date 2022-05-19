@@ -46,16 +46,11 @@ def NoveltyFit(lst):
     rows = len(lst)
     points = points.reshape(int(rows), 1)
     print(points)
-    maxVal = np.max(points)
-    minVal = np.min(points)
-    print(maxVal, minVal)
-    y = np.linspace(minVal, maxVal, np.round(
-        (maxVal-minVal) * 100)).reshape((maxVal-minVal) * 100, 1)
-    clf = LocalOutlierFactor(novelty=True)
-    clf.fit(points)
-    z = clf.decision_function(y)
-    rang = np.where(z > 0)
-    minline = y[rang[0][0]]
-    maxline = y[rang[0][len(rang[0])-1]]
-    print(maxline, minline)
-    return maxline, minline
+    y = Outliers(lst, 1)
+    y = np.array(y)
+    rang = np.where(y > 0)
+    normal = points[rang[0]]
+    minline = np.min(normal)
+    maxline = np.max(normal)
+    print(float(maxline), float(minline))
+    return float(maxline), float(minline)
