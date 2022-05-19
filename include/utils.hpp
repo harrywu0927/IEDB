@@ -205,7 +205,7 @@ int DB_DeleteNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams);
 
 int DB_OutlierDetection(struct DB_QueryParams *params);
 
-int DB_NoveltyRegression(struct DB_QueryParams *params);
+int DB_NoveltyFit(struct DB_QueryParams *params, double *maxLine, double *minLine);
 
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);

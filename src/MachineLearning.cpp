@@ -234,17 +234,23 @@ PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer)
 
 int DB_Outlier_Detection(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
-    if (!TemplateManager::CheckTemplate(params->pathToLine))
+    if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
-    auto allTypes = CurrentTemplate.GetAllTypes(params->pathCode);
-    if (allTypes.size() > 1)
-        return StatusCode::ML_TYPE_NOT_SUPPORT;
+    int dim = 1;
+    if (params->byPath)
+    {
+        auto allTypes = CurrentTemplate.GetAllTypes(params->pathCode);
+        if (allTypes.size() > 1)
+            return StatusCode::ML_TYPE_NOT_SUPPORT;
+        dim = allTypes[0].isArray ? allTypes[0].arrayLen : 1;
+    }
+
     int err = DB_ExecuteQuery(buffer, params);
     if (err != 0)
         return err;
     if (!Py_IsInitialized())
         Py_Initialize();
-    PyObject *arr;
+    PyObject *arr = ConvertToPyList_ML(buffer);
 
     // 指定py文件目录
     PyRun_SimpleString("import sys");
@@ -263,7 +269,7 @@ int DB_Outlier_Detection(DB_DataBuffer *buffer, DB_QueryParams *params)
             // 创建参数元组
             pArgs = PyTuple_New(2);
             PyTuple_SetItem(pArgs, 0, arr);
-            PyTuple_SetItem(pArgs, 1, PyLong_FromLong(1));
+            PyTuple_SetItem(pArgs, 1, PyLong_FromLong(dim));
             // 函数执行
             PyObject *ret = PyObject_CallObject(pFunc, pArgs);
             PyObject *item;
@@ -279,8 +285,63 @@ int DB_Outlier_Detection(DB_DataBuffer *buffer, DB_QueryParams *params)
     }
     return 0;
 }
+
+int DB_NoveltyFit(DB_QueryParams *params, double *maxLine, double *minLine)
+{
+    if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    int dim = 1;
+    if (params->byPath)
+    {
+        auto allTypes = CurrentTemplate.GetAllTypes(params->pathCode);
+        if (allTypes.size() > 1)
+            return StatusCode::ML_TYPE_NOT_SUPPORT;
+        dim = allTypes[0].isArray ? allTypes[0].arrayLen : 1;
+    }
+    DB_DataBuffer buffer;
+    int err = DB_ExecuteQuery(&buffer, params);
+    if (err != 0)
+        return err;
+    if (!Py_IsInitialized())
+        Py_Initialize();
+    PyObject *arr = ConvertToPyList_ML(&buffer);
+
+    // 指定py文件目录
+    PyRun_SimpleString("import sys");
+    PyRun_SimpleString("sys.path.append('./')");
+
+    PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
+    PyObject *pValue, *pArgs, *pFunc;
+    long res = 0;
+    if (mymodule != NULL)
+    {
+        // 从模块中获取函数
+        pFunc = PyObject_GetAttrString(mymodule, "NoveltyFit");
+
+        if (pFunc && PyCallable_Check(pFunc))
+        {
+            // 创建参数元组
+            pArgs = PyTuple_New(1);
+            PyTuple_SetItem(pArgs, 0, arr);
+            // PyTuple_SetItem(pArgs, 1, PyLong_FromLong(dim));
+            // 函数执行
+            PyObject *ret = PyObject_CallObject(pFunc, pArgs);
+            PyObject *item;
+            long val;
+            // int len = PyObject_Size(ret);
+            // for (int i = 0; i < len; i++)
+            // {
+            //     item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
+            //     val = PyLong_AsLong(item);     //转换为c类型的数据
+            //     cout << val << " ";
+            // }
+        }
+    }
+    return 0;
+}
 int main()
 {
+    // Py_Initialize();
     DB_QueryParams params;
     params.pathToLine = "JinfeiSeven";
     params.fileID = "JinfeiSeven1135073";
@@ -297,7 +358,7 @@ int main()
     code[8] = (char)0;
     code[9] = (char)0;
     params.pathCode = code;
-    params.valueName = "S1ON";
+    params.valueName = "S1OFF";
     // params.valueName = NULL;
     params.start = 0;
     params.end = 1650099030250;
@@ -307,8 +368,11 @@ int main()
     params.compareType = CMP_NONE;
     params.compareValue = "666";
     params.queryType = FILEID;
-    params.byPath = 1;
-    params.queryNums = 10;
+    params.byPath = 0;
+    params.queryNums = 50;
     DB_DataBuffer buffer;
+    double maxline, minline;
+    DB_NoveltyFit(&params, &maxline, &minline);
+    Py_Finalize();
     return 0;
 }

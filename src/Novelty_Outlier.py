@@ -8,8 +8,6 @@ from sklearn.neighbors import LocalOutlierFactor
 
 
 def Outliers(lst, dimension):
-    print(lst)
-    return
     points = np.array(lst, dtype=LONG)
     neighbors = 20
     if(len(points) < 50):
@@ -46,3 +44,18 @@ def Novelty(lst, dimension):
     else:
         print('输入数组shape有误')
     return
+
+
+def NoveltyFit(lst):
+    points = np.array(lst)
+    rows = len(lst)
+    points = points.reshape(int(rows), 1)
+    print(points)
+    y = Outliers(lst, 1)
+    y = np.array(y)
+    rang = np.where(y > 0)
+    normal = points[rang[0]]
+    minline = np.min(normal)
+    maxline = np.max(normal)
+    print(maxline, minline)
+    return maxline, minline

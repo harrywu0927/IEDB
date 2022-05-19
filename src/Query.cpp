@@ -7630,19 +7630,19 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 // 	//     free(buffer.buffer);
 // 	// }
 // 	// buffer.bufferMalloced = 0;
-// 	DB_QueryByFileID(&buffer, &params);
+// 	DB_QueryByTimespan(&buffer, &params);
 
 // 	if (buffer.bufferMalloced)
 // 	{
-// 		char buf[buffer.length];
-// 		memcpy(buf, buffer.buffer, buffer.length);
+// 		// char buf[buffer.length];
+// 		// memcpy(buf, buffer.buffer, buffer.length);
 // 		cout << buffer.length << endl;
-// 		for (int i = 0; i < buffer.length; i++)
-// 		{
-// 			cout << (int)buf[i] << " ";
-// 			if (i % 11 == 0)
-// 				cout << endl;
-// 		}
+// 		// for (int i = 0; i < buffer.length; i++)
+// 		// {
+// 		// 	cout << (int)buf[i] << " ";
+// 		// 	if (i % 11 == 0)
+// 		// 		cout << endl;
+// 		// }
 
 // 		free(buffer.buffer);
 // 	}
