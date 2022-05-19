@@ -7,12 +7,12 @@
 ### For Linux(Ubuntu18.04 or later):
 ```sudo apt install python3.8-dev```
 
-#### 为python3.8安装numpy、pandas、sklearn:
+#### 为python3.8安装numpy、pandas、sklearn、matplotlib:
 若不使用Anaconda：
 
 ```sudo apt install python3-pip liblapack-dev gfortran```
 
-```python3.8 -m pip install pybind11 pythran Cython numpy pandas scipy sklearn```
+```python3.8 -m pip install pybind11 pythran Cython numpy pandas scipy sklearn matplotlib```
 
 若安装过程中出现另外的依赖缺失，安装即可
 
