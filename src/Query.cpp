@@ -6740,7 +6740,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 				}
 			}
 		}
-		//根据首位ID的多文件查询
+		//根据首尾ID的多文件查询
 		else
 		{
 			auto packs = packManager.GetPackByIDs(params->pathToLine, fileid, fileidEnd);

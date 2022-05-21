@@ -10,7 +10,7 @@ int errorCode;
 FileIDManager fileIDManager;
 neb::CJsonObject settings = FileIDManager::GetSetting();
 unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
-PackManager packManager(atoi(settings("Pack_Cache_Size").c_str()) * 1024 * 2);
+PackManager packManager(atoi(settings("Pack_Cache_Size").c_str()) * 1024);
 
 //递归获取所有子文件夹
 void readAllDirs(vector<string> &dirs, string basePath)

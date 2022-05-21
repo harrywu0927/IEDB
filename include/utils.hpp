@@ -207,6 +207,10 @@ int DB_OutlierDetection(struct DB_DataBuffer *buffer, struct DB_QueryParams *par
 
 int DB_NoveltyFit(struct DB_QueryParams *params, double *maxLine, double *minLine);
 
+PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer);
+
+PyObject *ConvertToPyList_STAT(DB_DataBuffer *buffer);
+
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);
 

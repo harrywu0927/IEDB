@@ -9,7 +9,6 @@ int timerStarted = false;
 bool IOBusy = false;
 void *checkTime(void *ptr)
 {
-    // cout << "Timer created!" << endl;
     timerStarted = true;
     long interval = atol(settings("Pack_Interval").c_str());
     while (1)
@@ -63,10 +62,45 @@ void *checkSettings(void *ptr)
         // this_thread::sleep_for(chrono::seconds(3));
     }
 }
+
+/**
+ * @brief 负责对打包、再打包的自动管理
+ *
+ */
+void autoPacker()
+{
+}
 // thread settingsWatcher;
 pthread_t settingsWatcher;
 int settingsWatcherStarted = false;
 #endif
+
+bool checkNovelty(DB_DataBuffer *buffer)
+{
+    // 指定py文件目录
+    PyRun_SimpleString("import sys");
+    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
+
+    PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
+    PyObject *pValue, *pArgs, *pFunc;
+    PyObject *arr;
+    long res = 0;
+    if (mymodule != NULL)
+    {
+        // 从模块中获取函数
+        pFunc = PyObject_GetAttrString(mymodule, "Novelty");
+
+        if (pFunc && PyCallable_Check(pFunc))
+        {
+            // 创建参数元组
+            pArgs = PyTuple_New(1);
+            PyTuple_SetItem(pArgs, 0, arr);
+            PyTuple_SetItem(pArgs, 1, PyLong_FromLong(1)); //暂定维度1
+            // 函数执行
+            PyObject *ret = PyObject_CallObject(pFunc, pArgs);
+        }
+    }
+}
 /**
  * @brief 将一个缓冲区中的一条数据(文件)存放在指定路径下，以文件ID+时间的方式命名
  * @param buffer    数据缓冲区
@@ -97,6 +131,14 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
     {
     }
 #endif
+    if (!Py_IsInitialized())
+        Py_Initialize();
+    if (settings("Check_Novelty") == "true")
+    {
+        if (checkNovelty(buffer))
+        {
+        }
+    }
     string savepath = buffer->savePath;
     if (savepath == "")
         return StatusCode::EMPTY_SAVE_PATH;

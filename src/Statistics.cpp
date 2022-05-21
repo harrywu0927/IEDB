@@ -6,7 +6,7 @@
  * @param buffer
  * @return PyObject*
  */
-PyObject *ConvertToPyList(DB_DataBuffer *buffer)
+PyObject *ConvertToPyList_STAT(DB_DataBuffer *buffer)
 {
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
@@ -169,9 +169,9 @@ int DB_MAX(DB_DataBuffer *buffer)
 {
     if (!Py_IsInitialized())
         Py_Initialize();
-    if (!buffer->bufferMalloced)
+    if (buffer->length == 0)
         return StatusCode::NO_DATA_QUERIED;
-    PyObject *arr = ConvertToPyList(buffer);
+    PyObject *arr = ConvertToPyList_STAT(buffer);
     if (PyObject_Size(arr) == 0)
     {
         free(buffer->buffer);
@@ -183,7 +183,7 @@ int DB_MAX(DB_DataBuffer *buffer)
     int startPos = typeNum * 11 + 1;
     // 指定py文件目录
     PyRun_SimpleString("import sys");
-    PyRun_SimpleString("sys.path.append('./')");
+    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
     PyObject *statistics = PyImport_ImportModule("Statistics");
     PyObject *pFunc, *pArgs, *pValue;
     if (statistics != NULL)
@@ -225,11 +225,11 @@ int DB_MAX(DB_DataBuffer *buffer)
  */
 int DB_MIN(DB_DataBuffer *buffer)
 {
-    if (!buffer->bufferMalloced)
+    if (buffer->length == 0)
         return StatusCode::NO_DATA_QUERIED;
     if (!Py_IsInitialized())
         Py_Initialize();
-    PyObject *arr = ConvertToPyList(buffer);
+    PyObject *arr = ConvertToPyList_STAT(buffer);
     if (PyObject_Size(arr) == 0)
     {
         free(buffer->buffer);
@@ -241,7 +241,7 @@ int DB_MIN(DB_DataBuffer *buffer)
     int startPos = typeNum * 11 + 1;
     // 指定py文件目录
     PyRun_SimpleString("import sys");
-    PyRun_SimpleString("sys.path.append('./')");
+    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
     PyObject *statistics = PyImport_ImportModule("Statistics");
     PyObject *pFunc, *pArgs, *pValue;
     if (statistics != NULL)
@@ -283,11 +283,11 @@ int DB_MIN(DB_DataBuffer *buffer)
  */
 int DB_STD(DB_DataBuffer *buffer)
 {
-    if (!buffer->bufferMalloced)
+    if (buffer->length == 0)
         return StatusCode::NO_DATA_QUERIED;
     if (!Py_IsInitialized())
         Py_Initialize();
-    PyObject *arr = ConvertToPyList(buffer);
+    PyObject *arr = ConvertToPyList_STAT(buffer);
     if (PyObject_Size(arr) == 0)
     {
         free(buffer->buffer);
@@ -299,7 +299,7 @@ int DB_STD(DB_DataBuffer *buffer)
     int startPos = typeNum * 11 + 1;
     // 指定py文件目录
     PyRun_SimpleString("import sys");
-    PyRun_SimpleString("sys.path.append('./')");
+    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
     PyObject *statistics = PyImport_ImportModule("Statistics");
     PyObject *pFunc, *pArgs, *pValue;
     if (statistics != NULL)
@@ -341,11 +341,11 @@ int DB_STD(DB_DataBuffer *buffer)
  */
 int DB_STDEV(DB_DataBuffer *buffer)
 {
-    if (!buffer->bufferMalloced)
+    if (buffer->length == 0)
         return StatusCode::NO_DATA_QUERIED;
     if (!Py_IsInitialized())
         Py_Initialize();
-    PyObject *arr = ConvertToPyList(buffer);
+    PyObject *arr = ConvertToPyList_STAT(buffer);
     if (PyObject_Size(arr) == 0)
     {
         free(buffer->buffer);
@@ -357,7 +357,7 @@ int DB_STDEV(DB_DataBuffer *buffer)
     int startPos = typeNum * 11 + 1;
     // 指定py文件目录
     PyRun_SimpleString("import sys");
-    PyRun_SimpleString("sys.path.append('./')");
+    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
     PyObject *statistics = PyImport_ImportModule("Statistics");
     PyObject *pFunc, *pArgs, *pValue;
     if (statistics != NULL)
@@ -399,11 +399,11 @@ int DB_STDEV(DB_DataBuffer *buffer)
  */
 int DB_AVG(DB_DataBuffer *buffer)
 {
-    if (!buffer->bufferMalloced)
+    if (buffer->length == 0)
         return StatusCode::NO_DATA_QUERIED;
     if (!Py_IsInitialized())
         Py_Initialize();
-    PyObject *arr = ConvertToPyList(buffer);
+    PyObject *arr = ConvertToPyList_STAT(buffer);
     if (PyObject_Size(arr) == 0)
     {
         free(buffer->buffer);
@@ -415,7 +415,7 @@ int DB_AVG(DB_DataBuffer *buffer)
     int startPos = typeNum * 11 + 1;
     // 指定py文件目录
     PyRun_SimpleString("import sys");
-    PyRun_SimpleString("sys.path.append('./')");
+    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
     PyObject *statistics = PyImport_ImportModule("Statistics");
     PyObject *pFunc, *pArgs, *pValue;
     if (statistics != NULL)
@@ -459,9 +459,9 @@ int DB_MEDIAN(DB_DataBuffer *buffer)
 {
     if (!Py_IsInitialized())
         Py_Initialize();
-    if (!buffer->bufferMalloced)
+    if (buffer->length == 0)
         return StatusCode::NO_DATA_QUERIED;
-    PyObject *arr = ConvertToPyList(buffer);
+    PyObject *arr = ConvertToPyList_STAT(buffer);
     if (PyObject_Size(arr) == 0)
     {
         free(buffer->buffer);
@@ -473,7 +473,7 @@ int DB_MEDIAN(DB_DataBuffer *buffer)
     int startPos = typeNum * 11 + 1;
     // 指定py文件目录
     PyRun_SimpleString("import sys");
-    PyRun_SimpleString("sys.path.append('./')");
+    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
     PyObject *statistics = PyImport_ImportModule("Statistics");
     PyObject *pFunc, *pArgs, *pValue;
     if (statistics != NULL)
@@ -517,9 +517,9 @@ int DB_PROD(DB_DataBuffer *buffer)
 {
     if (!Py_IsInitialized())
         Py_Initialize();
-    if (!buffer->bufferMalloced)
+    if (buffer->length == 0)
         return StatusCode::NO_DATA_QUERIED;
-    PyObject *arr = ConvertToPyList(buffer);
+    PyObject *arr = ConvertToPyList_STAT(buffer);
     if (PyObject_Size(arr) == 0)
     {
         free(buffer->buffer);
@@ -531,7 +531,7 @@ int DB_PROD(DB_DataBuffer *buffer)
     int startPos = typeNum * 11 + 1;
     // 指定py文件目录
     PyRun_SimpleString("import sys");
-    PyRun_SimpleString("sys.path.append('./')");
+    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
     PyObject *statistics = PyImport_ImportModule("Statistics");
     PyObject *pFunc, *pArgs, *pValue;
     if (statistics != NULL)
@@ -576,7 +576,7 @@ int DB_SUM(DB_DataBuffer *buffer)
         return StatusCode::NO_DATA_QUERIED;
     if (!Py_IsInitialized())
         Py_Initialize();
-    PyObject *arr = ConvertToPyList(buffer);
+    PyObject *arr = ConvertToPyList_STAT(buffer);
     if (PyObject_Size(arr) == 0)
     {
         free(buffer->buffer);
@@ -588,7 +588,7 @@ int DB_SUM(DB_DataBuffer *buffer)
     int startPos = typeNum * 11 + 1;
     // 指定py文件目录
     PyRun_SimpleString("import sys");
-    PyRun_SimpleString("sys.path.append('./')");
+    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
     PyObject *statistics = PyImport_ImportModule("Statistics");
     PyObject *pFunc, *pArgs, *pValue;
     if (statistics != NULL)

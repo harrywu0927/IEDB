@@ -1,7 +1,7 @@
 #include <utils.hpp>
 
 /**
- * @brief 将查询得到的buffer中的数据提取到python列表中
+ * @brief 将查询得到的buffer中的数据提取到python列表中，允许数组
  *
  * @param buffer
  * @return PyObject*
@@ -254,7 +254,7 @@ int DB_OutlierDetection(DB_DataBuffer *buffer, DB_QueryParams *params)
 
     // 指定py文件目录
     PyRun_SimpleString("import sys");
-    PyRun_SimpleString("sys.path.append('./')");
+    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
 
     PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
     PyObject *pValue, *pArgs, *pFunc;
@@ -313,7 +313,7 @@ int DB_NoveltyFit(DB_QueryParams *params, double *maxLine, double *minLine)
 
     // 指定py文件目录
     PyRun_SimpleString("import sys");
-    PyRun_SimpleString("sys.path.append('./')");
+    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
 
     PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
     PyObject *pValue, *pArgs, *pFunc;
@@ -333,6 +333,64 @@ int DB_NoveltyFit(DB_QueryParams *params, double *maxLine, double *minLine)
             PyObject *ret = PyObject_CallObject(pFunc, pArgs);
             *maxLine = PyFloat_AsDouble(PyTuple_GetItem(ret, 0)); //转换为c类型的数据
             *minLine = PyFloat_AsDouble(PyTuple_GetItem(ret, 1));
+        }
+    }
+    return 0;
+}
+
+/**
+ * @brief 指定路径，对此路径下模版中所有变量的数据执行局部离群因子（LOF）训练，模型存为 变量名_novelty_model.pkl
+ *
+ * @param pathToLine
+ * @return 0:success,others:StatusCode
+ */
+int DB_NoveltyTraining(const char *pathToLine)
+{
+    if (TemplateManager::CheckTemplate(pathToLine) != 0)
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    if (!Py_IsInitialized())
+        Py_Initialize();
+    // 指定py文件目录
+    PyRun_SimpleString("import sys");
+    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
+    for (auto const &schema : CurrentTemplate.schemas)
+    {
+        DB_DataBuffer buffer;
+        DB_QueryParams params;
+        params.byPath = 0;
+        params.valueName = schema.first.name.c_str();
+        params.queryType = TIMESPAN;
+        params.start = 0;
+        params.end = getMilliTime();
+        params.pathToLine = pathToLine;
+        params.compareType = CMP_NONE;
+        params.order = ODR_NONE;
+        int err = DB_ExecuteQuery(&buffer, &params);
+        if (err != 0 || !buffer.bufferMalloced)
+            return err;
+
+        PyObject *arr = ConvertToPyList_ML(&buffer);
+
+        PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
+        PyObject *pValue, *pArgs, *pFunc;
+        long res = 0;
+        if (mymodule != NULL)
+        {
+            // 从模块中获取函数
+            pFunc = PyObject_GetAttrString(mymodule, "NoveltyModelTrain");
+            int dim = schema.second.isArray ? schema.second.arrayLen : 1;
+            if (pFunc && PyCallable_Check(pFunc))
+            {
+                // 创建参数元组
+                pArgs = PyTuple_New(3);
+                PyTuple_SetItem(pArgs, 0, arr);
+                PyTuple_SetItem(pArgs, 1, PyLong_FromLong(dim));
+                PyTuple_SetItem(pArgs, 2, PyBytes_FromString(params.valueName));
+                // 函数执行
+                PyObject *ret = PyObject_CallObject(pFunc, pArgs);
+                if (PyLong_AsLong(ret) != 0)
+                    return StatusCode::UNKNWON_DATAFILE;
+            }
         }
     }
     return 0;
@@ -370,7 +428,7 @@ int main()
     params.queryNums = 50;
     DB_DataBuffer buffer;
     double maxline, minline;
-    DB_NoveltyFit(&params, &maxline, &minline);
+    DB_NoveltyTraining("JinfeiSixteen");
     Py_Finalize();
     return 0;
 }
