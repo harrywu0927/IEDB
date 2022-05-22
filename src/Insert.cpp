@@ -75,7 +75,14 @@ pthread_t settingsWatcher;
 int settingsWatcherStarted = false;
 #endif
 
-bool checkNovelty(DB_DataBuffer *buffer)
+/**
+ * @brief 检查新数据的新颖性
+ *
+ * @param buffer
+ * @return 0:success, others:Status Code
+ * @note 按照模版分别获取数据，转为python参数后传入，输入已训练好的模型
+ */
+int checkNovelty(DB_DataBuffer *buffer)
 {
     // 指定py文件目录
     PyRun_SimpleString("import sys");
@@ -83,8 +90,189 @@ bool checkNovelty(DB_DataBuffer *buffer)
 
     PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
     PyObject *pValue, *pArgs, *pFunc;
-    PyObject *arr;
-    long res = 0;
+    PyObject *vals, *names, *dimensions;
+    names = PyList_New(0);
+    vals = PyList_New(0);
+    dimensions = PyList_New(0);
+    int cur = 0;
+    DataTypeConverter converter;
+    for (auto const &schema : CurrentTemplate.schemas)
+    {
+        PyObject *name = PyBytes_FromString(schema.first.name.c_str());
+        PyList_Append(names, name);
+        PyObject *val, *dim;
+        if (schema.second.isArray)
+        {
+            PyList_Append(dimensions, PyLong_FromLong(schema.second.arrayLen));
+            val = PyList_New(schema.second.arrayLen);
+            if (schema.second.valueType == ValueType::REAL)
+            {
+                float v = 0;
+                for (int i = 0; i < schema.second.arrayLen; i++)
+                {
+                    memcpy(&v, buffer->buffer + cur, 4);
+                    PyList_SetItem(val, i, PyFloat_FromDouble(v));
+                    cur += 4;
+                }
+                PyList_Append(vals, val);
+                cur += schema.second.hasTime ? 8 : 0;
+            }
+            else if (schema.second.valueType != ValueType::IMAGE)
+            {
+                long v = 0;
+                for (int i = 0; i < schema.second.arrayLen; i++)
+                {
+                    switch (schema.second.valueType)
+                    {
+                    case ValueType::INT:
+                    {
+                        char buf[2];
+                        memcpy(buf, buffer->buffer + cur, 2);
+                        v = converter.ToInt16(buf);
+                        break;
+                    }
+                    case ValueType::UINT:
+                    {
+                        char buf[2];
+                        memcpy(buf, buffer->buffer + cur, 2);
+                        v = converter.ToUInt16(buf);
+                        break;
+                    }
+                    case ValueType::DINT:
+                    {
+                        char buf[4];
+                        memcpy(buf, buffer->buffer + cur, 4);
+                        v = converter.ToInt32(buf);
+                        break;
+                    }
+                    case ValueType::UDINT:
+                    {
+                        char buf[4];
+                        memcpy(buf, buffer->buffer + cur, 4);
+                        v = converter.ToUInt32(buf);
+                        break;
+                    }
+                    case ValueType::SINT:
+                    {
+                        v = buffer->buffer[cur++];
+                        break;
+                    }
+                    case ValueType::USINT:
+                    {
+                        v = (unsigned char)buffer->buffer[cur];
+                        break;
+                    }
+                    case ValueType::TIME:
+                    {
+                        char buf[4];
+                        memcpy(buf, buffer->buffer + cur, 4);
+                        v = converter.ToInt32(buf);
+                        break;
+                    }
+                    case ValueType::BOOL:
+                    {
+                        v = buffer->buffer[cur];
+                        break;
+                    }
+                    default:
+                        break;
+                    }
+                    PyList_SetItem(val, i, PyLong_FromLong(v));
+                    cur += schema.second.valueBytes;
+                }
+                PyList_Append(vals, val);
+                cur += schema.second.hasTime ? 8 : 0;
+            }
+            else //是图片,跳过
+            {
+                char length[2], width[2], channels[2];
+                memcpy(length, buffer->buffer + cur, 2);
+                cur += 2;
+                memcpy(width, buffer->buffer + cur, 2);
+                cur += 2;
+                memcpy(channels, buffer->buffer + cur, 2);
+                cur += 2;
+                cur += (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels);
+            }
+        }
+        else
+        {
+            PyList_Append(dimensions, PyLong_FromLong(1));
+            if (schema.second.valueType == ValueType::REAL)
+            {
+                float v = 0;
+                memcpy(&v, buffer->buffer + cur, 4);
+                cur += 4;
+                val = PyLong_FromLong(v);
+                PyList_Append(vals, val);
+                cur += schema.second.hasTime ? 8 : 0;
+            }
+            else if (schema.second.valueType != ValueType::IMAGE)
+            {
+                long v = 0;
+                switch (schema.second.valueType)
+                {
+                case ValueType::INT:
+                {
+                    char buf[2];
+                    memcpy(buf, buffer->buffer + cur, 2);
+                    v = converter.ToInt16(buf);
+                    break;
+                }
+                case ValueType::UINT:
+                {
+                    char buf[2];
+                    memcpy(buf, buffer->buffer + cur, 2);
+                    v = converter.ToUInt16(buf);
+                    break;
+                }
+                case ValueType::DINT:
+                {
+                    char buf[4];
+                    memcpy(buf, buffer->buffer + cur, 4);
+                    v = converter.ToInt32(buf);
+                    break;
+                }
+                case ValueType::UDINT:
+                {
+                    char buf[4];
+                    memcpy(buf, buffer->buffer + cur, 4);
+                    v = converter.ToUInt32(buf);
+                    break;
+                }
+                case ValueType::SINT:
+                {
+                    v = buffer->buffer[cur++];
+                    break;
+                }
+                case ValueType::USINT:
+                {
+                    v = (unsigned char)buffer->buffer[cur];
+                    break;
+                }
+                case ValueType::TIME:
+                {
+                    char buf[4];
+                    memcpy(buf, buffer->buffer + cur, 4);
+                    v = converter.ToInt32(buf);
+                    break;
+                }
+                case ValueType::BOOL:
+                {
+                    v = buffer->buffer[cur];
+                    break;
+                }
+                default:
+                    break;
+                }
+                cur += schema.second.valueBytes;
+                val = PyLong_FromLong(v);
+                PyList_Append(vals, val);
+                cur += schema.second.hasTime ? 8 : 0;
+            }
+        }
+    }
+
     if (mymodule != NULL)
     {
         // 从模块中获取函数
@@ -93,13 +281,28 @@ bool checkNovelty(DB_DataBuffer *buffer)
         if (pFunc && PyCallable_Check(pFunc))
         {
             // 创建参数元组
-            pArgs = PyTuple_New(1);
-            PyTuple_SetItem(pArgs, 0, arr);
-            PyTuple_SetItem(pArgs, 1, PyLong_FromLong(1)); //暂定维度1
+            pArgs = PyTuple_New(3);
+            PyTuple_SetItem(pArgs, 0, vals);
+            PyTuple_SetItem(pArgs, 1, dimensions); //暂定维度1
+            PyTuple_SetItem(pArgs, 2, names);
             // 函数执行
             PyObject *ret = PyObject_CallObject(pFunc, pArgs);
+            PyObject *item;
+            long res = 0;
+            int len = PyObject_Size(ret);
+            for (int i = 0; i < len; i++)
+            {
+                item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
+                res = PyLong_AsLong(item);     //转换为c类型的数据
+                if (res < 0)
+                {
+                    return StatusCode::NOVEL_DATA_DETECTED;
+                }
+            }
+            return 0;
         }
     }
+    return StatusCode::PYTHON_SCRIPT_NOT_FOUND;
 }
 /**
  * @brief 将一个缓冲区中的一条数据(文件)存放在指定路径下，以文件ID+时间的方式命名
@@ -131,17 +334,28 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
     {
     }
 #endif
+    int errCode = 0;
+    IOBusy = 1;
     if (!Py_IsInitialized())
         Py_Initialize();
     if (settings("Check_Novelty") == "true")
     {
-        if (checkNovelty(buffer))
+        if (TemplateManager::CheckTemplate(buffer->savePath) != 0)
+            errCode = StatusCode::SCHEMA_FILE_NOT_FOUND;
+        if (errCode == 0) // errCode非0时，依然会插入数据，但不会检测奇异性，且会返回错误码
         {
+            errCode = checkNovelty(buffer); //此处若检测奇异性过程中出现错误，不会中止插入数据
+            if (errCode == 0)
+                addTime = 0;
         }
     }
+    return 0;
     string savepath = buffer->savePath;
     if (savepath == "")
+    {
+        IOBusy = 0;
         return StatusCode::EMPTY_SAVE_PATH;
+    }
     long fp;
     long curtime = getMilliTime();
     time_t time = curtime / 1000;
@@ -159,9 +373,11 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
             err = DB_Write(fp, buffer->buffer, buffer->length);
             if (err == 0)
             {
+                IOBusy = 0;
                 return DB_Close(fp);
             }
         }
+        IOBusy = 0;
         return err;
     }
     else
@@ -175,9 +391,11 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
                 err = DB_Write(fp, buffer->buffer + 1, buffer->length - 1);
                 if (err == 0)
                 {
+                    IOBusy = 0;
                     return DB_Close(fp);
                 }
             }
+            IOBusy = 0;
             return err;
         }
         else if (buffer->buffer[0] == 1) //数据完全压缩
@@ -185,6 +403,7 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
 
             int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
             err = DB_Close(fp);
+            IOBusy = 0;
             return err;
         }
         else if (buffer->buffer[0] == 2) //数据未完全压缩
@@ -195,13 +414,16 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
                 err = DB_Write(fp, buffer->buffer + 1, buffer->length - 1);
                 if (err == 0)
                 {
+                    IOBusy = 0;
                     return DB_Close(fp);
                 }
             }
+            IOBusy = 0;
             return err;
         }
     }
-    return 0;
+    IOBusy = 0;
+    return errCode;
 }
 
 /**
@@ -248,5 +470,15 @@ int DB_InsertRecords(DB_DataBuffer buffer[], int recordsNum, int addTime)
             return err;
         }
     }
+    return 0;
+}
+
+int main()
+{
+    DB_DataBuffer buffer;
+    buffer.savePath = "JinfeiSeven/JinfeiSeven1527050_2022-5-12-18-10-35-620.idb";
+    DB_ReadFile(&buffer);
+    buffer.savePath = "JinfeiSeven";
+    DB_InsertRecord(&buffer, 0);
     return 0;
 }

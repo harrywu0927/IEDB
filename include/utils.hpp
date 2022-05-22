@@ -46,38 +46,41 @@ namespace StatusCode
 {
     enum StatusCode
     {
-        DATA_TYPE_MISMATCH_ERROR = 135,  //数据类型不匹配
-        SCHEMA_FILE_NOT_FOUND = 136,     //未找到模版文件
-        PATHCODE_INVALID = 137,          //路径编码不合法
-        UNKNOWN_TYPE = 138,              //未知数据类型
-        TEMPLATE_RESOLUTION_ERROR = 139, //模版文件解析错误
-        DATAFILE_NOT_FOUND = 140,        //未找到数据文件
-        UNKNOWN_PATHCODE = 141,          //未知的路径编码
-        UNKNOWN_VARIABLE_NAME = 142,     //未知的变量名
-        BUFFER_FULL = 143,               //缓冲区满，还有数据
-        UNKNWON_DATAFILE = 144,          //未知的数据文件或数据文件不合法
-        NO_QUERY_TYPE = 145,             //未指定主查询条件
-        QUERY_TYPE_NOT_SURPPORT = 146,   //不支持的查询方式
-        EMPTY_PATH_TO_LINE = 147,        //到产线的路径为空
-        EMPTY_SAVE_PATH = 148,           //空的存储路径
-        NO_DATA_QUERIED = 149,           //未找到数据
-        VARIABLE_NAME_EXIST = 150,       //变量名已存在
-        PATHCODE_EXIST = 151,            //编码已存在
-        FILENAME_MODIFIED = 152,         //文件名被篡改
-        INVALID_TIMESPAN = 153,          //时间段设置错误或未指定
-        NO_PATHCODE_OR_NAME = 154,       //查询参数中路径编码和变量名均未找到
-        NO_QUERY_NUM = 155,              //查询最新记录时未指定查询条数
-        NO_FILEID = 156,                 //未指定文件ID
-        VARIABLE_NOT_ASSIGNED = 157,     //比较某个值时未指定变量名
-        NO_COMPARE_VALUE = 158,          //指定了比较类型却没有赋值
-        ZIPTYPE_ERROR = 159,             //压缩数据类型出现问题
-        NO_ZIP_TYPE = 160,               //未指定压缩/还原条件
-        ISARRAY_ERROR = 161,             // isArray只能为0或者1
-        HASTIME_ERROR = 162,             // hasTime只能为0或者1
-        ARRAYLEN_ERROR = 163,            // arrayLen不能小于１
-        DIR_INCLUDE_NUMBER = 164,        //文件夹名包含数字
-        AMBIGUOUS_QUERY_PARAMS = 165,    //查询条件有歧义
-        ML_TYPE_NOT_SUPPORT = 166,       //不支持的机器学习条件
+        DATA_TYPE_MISMATCH_ERROR = 135,   //数据类型不匹配
+        SCHEMA_FILE_NOT_FOUND = 136,      //未找到模版文件
+        PATHCODE_INVALID = 137,           //路径编码不合法
+        UNKNOWN_TYPE = 138,               //未知数据类型
+        TEMPLATE_RESOLUTION_ERROR = 139,  //模版文件解析错误
+        DATAFILE_NOT_FOUND = 140,         //未找到数据文件
+        UNKNOWN_PATHCODE = 141,           //未知的路径编码
+        UNKNOWN_VARIABLE_NAME = 142,      //未知的变量名
+        BUFFER_FULL = 143,                //缓冲区满，还有数据
+        UNKNWON_DATAFILE = 144,           //未知的数据文件或数据文件不合法
+        NO_QUERY_TYPE = 145,              //未指定主查询条件
+        QUERY_TYPE_NOT_SURPPORT = 146,    //不支持的查询方式
+        EMPTY_PATH_TO_LINE = 147,         //到产线的路径为空
+        EMPTY_SAVE_PATH = 148,            //空的存储路径
+        NO_DATA_QUERIED = 149,            //未找到数据
+        VARIABLE_NAME_EXIST = 150,        //变量名已存在
+        PATHCODE_EXIST = 151,             //编码已存在
+        FILENAME_MODIFIED = 152,          //文件名被篡改
+        INVALID_TIMESPAN = 153,           //时间段设置错误或未指定
+        NO_PATHCODE_OR_NAME = 154,        //查询参数中路径编码和变量名均未找到
+        NO_QUERY_NUM = 155,               //查询最新记录时未指定查询条数
+        NO_FILEID = 156,                  //未指定文件ID
+        VARIABLE_NOT_ASSIGNED = 157,      //比较某个值时未指定变量名
+        NO_COMPARE_VALUE = 158,           //指定了比较类型却没有赋值
+        ZIPTYPE_ERROR = 159,              //压缩数据类型出现问题
+        NO_ZIP_TYPE = 160,                //未指定压缩/还原条件
+        ISARRAY_ERROR = 161,              // isArray只能为0或者1
+        HASTIME_ERROR = 162,              // hasTime只能为0或者1
+        ARRAYLEN_ERROR = 163,             // arrayLen不能小于１
+        DIR_INCLUDE_NUMBER = 164,         //文件夹名包含数字
+        AMBIGUOUS_QUERY_PARAMS = 165,     //查询条件有歧义
+        ML_TYPE_NOT_SUPPORT = 166,        //不支持的机器学习条件
+        NOVEL_DATA_DETECTED = 167,        //检测到奇异数据
+        PYTHON_SCRIPT_NOT_FOUND = 168,    //未找到python脚本文件
+        METHOD_NOT_FOUND_IN_PYTHON = 169, // python脚本中未找到相应的方法
     };
 }
 namespace ValueType

@@ -1,5 +1,17 @@
 #include <utils.hpp>
 
+enum STAT_Type
+{
+    MAX,
+    MIN,
+    SUM,
+    PROD,
+    STD,
+    STDEV,
+    AVG,
+    MEDIAN
+};
+
 /**
  * @brief 将查询得到的buffer中的数据提取到python列表中
  *
@@ -159,13 +171,13 @@ void writeStatHead(int typeNum, char *newBuffer, char *buffer)
 }
 
 /**
- * @brief 根据查询得到的缓冲区中的数据获取每列的最大值
+ * @brief 处理统计函数，调用Python程序
  *
  * @param buffer
- * @return status code
- * @note 将buffer中的数据处理为python数据结构后作为参数传入相对应的函数中，获取返回值即可
+ * @param type
+ * @return int
  */
-int DB_MAX(DB_DataBuffer *buffer)
+int STAT_Process(DB_DataBuffer *buffer, STAT_Type type)
 {
     if (!Py_IsInitialized())
         Py_Initialize();
@@ -189,8 +201,35 @@ int DB_MAX(DB_DataBuffer *buffer)
     if (statistics != NULL)
     {
         // 从模块中获取函数
-        pFunc = PyObject_GetAttrString(statistics, "MAX");
-
+        switch (type)
+        {
+        case STAT_Type::MAX:
+            pFunc = PyObject_GetAttrString(statistics, "MAX");
+            break;
+        case STAT_Type::MIN:
+            pFunc = PyObject_GetAttrString(statistics, "MIN");
+            break;
+        case STAT_Type::SUM:
+            pFunc = PyObject_GetAttrString(statistics, "SUM");
+            break;
+        case STAT_Type::PROD:
+            pFunc = PyObject_GetAttrString(statistics, "PROD");
+            break;
+        case STAT_Type::STD:
+            pFunc = PyObject_GetAttrString(statistics, "STD");
+            break;
+        case STAT_Type::STDEV:
+            pFunc = PyObject_GetAttrString(statistics, "STDEV");
+            break;
+        case STAT_Type::AVG:
+            pFunc = PyObject_GetAttrString(statistics, "AVG");
+            break;
+        case STAT_Type::MEDIAN:
+            pFunc = PyObject_GetAttrString(statistics, "MEDIAN");
+            break;
+        default:
+            break;
+        }
         if (pFunc && PyCallable_Check(pFunc))
         {
             // 创建参数元组
@@ -211,9 +250,22 @@ int DB_MAX(DB_DataBuffer *buffer)
         }
     }
     free(buffer->buffer);
+    buffer->buffer = NULL;
     buffer->buffer = newBuffer;
     buffer->length = typeNum * 19 + 1;
     return 0;
+}
+
+/**
+ * @brief 根据查询得到的缓冲区中的数据获取每列的最大值
+ *
+ * @param buffer
+ * @return status code
+ * @note 将buffer中的数据处理为python数据结构后作为参数传入相对应的函数中，获取返回值即可
+ */
+int DB_MAX(DB_DataBuffer *buffer)
+{
+    return STAT_Process(buffer, STAT_Type::MAX);
 }
 
 /**
@@ -225,53 +277,7 @@ int DB_MAX(DB_DataBuffer *buffer)
  */
 int DB_MIN(DB_DataBuffer *buffer)
 {
-    if (buffer->length == 0)
-        return StatusCode::NO_DATA_QUERIED;
-    if (!Py_IsInitialized())
-        Py_Initialize();
-    PyObject *arr = ConvertToPyList_STAT(buffer);
-    if (PyObject_Size(arr) == 0)
-    {
-        free(buffer->buffer);
-        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    }
-    int typeNum = buffer->buffer[0];
-    char *newBuffer = (char *)malloc(typeNum * 19 + 1);
-    writeStatHead(typeNum, newBuffer, buffer->buffer);
-    int startPos = typeNum * 11 + 1;
-    // 指定py文件目录
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
-    PyObject *statistics = PyImport_ImportModule("Statistics");
-    PyObject *pFunc, *pArgs, *pValue;
-    if (statistics != NULL)
-    {
-        // 从模块中获取函数
-        pFunc = PyObject_GetAttrString(statistics, "MIN");
-
-        if (pFunc && PyCallable_Check(pFunc))
-        {
-            // 创建参数元组
-            pArgs = PyTuple_New(1);
-            PyTuple_SetItem(pArgs, 0, arr);
-            // 函数执行
-            PyObject *ret = PyObject_CallObject(pFunc, pArgs);
-            PyObject *item;
-            double val;
-            int len = PyObject_Size(ret);
-            for (int i = 0; i < len; i++)
-            {
-                item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
-                val = PyFloat_AsDouble(item);  //转换为c类型的数据
-                cout << val << " ";
-                memcpy(newBuffer + startPos + i * 8, &val, 8);
-            }
-        }
-    }
-    free(buffer->buffer);
-    buffer->buffer = newBuffer;
-    buffer->length = typeNum * 19 + 1;
-    return 0;
+    return STAT_Process(buffer, STAT_Type::MIN);
 }
 
 /**
@@ -283,53 +289,7 @@ int DB_MIN(DB_DataBuffer *buffer)
  */
 int DB_STD(DB_DataBuffer *buffer)
 {
-    if (buffer->length == 0)
-        return StatusCode::NO_DATA_QUERIED;
-    if (!Py_IsInitialized())
-        Py_Initialize();
-    PyObject *arr = ConvertToPyList_STAT(buffer);
-    if (PyObject_Size(arr) == 0)
-    {
-        free(buffer->buffer);
-        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    }
-    int typeNum = buffer->buffer[0];
-    char *newBuffer = (char *)malloc(typeNum * 19 + 1);
-    writeStatHead(typeNum, newBuffer, buffer->buffer);
-    int startPos = typeNum * 11 + 1;
-    // 指定py文件目录
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
-    PyObject *statistics = PyImport_ImportModule("Statistics");
-    PyObject *pFunc, *pArgs, *pValue;
-    if (statistics != NULL)
-    {
-        // 从模块中获取函数
-        pFunc = PyObject_GetAttrString(statistics, "STD");
-
-        if (pFunc && PyCallable_Check(pFunc))
-        {
-            // 创建参数元组
-            pArgs = PyTuple_New(1);
-            PyTuple_SetItem(pArgs, 0, arr);
-            // 函数执行
-            PyObject *ret = PyObject_CallObject(pFunc, pArgs);
-            PyObject *item;
-            double val;
-            int len = PyObject_Size(ret);
-            for (int i = 0; i < len; i++)
-            {
-                item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
-                val = PyFloat_AsDouble(item);  //转换为c类型的数据
-                cout << val << " ";
-                memcpy(newBuffer + startPos + i * 8, &val, 8);
-            }
-        }
-    }
-    free(buffer->buffer);
-    buffer->buffer = newBuffer;
-    buffer->length = typeNum * 19 + 1;
-    return 0;
+    return STAT_Process(buffer, STAT_Type::STD);
 }
 
 /**
@@ -341,53 +301,7 @@ int DB_STD(DB_DataBuffer *buffer)
  */
 int DB_STDEV(DB_DataBuffer *buffer)
 {
-    if (buffer->length == 0)
-        return StatusCode::NO_DATA_QUERIED;
-    if (!Py_IsInitialized())
-        Py_Initialize();
-    PyObject *arr = ConvertToPyList_STAT(buffer);
-    if (PyObject_Size(arr) == 0)
-    {
-        free(buffer->buffer);
-        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    }
-    int typeNum = buffer->buffer[0];
-    char *newBuffer = (char *)malloc(typeNum * 19 + 1);
-    writeStatHead(typeNum, newBuffer, buffer->buffer);
-    int startPos = typeNum * 11 + 1;
-    // 指定py文件目录
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
-    PyObject *statistics = PyImport_ImportModule("Statistics");
-    PyObject *pFunc, *pArgs, *pValue;
-    if (statistics != NULL)
-    {
-        // 从模块中获取函数
-        pFunc = PyObject_GetAttrString(statistics, "STDEV");
-
-        if (pFunc && PyCallable_Check(pFunc))
-        {
-            // 创建参数元组
-            pArgs = PyTuple_New(1);
-            PyTuple_SetItem(pArgs, 0, arr);
-            // 函数执行
-            PyObject *ret = PyObject_CallObject(pFunc, pArgs);
-            PyObject *item;
-            double val;
-            int len = PyObject_Size(ret);
-            for (int i = 0; i < len; i++)
-            {
-                item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
-                val = PyFloat_AsDouble(item);  //转换为c类型的数据
-                cout << val << " ";
-                memcpy(newBuffer + startPos + i * 8, &val, 8);
-            }
-        }
-    }
-    free(buffer->buffer);
-    buffer->buffer = newBuffer;
-    buffer->length = typeNum * 19 + 1;
-    return 0;
+    return STAT_Process(buffer, STAT_Type::STDEV);
 }
 
 /**
@@ -399,53 +313,7 @@ int DB_STDEV(DB_DataBuffer *buffer)
  */
 int DB_AVG(DB_DataBuffer *buffer)
 {
-    if (buffer->length == 0)
-        return StatusCode::NO_DATA_QUERIED;
-    if (!Py_IsInitialized())
-        Py_Initialize();
-    PyObject *arr = ConvertToPyList_STAT(buffer);
-    if (PyObject_Size(arr) == 0)
-    {
-        free(buffer->buffer);
-        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    }
-    int typeNum = buffer->buffer[0];
-    char *newBuffer = (char *)malloc(typeNum * 19 + 1);
-    writeStatHead(typeNum, newBuffer, buffer->buffer);
-    int startPos = typeNum * 11 + 1;
-    // 指定py文件目录
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
-    PyObject *statistics = PyImport_ImportModule("Statistics");
-    PyObject *pFunc, *pArgs, *pValue;
-    if (statistics != NULL)
-    {
-        // 从模块中获取函数
-        pFunc = PyObject_GetAttrString(statistics, "MEAN");
-
-        if (pFunc && PyCallable_Check(pFunc))
-        {
-            // 创建参数元组
-            pArgs = PyTuple_New(1);
-            PyTuple_SetItem(pArgs, 0, arr);
-            // 函数执行
-            PyObject *ret = PyObject_CallObject(pFunc, pArgs);
-            PyObject *item;
-            double val;
-            int len = PyObject_Size(ret);
-            for (int i = 0; i < len; i++)
-            {
-                item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
-                val = PyFloat_AsDouble(item);  //转换为c类型的数据
-                cout << val << " ";
-                memcpy(newBuffer + startPos + i * 8, &val, 8);
-            }
-        }
-    }
-    free(buffer->buffer);
-    buffer->buffer = newBuffer;
-    buffer->length = typeNum * 19 + 1;
-    return 0;
+    return STAT_Process(buffer, STAT_Type::AVG);
 }
 
 /**
@@ -457,53 +325,7 @@ int DB_AVG(DB_DataBuffer *buffer)
  */
 int DB_MEDIAN(DB_DataBuffer *buffer)
 {
-    if (!Py_IsInitialized())
-        Py_Initialize();
-    if (buffer->length == 0)
-        return StatusCode::NO_DATA_QUERIED;
-    PyObject *arr = ConvertToPyList_STAT(buffer);
-    if (PyObject_Size(arr) == 0)
-    {
-        free(buffer->buffer);
-        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    }
-    int typeNum = buffer->buffer[0];
-    char *newBuffer = (char *)malloc(typeNum * 19 + 1);
-    writeStatHead(typeNum, newBuffer, buffer->buffer);
-    int startPos = typeNum * 11 + 1;
-    // 指定py文件目录
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
-    PyObject *statistics = PyImport_ImportModule("Statistics");
-    PyObject *pFunc, *pArgs, *pValue;
-    if (statistics != NULL)
-    {
-        // 从模块中获取函数
-        pFunc = PyObject_GetAttrString(statistics, "MEDIAN");
-
-        if (pFunc && PyCallable_Check(pFunc))
-        {
-            // 创建参数元组
-            pArgs = PyTuple_New(1);
-            PyTuple_SetItem(pArgs, 0, arr);
-            // 函数执行
-            PyObject *ret = PyObject_CallObject(pFunc, pArgs);
-            PyObject *item;
-            double val;
-            int len = PyObject_Size(ret);
-            for (int i = 0; i < len; i++)
-            {
-                item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
-                val = PyFloat_AsDouble(item);  //转换为c类型的数据
-                cout << val << " ";
-                memcpy(newBuffer + startPos + i * 8, &val, 8);
-            }
-        }
-    }
-    free(buffer->buffer);
-    buffer->buffer = newBuffer;
-    buffer->length = typeNum * 19 + 1;
-    return 0;
+    return STAT_Process(buffer, STAT_Type::MEDIAN);
 }
 
 /**
@@ -515,53 +337,7 @@ int DB_MEDIAN(DB_DataBuffer *buffer)
  */
 int DB_PROD(DB_DataBuffer *buffer)
 {
-    if (!Py_IsInitialized())
-        Py_Initialize();
-    if (buffer->length == 0)
-        return StatusCode::NO_DATA_QUERIED;
-    PyObject *arr = ConvertToPyList_STAT(buffer);
-    if (PyObject_Size(arr) == 0)
-    {
-        free(buffer->buffer);
-        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    }
-    int typeNum = buffer->buffer[0];
-    char *newBuffer = (char *)malloc(typeNum * 19 + 1);
-    writeStatHead(typeNum, newBuffer, buffer->buffer);
-    int startPos = typeNum * 11 + 1;
-    // 指定py文件目录
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
-    PyObject *statistics = PyImport_ImportModule("Statistics");
-    PyObject *pFunc, *pArgs, *pValue;
-    if (statistics != NULL)
-    {
-        // 从模块中获取函数
-        pFunc = PyObject_GetAttrString(statistics, "PROD");
-
-        if (pFunc && PyCallable_Check(pFunc))
-        {
-            // 创建参数元组
-            pArgs = PyTuple_New(1);
-            PyTuple_SetItem(pArgs, 0, arr);
-            // 函数执行
-            PyObject *ret = PyObject_CallObject(pFunc, pArgs);
-            PyObject *item;
-            double val;
-            int len = PyObject_Size(ret);
-            for (int i = 0; i < len; i++)
-            {
-                item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
-                val = PyFloat_AsDouble(item);  //转换为c类型的数据
-                cout << val << " ";
-                memcpy(newBuffer + startPos + i * 8, &val, 8);
-            }
-        }
-    }
-    free(buffer->buffer);
-    buffer->buffer = newBuffer;
-    buffer->length = typeNum * 19 + 1;
-    return 0;
+    return STAT_Process(buffer, STAT_Type::PROD);
 }
 /**
  * @brief 根据查询得到的缓冲区中的数据对每一列求和
@@ -572,53 +348,7 @@ int DB_PROD(DB_DataBuffer *buffer)
  */
 int DB_SUM(DB_DataBuffer *buffer)
 {
-    if (!buffer->bufferMalloced)
-        return StatusCode::NO_DATA_QUERIED;
-    if (!Py_IsInitialized())
-        Py_Initialize();
-    PyObject *arr = ConvertToPyList_STAT(buffer);
-    if (PyObject_Size(arr) == 0)
-    {
-        free(buffer->buffer);
-        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-    }
-    int typeNum = buffer->buffer[0];
-    char *newBuffer = (char *)malloc(typeNum * 19 + 1);
-    writeStatHead(typeNum, newBuffer, buffer->buffer);
-    int startPos = typeNum * 11 + 1;
-    // 指定py文件目录
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
-    PyObject *statistics = PyImport_ImportModule("Statistics");
-    PyObject *pFunc, *pArgs, *pValue;
-    if (statistics != NULL)
-    {
-        // 从模块中获取函数
-        pFunc = PyObject_GetAttrString(statistics, "SUM");
-
-        if (pFunc && PyCallable_Check(pFunc))
-        {
-            // 创建参数元组
-            pArgs = PyTuple_New(1);
-            PyTuple_SetItem(pArgs, 0, arr);
-            // 函数执行
-            PyObject *ret = PyObject_CallObject(pFunc, pArgs);
-            PyObject *item;
-            double val;
-            int len = PyObject_Size(ret);
-            for (int i = 0; i < len; i++)
-            {
-                item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
-                val = PyFloat_AsDouble(item);  //转换为c类型的数据
-                cout << val << " ";
-                memcpy(newBuffer + startPos + i * 8, &val, 8);
-            }
-        }
-    }
-    free(buffer->buffer);
-    buffer->buffer = newBuffer;
-    buffer->length = typeNum * 19 + 1;
-    return 0;
+    return STAT_Process(buffer, STAT_Type::SUM);
 }
 // int main()
 // {

@@ -5,8 +5,6 @@ import numpy as np
 from sklearn.neighbors import LocalOutlierFactor
 import joblib
 
-# 离群点检测
-
 
 def Outliers(lst, dimension):
     points = np.array(lst, dtype=LONG)
@@ -22,18 +20,19 @@ def Outliers(lst, dimension):
         return list(res)
     else:
         print('输入数组shape有误')
-    return
-
-# 奇异点检测
 
 
-def Novelty(lst, dimension, valName):
-    if(len(lst) % dimension != 0):
-        return
-    clf = joblib.load(valName.decode()+'_novelty_model.pkl')
-    points = np.array(lst)
-    points = points.reshape((len(points)/dimension), dimension)
-    res = clf.predict(points)
+"""_summary_
+    """
+
+
+def Novelty(vals, dimensions, names):
+    res = []
+    for i in range(len(vals)):
+        clf = joblib.load(names[i].decode()+'_novelty_model.pkl')
+        points = np.array(vals[i])
+        points = points.reshape((len(points)/dimensions[i]), dimensions[i])
+        res.append(clf.predict(points))
     return list(res)
 
 
