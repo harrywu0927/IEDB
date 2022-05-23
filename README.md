@@ -14,9 +14,9 @@
 
 ```python3.8 -m pip install pybind11 pythran Cython numpy pandas scipy sklearn matplotlib```
 
-若安装过程中出现另外的依赖缺失，安装即可
+- 若安装过程中出现另外的依赖缺失，安装即可
 
-若使用Intel芯片，可选装sklearn加速包：
+- 若使用Intel芯片，可选装sklearn加速包：
 
 ```python3.8 -m pip install scikit-learn-intelex```
 

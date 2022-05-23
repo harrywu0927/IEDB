@@ -14,6 +14,11 @@
 #include <sys/time.h>
 #include <pthread.h>
 #endif
+#ifndef __linux__
+#include <mach/mach.h>
+#endif
+#include <sys/sysctl.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <errno.h>
@@ -139,6 +144,8 @@ void removeFilenameLabel(string &path);
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);
 
 int getMemory(long size, char *mem);
+
+void getMemoryUsage(long &total, long &available);
 
 int CheckQueryParams(DB_QueryParams *params);
 

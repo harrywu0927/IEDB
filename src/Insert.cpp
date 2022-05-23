@@ -322,17 +322,18 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
         pthread_create(&settingsWatcher, NULL, checkSettings, NULL);
         settingsWatcherStarted = true;
     }
-    if (!timerStarted && settings("Pack_Mode") == "timed")
-    {
-        int ret = pthread_create(&timer, NULL, checkTime, NULL);
-        if (ret != 0)
-        {
-            cout << "pthread_create error: error_code=" << ret << endl;
-        }
-    }
+    // if (!timerStarted && settings("Pack_Mode") == "timed")
+    // {
+    //     int ret = pthread_create(&timer, NULL, checkTime, NULL);
+    //     if (ret != 0)
+    //     {
+    //         cout << "pthread_create error: error_code=" << ret << endl;
+    //     }
+    // }
     else if (settings("Pack_Mode") == "auto")
     {
     }
+    return 0;
 #endif
     int errCode = 0;
     IOBusy = 1;
@@ -344,12 +345,12 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
             errCode = StatusCode::SCHEMA_FILE_NOT_FOUND;
         if (errCode == 0) // errCode非0时，依然会插入数据，但不会检测奇异性，且会返回错误码
         {
-            errCode = checkNovelty(buffer); //此处若检测奇异性过程中出现错误，不会中止插入数据
+            errCode = checkNovelty(buffer); //此处若检测奇异性过程中出现异常，不会中止插入数据
             if (errCode == 0)
                 addTime = 0;
         }
     }
-    return 0;
+
     string savepath = buffer->savePath;
     if (savepath == "")
     {
