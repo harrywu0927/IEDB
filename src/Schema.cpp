@@ -15,6 +15,20 @@ ZipTemplate CurrentZipTemplate;
 int DB_AddNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams)
 {
     int err;
+
+    //检查变量名输入是否合法
+    string variableName = TreeParams->valueName;
+    err = checkInputVaribaleName(variableName);
+    if(err !=0)
+        return err;
+
+    //检查路径编码输入是否合法
+    char inputPathCode[10]={0};
+    memcpy(inputPathCode,TreeParams->pathCode,10);
+    err = checkInputPathcode(inputPathCode);
+    if(err!=0)
+        return err;
+
     vector<string> files;
     readFileList(TreeParams->pathToLine, files);
     string temPath = "";
@@ -139,6 +153,20 @@ int DB_AddNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams)
 int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
 {
     int err;
+
+    //检查变量名输入是否合法
+    string variableName = TreeParams->valueName;
+    err = checkInputVaribaleName(variableName);
+    if(err !=0)
+        return err;
+
+    //检查路径编码输入是否合法
+    char inputPathCode[10]={0};
+    memcpy(inputPathCode,TreeParams->pathCode,10);
+    err = checkInputPathcode(inputPathCode);
+    if(err!=0)
+        return err;
+        
     vector<string> files;
     readTEMFilesList(TreeParams->pathToLine, files);
     string temPath = "";
@@ -279,6 +307,20 @@ int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
 int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 {
     int err;
+
+    //检查变量名输入是否合法
+    string variableName = TreeParams->valueName;
+    err = checkInputVaribaleName(variableName);
+    if(err !=0)
+        return err;
+
+    //检查路径编码输入是否合法
+    char inputPathCode[10]={0};
+    memcpy(inputPathCode,TreeParams->pathCode,10);
+    err = checkInputPathcode(inputPathCode);
+    if(err!=0)
+        return err;
+
     vector<string> files;
     readTEMFilesList(TreeParams->pathToLine, files);
     string temPath = "";
@@ -436,6 +478,20 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 int DB_UpdateNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams)
 {
     int err;
+
+    //检查更新后变量名输入是否合法
+    string variableName = newTreeParams->valueName;
+    err = checkInputVaribaleName(variableName);
+    if(err !=0)
+        return err;
+
+    //检查更新后路径编码输入是否合法
+    char inputPathCode[10]={0};
+    memcpy(inputPathCode,newTreeParams->pathCode,10);
+    err = checkInputPathcode(inputPathCode);
+    if(err!=0)
+        return err;
+
     vector<string> files;
     readFileList(TreeParams->pathToLine, files);
     string temPath = "";
@@ -588,6 +644,20 @@ int DB_UpdateNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams, struct 
 int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams)
 {
     int err;
+
+    //检查更新后变量名输入是否合法
+    string variableName = newTreeParams->valueName;
+    err = checkInputVaribaleName(variableName);
+    if(err !=0)
+        return err;
+
+    //检查更新后路径编码输入是否合法
+    char inputPathCode[10]={0};
+    memcpy(inputPathCode,newTreeParams->pathCode,10);
+    err = checkInputPathcode(inputPathCode);
+    if(err!=0)
+        return err;
+
     vector<string> files;
     readFileList(TreeParams->pathToLine, files);
     string temPath = "";
@@ -756,6 +826,20 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
 int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams)
 {
     int err;
+
+    //检查更新后变量名输入是否合法
+    string variableName = newTreeParams->valueName;
+    err = checkInputVaribaleName(variableName);
+    if(err !=0)
+        return err;
+
+    //检查更新后路径编码输入是否合法
+    char inputPathCode[10]={0};
+    memcpy(inputPathCode,newTreeParams->pathCode,10);
+    err = checkInputPathcode(inputPathCode);
+    if(err!=0)
+        return err;
+
     vector<string> files;
     readFileList(TreeParams->pathToLine, files);
     string temPath = "";
@@ -1200,6 +1284,13 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 int DB_AddNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
+
+    //检查变量名输入是否合法
+    string variableName = ZipParams->valueName;
+    err = checkInputVaribaleName(variableName);
+    if(err !=0)
+        return err;
+
     vector<string> files;
     readFileList(ZipParams->pathToLine, files);
     string temPath = "";
@@ -1483,6 +1574,13 @@ int DB_AddNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams)
 int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
+
+    //检查变量名输入是否合法
+    string variableName = ZipParams->valueName;
+    err = checkInputVaribaleName(variableName);
+    if(err !=0)
+        return err;
+
     vector<string> files;
     readFileList(ZipParams->pathToLine, files);
     string temPath = "";
@@ -1782,6 +1880,13 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
 int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
+
+    //检查变量名输入是否合法
+    string variableName = ZipParams->valueName;
+    err = checkInputVaribaleName(variableName);
+    if(err !=0)
+        return err;
+
     vector<string> files;
     readFileList(ZipParams->pathToLine, files);
     string temPath = "";
@@ -2077,7 +2182,7 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
     err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
-        err = DB_Write(fp, readBuf,len + 91);
+        err = DB_Write(fp, readBuf, len + 91);
 
         if (err == 0)
         {
@@ -2099,6 +2204,13 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams)
 {
     int err;
+
+    //检查更新后变量名输入是否合法
+    string variableName = newZipParams->valueName;
+    err = checkInputVaribaleName(variableName);
+    if(err !=0)
+        return err;
+
     vector<string> files;
     readFileList(ZipParams->pathToLine, files);
     string temPath = "";
@@ -2400,6 +2512,13 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
 int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams)
 {
     int err;
+
+    //检查更新后变量名输入是否合法
+    string variableName = newZipParams->valueName;
+    err = checkInputVaribaleName(variableName);
+    if(err !=0)
+        return err;
+
     vector<string> files;
     readFileList(ZipParams->pathToLine, files);
     string temPath = "";
@@ -2717,6 +2836,13 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
 int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams)
 {
     int err;
+
+    //检查更新后变量名输入是否合法
+    string variableName = newZipParams->valueName;
+    err = checkInputVaribaleName(variableName);
+    if(err !=0)
+        return err;
+
     vector<string> files;
     readFileList(ZipParams->pathToLine, files);
     string temPath = "";
@@ -3303,26 +3429,26 @@ int main()
 {
     // DB_LoadZipSchema("jinfei/");
 
-    // DB_TreeNodeParams params;
-    // params.pathToLine = "jinfei";
-    // params.newPath = "jinfei3";
-    // char code[10];
-    // code[0] = (char)0;
-    // code[1] = (char)1;
-    // code[2] = (char)0;
-    // code[3] = (char)4;
-    // code[4] = 'R';
-    // code[5] = (char)1;
-    // code[6] = 0;
-    // code[7] = (char)0;
-    // code[8] = (char)0;
-    // code[9] = (char)0;
-    // params.pathCode = code;
-    // params.valueType = 3;
-    // params.hasTime = 0;
-    // params.isArrary = 0;
-    // params.arrayLen = 100;
-    // params.valueName = "S4ON";
+    DB_TreeNodeParams params;
+    params.pathToLine = "jinfei";
+    params.newPath = "jinfeiTest";
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)128;
+    code[4] = 'R';
+    code[5] = (char)1;
+    code[6] = (char)0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueType = 3;
+    params.hasTime = 0;
+    params.isArrary = 0;
+    params.arrayLen = 100;
+    params.valueName = "S4ON";
 
     // DB_TreeNodeParams newTreeParams;
     // newTreeParams.pathToLine = "jinfeiTwo";
@@ -3346,35 +3472,35 @@ int main()
     // DB_UpdateNodeToSchema_old(&params,&newTreeParams);
     // DB_UpdateNodeToSchema_MultiTem(&params,&newTreeParams);
     // DB_UpdateNodeToSchema(&params,&newTreeParams);
-    // DB_AddNodeToSchema(&params);
+     DB_AddNodeToSchema(&params);
     // DB_AddNodeToSchema_MultiTem(&params);
-    //DB_AddNodeToSchema(&params);
+    // DB_AddNodeToSchema(&params);
     // DB_DeleteNodeToSchema(&params);
 
-    DB_ZipNodeParams params;
-    params.pathToLine = "jinfei";
-    params.valueType = 3;
-    params.hasTime = 1;
-    params.isArrary = 1;
-    params.arrayLen = 100;
-    params.valueName = "S4ON";
-    params.standardValue = "210";
-    params.maxValue = "230";
-    params.minValue = "190";
-    params.newPath="jinfei";
-    //DB_AddNodeToZipSchema(&params);
-    DB_DeleteNodeToZipSchema(&params);
-    DB_ZipNodeParams newparams;
-    newparams.pathToLine = "/jinfeiTwo";
-    newparams.valueType = 3;
-    newparams.hasTime = 0;
-    newparams.isArrary = 0;
-    newparams.arrayLen = 100;
-    newparams.valueName = "S1ON";
-    newparams.standardValue = "1000";
-    newparams.maxValue = "1200";
-    newparams.minValue = "800";
-    //DB_UpdateNodeToZipSchema_Override(&params,&newparams);
-    //DB_UpdateNodeToZipSchema(&params,&newparams);
+    // DB_ZipNodeParams params;
+    // params.pathToLine = "jinfei";
+    // params.valueType = 3;
+    // params.hasTime = 1;
+    // params.isArrary = 1;
+    // params.arrayLen = 100;
+    // params.valueName = "S4ON";
+    // params.standardValue = "210";
+    // params.maxValue = "230";
+    // params.minValue = "190";
+    // params.newPath = "jinfeiTwo";
+    // DB_AddNodeToZipSchema(&params);
+    // // DB_DeleteNodeToZipSchema(&params);
+    // DB_ZipNodeParams newparams;
+    // newparams.pathToLine = "/jinfeiTwo";
+    // newparams.valueType = 3;
+    // newparams.hasTime = 0;
+    // newparams.isArrary = 0;
+    // newparams.arrayLen = 100;
+    // newparams.valueName = "S1ON";
+    // newparams.standardValue = "1000";
+    // newparams.maxValue = "1200";
+    // newparams.minValue = "800";
+    // DB_UpdateNodeToZipSchema_Override(&params,&newparams);
+    // DB_UpdateNodeToZipSchema(&params,&newparams);
     return 0;
 }

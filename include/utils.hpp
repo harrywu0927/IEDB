@@ -86,6 +86,11 @@ namespace StatusCode
         NOVEL_DATA_DETECTED = 167,        //检测到奇异数据
         PYTHON_SCRIPT_NOT_FOUND = 168,    //未找到python脚本文件
         METHOD_NOT_FOUND_IN_PYTHON = 169, // python脚本中未找到相应的方法
+        VARIABLE_NAME_CHECK_ERROR = 170,  //变量名不合法
+        PATHCODE_CHECK_ERROR = 171,       //路径编码不合法
+        STANDARD_CHECK_ERROR = 172,       //标准值不合法
+        MAX_CHECK_ERROR = 173,            //最大值不合法
+        MIN_CHECK_ERROR = 174,            //最小值不合法
     };
 }
 namespace ValueType
@@ -220,6 +225,13 @@ int DB_NoveltyFit(struct DB_QueryParams *params, double *maxLine, double *minLin
 PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer);
 
 PyObject *ConvertToPyList_STAT(DB_DataBuffer *buffer);
+
+//检查模板相关输入
+int checkInputVaribaleName(string variableName);
+
+int checkInputPathcode(char pathcode[]);
+
+int checkInputVariable(string Variable);
 
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);

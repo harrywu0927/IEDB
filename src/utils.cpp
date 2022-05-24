@@ -2069,6 +2069,45 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
     buffLength = (int)writebuff_pos;
     return 0;
 }
+
+int checkInputVaribaleName(string variableName)
+{
+    if ((variableName[0] >= 'a' && variableName[0] <= 'z') || (variableName[0] >= 'A' && variableName[0] <= 'Z') || variableName[0] == '_' || variableName[0] == '@')
+        ;
+    else
+    {
+        cout << "变量名输入不合法！" << endl;
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
+    }
+
+    for (int i = 1; i < variableName.length(); i++)
+    {
+        if ((variableName[i] >= 'a' && variableName[i] <= 'z') || (variableName[i] >= 'A' && variableName[i] <= 'Z') || variableName[i] == '_' || (variableName[i] >= '0' && variableName[i] <= '9'))
+            continue;
+        else
+        {
+            cout << "变量名输入不合法！" << endl;
+            return StatusCode::VARIABLE_NAME_CHECK_ERROR;
+        }
+    }
+    return 0;
+}
+
+int checkInputPathcode(char pathcode[])
+{
+    for(int i=0;i<10;i++)
+    {
+        if((pathcode[i]>=(char)0 && pathcode[i]<=(char)127) || (pathcode[i]>='a'&&pathcode[i]<='z') || (pathcode[i]>='A'&&pathcode[i]<='Z'))
+            continue;
+        else
+        {
+            cout<<"路径编码输入不合法"<<endl;
+            return StatusCode::PATHCODE_CHECK_ERROR;
+        }
+    }
+    return 0;
+}
+
 // int main()
 // {
 //     // FileIDManager::GetFileID("/");
