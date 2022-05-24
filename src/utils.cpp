@@ -764,7 +764,7 @@ void get_procmeminfo(MEM_OCCUPY *lpMemory)
     char buff[128] = {0};
     fd = fopen("/proc/meminfo", "r");
     if (fd < 0)
-        return -1;
+        return ;
     fgets(buff, sizeof(buff), fd);
     Parser_EnvInfo(buff, sizeof(buff), lpMemory);
 

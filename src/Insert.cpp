@@ -474,12 +474,12 @@ int DB_InsertRecords(DB_DataBuffer buffer[], int recordsNum, int addTime)
     return 0;
 }
 
-int main()
-{
-    DB_DataBuffer buffer;
-    buffer.savePath = "JinfeiSeven/JinfeiSeven1527050_2022-5-12-18-10-35-620.idb";
-    DB_ReadFile(&buffer);
-    buffer.savePath = "JinfeiSeven";
-    DB_InsertRecord(&buffer, 0);
-    return 0;
-}
+// int main()
+// {
+//     DB_DataBuffer buffer;
+//     buffer.savePath = "JinfeiSeven/JinfeiSeven1527050_2022-5-12-18-10-35-620.idb";
+//     DB_ReadFile(&buffer);
+//     buffer.savePath = "JinfeiSeven";
+//     DB_InsertRecord(&buffer, 0);
+//     return 0;
+// }
