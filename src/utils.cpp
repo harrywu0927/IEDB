@@ -2108,6 +2108,7 @@ int checkInputPathcode(char pathcode[])
     return 0;
 }
 
+//有缺陷，如果SID是在已存在文件之间的ID，则SID必须存在
 int readIDBFilesListBySIDandNum(string path, string SID, uint32_t num, vector<pair<string, long>> &selectedFiles)
 {
     int err = 0;
@@ -2208,6 +2209,117 @@ int readIDBFilesListBySIDandNum(string path, string SID, uint32_t num, vector<pa
     return err;
 }
 
+//有缺陷，如果SID和EID是在已存在文件之间的ID，则SID和EID必须存在
+int readIDBFilesListBySIDandEID(string path, string SID, string EID, vector<pair<string, long>> &selectedFiles)
+{
+    int err = 0;
+    vector<pair<string, long>> files;
+    readIDBFilesWithTimestamps(path, files);
+    if (files.size() < 1)
+    {
+        cout << "没有找到文件" << endl;
+        return StatusCode::DATAFILE_NOT_FOUND;
+    }
+    sortByTime(files, TIME_ASC); //升序
+
+    //提取出第一个文件的ID与EID对比
+    vector<string> firstFile = DataType::splitWithStl(files[0].first, "_");
+    char firstFileID[10];
+    memset(firstFileID, 0, sizeof(firstFileID));
+    int pos = 0;
+    for (int i = 0; i < firstFile[0].length(); i++)
+    {
+        if (isdigit(firstFile[0][i]))
+        {
+            firstFileID[pos] = firstFile[0][i];
+            pos++;
+        }
+    }
+    int firstID = atoi(firstFileID);
+    //提取出最后一个文件的ID与SID对比
+    vector<string> lastFile = DataType::splitWithStl(files[files.size() - 1].first, "_");
+    char lastFileID[10];
+    memset(lastFileID, 0, sizeof(lastFileID));
+    pos = 0;
+    for (int i = 0; i < lastFile[0].length(); i++)
+    {
+        if (isdigit(lastFile[0][i]))
+        {
+            lastFileID[pos] = lastFile[0][i];
+            pos++;
+        }
+    }
+    int lastID = atoi(lastFileID);
+    //提取出SID与最后一个文件的ID做对比
+    char SIDnum[10];
+    memset(SIDnum, 0, sizeof(SIDnum));
+    pos = 0;
+    for (int i = 0; i < SID.length(); i++)
+    {
+        if (isdigit(SID[i]))
+        {
+            SIDnum[pos] = SID[i];
+            pos++;
+        }
+    }
+    int S_ID = atoi(SIDnum);
+    //提取出EID与第一个文件的ID做对比
+    char EIDnum[10];
+    memset(EIDnum, 0, sizeof(EIDnum));
+    pos = 0;
+    for (int i = 0; i < EID.length(); i++)
+    {
+        if (isdigit(EID[i]))
+        {
+            SIDnum[pos] = EID[i];
+            pos++;
+        }
+    }
+    int E_ID = atoi(SIDnum);
+
+    //如果SID比最后一个文件ID大 或者 EID比第一个文件的ID小
+    if (S_ID > lastID || E_ID < firstID)
+        return StatusCode::DATAFILE_NOT_FOUND;
+
+    if (S_ID < firstID)
+        SID = files[0].first;
+    if (E_ID > lastID)
+        EID = files[files.size() - 1].first;
+
+    bool SIDFind = false;
+    bool EIDFind = false;
+    for (auto i = 0; i < files.size(); i++)
+    {
+        if (SIDFind == false)
+        {
+            if (files[i].first.find(SID) != string::npos)
+            {
+                SIDFind = true;
+                selectedFiles.push_back(files[i]);
+            }
+        }
+        else
+        {
+            if (EIDFind == false)
+            {
+                if (files[i].first.find(EID) != string::npos)
+                {
+                    EIDFind = true;
+                    selectedFiles.push_back(files[i]);
+                }
+                else
+                    selectedFiles.push_back(files[i]);
+            }
+            else
+                break;
+        }
+    }
+    if (SIDFind == false)
+        return StatusCode::DATAFILE_NOT_FOUND;
+    return err;
+}
+
+//有缺陷，如果SID是在已存在文件之间的ID，则SID必须存在
 int readIDBZIPFilesListBySIDandNum(string path, string SID, uint32_t num, vector<pair<string, long>> &selectedFiles)
 {
     int err = 0;
@@ -2308,6 +2420,116 @@ int readIDBZIPFilesListBySIDandNum(string path, string SID, uint32_t num, vector
     return err;
 }
 
+//有缺陷，如果SID和EID是在已存在文件之间的ID，则SID和EID必须存在
+int readIDBZIPFilesListBySIDandEID(string path, string SID, string EID, vector<pair<string, long>> &selectedFiles)
+{
+    int err = 0;
+    vector<pair<string, long>> files;
+    readIDBZIPFilesWithTimestamps(path, files);
+    if (files.size() < 1)
+    {
+        cout << "没有找到文件" << endl;
+        return StatusCode::DATAFILE_NOT_FOUND;
+    }
+    sortByTime(files, TIME_ASC); //升序
+
+    //提取出第一个文件的ID与EID对比
+    vector<string> firstFile = DataType::splitWithStl(files[0].first, "_");
+    char firstFileID[10];
+    memset(firstFileID, 0, sizeof(firstFileID));
+    int pos = 0;
+    for (int i = 0; i < firstFile[0].length(); i++)
+    {
+        if (isdigit(firstFile[0][i]))
+        {
+            firstFileID[pos] = firstFile[0][i];
+            pos++;
+        }
+    }
+    int firstID = atoi(firstFileID);
+    //提取出最后一个文件的ID与SID对比
+    vector<string> lastFile = DataType::splitWithStl(files[files.size() - 1].first, "_");
+    char lastFileID[10];
+    memset(lastFileID, 0, sizeof(lastFileID));
+    pos = 0;
+    for (int i = 0; i < lastFile[0].length(); i++)
+    {
+        if (isdigit(lastFile[0][i]))
+        {
+            lastFileID[pos] = lastFile[0][i];
+            pos++;
+        }
+    }
+    int lastID = atoi(lastFileID);
+    //提取出SID与最后一个文件的ID做对比
+    char SIDnum[10];
+    memset(SIDnum, 0, sizeof(SIDnum));
+    pos = 0;
+    for (int i = 0; i < SID.length(); i++)
+    {
+        if (isdigit(SID[i]))
+        {
+            SIDnum[pos] = SID[i];
+            pos++;
+        }
+    }
+    int S_ID = atoi(SIDnum);
+    //提取出EID与第一个文件的ID做对比
+    char EIDnum[10];
+    memset(EIDnum, 0, sizeof(EIDnum));
+    pos = 0;
+    for (int i = 0; i < EID.length(); i++)
+    {
+        if (isdigit(EID[i]))
+        {
+            SIDnum[pos] = EID[i];
+            pos++;
+        }
+    }
+    int E_ID = atoi(SIDnum);
+
+    //如果SID比最后一个文件ID大 或者 EID比第一个文件的ID小
+    if (S_ID > lastID || E_ID < firstID)
+        return StatusCode::DATAFILE_NOT_FOUND;
+
+    if (S_ID < firstID)
+        SID = files[0].first;
+    if (E_ID > lastID)
+        EID = files[files.size() - 1].first;
+
+    bool SIDFind = false;
+    bool EIDFind = false;
+    for (auto i = 0; i < files.size(); i++)
+    {
+        if (SIDFind == false)
+        {
+            if (files[i].first.find(SID) != string::npos)
+            {
+                SIDFind = true;
+                selectedFiles.push_back(files[i]);
+            }
+        }
+        else
+        {
+            if (EIDFind == false)
+            {
+                if (files[i].first.find(EID) != string::npos)
+                {
+                    EIDFind = true;
+                    selectedFiles.push_back(files[i]);
+                }
+                else
+                    selectedFiles.push_back(files[i]);
+            }
+            else
+                break;
+        }
+    }
+    if (SIDFind == false)
+        return StatusCode::DATAFILE_NOT_FOUND;
+    return err;
+}
+
 int main()
 {
     // FileIDManager::GetFileID("/");
@@ -2324,11 +2546,22 @@ int main()
     // ReZipBuff(buff, length, "/");
     // cout<<length<<endl;
     // return 0;
-    vector<pair<string, long>> selectFiles;
+    vector<pair<string, long>> selectIDBFiles;
+    vector<pair<string, long>> selectIDBFIles2;
     string SID = "JinfeiEleven4534";
-    readIDBFilesListBySIDandNum("JinfeiEleven", SID, 12, selectFiles);
-    cout << selectFiles.size() << endl;
-    cout << 22222 << endl;
+    string EID = "JinfeiEleven4564";
+    readIDBFilesListBySIDandNum("JinfeiEleven", SID, 12, selectIDBFiles);
+    cout << selectIDBFiles.size() << endl;
+    readIDBFilesListBySIDandEID("JinfeiEleven", SID, EID, selectIDBFIles2);
+    cout << selectIDBFIles2.size() << endl;
+    vector<pair<string, long>> selectIDBZIPFiles;
+    vector<pair<string, long>> selectIDBZIPFiles2;
+    SID = "JinfeiSeven1526000";
+    EID = "JinfeiSeven1540000";
+    readIDBZIPFilesListBySIDandNum("JinfeiSeven", SID, 1000, selectIDBZIPFiles);
+    cout << selectIDBZIPFiles.size() << endl;
+    readIDBZIPFilesListBySIDandEID("JinfeiSeven", SID, EID, selectIDBZIPFiles2);
+    cout << selectIDBZIPFiles2.size() << endl;
     return 0;
     vector<string> vec = DataType::splitWithStl("jinfei/", "/");
     // curNum = getDirCurrentFileIDIndex();
