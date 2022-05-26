@@ -124,7 +124,15 @@ void readFileList(string path, vector<string> &files);
 
 void readIDBFilesList(string path, vector<string> &files);
 
+int readIDBFilesListBySIDandNum(string path, string SID, uint32_t num, vector<pair<string, long>> &selectedFiles);
+
+int readIDBFilesListBySIDandEID(string path, string SID, string EID, vector<pair<string, long>> &selectedFiles);
+
 void readIDBZIPFilesList(string path, vector<string> &files);
+
+int readIDBZIPFilesListBySIDandNum(string path, string SID, uint32_t num, vector<pair<string, long>> &selectedFiles);
+
+int readIDBZIPFilesListBySIDandEID(string path, string SID, string EID, vector<pair<string, long>> &selectedFiles);
 
 void readTEMFilesList(string path, vector<string> &files);
 

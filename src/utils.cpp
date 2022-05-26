@@ -764,7 +764,7 @@ void get_procmeminfo(MEM_OCCUPY *lpMemory)
     char buff[128] = {0};
     fd = fopen("/proc/meminfo", "r");
     if (fd < 0)
-        return ;
+        return;
     fgets(buff, sizeof(buff), fd);
     Parser_EnvInfo(buff, sizeof(buff), lpMemory);
 
@@ -2095,50 +2095,256 @@ int checkInputVaribaleName(string variableName)
 
 int checkInputPathcode(char pathcode[])
 {
-    for(int i=0;i<10;i++)
+    for (int i = 0; i < 10; i++)
     {
-        if((pathcode[i]>=(char)0 && pathcode[i]<=(char)127) || (pathcode[i]>='a'&&pathcode[i]<='z') || (pathcode[i]>='A'&&pathcode[i]<='Z'))
+        if ((pathcode[i] >= (char)0 && pathcode[i] <= (char)127) || (pathcode[i] >= 'a' && pathcode[i] <= 'z') || (pathcode[i] >= 'A' && pathcode[i] <= 'Z'))
             continue;
         else
         {
-            cout<<"路径编码输入不合法"<<endl;
+            cout << "路径编码输入不合法" << endl;
             return StatusCode::PATHCODE_CHECK_ERROR;
         }
     }
     return 0;
 }
 
-// int main()
-// {
-//     // FileIDManager::GetFileID("/");
-//     // FileIDManager::GetFileID("/");
-//     // FileIDManager::GetFileID("/Jinfei3");
-//     // FileIDManager::GetFileID("/Jinfei3");
-//     // FileIDManager::GetFileID("/Jinfei4/line1");
-//     // FileIDManager::GetFileID("/Jinfei4/line1/");
-//     // cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
-//     // char *buff=NULL;
-//     // int length=0;
-//     // DB_ZipSwitchFile("/","/");
+int readIDBFilesListBySIDandNum(string path, string SID, uint32_t num, vector<pair<string, long>> &selectedFiles)
+{
+    int err = 0;
+    vector<pair<string, long>> files;
+    readIDBFilesWithTimestamps(path, files);
+    if (files.size() < 1)
+    {
+        cout << "没有找到文件" << endl;
+        return StatusCode::DATAFILE_NOT_FOUND;
+    }
+    sortByTime(files, TIME_ASC); //升序
 
-//     // ReZipBuff(buff, length, "/");
-//     // cout<<length<<endl;
-//     // return 0;
-//     vector<string> vec = DataType::splitWithStl("jinfei/", "/");
-//     // curNum = getDirCurrentFileIDIndex();
-//     return 0;
-//     char *buff = (char *)malloc(24);
-//     buff[0] = 0;
-//     buff[1] = 0;
-//     buff[2] = 0;
-//     buff[3] = 0;
-//     buff[4] = 0;
-//     buff[5] = 103;
-//     int len = 6;
-//     ReZipBuff(buff, len, "/");
-//     Packer packer;
-//     vector<pair<string, long>> files;
-//     readDataFilesWithTimestamps("", files);
-//     packer.Pack("", files);
-//     return 0;
-// }
+    uint32_t count = 0; //用于记录个数
+
+    //提取出第一个文件的ID与SID对比
+    vector<string> firstFile = DataType::splitWithStl(files[0].first, "_");
+    char firstFileID[10];
+    memset(firstFileID, 0, sizeof(firstFileID));
+    int pos = 0;
+    for (int i = 0; i < firstFile[0].length(); i++)
+    {
+        if (isdigit(firstFile[0][i]))
+        {
+            firstFileID[pos] = firstFile[0][i];
+            pos++;
+        }
+    }
+    int firstID = atoi(firstFileID);
+    //提取出SID与第一个文件的ID做对比
+    char SIDnum[10];
+    memset(SIDnum, 0, sizeof(SIDnum));
+    pos = 0;
+    for (int i = 0; i < SID.length(); i++)
+    {
+        if (isdigit(SID[i]))
+        {
+            SIDnum[pos] = SID[i];
+            pos++;
+        }
+    }
+    int S_ID = atoi(SIDnum);
+    //提取出最后一个文件的ID与SID对比
+    vector<string> lastFile = DataType::splitWithStl(files[files.size() - 1].first, "_");
+    char lastFileID[10];
+    memset(lastFileID, 0, sizeof(lastFileID));
+    pos = 0;
+    for (int i = 0; i < lastFile[0].length(); i++)
+    {
+        if (isdigit(lastFile[0][i]))
+        {
+            lastFileID[pos] = lastFile[0][i];
+            pos++;
+        }
+    }
+    int lastID = atoi(lastFileID);
+
+    //如果SID比最后一个文件的ID大
+    if (S_ID > lastID)
+        return StatusCode::DATAFILE_NOT_FOUND;
+
+    //如果SID比第一个文件的ID小
+    if (S_ID < firstID)
+    {
+        if (S_ID + num - firstID <= 0)
+            return StatusCode::DATAFILE_NOT_FOUND;
+        else
+        {
+            SID = files[0].first;   // SID从第一个文件开始
+            count = firstID - S_ID; // count从两者的差开始
+        }
+    }
+
+    bool SIDFind = false;
+    for (auto i = 0; i < files.size(); i++)
+    {
+        if (SIDFind == false)
+        {
+            if (files[i].first.find(SID) != string::npos)
+            {
+                SIDFind = true;
+                selectedFiles.push_back(files[i]);
+                count++;
+            }
+        }
+        else
+        {
+            if (count < num)
+            {
+                selectedFiles.push_back(files[i]);
+                count++;
+            }
+            else
+                break;
+        }
+    }
+    if (SIDFind == false)
+        return StatusCode::DATAFILE_NOT_FOUND;
+    return err;
+}
+
+int readIDBZIPFilesListBySIDandNum(string path, string SID, uint32_t num, vector<pair<string, long>> &selectedFiles)
+{
+    int err = 0;
+    vector<pair<string, long>> files;
+    readIDBZIPFilesWithTimestamps(path, files);
+    if (files.size() < 1)
+    {
+        cout << "没有找到文件" << endl;
+        return StatusCode::DATAFILE_NOT_FOUND;
+    }
+    sortByTime(files, TIME_ASC); //升序
+
+    uint32_t count = 0; //用于记录个数
+
+    //提取出第一个文件的ID与SID对比
+    vector<string> firstFile = DataType::splitWithStl(files[0].first, "_");
+    char firstFileID[10];
+    memset(firstFileID, 0, sizeof(firstFileID));
+    int pos = 0;
+    for (int i = 0; i < firstFile[0].length(); i++)
+    {
+        if (isdigit(firstFile[0][i]))
+        {
+            firstFileID[pos] = firstFile[0][i];
+            pos++;
+        }
+    }
+    int firstID = atoi(firstFileID);
+    //提取出SID与第一个文件的ID做对比
+    char SIDnum[10];
+    memset(SIDnum, 0, sizeof(SIDnum));
+    pos = 0;
+    for (int i = 0; i < SID.length(); i++)
+    {
+        if (isdigit(SID[i]))
+        {
+            SIDnum[pos] = SID[i];
+            pos++;
+        }
+    }
+    int S_ID = atoi(SIDnum);
+    //提取出最后一个文件的ID与SID对比
+    vector<string> lastFile = DataType::splitWithStl(files[files.size() - 1].first, "_");
+    char lastFileID[10];
+    memset(lastFileID, 0, sizeof(lastFileID));
+    pos = 0;
+    for (int i = 0; i < lastFile[0].length(); i++)
+    {
+        if (isdigit(lastFile[0][i]))
+        {
+            lastFileID[pos] = lastFile[0][i];
+            pos++;
+        }
+    }
+    int lastID = atoi(lastFileID);
+
+    //如果SID比最后一个文件的ID大
+    if (S_ID > lastID)
+        return StatusCode::DATAFILE_NOT_FOUND;
+
+    //如果SID比第一个文件的ID小
+    if (S_ID < firstID)
+    {
+        if (S_ID + num - firstID <= 0)
+            return StatusCode::DATAFILE_NOT_FOUND;
+        else
+        {
+            SID = files[0].first;   // SID从第一个文件开始
+            count = firstID - S_ID; // count从两者的差开始
+        }
+    }
+
+    bool SIDFind = false;
+    for (auto i = 0; i < files.size(); i++)
+    {
+        if (SIDFind == false)
+        {
+            if (files[i].first.find(SID) != string::npos)
+            {
+                SIDFind = true;
+                selectedFiles.push_back(files[i]);
+                count++;
+            }
+        }
+        else
+        {
+            if (count < num)
+            {
+                selectedFiles.push_back(files[i]);
+                count++;
+            }
+            else
+                break;
+        }
+    }
+    if (SIDFind == false)
+        return StatusCode::DATAFILE_NOT_FOUND;
+    return err;
+}
+
+int main()
+{
+    // FileIDManager::GetFileID("/");
+    // FileIDManager::GetFileID("/");
+    // FileIDManager::GetFileID("/Jinfei3");
+    // FileIDManager::GetFileID("/Jinfei3");
+    // FileIDManager::GetFileID("/Jinfei4/line1");
+    // FileIDManager::GetFileID("/Jinfei4/line1/");
+    // cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
+    // char *buff=NULL;
+    // int length=0;
+    // DB_ZipSwitchFile("/","/");
+
+    // ReZipBuff(buff, length, "/");
+    // cout<<length<<endl;
+    // return 0;
+    vector<pair<string, long>> selectFiles;
+    string SID = "JinfeiEleven4534";
+    readIDBFilesListBySIDandNum("JinfeiEleven", SID, 12, selectFiles);
+    cout << selectFiles.size() << endl;
+    cout << 22222 << endl;
+    return 0;
+    vector<string> vec = DataType::splitWithStl("jinfei/", "/");
+    // curNum = getDirCurrentFileIDIndex();
+    return 0;
+    char *buff = (char *)malloc(24);
+    buff[0] = 0;
+    buff[1] = 0;
+    buff[2] = 0;
+    buff[3] = 0;
+    buff[4] = 0;
+    buff[5] = 103;
+    int len = 6;
+    ReZipBuff(buff, len, "/");
+    Packer packer;
+    vector<pair<string, long>> files;
+    readDataFilesWithTimestamps("", files);
+    packer.Pack("", files);
+    return 0;
+}
