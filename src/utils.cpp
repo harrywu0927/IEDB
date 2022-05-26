@@ -2533,54 +2533,54 @@ int readIDBZIPFilesListBySIDandEID(string path, string SID, string EID, vector<p
     return err;
 }
 
-int main()
-{
-    // FileIDManager::GetFileID("/");
-    // FileIDManager::GetFileID("/");
-    // FileIDManager::GetFileID("/Jinfei3");
-    // FileIDManager::GetFileID("/Jinfei3");
-    // FileIDManager::GetFileID("/Jinfei4/line1");
-    // FileIDManager::GetFileID("/Jinfei4/line1/");
-    // cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
-    // char *buff=NULL;
-    // int length=0;
-    // DB_ZipSwitchFile("/","/");
+// int main()
+// {
+//     // FileIDManager::GetFileID("/");
+//     // FileIDManager::GetFileID("/");
+//     // FileIDManager::GetFileID("/Jinfei3");
+//     // FileIDManager::GetFileID("/Jinfei3");
+//     // FileIDManager::GetFileID("/Jinfei4/line1");
+//     // FileIDManager::GetFileID("/Jinfei4/line1/");
+//     // cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
+//     // char *buff=NULL;
+//     // int length=0;
+//     // DB_ZipSwitchFile("/","/");
 
-    // ReZipBuff(buff, length, "/");
-    // cout<<length<<endl;
-    // return 0;
-    vector<pair<string, long>> selectIDBFiles;
-    vector<pair<string, long>> selectIDBFIles2;
-    string SID = "JinfeiEleven4534";
-    string EID = "JinfeiEleven4564";
-    readIDBFilesListBySIDandNum("JinfeiEleven", SID, 12, selectIDBFiles);
-    cout << selectIDBFiles.size() << endl;
-    readIDBFilesListBySIDandEID("JinfeiEleven", SID, EID, selectIDBFIles2);
-    cout << selectIDBFIles2.size() << endl;
-    vector<pair<string, long>> selectIDBZIPFiles;
-    vector<pair<string, long>> selectIDBZIPFiles2;
-    SID = "JinfeiSeven1526000";
-    EID = "JinfeiSeven1540000";
-    readIDBZIPFilesListBySIDandNum("JinfeiSeven", SID, 1000, selectIDBZIPFiles);
-    cout << selectIDBZIPFiles.size() << endl;
-    readIDBZIPFilesListBySIDandEID("JinfeiSeven", SID, EID, selectIDBZIPFiles2);
-    cout << selectIDBZIPFiles2.size() << endl;
-    return 0;
-    vector<string> vec = DataType::splitWithStl("jinfei/", "/");
-    // curNum = getDirCurrentFileIDIndex();
-    return 0;
-    char *buff = (char *)malloc(24);
-    buff[0] = 0;
-    buff[1] = 0;
-    buff[2] = 0;
-    buff[3] = 0;
-    buff[4] = 0;
-    buff[5] = 103;
-    int len = 6;
-    ReZipBuff(buff, len, "/");
-    Packer packer;
-    vector<pair<string, long>> files;
-    readDataFilesWithTimestamps("", files);
-    packer.Pack("", files);
-    return 0;
-}
+//     // ReZipBuff(buff, length, "/");
+//     // cout<<length<<endl;
+//     // return 0;
+//     vector<pair<string, long>> selectIDBFiles;
+//     vector<pair<string, long>> selectIDBFIles2;
+//     string SID = "JinfeiEleven4534";
+//     string EID = "JinfeiEleven4564";
+//     readIDBFilesListBySIDandNum("JinfeiEleven", SID, 12, selectIDBFiles);
+//     cout << selectIDBFiles.size() << endl;
+//     readIDBFilesListBySIDandEID("JinfeiEleven", SID, EID, selectIDBFIles2);
+//     cout << selectIDBFIles2.size() << endl;
+//     vector<pair<string, long>> selectIDBZIPFiles;
+//     vector<pair<string, long>> selectIDBZIPFiles2;
+//     SID = "JinfeiSeven1526000";
+//     EID = "JinfeiSeven1540000";
+//     readIDBZIPFilesListBySIDandNum("JinfeiSeven", SID, 1000, selectIDBZIPFiles);
+//     cout << selectIDBZIPFiles.size() << endl;
+//     readIDBZIPFilesListBySIDandEID("JinfeiSeven", SID, EID, selectIDBZIPFiles2);
+//     cout << selectIDBZIPFiles2.size() << endl;
+//     return 0;
+//     vector<string> vec = DataType::splitWithStl("jinfei/", "/");
+//     // curNum = getDirCurrentFileIDIndex();
+//     return 0;
+//     char *buff = (char *)malloc(24);
+//     buff[0] = 0;
+//     buff[1] = 0;
+//     buff[2] = 0;
+//     buff[3] = 0;
+//     buff[4] = 0;
+//     buff[5] = 103;
+//     int len = 6;
+//     ReZipBuff(buff, len, "/");
+//     Packer packer;
+//     vector<pair<string, long>> files;
+//     readDataFilesWithTimestamps("", files);
+//     packer.Pack("", files);
+//     return 0;
+// }
