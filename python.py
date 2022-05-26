@@ -62,15 +62,3 @@ def LOF():
         "errors novel regular: %d/40 ; errors novel abnormal: %d/40"
         % (n_error_test, n_error_outliers))
     plt.show()
-
-
-def listTest(lst):
-    print(type(lst))
-    nplst = np.array(lst, dtype=LONG)
-    nplst = nplst.reshape(50, 2)
-    print(type(nplst))
-    print(nplst)
-    clf = LocalOutlierFactor()
-    res = clf.fit_predict(nplst)
-    return list(res)
-# LOF()

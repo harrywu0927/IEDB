@@ -184,7 +184,7 @@ long Template::FindSortPosFromSelectedData(vector<long> &bytesList, string name,
  *
  * @return  0:success,
  *          others: StatusCode
- * @note
+ * @note ! Deprecated
  */
 int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position, long &bytes)
 {
@@ -276,8 +276,8 @@ int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position
         if (codeEquals)
         {
             position = pos;
-            int num = 1;
-            if (schema.second.isArray)
+            int num = 1; //元素个数
+            if (schema.second.isArray || schema.second.isTimeseries)
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
@@ -293,14 +293,14 @@ int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position
                 else
                     num = schema.second.arrayLen;
             }
-            bytes = num * schema.second.valueBytes;
+            bytes = num * (schema.second.valueBytes + (schema.second.isTimeseries ? 8 : 0));
             type = schema.second;
             return 0;
         }
         else
         {
             int num = 1;
-            if (schema.second.isArray)
+            if (schema.second.isArray || schema.second.isTimeseries)
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
@@ -316,6 +316,7 @@ int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position
                     num = schema.second.arrayLen;
             }
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
+            pos += schema.second.isTimeseries ? num * 8 : 0;
         }
     }
     return StatusCode::UNKNOWN_PATHCODE;
@@ -355,7 +356,7 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
         if (codeEquals)
         {
             int num = 1;
-            if (schema.second.isArray)
+            if (schema.second.isArray || schema.second.isTimeseries)
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
@@ -372,14 +373,15 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
                     num = schema.second.arrayLen;
             }
             positions.push_back(pos);
-            bytes.push_back(num * schema.second.valueBytes);
+            bytes.push_back(num * (schema.second.valueBytes + (schema.second.isTimeseries ? 8 : 0))); //时间序列整个获取
             types.push_back(schema.second);
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
+            pos += schema.second.isTimeseries ? num * 8 : 0;
         }
         else
         {
             int num = 1;
-            if (schema.second.isArray)
+            if (schema.second.isArray || schema.second.isTimeseries)
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
@@ -395,6 +397,7 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
                     num = schema.second.arrayLen;
             }
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
+            pos += schema.second.isTimeseries ? num * 8 : 0;
         }
     }
     return positions.size() == 0 ? StatusCode::UNKNOWN_PATHCODE : 0;
@@ -409,7 +412,7 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
  *
  * @return  0:success,
  *          others: StatusCode
- * @note    图片数据目前暂时协定前2个字节为图片总长，不包括图片自身
+ * @note    图片数据目前暂时协定前2个字节为图片总长，不包括图片自身  Deprecated
  */
 int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<long> &positions, vector<long> &bytes)
 {
@@ -486,7 +489,7 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
  *
  * @return  0:success,
  *          others: StatusCode
- * @note
+ * @note ! Deprecated
  */
 int Template::FindDatatypePosByName(const char *name, char buff[], long &position, long &bytes)
 {
@@ -575,7 +578,7 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
         {
             position = pos;
             int num = 1;
-            if (schema.second.isArray)
+            if (schema.second.isArray || schema.second.isTimeseries)
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
@@ -591,14 +594,14 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
                 else
                     num = schema.second.arrayLen;
             }
-            bytes = num * schema.second.valueBytes;
+            bytes = num * (schema.second.valueBytes + (schema.second.isTimeseries ? 8 : 0));
             type = schema.second;
             return 0;
         }
         else
         {
             int num = 1;
-            if (schema.second.isArray)
+            if (schema.second.isArray || schema.second.isTimeseries)
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
@@ -614,6 +617,7 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
                     num = schema.second.arrayLen;
             }
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
+            pos += schema.second.isTimeseries ? num * 8 : 0;
         }
     }
     return StatusCode::UNKNOWN_VARIABLE_NAME;

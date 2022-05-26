@@ -570,10 +570,6 @@ neb::CJsonObject FileIDManager::GetSetting()
 
 string FileIDManager::GetFileID(string path)
 {
-    /*
-        临时使用，今后需修改
-        获取此路径下文件数量，以文件数量+1作为ID
-    */
     string tmp = path;
     vector<string> paths = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
     string prefix = "Default";
@@ -781,6 +777,13 @@ void get_procmeminfo(MEM_OCCUPY *lpMemory)
 }
 
 #endif
+
+/**
+ * @brief Get the Memory Usage object
+ *
+ * @param total
+ * @param available
+ */
 void getMemoryUsage(long &total, long &available)
 {
 #ifdef __linux__
@@ -2308,43 +2311,43 @@ int readIDBZIPFilesListBySIDandNum(string path, string SID, uint32_t num, vector
     return err;
 }
 
-int main()
-{
-    // FileIDManager::GetFileID("/");
-    // FileIDManager::GetFileID("/");
-    // FileIDManager::GetFileID("/Jinfei3");
-    // FileIDManager::GetFileID("/Jinfei3");
-    // FileIDManager::GetFileID("/Jinfei4/line1");
-    // FileIDManager::GetFileID("/Jinfei4/line1/");
-    // cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
-    // char *buff=NULL;
-    // int length=0;
-    // DB_ZipSwitchFile("/","/");
+// int main()
+// {
+//     // FileIDManager::GetFileID("/");
+//     // FileIDManager::GetFileID("/");
+//     // FileIDManager::GetFileID("/Jinfei3");
+//     // FileIDManager::GetFileID("/Jinfei3");
+//     // FileIDManager::GetFileID("/Jinfei4/line1");
+//     // FileIDManager::GetFileID("/Jinfei4/line1/");
+//     // cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
+//     // char *buff=NULL;
+//     // int length=0;
+//     // DB_ZipSwitchFile("/","/");
 
-    // ReZipBuff(buff, length, "/");
-    // cout<<length<<endl;
-    // return 0;
-    vector<pair<string, long>> selectFiles;
-    string SID = "JinfeiEleven4534";
-    readIDBFilesListBySIDandNum("JinfeiEleven", SID, 12, selectFiles);
-    cout << selectFiles.size() << endl;
-    cout << 22222 << endl;
-    return 0;
-    vector<string> vec = DataType::splitWithStl("jinfei/", "/");
-    // curNum = getDirCurrentFileIDIndex();
-    return 0;
-    char *buff = (char *)malloc(24);
-    buff[0] = 0;
-    buff[1] = 0;
-    buff[2] = 0;
-    buff[3] = 0;
-    buff[4] = 0;
-    buff[5] = 103;
-    int len = 6;
-    ReZipBuff(buff, len, "/");
-    Packer packer;
-    vector<pair<string, long>> files;
-    readDataFilesWithTimestamps("", files);
-    packer.Pack("", files);
-    return 0;
-}
+//     // ReZipBuff(buff, length, "/");
+//     // cout<<length<<endl;
+//     // return 0;
+//     vector<pair<string, long>> selectFiles;
+//     string SID = "JinfeiEleven4534";
+//     readIDBFilesListBySIDandNum("JinfeiEleven", SID, 12, selectFiles);
+//     cout << selectFiles.size() << endl;
+//     cout << 22222 << endl;
+//     return 0;
+//     vector<string> vec = DataType::splitWithStl("jinfei/", "/");
+//     // curNum = getDirCurrentFileIDIndex();
+//     return 0;
+//     char *buff = (char *)malloc(24);
+//     buff[0] = 0;
+//     buff[1] = 0;
+//     buff[2] = 0;
+//     buff[3] = 0;
+//     buff[4] = 0;
+//     buff[5] = 103;
+//     int len = 6;
+//     ReZipBuff(buff, len, "/");
+//     Packer packer;
+//     vector<pair<string, long>> files;
+//     readDataFilesWithTimestamps("", files);
+//     packer.Pack("", files);
+//     return 0;
+// }

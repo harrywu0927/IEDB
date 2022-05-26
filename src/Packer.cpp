@@ -118,6 +118,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
     fwrite(packBuffer, cur, 1, (FILE *)fp);
     free(packBuffer);
     DB_Close(fp);
+    packManager.allPacks[pathToLine].push_back({packageName, make_tuple(start, end)});
     packMutex.unlock();
     IOBusy = false;
     return 0;
@@ -165,7 +166,7 @@ int Packer::RePack(string pathToLine)
          {
              return std::get<0>(iter1) < std::get<0>(iter2);
          });
-    int packThreshold = 1024 * 1024;
+    int packThreshold = atol(settings("Pack_Max_Size").c_str());
     int cursize = 0;
     string lastTemName = "";
     for (auto &pack : packsWithTime)

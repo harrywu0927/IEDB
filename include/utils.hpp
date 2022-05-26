@@ -280,6 +280,8 @@ class DataType
 public:
     bool isArray = false;
     bool hasTime = false;
+    bool isTimeseries = false; //若为时间序列，则arrayLen即表示为时间序列的长度。此值为true时，hasTime不可为true。(时间序列：<timestamp,value>键-值序列)
+    bool hasImage = false;     //若包含图片，则查询时需要对每一个节拍对照模版遍历；若不包含，则仅需获取数据的绝对偏移，大大节省查询时间
     int arrayLen;
     int valueBytes;
     ValueType::ValueType valueType;

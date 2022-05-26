@@ -333,7 +333,6 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
     else if (settings("Pack_Mode") == "auto")
     {
     }
-    return 0;
 #endif
     int errCode = 0;
     IOBusy = 1;
@@ -350,7 +349,7 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
                 addTime = 0;
         }
     }
-
+    return errCode;
     string savepath = buffer->savePath;
     if (savepath == "")
     {
@@ -474,12 +473,20 @@ int DB_InsertRecords(DB_DataBuffer buffer[], int recordsNum, int addTime)
     return 0;
 }
 
-// int main()
-// {
-//     DB_DataBuffer buffer;
-//     buffer.savePath = "JinfeiSeven/JinfeiSeven1527050_2022-5-12-18-10-35-620.idb";
-//     DB_ReadFile(&buffer);
-//     buffer.savePath = "JinfeiSeven";
-//     DB_InsertRecord(&buffer, 0);
-//     return 0;
-// }
+int main()
+{
+    DB_DataBuffer buffer;
+    vector<string> files;
+    readDataFiles("JinfeiSeven", files);
+    for (int i = 0; i < 1000; i++)
+    {
+        buffer.savePath = files[rand() % files.size()].c_str();
+        DB_ReadFile(&buffer);
+        buffer.savePath = "JinfeiSeven";
+        if (DB_InsertRecord(&buffer, 0) != 0)
+            cout << "warning" << endl;
+        free(buffer.buffer);
+    }
+
+    return 0;
+}

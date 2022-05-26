@@ -1,21 +1,7 @@
 #include <utils.hpp>
-#include <vector>
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <dirent.h>
-#include <sys/stat.h>
-#include <time.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <unordered_map>
 #include <stack>
-#include <algorithm>
 #include <tuple>
-#include <sstream>
-#include <errno.h>
 #include <atomic>
 using namespace std;
 Template CurrentTemplate;
@@ -7510,8 +7496,8 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 // 	// Py_Initialize();
 // 	DataTypeConverter converter;
 // 	DB_QueryParams params;
-// 	params.pathToLine = "JinfeiSixteen";
-// 	params.fileID = "12345";
+// 	params.pathToLine = "RobotDataTwenty";
+// 	params.fileID = "20";
 // 	// params.fileIDend = "JinfeiSixteen12349";
 // 	params.fileIDend = NULL;
 // 	char code[10];
@@ -7531,7 +7517,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 // 	params.start = 0;
 // 	params.end = 1751269000000;
 // 	params.order = ODR_NONE;
-// 	params.compareType = LT;
+// 	params.compareType = CMP_NONE;
 // 	params.compareValue = "666";
 // 	params.queryType = FILEID;
 // 	params.byPath = 0;
@@ -7630,19 +7616,19 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 // 	//     free(buffer.buffer);
 // 	// }
 // 	// buffer.bufferMalloced = 0;
-// 	DB_QueryByTimespan(&buffer, &params);
+// 	DB_QueryByFileID(&buffer, &params);
 
 // 	if (buffer.bufferMalloced)
 // 	{
-// 		// char buf[buffer.length];
-// 		// memcpy(buf, buffer.buffer, buffer.length);
+// 		char buf[buffer.length];
+// 		memcpy(buf, buffer.buffer, buffer.length);
 // 		cout << buffer.length << endl;
-// 		// for (int i = 0; i < buffer.length; i++)
-// 		// {
-// 		// 	cout << (int)buf[i] << " ";
-// 		// 	if (i % 11 == 0)
-// 		// 		cout << endl;
-// 		// }
+// 		for (int i = 0; i < buffer.length; i++)
+// 		{
+// 			cout << (int)buf[i] << " ";
+// 			if (i % 11 == 0)
+// 				cout << endl;
+// 		}
 
 // 		free(buffer.buffer);
 // 	}
