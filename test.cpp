@@ -109,7 +109,6 @@ int main()
     // }
     // Py_Finalize();
     // return 0;
-
     DB_QueryParams params;
     params.pathToLine = "RobotDataTwenty";
     params.fileID = "RobotDataTwenty50";

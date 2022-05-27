@@ -71,7 +71,7 @@ namespace StatusCode
         FILENAME_MODIFIED = 152,          //文件名被篡改
         INVALID_TIMESPAN = 153,           //时间段设置错误或未指定
         NO_PATHCODE_OR_NAME = 154,        //查询参数中路径编码和变量名均未找到
-        NO_QUERY_NUM = 155,               //查询最新记录时未指定查询条数
+        NO_QUERY_NUM = 155,               //未指定查询条数
         NO_FILEID = 156,                  //未指定文件ID
         VARIABLE_NOT_ASSIGNED = 157,      //比较某个值时未指定变量名
         NO_COMPARE_VALUE = 158,           //指定了比较类型却没有赋值
@@ -280,21 +280,22 @@ class DataType
 public:
     bool isArray = false;
     bool hasTime = false;
-    bool isTimeseries = false; //若为时间序列，则arrayLen即表示为时间序列的长度。此值为true时，hasTime不可为true。(时间序列：<timestamp,value>键-值序列)
-    bool hasImage = false;     //若包含图片，则查询时需要对每一个节拍对照模版遍历；若不包含，则仅需获取数据的绝对偏移，大大节省查询时间
-    int arrayLen;
-    int valueBytes;
-    ValueType::ValueType valueType;
+    bool isTimeseries = false;      //此值为true时，hasTime不可为true。(时间序列：<timestamp,value>键-值序列)
+    int tsLen;                      //时间序列长度
+    int arrayLen;                   //数组长度
+    int valueBytes;                 //值所占字节
+    ValueType::ValueType valueType; //基本数据类型
 
     char maxValue[10];      //最大值
     char minValue[10];      //最小值
     char standardValue[10]; //标准值
 
-    //实现分割字符串(源字符串也将改变)
+    //实现分割字符串(源字符串也将改变) 线程不安全
     //@param srcstr     源字符串
     //@param str        划分字符
     static vector<string> StringSplit(char srcstr[], const char *str);
 
+    //使用STL的字符串分割
     static vector<string> splitWithStl(const string &str, const string &pattern);
     //判断值类型
     static ValueType::ValueType JudgeValueType(string vType);
@@ -338,16 +339,19 @@ class Template //标准模板
 {
 public:
     vector<pair<PathCode, DataType>> schemas;
-    string path;         //挂载路径
-    char *temFileBuffer; //模版文件缓存
+    string path; //挂载路径
+    // char *temFileBuffer; //模版文件缓存
     long fileLength;
     long totalBytes;
+    bool hasImage = false; //若包含图片，则查询时需要对每一个节拍对照模版遍历；若不包含，则仅需获取数据的绝对偏移，大大节省查询时间
     Template() {}
     Template(vector<PathCode> &pathEncodes, vector<DataType> &dataTypes, const char *path)
     {
         for (int i = 0; i < pathEncodes.size(); i++)
         {
             this->schemas.push_back(make_pair(pathEncodes[i], dataTypes[i]));
+            if (dataTypes[i].valueType == ValueType::IMAGE)
+                this->hasImage = true;
         }
         this->path = path;
         this->totalBytes = GetTotalBytes();
@@ -357,9 +361,15 @@ public:
 
     bool checkHasArray(char *pathCode);
 
+    bool checkHasImage(char *pathCode);
+
+    bool checkHasTimeseries(char *pathCode);
+
     int FindDatatypePosByCode(char pathCode[], char buff[], long &position, long &bytes);
 
     int FindDatatypePosByCode(char pathCode[], char buff[], long &position, long &bytes, DataType &type);
+
+    int FindMultiDatatypePosByCode(char pathCode[], vector<long> &positions, vector<long> &bytes, vector<DataType> &types);
 
     int FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<long> &positions, vector<long> &bytes, vector<DataType> &types);
 
@@ -368,6 +378,8 @@ public:
     int FindDatatypePosByName(const char *name, char buff[], long &position, long &bytes);
 
     int FindDatatypePosByName(const char *name, char buff[], long &position, long &bytes, DataType &type);
+
+    int FindDatatypePosByName(const char *name, long &position, long &bytes, DataType &type);
 
     int writeBufferHead(vector<PathCode> &pathCodes, vector<DataType> &typeList, char *buffer);
 
@@ -380,7 +392,10 @@ public:
 
     long GetTotalBytes();
 
+    long GetBytesByCode(char *pathCode);
+
     int GetDataTypeByCode(char *pathCode, DataType &type);
+    int GetDataTypeByCode(char *pathCode, vector<DataType> &types);
     vector<DataType> GetAllTypes(char *pathCode);
 };
 

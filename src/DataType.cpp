@@ -67,7 +67,7 @@ ValueType::ValueType DataType::JudgeValueType(string vType)
 
 /**
  * @brief 通过ValueType类型返回对应的枚举值
- * 
+ *
  * @param vType ValueType::ValueType枚举类型
  * @return int 数据类型对应的枚举值
  */
@@ -78,25 +78,25 @@ int DataType::JudgeByValueType(ValueType::ValueType vType)
     case ValueType::INT:
         return 4;
         break;
-    case ValueType::UINT: 
+    case ValueType::UINT:
         return 1;
         break;
-    case ValueType::SINT: 
+    case ValueType::SINT:
         return 6;
         break;
-    case ValueType::USINT: 
+    case ValueType::USINT:
         return 2;
         break;
-    case ValueType::REAL: 
+    case ValueType::REAL:
         return 8;
         break;
-    case ValueType::TIME: 
+    case ValueType::TIME:
         return 9;
         break;
-    case ValueType::DINT: 
+    case ValueType::DINT:
         return 7;
         break;
-    case ValueType::UDINT: 
+    case ValueType::UDINT:
         return 3;
         break;
     case ValueType::BOOL:
@@ -113,7 +113,7 @@ int DataType::JudgeByValueType(ValueType::ValueType vType)
 
 /**
  * @brief 通过int类型返回对应的数据类型字符串
- * 
+ *
  * @param vType ValueType::ValueType的枚举值
  * @return string 对应的数据类型字符串
  */
@@ -197,6 +197,18 @@ int DataType::GetDataTypeFromStr(char dataType[], DataType &type)
         type.arrayLen = atoi(const_cast<char *>(vec[1].c_str()));
         type.valueBytes = GetValueBytes(type.valueType);
         return 0;
+    }
+    else if (dtype.find("Timeseries") != string::npos)
+    {
+        type.isTimeseries = true;
+        vector<string> arr = StringSplit(const_cast<char *>(dtype.c_str()), " ");
+        type.valueType = JudgeValueType(arr[2]); //值类型
+
+        //获取时间序列长度
+        arr[0][arr[0].length() - 1] = '\0';
+        vector<string> vec = DataType::StringSplit(const_cast<char *>(arr[0].c_str()), "..");
+        type.arrayLen = atoi(const_cast<char *>(vec[1].c_str()));
+        type.valueBytes = GetValueBytes(type.valueType);
     }
     else if (dtype.find("IMAGE") != string::npos)
     {

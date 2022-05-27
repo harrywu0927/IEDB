@@ -30,10 +30,10 @@ vector<pair<string, tuple<long, long>>> PackManager::GetPacksByTime(string pathT
 }
 
 /**
- * @brief 获取磁盘上当前所有目录下的某一产线下的所有包中的最后index个包
+ * @brief 获取磁盘上当前所有目录下的某一产线下的所有包中的最后第index个包
  *
  * @param pathToLine 到产线的路径
- * @param index 最后index个
+ * @param index 最后第index个
  * @return pair<string, tuple<long, long, char*>>
  */
 pair<string, pair<char *, long>> PackManager::GetLastPack(string pathToLine, int index)
