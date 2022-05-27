@@ -473,20 +473,20 @@ int DB_InsertRecords(DB_DataBuffer buffer[], int recordsNum, int addTime)
     return 0;
 }
 
-int main()
-{
-    DB_DataBuffer buffer;
-    vector<string> files;
-    readDataFiles("JinfeiSeven", files);
-    for (int i = 0; i < 1000; i++)
-    {
-        buffer.savePath = files[rand() % files.size()].c_str();
-        DB_ReadFile(&buffer);
-        buffer.savePath = "JinfeiSeven";
-        if (DB_InsertRecord(&buffer, 0) != 0)
-            cout << "warning" << endl;
-        free(buffer.buffer);
-    }
+// int main()
+// {
+//     DB_DataBuffer buffer;
+//     vector<string> files;
+//     readDataFiles("JinfeiSeven", files);
+//     for (int i = 0; i < 1000; i++)
+//     {
+//         buffer.savePath = files[rand() % files.size()].c_str();
+//         DB_ReadFile(&buffer);
+//         buffer.savePath = "JinfeiSeven";
+//         if (DB_InsertRecord(&buffer, 0) != 0)
+//             cout << "warning" << endl;
+//         free(buffer.buffer);
+//     }
 
-    return 0;
-}
+//     return 0;
+// }

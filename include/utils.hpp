@@ -91,6 +91,7 @@ namespace StatusCode
         STANDARD_CHECK_ERROR = 172,       //标准值不合法
         MAX_CHECK_ERROR = 173,            //最大值不合法
         MIN_CHECK_ERROR = 174,            //最小值不合法
+        VALUE_CHECKE_ERROR = 175,         //变量值不合法
     };
 }
 namespace ValueType
@@ -239,7 +240,7 @@ int checkInputVaribaleName(string variableName);
 
 int checkInputPathcode(char pathcode[]);
 
-int checkInputVariable(string Variable);
+int checkInputValue(string variableType,string value);
 
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);

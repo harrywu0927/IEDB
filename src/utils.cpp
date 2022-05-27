@@ -2111,6 +2111,283 @@ int checkInputPathcode(char pathcode[])
     return 0;
 }
 
+int checkInputValue(string variableType, string value)
+{
+    if (variableType == "BOOL")
+    {
+        if (value.length() != 1)
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+        else if (value[0] != '0' && value[0] != '1')
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+    }
+    else if (variableType == "USINT")
+    {
+        for (int i = 0; i < value.length(); i++) //检查是否都为数字
+        {
+            if (value[i] < '0' || value[i] > '9')
+            {
+                return StatusCode::VALUE_CHECKE_ERROR;
+            }
+        }
+        if ((value.length() != 1 && value[0] == '0') || value[0] == '-') //以0开头或 以-开头
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+        uint16_t Val =  (uint16_t)atoi(value.c_str());
+        if (Val > 255 || Val < 0)
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+    }
+    else if (variableType == "UINT")
+    {
+        for (int i = 0; i < value.length(); i++) //检查是否都为数字
+        {
+            if (value[i] < '0' || value[i] > '9')
+            {
+                return StatusCode::VALUE_CHECKE_ERROR;
+            }
+        }
+        if ((value.length() != 1 && value[0] == '0') || value[0] == '-') //以0开头或 以-开头
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+        uint32_t Val = (uint32_t)atoi(value.c_str());
+        if (Val > 65535 || Val < 0)
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+    }
+    else if (variableType == "UDINT")
+    {
+        for (int i = 0; i < value.length(); i++) //检查是否都为数字
+        {
+            if (value[i] < '0' || value[i] > '9')
+            {
+                return StatusCode::VALUE_CHECKE_ERROR;
+            }
+        }
+        if ((value.length() != 1 && value[0] == '0') || value[0] == '-') //以0开头或 以-开头
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+        uint64_t Val = (uint64_t)stoll(value);
+        if (Val > 4294967295 || Val < 0)
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+    }
+    else if (variableType == "SINT")
+    {
+        if (value.length() == 1 && value[0] == '-') //只有一个 -
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+
+        for (int i = 0; i < value.length(); i++) //检查是否都为数字或者以-开头
+        {
+            if (i == 0 && value[i] == '-') //以-开头
+            {
+                continue;
+            }
+            else if (value[i] < '0' || value[i] > '9')
+            {
+                return StatusCode::VALUE_CHECKE_ERROR;
+            }
+        }
+
+        if ( (value.length() != 1 && value[0] == '0') || (value.length()>2 && value[0]== '-' && value[1]=='0')) //以0开头
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+        int16_t Val = (int16_t)atoi(value.c_str());
+        if (Val > 127 || Val < -128)
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+    }
+    else if (variableType == "INT")
+    {
+        if (value.length() == 1 && value[0] == '-') //只有一个 -
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+
+        for (int i = 0; i < value.length(); i++) //检查是否都为数字或者以-开头
+        {
+            if (i == 0 && value[i] == '-') //以-开头
+            {
+                continue;
+            }
+            else if (value[i] < '0' || value[i] > '9')
+            {
+                return StatusCode::VALUE_CHECKE_ERROR;
+            }
+        }
+
+        if ((value.length() != 1 && value[0] == '0') || (value.length()>2 && value[0]== '-' && value[1]=='0')) //以0开头
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+        int32_t Val = (int32_t)atoi(value.c_str());
+        if (Val > 32767 || Val < -32768)
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+    }
+    else if (variableType == "DINT")
+    {
+        if (value.length() == 1 && value[0] == '-') //只有一个 -
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+
+        for (int i = 0; i < value.length(); i++) //检查是否都为数字或者以-开头
+        {
+            if (i == 0 && value[i] == '-') //以-开头
+            {
+                continue;
+            }
+            else if (value[i] < '0' || value[i] > '9')
+            {
+                return StatusCode::VALUE_CHECKE_ERROR;
+            }
+        }
+
+        if ((value.length() != 1 && value[0] == '0') || (value.length()>2 && value[0]== '-' && value[1]=='0')) //以0开头
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+        int64_t Val = (int64_t)stoll(value);
+        if (Val > 2147483647 || Val < -2147483648)
+        {
+            return StatusCode::VALUE_CHECKE_ERROR;
+        }
+    }
+    else if (variableType == "REAL")
+    {
+        if (value.find(".") != string::npos) //包含小数点
+        {
+            vector<string> valueSplit = DataType::splitWithStl(value,".");
+            if (valueSplit.size() != 2) //一般分割出两段
+            {
+                return StatusCode::VALUE_CHECKE_ERROR;
+            }
+            if (valueSplit[0].length() == 0 || valueSplit[1].length() == 0) //分割出来有空的情况
+            {
+                return StatusCode::VALUE_CHECKE_ERROR;
+            }
+
+            //检查前半段
+            if (valueSplit[0].find("-") !=string::npos) //如果包含 -
+            {
+                vector<string> temp = DataType::splitWithStl(valueSplit[0],"-");
+                if (temp.size() != 2) //不只一个 -
+                {
+                    return StatusCode::VALUE_CHECKE_ERROR;
+                }
+                if (temp[0].length() != 0) //-分割出前半段肯定为空
+                {
+                    return StatusCode::VALUE_CHECKE_ERROR;
+                }
+
+                if (temp[1].length() == 0) //后半段为空，说明只有 -
+                {
+                    return StatusCode::VALUE_CHECKE_ERROR;
+                }
+                if (temp[1].length() > 1 && temp[1][0] == '0') //如果是0开头那么长度只能为1
+                {
+                    return StatusCode::VALUE_CHECKE_ERROR;
+                }
+
+                for (int j = 0; j < temp[1].length(); j++)
+                {
+                    if (temp[1][j] < '0' || temp[1][j] > '9') //-分割出后半段只能是纯数字
+                    {
+                        return StatusCode::VALUE_CHECKE_ERROR;
+                    }
+                }
+            }
+            else //不包含-
+            {
+                if (valueSplit[0].length() > 1 && valueSplit[0][0] == '0') //如果是0开头那么长度只能为1
+                {
+                    return StatusCode::VALUE_CHECKE_ERROR;
+                }
+
+                for (int i = 0; i < valueSplit[0].length(); i++)
+                {
+                    if (valueSplit[0][i] < '0' || valueSplit[0][i] > '9') //-分割出后半段只能是纯数字
+                    {
+                        return StatusCode::VALUE_CHECKE_ERROR;
+                    }
+                }
+            }
+
+            //检查后半段
+            for (int i = 0; i < valueSplit[1].length(); i++)
+            {
+                if (valueSplit[1][i] < '0' || valueSplit[1][i] > '9') //后半段只能是纯数字
+                {
+                    return StatusCode::VALUE_CHECKE_ERROR;
+                }
+            }
+        }
+        else //不包含小数点
+        {
+            if (value.find("-") != string::npos) //包含 -
+            {
+                vector<string> temp = DataType::splitWithStl(value,"-");
+                if (temp.size() != 2) //正常分割出两段
+                {
+                    return StatusCode::VALUE_CHECKE_ERROR;
+                }
+                if (temp[0].length() != 0) //前半段一定为空
+                {
+                    return StatusCode::VALUE_CHECKE_ERROR;
+                }
+
+                //检查后半段
+                if (temp[1].length() == 0) //后半段为空
+                {
+                    return StatusCode::VALUE_CHECKE_ERROR;
+                }
+                if (temp[1].length() > 1 && temp[1][0] == '0') //0开头
+                {
+                    return StatusCode::VALUE_CHECKE_ERROR;
+                }
+
+                for (int j = 0; j < temp[1].length(); j++)
+                {
+                    if (temp[1][j] < '0' || temp[1][j] > '9') //-分割出后半段只能是纯数字
+                    {
+                        return StatusCode::VALUE_CHECKE_ERROR;
+                    }
+                }
+            }
+            else // 不包含 -
+            {
+                if (value.length() > 1 && value[0] == '0' ) //连续0开头
+                {
+                    return StatusCode::VALUE_CHECKE_ERROR;
+                }
+                for (int j = 0; j < value.length(); j++)
+                {
+                    if (value[j] < '0' || value[j] > '9') //-分割出后半段只能是纯数字
+                    {
+                        return StatusCode::VALUE_CHECKE_ERROR;
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
+
 //有缺陷，如果SID是在已存在文件之间的ID，则SID必须存在
 int readIDBFilesListBySIDandNum(string path, string SID, uint32_t num, vector<pair<string, long>> &selectedFiles)
 {
@@ -2533,54 +2810,57 @@ int readIDBZIPFilesListBySIDandEID(string path, string SID, string EID, vector<p
     return err;
 }
 
-// int main()
-// {
-//     // FileIDManager::GetFileID("/");
-//     // FileIDManager::GetFileID("/");
-//     // FileIDManager::GetFileID("/Jinfei3");
-//     // FileIDManager::GetFileID("/Jinfei3");
-//     // FileIDManager::GetFileID("/Jinfei4/line1");
-//     // FileIDManager::GetFileID("/Jinfei4/line1/");
-//     // cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
-//     // char *buff=NULL;
-//     // int length=0;
-//     // DB_ZipSwitchFile("/","/");
+int main()
+{
+    // FileIDManager::GetFileID("/");
+    // FileIDManager::GetFileID("/");
+    // FileIDManager::GetFileID("/Jinfei3");
+    // FileIDManager::GetFileID("/Jinfei3");
+    // FileIDManager::GetFileID("/Jinfei4/line1");
+    // FileIDManager::GetFileID("/Jinfei4/line1/");
+    // cout << settings("Pack_Mode") << " " << settings("Pack_Num") << " " << settings("Pack_Interval") << endl;
+    // char *buff=NULL;
+    // int length=0;
+    // DB_ZipSwitchFile("/","/");
 
-//     // ReZipBuff(buff, length, "/");
-//     // cout<<length<<endl;
-//     // return 0;
-//     vector<pair<string, long>> selectIDBFiles;
-//     vector<pair<string, long>> selectIDBFIles2;
-//     string SID = "JinfeiEleven4534";
-//     string EID = "JinfeiEleven4564";
-//     readIDBFilesListBySIDandNum("JinfeiEleven", SID, 12, selectIDBFiles);
-//     cout << selectIDBFiles.size() << endl;
-//     readIDBFilesListBySIDandEID("JinfeiEleven", SID, EID, selectIDBFIles2);
-//     cout << selectIDBFIles2.size() << endl;
-//     vector<pair<string, long>> selectIDBZIPFiles;
-//     vector<pair<string, long>> selectIDBZIPFiles2;
-//     SID = "JinfeiSeven1526000";
-//     EID = "JinfeiSeven1540000";
-//     readIDBZIPFilesListBySIDandNum("JinfeiSeven", SID, 1000, selectIDBZIPFiles);
-//     cout << selectIDBZIPFiles.size() << endl;
-//     readIDBZIPFilesListBySIDandEID("JinfeiSeven", SID, EID, selectIDBZIPFiles2);
-//     cout << selectIDBZIPFiles2.size() << endl;
-//     return 0;
-//     vector<string> vec = DataType::splitWithStl("jinfei/", "/");
-//     // curNum = getDirCurrentFileIDIndex();
-//     return 0;
-//     char *buff = (char *)malloc(24);
-//     buff[0] = 0;
-//     buff[1] = 0;
-//     buff[2] = 0;
-//     buff[3] = 0;
-//     buff[4] = 0;
-//     buff[5] = 103;
-//     int len = 6;
-//     ReZipBuff(buff, len, "/");
-//     Packer packer;
-//     vector<pair<string, long>> files;
-//     readDataFilesWithTimestamps("", files);
-//     packer.Pack("", files);
-//     return 0;
-// }
+    // ReZipBuff(buff, length, "/");
+    // cout<<length<<endl;
+    // return 0;
+    int err = checkInputValue("REAL","-9.000001");
+    cout<<err<<endl;
+    return 0;
+    vector<pair<string, long>> selectIDBFiles;
+    vector<pair<string, long>> selectIDBFIles2;
+    string SID = "JinfeiEleven4534";
+    string EID = "JinfeiEleven4564";
+    readIDBFilesListBySIDandNum("JinfeiEleven", SID, 12, selectIDBFiles);
+    cout << selectIDBFiles.size() << endl;
+    readIDBFilesListBySIDandEID("JinfeiEleven", SID, EID, selectIDBFIles2);
+    cout << selectIDBFIles2.size() << endl;
+    vector<pair<string, long>> selectIDBZIPFiles;
+    vector<pair<string, long>> selectIDBZIPFiles2;
+    SID = "JinfeiSeven1526000";
+    EID = "JinfeiSeven1540000";
+    readIDBZIPFilesListBySIDandNum("JinfeiSeven", SID, 1000, selectIDBZIPFiles);
+    cout << selectIDBZIPFiles.size() << endl;
+    readIDBZIPFilesListBySIDandEID("JinfeiSeven", SID, EID, selectIDBZIPFiles2);
+    cout << selectIDBZIPFiles2.size() << endl;
+    return 0;
+    vector<string> vec = DataType::splitWithStl("jinfei/", "/");
+    // curNum = getDirCurrentFileIDIndex();
+    return 0;
+    char *buff = (char *)malloc(24);
+    buff[0] = 0;
+    buff[1] = 0;
+    buff[2] = 0;
+    buff[3] = 0;
+    buff[4] = 0;
+    buff[5] = 103;
+    int len = 6;
+    ReZipBuff(buff, len, "/");
+    Packer packer;
+    vector<pair<string, long>> files;
+    readDataFilesWithTimestamps("", files);
+    packer.Pack("", files);
+    return 0;
+}
