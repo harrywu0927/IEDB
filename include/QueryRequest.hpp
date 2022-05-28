@@ -5,8 +5,7 @@ using namespace std;
 class QueryRequest
 {
 private:
-    int queryID;        //查询ID
+    int queryID;         //查询ID
     string templatePath; //模版挂载路径
 public:
 };
-

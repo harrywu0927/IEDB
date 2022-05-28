@@ -228,7 +228,7 @@ int DB_DeleteNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams);
 
 int DB_DeleteNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams);
 
-//python相关
+// python相关
 int DB_OutlierDetection(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
 int DB_NoveltyFit(struct DB_QueryParams *params, double *maxLine, double *minLine);
@@ -242,9 +242,9 @@ int checkInputVaribaleName(string variableName);
 
 int checkInputPathcode(char pathcode[]);
 
-int checkInputValue(string variableType,string value);
+int checkInputValue(string variableType, string value);
 
-int checkValueRange(string variableType,string standardValue,string maxValue,string minValue);
+int checkValueRange(string variableType, string standardValue, string maxValue, string minValue);
 
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);

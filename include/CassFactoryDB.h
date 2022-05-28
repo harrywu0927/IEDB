@@ -56,7 +56,7 @@ struct DB_QueryParams
 {
     char *pathCode;                  //路径编码
     const char *valueName;           //变量名
-    int byPath;                      //1表示根据路径编码查询，0表示根据变量名查询
+    int byPath;                      // 1表示根据路径编码查询，0表示根据变量名查询
     int isContinue;                  //是否继续获取数据，1表示接续上次未传输完的数据，0表示结束
     long start;                      //开始时间
     long end;                        //结束时间
@@ -155,15 +155,14 @@ int DB_PROD(struct DB_DataBuffer *buffer);
 //离群点检测
 int DB_Outlier_Detection(struct DB_QueryParams *params);
 
-
 //文件打包
 int DB_Pack(const char *pathToLine, int num, int packAll);
 
 //按条件统计正常数据条数
-int DB_GetNormalDataCount(struct DB_QueryParams *params, long *count); 
+int DB_GetNormalDataCount(struct DB_QueryParams *params, long *count);
 
 //按条件统计非正常数据条数
-int DB_GetAbnormalDataCount(struct DB_QueryParams *params, long *count); 
+int DB_GetAbnormalDataCount(struct DB_QueryParams *params, long *count);
 
 //读取文件内容到缓冲区
 int DB_ReadFile(struct DB_DataBuffer *buffer);
