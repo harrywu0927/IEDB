@@ -78,18 +78,21 @@ int DB_AddNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams)
         readbuf_pos += 10;
     }
 
+    //检查数据类型是否合法
     if (TreeParams->valueType < 1 || TreeParams->valueType > 10)
     {
         cout << "数据类型选择错误" << endl;
         return StatusCode::UNKNOWN_TYPE;
     }
 
+    //检查是否为数组是否合法
     if (TreeParams->isArrary != 0 && TreeParams->isArrary != 1)
     {
         cout << "isArray只能为0或1" << endl;
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查是否带时间戳是否合法
     if (TreeParams->hasTime != 0 && TreeParams->hasTime != 1)
     {
         cout << "hasTime只能为0或1" << endl;
@@ -216,18 +219,21 @@ int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
         readbuf_pos += 10;
     }
 
+    //检查数据类型是否合法
     if (TreeParams->valueType < 1 || TreeParams->valueType > 10)
     {
         cout << "数据类型选择错误" << endl;
         return StatusCode::UNKNOWN_TYPE;
     }
 
+    //检查是否为数组是否合法
     if (TreeParams->isArrary != 0 && TreeParams->isArrary != 1)
     {
         cout << "isArray只能为0或1" << endl;
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查是否带时间戳是否合法
     if (TreeParams->hasTime != 0 && TreeParams->hasTime != 1)
     {
         cout << "hasTime只能为0或1" << endl;
@@ -370,18 +376,21 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
         readbuf_pos += 10;
     }
 
+    //检查数据类型是否合法
     if (TreeParams->valueType < 1 || TreeParams->valueType > 10)
     {
         cout << "数据类型选择错误" << endl;
         return StatusCode::UNKNOWN_TYPE;
     }
 
+    //检查是否为数组是否合法
     if (TreeParams->isArrary != 0 && TreeParams->isArrary != 1)
     {
         cout << "isArray只能为0或1" << endl;
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查是否带时间戳是否合法
     if (TreeParams->hasTime != 0 && TreeParams->hasTime != 1)
     {
         cout << "hasTime只能为0或1" << endl;
@@ -539,18 +548,21 @@ int DB_UpdateNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams, struct 
         return StatusCode::UNKNOWN_PATHCODE;
     }
 
+    //检测数据类型是否合法
     if (newTreeParams->valueType < 1 || newTreeParams->valueType > 10)
     {
         cout << "数据类型选择错误" << endl;
         return StatusCode::UNKNOWN_TYPE;
     }
 
+    //检查是否为数组是否合法
     if (newTreeParams->isArrary != 0 && newTreeParams->isArrary != 1)
     {
         cout << "isArray只能为0或1" << endl;
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查是否带时间戳是否合法
     if (newTreeParams->hasTime != 0 && newTreeParams->hasTime != 1)
     {
         cout << "hasTime只能为0或1" << endl;
@@ -705,18 +717,21 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
         return StatusCode::UNKNOWN_PATHCODE;
     }
 
+    //检查数据类型是否合法
     if (newTreeParams->valueType < 1 || newTreeParams->valueType > 10)
     {
         cout << "数据类型选择错误" << endl;
         return StatusCode::UNKNOWN_TYPE;
     }
 
+    //检查是否为数组是否合法
     if (newTreeParams->isArrary != 0 && newTreeParams->isArrary != 1)
     {
         cout << "isArray只能为0或1" << endl;
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查是否带时间戳是否合法
     if (newTreeParams->hasTime != 0 && newTreeParams->hasTime != 1)
     {
         cout << "hasTime只能为0或1" << endl;
@@ -887,18 +902,21 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
         return StatusCode::UNKNOWN_PATHCODE;
     }
 
+    //检查数据类型是否合法
     if (newTreeParams->valueType < 1 || newTreeParams->valueType > 10)
     {
         cout << "数据类型选择错误" << endl;
         return StatusCode::UNKNOWN_TYPE;
     }
 
+    //检查是否为数组是否合法
     if (newTreeParams->isArrary != 0 && newTreeParams->isArrary != 1)
     {
         cout << "isArray只能为0或1" << endl;
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查是否带时间戳是否合法
     if (newTreeParams->hasTime != 0 && newTreeParams->hasTime != 1)
     {
         cout << "hasTime只能为0或1" << endl;
@@ -1285,9 +1303,48 @@ int DB_AddNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
 
+    //检测数据类型是否合法
+    if (ZipParams->valueType < 1 || ZipParams->valueType > 10)
+    {
+        cout << "数据类型选择错误" << endl;
+        return StatusCode::UNKNOWN_TYPE;
+    }
+
     //检查变量名输入是否合法
     string variableName = ZipParams->valueName;
     err = checkInputVaribaleName(variableName);
+    if (err != 0)
+        return err;
+
+    //检测标准值输入是否合法
+    string sValue = ZipParams->standardValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(ZipParams->valueType), sValue);
+    if (err != 0)
+    {
+        cout << "标准值输入不合法！" << endl;
+        return StatusCode::STANDARD_CHECK_ERROR;
+    }
+
+    //检测最大值输入是否合法
+    string maValue = ZipParams->maxValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(ZipParams->valueType), maValue);
+    if (err != 0)
+    {
+        cout << "最大值输入不合法！" << endl;
+        return StatusCode::MAX_CHECK_ERROR;
+    }
+
+    //检测最小值输入是否合法
+    string miValue = ZipParams->minValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(ZipParams->valueType), miValue);
+    if (err != 0)
+    {
+        cout << "最小值输入不合法！" << endl;
+        return StatusCode::MIN_CHECK_ERROR;
+    }
+
+    //检测值范围是否合法
+    err = checkValueRange(DataType::JudgeValueTypeByNum(ZipParams->valueType), sValue, maValue, miValue);
     if (err != 0)
         return err;
 
@@ -1327,18 +1384,14 @@ int DB_AddNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams)
         readbuf_pos += 91;
     }
 
-    if (ZipParams->valueType < 1 || ZipParams->valueType > 10)
-    {
-        cout << "数据类型选择错误" << endl;
-        return StatusCode::UNKNOWN_TYPE;
-    }
-
+    //检查是否为数组是否合法
     if (ZipParams->isArrary != 0 && ZipParams->isArrary != 1)
     {
         cout << "isArray只能为0或1" << endl;
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查是否带时间戳是否合法
     if (ZipParams->hasTime != 0 && ZipParams->hasTime != 1)
     {
         cout << "hasTime只能为0或1" << endl;
@@ -1575,9 +1628,47 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
 
+    if (ZipParams->valueType < 1 || ZipParams->valueType > 10)
+    {
+        cout << "数据类型选择错误" << endl;
+        return StatusCode::UNKNOWN_TYPE;
+    }
+
     //检查变量名输入是否合法
     string variableName = ZipParams->valueName;
     err = checkInputVaribaleName(variableName);
+    if (err != 0)
+        return err;
+
+    //检测标准值输入是否合法
+    string sValue = ZipParams->standardValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(ZipParams->valueType), sValue);
+    if (err != 0)
+    {
+        cout << "标准值输入不合法！" << endl;
+        return StatusCode::STANDARD_CHECK_ERROR;
+    }
+
+    //检测最大值输入是否合法
+    string maValue = ZipParams->maxValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(ZipParams->valueType), maValue);
+    if (err != 0)
+    {
+        cout << "最大值输入不合法！" << endl;
+        return StatusCode::MAX_CHECK_ERROR;
+    }
+
+    //检测最小值输入是否合法
+    string miValue = ZipParams->minValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(ZipParams->valueType), miValue);
+    if (err != 0)
+    {
+        cout << "最小值输入不合法！" << endl;
+        return StatusCode::MIN_CHECK_ERROR;
+    }
+
+    //检测值范围是否合法
+    err = checkValueRange(DataType::JudgeValueTypeByNum(ZipParams->valueType), sValue, maValue, miValue);
     if (err != 0)
         return err;
 
@@ -1617,18 +1708,14 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
         readbuf_pos += 91;
     }
 
-    if (ZipParams->valueType < 1 || ZipParams->valueType > 10)
-    {
-        cout << "数据类型选择错误" << endl;
-        return StatusCode::UNKNOWN_TYPE;
-    }
-
+    //检查是否为数组是否合法
     if (ZipParams->isArrary != 0 && ZipParams->isArrary != 1)
     {
         cout << "isArray只能为0或1" << endl;
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查是否带时间戳是否合法
     if (ZipParams->hasTime != 0 && ZipParams->hasTime != 1)
     {
         cout << "hasTime只能为0或1" << endl;
@@ -1881,9 +1968,48 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
 
+    //检测数据类型是否合法
+    if (ZipParams->valueType < 1 || ZipParams->valueType > 10)
+    {
+        cout << "数据类型选择错误" << endl;
+        return StatusCode::UNKNOWN_TYPE;
+    }
+
     //检查变量名输入是否合法
     string variableName = ZipParams->valueName;
     err = checkInputVaribaleName(variableName);
+    if (err != 0)
+        return err;
+
+    //检测标准值输入是否合法
+    string sValue = ZipParams->standardValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(ZipParams->valueType), sValue);
+    if (err != 0)
+    {
+        cout << "标准值输入不合法！" << endl;
+        return StatusCode::STANDARD_CHECK_ERROR;
+    }
+
+    //检测最大值输入是否合法
+    string maValue = ZipParams->maxValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(ZipParams->valueType), maValue);
+    if (err != 0)
+    {
+        cout << "最大值输入不合法！" << endl;
+        return StatusCode::MAX_CHECK_ERROR;
+    }
+
+    //检测最小值输入是否合法
+    string miValue = ZipParams->minValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(ZipParams->valueType), miValue);
+    if (err != 0)
+    {
+        cout << "最小值输入不合法！" << endl;
+        return StatusCode::MIN_CHECK_ERROR;
+    }
+
+    //检测值范围是否合法
+    err = checkValueRange(DataType::JudgeValueTypeByNum(ZipParams->valueType), sValue, maValue, miValue);
     if (err != 0)
         return err;
 
@@ -1923,18 +2049,14 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
         readbuf_pos += 91;
     }
 
-    if (ZipParams->valueType < 1 || ZipParams->valueType > 10)
-    {
-        cout << "数据类型选择错误" << endl;
-        return StatusCode::UNKNOWN_TYPE;
-    }
-
+    //检查是否为数组是否合法
     if (ZipParams->isArrary != 0 && ZipParams->isArrary != 1)
     {
         cout << "isArray只能为0或1" << endl;
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检测是否带时间戳是否合法
     if (ZipParams->hasTime != 0 && ZipParams->hasTime != 1)
     {
         cout << "hasTime只能为0或1" << endl;
@@ -2205,9 +2327,55 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
 {
     int err;
 
+    //检查更新后数据类型是否合法
+    if (newZipParams->valueType < 1 || newZipParams->valueType > 10)
+    {
+        cout << "数据类型选择错误" << endl;
+        return StatusCode::UNKNOWN_TYPE;
+    }
+
+    //检查更新后数据类型是否合法
+    if (newZipParams->valueType < 1 || newZipParams->valueType > 10)
+    {
+        cout << "数据类型选择错误" << endl;
+        return StatusCode::UNKNOWN_TYPE;
+    }
+
     //检查更新后变量名输入是否合法
     string variableName = newZipParams->valueName;
     err = checkInputVaribaleName(variableName);
+    if (err != 0)
+        return err;
+
+    //检测更新后标准值输入是否合法
+    string sValue = newZipParams->standardValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(newZipParams->valueType), sValue);
+    if (err != 0)
+    {
+        cout << "标准值输入不合法！" << endl;
+        return StatusCode::STANDARD_CHECK_ERROR;
+    }
+
+    //检测更新后最大值输入是否合法
+    string maValue = newZipParams->maxValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(newZipParams->valueType), maValue);
+    if (err != 0)
+    {
+        cout << "最大值输入不合法！" << endl;
+        return StatusCode::MAX_CHECK_ERROR;
+    }
+
+    //检测更新后最小值输入是否合法
+    string miValue = newZipParams->minValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(newZipParams->valueType), miValue);
+    if (err != 0)
+    {
+        cout << "最小值输入不合法！" << endl;
+        return StatusCode::MIN_CHECK_ERROR;
+    }
+
+    //检测值范围是否合法
+    err = checkValueRange(DataType::JudgeValueTypeByNum(newZipParams->valueType), sValue, maValue, miValue);
     if (err != 0)
         return err;
 
@@ -2265,18 +2433,14 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
         readbuf_pos += 91;
     }
 
-    if (newZipParams->valueType < 1 || newZipParams->valueType > 10)
-    {
-        cout << "数据类型选择错误" << endl;
-        return StatusCode::UNKNOWN_TYPE;
-    }
-
+    //检查更新后是否为数组是否合法
     if (newZipParams->isArrary != 0 && newZipParams->isArrary != 1)
     {
         cout << "isArray只能为0或1" << endl;
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查更新后是否带时间戳是否合法
     if (newZipParams->hasTime != 0 && newZipParams->hasTime != 1)
     {
         cout << "hasTime只能为0或1" << endl;
@@ -2519,6 +2683,38 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
     if (err != 0)
         return err;
 
+    //检测更新后标准值输入是否合法
+    string sValue = newZipParams->standardValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(newZipParams->valueType), sValue);
+    if (err != 0)
+    {
+        cout << "标准值输入不合法！" << endl;
+        return StatusCode::STANDARD_CHECK_ERROR;
+    }
+
+    //检测更新后最大值输入是否合法
+    string maValue = newZipParams->maxValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(newZipParams->valueType), maValue);
+    if (err != 0)
+    {
+        cout << "最大值输入不合法！" << endl;
+        return StatusCode::MAX_CHECK_ERROR;
+    }
+
+    //检测更新后最小值输入是否合法
+    string miValue = newZipParams->minValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(newZipParams->valueType), miValue);
+    if (err != 0)
+    {
+        cout << "最小值输入不合法！" << endl;
+        return StatusCode::MIN_CHECK_ERROR;
+    }
+
+    //检测值范围是否合法
+    err = checkValueRange(DataType::JudgeValueTypeByNum(newZipParams->valueType), sValue, maValue, miValue);
+    if (err != 0)
+        return err;
+
     vector<string> files;
     readFileList(ZipParams->pathToLine, files);
     string temPath = "";
@@ -2573,18 +2769,14 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
         readbuf_pos += 91;
     }
 
-    if (newZipParams->valueType < 1 || newZipParams->valueType > 10)
-    {
-        cout << "数据类型选择错误" << endl;
-        return StatusCode::UNKNOWN_TYPE;
-    }
-
+    //检查更新后是否为数组是否合法
     if (newZipParams->isArrary != 0 && newZipParams->isArrary != 1)
     {
         cout << "isArray只能为0或1" << endl;
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查更新后是否带时间戳是否合法
     if (newZipParams->hasTime != 0 && newZipParams->hasTime != 1)
     {
         cout << "hasTime只能为0或1" << endl;
@@ -2837,9 +3029,48 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
 {
     int err;
 
+    //检查更新后数据类型是否合法
+    if (newZipParams->valueType < 1 || newZipParams->valueType > 10)
+    {
+        cout << "数据类型选择错误" << endl;
+        return StatusCode::UNKNOWN_TYPE;
+    }
+
     //检查更新后变量名输入是否合法
     string variableName = newZipParams->valueName;
     err = checkInputVaribaleName(variableName);
+    if (err != 0)
+        return err;
+
+    //检测更新后标准值输入是否合法
+    string sValue = newZipParams->standardValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(newZipParams->valueType), sValue);
+    if (err != 0)
+    {
+        cout << "标准值输入不合法！" << endl;
+        return StatusCode::STANDARD_CHECK_ERROR;
+    }
+
+    //检测更新后最大值输入是否合法
+    string maValue = newZipParams->maxValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(newZipParams->valueType), maValue);
+    if (err != 0)
+    {
+        cout << "最大值输入不合法！" << endl;
+        return StatusCode::MAX_CHECK_ERROR;
+    }
+
+    //检测更新后最小值输入是否合法
+    string miValue = newZipParams->minValue;
+    err = checkInputValue(DataType::JudgeValueTypeByNum(newZipParams->valueType), miValue);
+    if (err != 0)
+    {
+        cout << "最小值输入不合法！" << endl;
+        return StatusCode::MIN_CHECK_ERROR;
+    }
+
+    //检测值范围是否合法
+    err = checkValueRange(DataType::JudgeValueTypeByNum(newZipParams->valueType), sValue, maValue, miValue);
     if (err != 0)
         return err;
 
@@ -2897,18 +3128,14 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
         readbuf_pos += 91;
     }
 
-    if (newZipParams->valueType < 1 || newZipParams->valueType > 10)
-    {
-        cout << "数据类型选择错误" << endl;
-        return StatusCode::UNKNOWN_TYPE;
-    }
-
+    //检查更新后是否为数组是否合法
     if (newZipParams->isArrary != 0 && newZipParams->isArrary != 1)
     {
         cout << "isArray只能为0或1" << endl;
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查更新后是否带时间戳是否合法
     if (newZipParams->hasTime != 0 && newZipParams->hasTime != 1)
     {
         cout << "hasTime只能为0或1" << endl;
@@ -3427,80 +3654,76 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 
 // int main()
 // {
-//     // DB_LoadZipSchema("jinfei/");
+    // DB_LoadZipSchema("jinfei/");
 
-//     // DB_TreeNodeParams params;
-//     // params.pathToLine = "jinfei";
-//     // params.newPath = "jinfei3";
-//     // char code[10];
-//     // code[0] = (char)0;
-//     // code[1] = (char)1;
-//     // code[2] = (char)0;
-//     // code[3] = (char)4;
-//     // code[4] = 'R';
-//     // code[5] = (char)1;
-//     // code[6] = 0;
-//     // code[7] = (char)0;
-//     // code[8] = (char)0;
-//     // code[9] = (char)0;
-//     // params.pathCode = code;
-//     // params.valueType = 3;
-//     // params.hasTime = 0;
-//     // params.isArrary = 0;
-//     // params.arrayLen = 100;
-//     // params.valueName = "S4ON";
+    // DB_TreeNodeParams params;
+    // params.pathToLine = "jinfei";
+    // params.newPath = "jinfeithree";
+    // char code[10];
+    // code[0] = (char)0;
+    // code[1] = (char)1;
+    // code[2] = (char)0;
+    // code[3] = (char)4;
+    // code[4] = 'R';
+    // code[5] = (char)1;
+    // code[6] = 0;
+    // code[7] = (char)200;
+    // code[8] = (char)0;
+    // code[9] = (char)0;
+    // params.pathCode = code;
+    // params.valueType = 3;
+    // params.hasTime = 0;
+    // params.isArrary = 0;
+    // params.arrayLen = 100;
+    // params.valueName = "S4ON";
 
-//     // DB_TreeNodeParams newTreeParams;
-//     // newTreeParams.pathToLine = "jinfeiTwo";
-//     // char newcode[10];
-//     // newcode[0] = (char)0;
-//     // newcode[1] = (char)1;
-//     // newcode[2] = (char)0;
-//     // newcode[3] = (char)4;
-//     // newcode[4] = 'R';
-//     // newcode[5] = (char)1;
-//     // newcode[6] = 0;
-//     // newcode[7] = (char)0;
-//     // newcode[8] = (char)0;
-//     // newcode[9] = (char)0;
-//     // newTreeParams.pathCode = newcode;
-//     // newTreeParams.valueType = 3;
-//     // newTreeParams.hasTime = 1;
-//     // newTreeParams.isArrary = 1;
-//     // newTreeParams.arrayLen = 100;
-//     // newTreeParams.valueName = "S4ON";
-//     // DB_UpdateNodeToSchema_old(&params,&newTreeParams);
-//     // DB_UpdateNodeToSchema_MultiTem(&params,&newTreeParams);
-//     // DB_UpdateNodeToSchema(&params,&newTreeParams);
-//     // DB_AddNodeToSchema(&params);
-//     // DB_AddNodeToSchema_MultiTem(&params);
-//     //DB_AddNodeToSchema(&params);
-//     // DB_DeleteNodeToSchema(&params);
+    // DB_TreeNodeParams newTreeParams;
+    // newTreeParams.pathToLine = "jinfeiTwo";
+    // char newcode[10];
+    // newcode[0] = (char)0;
+    // newcode[1] = (char)1;
+    // newcode[2] = (char)0;
+    // newcode[3] = (char)4;
+    // newcode[4] = 'R';
+    // newcode[5] = (char)1;
+    // newcode[6] = 0;
+    // newcode[7] = (char)0;
+    // newcode[8] = (char)0;
+    // newcode[9] = (char)0;
+    // newTreeParams.pathCode = newcode;
+    // newTreeParams.valueType = 3;
+    // newTreeParams.hasTime = 1;
+    // newTreeParams.isArrary = 1;
+    // newTreeParams.arrayLen = 100;
+    // newTreeParams.valueName = "S4ON";
+    // DB_UpdateNodeToSchema(&params,&newTreeParams);
+    // DB_AddNodeToSchema(&params);
+    // DB_DeleteNodeToSchema(&params);
 
-//     DB_ZipNodeParams params;
-//     params.pathToLine = "jinfei";
-//     params.valueType = 3;
-//     params.hasTime = 1;
-//     params.isArrary = 1;
-//     params.arrayLen = 100;
-//     params.valueName = "S4ON";
-//     params.standardValue = "210";
-//     params.maxValue = "230";
-//     params.minValue = "190";
-//     params.newPath="jinfei";
-//     //DB_AddNodeToZipSchema(&params);
-//     DB_DeleteNodeToZipSchema(&params);
-//     DB_ZipNodeParams newparams;
-//     newparams.pathToLine = "/jinfeiTwo";
-//     newparams.valueType = 3;
-//     newparams.hasTime = 0;
-//     newparams.isArrary = 0;
-//     newparams.arrayLen = 100;
-//     newparams.valueName = "S1ON";
-//     newparams.standardValue = "1000";
-//     newparams.maxValue = "1200";
-//     newparams.minValue = "800";
-//     //DB_UpdateNodeToZipSchema_Override(&params,&newparams);
-//     //DB_UpdateNodeToZipSchema(&params,&newparams);
+    // DB_ZipNodeParams params;
+    // params.pathToLine = "jinfei";
+    // params.valueType = 3;
+    // params.hasTime = 1;
+    // params.isArrary = 1;
+    // params.arrayLen = 100;
+    // params.valueName = "S4ON";
+    // params.standardValue = "210";
+    // params.maxValue = "230";
+    // params.minValue = "190";
+    // params.newPath="jinfeiToday";
+    // DB_AddNodeToZipSchema(&params);
+    // DB_DeleteNodeToZipSchema(&params);
+    // DB_ZipNodeParams newparams;
+    // newparams.pathToLine = "/jinfeiTwo";
+    // newparams.valueType = 3;
+    // newparams.hasTime = 0;
+    // newparams.isArrary = 0;
+    // newparams.arrayLen = 100;
+    // newparams.valueName = "S1ON";
+    // newparams.standardValue = "1000";
+    // newparams.maxValue = "1200";
+    // newparams.minValue = "800";
+    // DB_UpdateNodeToZipSchema_Override(&params,&newparams);
+    // DB_UpdateNodeToZipSchema(&params,&newparams);
 //     return 0;
 // }

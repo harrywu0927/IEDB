@@ -1731,7 +1731,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
  * @return  0:success,
  *          other:StatusCode
  */
-int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
+int DB_ZipFile_Single(const char *ZipTemPath, const char *pathToLine)
 {
     IOBusy = true;
     int err = 0;
@@ -1876,13 +1876,13 @@ int DB_ZipFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, 
  * @return  0:success,
  *          other:StatusCode
  */
-int DB_ZipFile_MultiThread(const char *ZipTemPath, const char *pathToLine)
+int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
 {
     int err;
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如直接使用单线程
     {
-        err = DB_ZipFile(ZipTemPath, pathToLine);
+        err = DB_ZipFile_Single(ZipTemPath, pathToLine);
         return err;
     }
 
@@ -1907,7 +1907,7 @@ int DB_ZipFile_MultiThread(const char *ZipTemPath, const char *pathToLine)
     if (filesWithTime.size() < 1000)
     {
         IOBusy = false;
-        err = DB_ZipFile(ZipTemPath, pathToLine);
+        err = DB_ZipFile_Single(ZipTemPath, pathToLine);
         return err;
     }
     sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
@@ -1942,7 +1942,7 @@ int DB_ZipFile_MultiThread(const char *ZipTemPath, const char *pathToLine)
  * @return  0:success,
  *          others:StatusCode
  */
-int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
+int DB_ReZipFile_Single(const char *ZipTemPath, const char *pathToLine)
 {
     IOBusy = true;
     int err = 0;
@@ -2069,13 +2069,13 @@ int DB_ReZipFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin
  * @return  0:success,
  *          other:StatusCode
  */
-int DB_ReZipFile_MultiThread(const char *ZipTemPath, const char *pathToLine)
+int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
 {
     int err;
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如直接使用单线程
     {
-        err = DB_ReZipFile(ZipTemPath, pathToLine);
+        err = DB_ReZipFile_Single(ZipTemPath, pathToLine);
         return err;
     }
 
@@ -2100,7 +2100,7 @@ int DB_ReZipFile_MultiThread(const char *ZipTemPath, const char *pathToLine)
     if (filesWithTime.size() < 1000)
     {
         IOBusy = false;
-        err = DB_ReZipFile(ZipTemPath, pathToLine);
+        err = DB_ReZipFile_Single(ZipTemPath, pathToLine);
         return err;
     }
     sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
@@ -2200,7 +2200,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
  * @return 0:success,
  *          others: StatusCode
  */
-int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
+int DB_ZipFileByTimeSpan_Single(struct DB_ZipParams *params)
 {
     IOBusy = true;
     params->ZipType = TIME_SPAN;
@@ -2353,7 +2353,7 @@ int DB_ZipFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16
  * @return 0:success,
  *          others: StatusCode
  */
-int DB_ZipFileByTimeSpan_MultiThread(struct DB_ZipParams *params)
+int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
 {
     params->ZipType = TIME_SPAN;
     int err = CheckZipParams(params);
@@ -2363,7 +2363,7 @@ int DB_ZipFileByTimeSpan_MultiThread(struct DB_ZipParams *params)
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如使用单线程
     {
-        err = DB_ZipFileByTimeSpan(params);
+        err = DB_ZipFileByTimeSpan_Single(params);
         return err;
     }
 
@@ -2395,7 +2395,7 @@ int DB_ZipFileByTimeSpan_MultiThread(struct DB_ZipParams *params)
     if (selectedFiles.size() < 1000)
     {
         IOBusy = false;
-        err = DB_ZipFileByTimeSpan(params);
+        err = DB_ZipFileByTimeSpan_Single(params);
     }
     sortByTime(selectedFiles, TIME_ASC);
 
@@ -2436,7 +2436,7 @@ int DB_ZipFileByTimeSpan_MultiThread(struct DB_ZipParams *params)
  * @return 0:success,
  *          others: StatusCode
  */
-int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
+int DB_ReZipFileByTimeSpan_Single(struct DB_ZipParams *params)
 {
     IOBusy = true;
     params->ZipType = TIME_SPAN;
@@ -2579,7 +2579,7 @@ int DB_ReZipFileByTimeSpan_MultiThread(struct DB_ZipParams *params)
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如使用单线程
     {
-        err = DB_ReZipFileByTimeSpan(params);
+        err = DB_ReZipFileByTimeSpan_Single(params);
         return err;
     }
 
@@ -2611,7 +2611,7 @@ int DB_ReZipFileByTimeSpan_MultiThread(struct DB_ZipParams *params)
     if (selectedFiles.size() < 1000)
     {
         IOBusy = false;
-        err = DB_ReZipFileByTimeSpan(params);
+        err = DB_ReZipFileByTimeSpan_Single(params);
     }
     sortByTime(selectedFiles, TIME_ASC);
 

@@ -2104,7 +2104,7 @@ int checkInputPathcode(char pathcode[])
             continue;
         else
         {
-            cout << "路径编码输入不合法" << endl;
+            cout << "路径编码输入不合法!" << endl;
             return StatusCode::PATHCODE_CHECK_ERROR;
         }
     }
@@ -2383,6 +2383,96 @@ int checkInputValue(string variableType, string value)
                     }
                 }
             }
+        }
+    }
+    return 0;
+}
+
+int checkValueRange(string variableType,string standardValue,string maxValue,string minValue)
+{
+    if(variableType=="BOOL")
+    {
+        if(standardValue!=maxValue || standardValue!=minValue || minValue!=maxValue)
+        {
+            cout<<"BOOL类型标准值、最大值、最小值必须保持一致!"<<endl;
+            return StatusCode::VALUE_RANGE_ERROR;
+        }
+    }
+    if(variableType=="USINT")
+    {
+        uint8_t standard = (uint8_t)atoi(standardValue.c_str());
+        uint8_t min = (uint8_t)atoi(minValue.c_str());
+        uint8_t max = (uint8_t)atoi(maxValue.c_str());
+        if( standard<min || standard>max )
+        {
+            cout<<"请检查标准值、最大值、最小值的范围！"<<endl;
+            return StatusCode::VALUE_RANGE_ERROR;
+        }
+    }
+    if(variableType=="UINT")
+    {
+        uint16_t standard = (uint16_t)atoi(standardValue.c_str());
+        uint16_t min = (uint16_t)atoi(minValue.c_str());
+        uint16_t max = (uint16_t)atoi(maxValue.c_str());
+        if( standard<min || standard>max )
+        {
+            cout<<"请检查标准值、最大值、最小值的范围！"<<endl;
+            return StatusCode::VALUE_RANGE_ERROR;
+        }
+    }
+    if(variableType=="UDINT")
+    {
+        uint32_t standard = (uint32_t)atoi(standardValue.c_str());
+        uint32_t min = (uint32_t)atoi(minValue.c_str());
+        uint32_t max = (uint32_t)atoi(maxValue.c_str());
+        if( standard<min || standard>max )
+        {
+            cout<<"请检查标准值、最大值、最小值的范围！"<<endl;
+            return StatusCode::VALUE_RANGE_ERROR;
+        }
+    }
+    if(variableType=="SINT")
+    {
+        int8_t standard = (int8_t)atoi(standardValue.c_str());
+        int8_t min = (int8_t)atoi(minValue.c_str());
+        int8_t max = (int8_t)atoi(maxValue.c_str());
+        if( standard<min || standard>max )
+        {
+            cout<<"请检查标准值、最大值、最小值的范围！"<<endl;
+            return StatusCode::VALUE_RANGE_ERROR;
+        }
+    }
+    if(variableType=="INT")
+    {
+        int16_t standard = (int16_t)atoi(standardValue.c_str());
+        int16_t min = (int16_t)atoi(minValue.c_str());
+        int16_t max = (int16_t)atoi(maxValue.c_str());
+        if( standard<min || standard>max )
+        {
+            cout<<"请检查标准值、最大值、最小值的范围！"<<endl;
+            return StatusCode::VALUE_RANGE_ERROR;
+        }
+    }
+    if(variableType=="DINT")
+    {
+        int32_t standard = (int32_t)atoi(standardValue.c_str());
+        int32_t min = (int32_t)atoi(minValue.c_str());
+        int32_t max = (int32_t)atoi(maxValue.c_str());
+        if( standard<min || standard>max )
+        {
+            cout<<"请检查标准值、最大值、最小值的范围！"<<endl;
+            return StatusCode::VALUE_RANGE_ERROR;
+        }
+    }
+    if(variableType=="REAL")
+    {
+        double standard = atof(standardValue.c_str());
+        double min = atof(minValue.c_str());
+        double max = atof(maxValue.c_str());
+        if( standard<min || standard>max )
+        {
+            cout<<"请检查标准值、最大值、最小值的范围！"<<endl;
+            return StatusCode::VALUE_RANGE_ERROR;
         }
     }
     return 0;
@@ -2826,9 +2916,13 @@ int main()
     // ReZipBuff(buff, length, "/");
     // cout<<length<<endl;
     // return 0;
+
     int err = checkInputValue("REAL","-9.000001");
     cout<<err<<endl;
+    err = checkValueRange("REAL","23.456","21.3234","20.324");
+    cout<<err<<endl;
     return 0;
+
     vector<pair<string, long>> selectIDBFiles;
     vector<pair<string, long>> selectIDBFIles2;
     string SID = "JinfeiEleven4534";
@@ -2846,6 +2940,7 @@ int main()
     readIDBZIPFilesListBySIDandEID("JinfeiSeven", SID, EID, selectIDBZIPFiles2);
     cout << selectIDBZIPFiles2.size() << endl;
     return 0;
+
     vector<string> vec = DataType::splitWithStl("jinfei/", "/");
     // curNum = getDirCurrentFileIDIndex();
     return 0;

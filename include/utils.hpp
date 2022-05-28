@@ -92,6 +92,7 @@ namespace StatusCode
         MAX_CHECK_ERROR = 173,            //最大值不合法
         MIN_CHECK_ERROR = 174,            //最小值不合法
         VALUE_CHECKE_ERROR = 175,         //变量值不合法
+        VALUE_RANGE_ERROR = 176,          //变量值范围不合法，例如最小值大于最大值
     };
 }
 namespace ValueType
@@ -194,13 +195,13 @@ int DB_ZipAnalogFileByTimeSpan_Single(struct DB_ZipParams *params);
 
 int DB_ReZipAnalogFileByTimeSpan_Single(struct DB_ZipParams *params);
 
-int DB_ZipFile_MultiThread(const char *ZipTemPath, const char *pathToLine);
+int DB_ZipFile_Single(const char *ZipTemPath, const char *pathToLine);
 
-int DB_ReZipFile_MultiThread(const char *ZipTemPath, const char *pathToLine);
+int DB_ReZipFile_Single(const char *ZipTemPath, const char *pathToLine);
 
-int DB_ZipFileByTimeSpan_MultiThread(struct DB_ZipParams *params);
+int DB_ZipFileByTimeSpan_Single(struct DB_ZipParams *params);
 
-int DB_ReZipFileByTimeSpan_MultiThread(struct DB_ZipParams *params);
+int DB_ReZipFileByTimeSpan_Single(struct DB_ZipParams *params);
 
 //模板相关函数
 int DB_AddNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams);
@@ -227,6 +228,7 @@ int DB_DeleteNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams);
 
 int DB_DeleteNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams);
 
+//python相关
 int DB_OutlierDetection(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
 int DB_NoveltyFit(struct DB_QueryParams *params, double *maxLine, double *minLine);
@@ -241,6 +243,8 @@ int checkInputVaribaleName(string variableName);
 int checkInputPathcode(char pathcode[]);
 
 int checkInputValue(string variableType,string value);
+
+int checkValueRange(string variableType,string standardValue,string maxValue,string minValue);
 
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);
