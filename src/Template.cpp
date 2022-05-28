@@ -184,6 +184,72 @@ bool Template::checkHasTimeseries(char *pathCode)
 }
 
 /**
+ * @brief 检查指定编码下是否包含数组类型数据
+ *
+ * @param pathCode
+ * @return bool
+ */
+bool Template::checkIsArray(const char *name)
+{
+    for (auto const &schema : this->schemas)
+    {
+        string str = name;
+        if (schema.first.name == str)
+        {
+            if (schema.second.isArray)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * @brief 检查指定编码下是否包含图片类型数据
+ *
+ * @param pathCode
+ * @return bool
+ */
+bool Template::checkIsImage(const char *name)
+{
+    for (auto const &schema : this->schemas)
+    {
+        string str = name;
+        if (schema.first.name == str)
+        {
+            if (schema.second.valueType == ValueType::IMAGE)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * @brief 检查指定编码下是否包含时间序列
+ *
+ * @param pathCode
+ * @return bool
+ */
+bool Template::checkIsTimeseries(const char *name)
+{
+    for (auto const &schema : this->schemas)
+    {
+        string str = name;
+        if (schema.first.name == str)
+        {
+            if (schema.second.isTimeseries)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
  * @brief 获取模版中的数据总字节数
  *
  * @return long
@@ -409,7 +475,7 @@ int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position
                 else
                     num = schema.second.arrayLen;
             }
-            bytes = num * (schema.second.valueBytes + (schema.second.isTimeseries ? 8 : 0));
+            bytes = num * schema.second.valueBytes + (schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0));
             type = schema.second;
             return 0;
         }
@@ -443,7 +509,7 @@ int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position
                     num = schema.second.arrayLen;
             }
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
-            pos += schema.second.isTimeseries ? num * 8 : 0;
+            pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
         }
     }
     return StatusCode::UNKNOWN_PATHCODE;
@@ -511,10 +577,10 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
                     num = schema.second.arrayLen;
             }
             positions.push_back(pos);
-            bytes.push_back(num * (schema.second.valueBytes + (schema.second.isTimeseries ? 8 : 0))); //时间序列整个获取
+            bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); //时间序列整个获取
             types.push_back(schema.second);
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
-            pos += schema.second.isTimeseries ? num * 8 : 0;
+            pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
         }
         else
         {
@@ -535,7 +601,7 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
                     num = schema.second.arrayLen;
             }
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
-            pos += schema.second.isTimeseries ? num * 8 : 0;
+            pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
         }
     }
     return positions.size() == 0 ? StatusCode::UNKNOWN_PATHCODE : 0;
@@ -591,10 +657,10 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], vector<long> &position
                 num = schema.second.arrayLen;
             }
             positions.push_back(pos);
-            bytes.push_back(num * (schema.second.valueBytes + (schema.second.isTimeseries ? 8 : 0))); //时间序列整个获取
+            bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); //时间序列整个获取
             types.push_back(schema.second);
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
-            pos += schema.second.isTimeseries ? num * 8 : 0;
+            pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
         }
         else
         {
@@ -615,7 +681,7 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], vector<long> &position
                 num = schema.second.arrayLen;
             }
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
-            pos += schema.second.isTimeseries ? num * 8 : 0;
+            pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
         }
     }
     return positions.size() == 0 ? StatusCode::UNKNOWN_PATHCODE : 0;
@@ -671,8 +737,9 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
                     num = schema.second.arrayLen;
             }
             positions.push_back(pos);
-            bytes.push_back(num * schema.second.valueBytes);
+            bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); //时间序列整个获取
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
+            pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
         }
         else
         {
@@ -693,6 +760,7 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
                     num = schema.second.arrayLen;
             }
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
+            pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
         }
     }
     return positions.size() == 0 ? StatusCode::UNKNOWN_PATHCODE : 0;
@@ -739,7 +807,7 @@ int Template::FindDatatypePosByName(const char *name, long &position, long &byte
             {
                 num = schema.second.arrayLen;
             }
-            bytes = num * (schema.second.valueBytes + (schema.second.isTimeseries ? 8 : 0));
+            bytes = num * schema.second.valueBytes + (schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0));
             type = schema.second;
             return 0;
         }
@@ -762,7 +830,7 @@ int Template::FindDatatypePosByName(const char *name, long &position, long &byte
                 num = schema.second.arrayLen;
             }
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
-            pos += schema.second.isTimeseries ? num * 8 : 0;
+            pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
         }
     }
     return StatusCode::UNKNOWN_VARIABLE_NAME;
@@ -893,7 +961,7 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
                 else
                     num = schema.second.arrayLen;
             }
-            bytes = num * (schema.second.valueBytes + (schema.second.isTimeseries ? 8 : 0));
+            bytes = num * schema.second.valueBytes + (schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0));
             type = schema.second;
             return 0;
         }
@@ -927,7 +995,7 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
                     num = schema.second.arrayLen;
             }
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
-            pos += schema.second.isTimeseries ? num * 8 : 0;
+            pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
         }
     }
     return StatusCode::UNKNOWN_VARIABLE_NAME;
@@ -994,7 +1062,7 @@ int Template::GetDataTypeByCode(char *pathCode, DataType &type)
  * @param types
  * @return int
  */
-int Template::GetDataTypeByCode(char *pathCode, vector<DataType> &types)
+int Template::GetDataTypesByCode(char *pathCode, vector<DataType> &types)
 {
     int level = 5; //路径级数
     for (int i = 10 - 1; i >= 0 && pathCode[i] == 0; i -= 2)
@@ -1029,14 +1097,14 @@ long Template::GetBytesByCode(char *pathCode)
 {
     vector<DataType> types;
     long total = 0;
-    this->GetDataTypeByCode(pathCode, types);
+    this->GetDataTypesByCode(pathCode, types);
     for (auto &type : types)
     {
         if (type.isTimeseries)
         {
             if (type.isArray)
             {
-                total += (type.valueBytes + 8) * type.arrayLen * type.tsLen;
+                total += (type.valueBytes * type.arrayLen + 8) * type.tsLen;
             }
             else
             {

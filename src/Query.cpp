@@ -3150,6 +3150,76 @@ int DB_QueryWholeFile_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params)
 }
 
 /**
+ * @brief 根据给定的查询条件在某一产线文件夹下的数据文件中获取符合条件的整个文件的数据，可比较数据大小筛选，可按照时间
+ *          将结果升序或降序排序，数据存放在新开辟的缓冲区buffer中
+ * @param buffer    数据缓冲区
+ * @param params    查询请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note
+ */
+int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
+{
+	int check = CheckQueryParams(params);
+	if (check != 0)
+		return check;
+	if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+		return StatusCode::SCHEMA_FILE_NOT_FOUND;
+
+	vector<DataType> types;
+	if (params->byPath)
+	{
+		int err = CurrentTemplate.GetDataTypesByCode(params->pathCode, types);
+		if (err != 0)
+			return err;
+		if ((params->queryType != QRY_NONE || params->compareType != CMP_NONE) && types.size() > 1 && (params->valueName == NULL || strcmp(params->valueName, "") == 0)) //若此编码包含的数据类型大于1，而未指定变量名，又需要比较或排序，返回异常
+			return StatusCode::INVALID_QRY_PARAMS;
+		else
+		{
+			if ((params->valueName == NULL || strcmp(params->valueName, "") == 0) && (params->queryType != QRY_NONE || params->compareType != CMP_NONE)) //由于编码会变为全0，因此若需要排序或比较，需要添加变量名
+			{
+				vector<PathCode> pathCodes;
+				CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
+				for (auto &code : pathCodes)
+				{
+					bool codeEquals = true;
+					for (size_t k = 0; k < 10; k++) //判断路径编码是否相等
+					{
+						if (code.code[k] != params->pathCode[k])
+						{
+							codeEquals = false;
+						}
+					}
+					if (codeEquals)
+					{
+						params->valueName = code.name.c_str();
+						break;
+					}
+				}
+			}
+			params->pathCode = const_cast<char *>("\0\0\0\0\0\0\0\0\0\0");
+		}
+	}
+	else
+	{
+		params->byPath = 1;
+		params->pathCode = const_cast<char *>("\0\0\0\0\0\0\0\0\0\0");
+	}
+	switch (params->queryType)
+	{
+	case TIMESPAN:
+		return DB_QueryByTimespan(buffer, params);
+	case LAST:
+		return DB_QueryLastRecords(buffer, params);
+	case FILEID:
+		return DB_QueryByFileID(buffer, params);
+	default:
+		return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+	}
+	return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+}
+/**
  * @brief 根据给定的时间段和路径编码或变量名在某一产线文件夹下的数据文件中查询数据，可比较数据大小筛选，可按照时间
  *          将结果升序或降序排序，数据存放在新开辟的缓冲区buffer中
  * @param buffer    数据缓冲区
@@ -5118,9 +5188,9 @@ int PackProcess_New(DB_QueryParams *params, atomic<long> *cur, atomic<int> *inde
  *
  * @return  0:success,
  *          others: StatusCode
- * @note   支持idb文件和pak文件混合查询,此处默认pak文件中的时间均早于idb和idbzip文件！！
+ * @note   可能不稳定
  */
-int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByTimespan_MT(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
 	IOBusy = true;
 	if (maxThreads <= 2) //线程数量<=2时，多线程已无必要
@@ -6492,6 +6562,14 @@ int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 			vector<PathCode> pathCodes;
 			DataType type;
 			string currentFileID = "";
+			if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+			{
+				IOBusy = false;
+				return StatusCode::SCHEMA_FILE_NOT_FOUND;
+			}
+			bool hasIMG = CurrentTemplate.checkHasImage(params->pathCode);
+			bool hasArray = CurrentTemplate.checkHasArray(params->pathCode);
+			// bool hasTS = CurrentTemplate.checkHasTimeseries(params->pathCode);
 			for (auto &pack : packs)
 			{
 				if (pack.first != NULL && pack.second != 0)
@@ -6500,19 +6578,13 @@ int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 					int fileNum;
 					string templateName;
 					packReader.ReadPackHead(fileNum, templateName);
-					if (TemplateManager::CheckTemplate(templateName) != 0)
-					{
-						IOBusy = false;
-						return StatusCode::SCHEMA_FILE_NOT_FOUND;
-					}
+
 					long bytes = 0, pos = 0;		 //单个变量
 					vector<long> posList, bytesList; //多个变量
 					long sortPos = 0;
 					long copyBytes = 0;
 					int compareBytes = 0;
-					bool hasIMG = CurrentTemplate.checkHasImage(params->pathCode);
-					bool hasArray = CurrentTemplate.checkHasArray(params->pathCode);
-					bool hasTS = CurrentTemplate.checkHasTimeseries(params->pathCode);
+
 					int err;
 					if (!hasIMG) //不包含图片时，每此查询仅需查找一次模版
 					{
@@ -6569,12 +6641,11 @@ int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 							default:
 								IOBusy = false;
 								return StatusCode::UNKNWON_DATAFILE;
-								break;
 							}
 
 							//获取数据的偏移量和字节数
 
-							if (hasIMG) //数据带有图片
+							if (hasIMG) //数据带有图片,需要重新获取偏移和字节数
 							{
 								if (params->byPath)
 								{
@@ -6700,18 +6771,47 @@ int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 					}
 				}
 			}
-			if (currentFileID != fileidEnd)
+			if (currentFileID != fileidEnd) //还未结束
 			{
 				vector<pair<string, long>> dataFiles;
 				readDataFilesWithTimestamps(params->pathToLine, dataFiles);
 				sortByTime(dataFiles, TIME_ASC);
+				if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+				{
+					IOBusy = false;
+					return StatusCode::SCHEMA_FILE_NOT_FOUND;
+				}
+				long bytes = 0, pos = 0;		 //单个变量
+				vector<long> posList, bytesList; //多个变量
+				// DataType type;
+				long sortPos = 0;
+				int compareBytes = 0;
+				long copyBytes = 0;
+				int err;
+				if (!hasIMG) //不包含图片时，每此查询仅需查找一次模版
+				{
+					typeList.clear();
+					err = params->byPath ? CurrentTemplate.FindMultiDatatypePosByCode(params->pathCode, posList, bytesList, typeList) : CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes, type);
+					if (err != 0)
+					{
+						buffer->buffer = NULL;
+						buffer->bufferMalloced = 0;
+						IOBusy = false;
+						return err;
+					}
+					copyBytes = CurrentTemplate.GetBytesByCode(params->pathCode);
+					if (params->byPath && (params->valueName != NULL || strcmp(params->valueName, "") == 0))
+					{
+						sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, params->pathCode, typeList);
+						compareBytes = CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes, type) == 0 ? bytes : 0;
+					}
+				}
 				for (auto &file : dataFiles)
 				{
-					if (currentFileID == fileidEnd)
-						break;
 					if (firstIndexFound || file.first.find(fileid) != string::npos)
 					{
 						firstIndexFound = true;
+						currentFileID = file.first;
 						long len; //文件长度
 						DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
 						char *buff = new char[CurrentTemplate.totalBytes];
@@ -6720,37 +6820,29 @@ int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 						{
 							ReZipBuff(buff, (int &)len, params->pathToLine);
 						}
-						if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
-						{
-							IOBusy = false;
-							return StatusCode::SCHEMA_FILE_NOT_FOUND;
-						}
-
 						//获取数据的偏移量和字节数
-						long bytes = 0, pos = 0;		 //单个变量
-						vector<long> posList, bytesList; //多个变量
-						long copyBytes = 0;
-						int err;
-						DataType type;
-
-						char *pathCode;
-						if (params->byPath)
+						if (hasIMG)
 						{
-							pathCode = params->pathCode;
-							if (typeList.size() == 0)
-								err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList, typeList);
-							else
-								err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, buff, posList, bytesList);
-							for (int i = 0; i < bytesList.size(); i++)
+							if (params->byPath)
 							{
-								copyBytes += typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i];
+								bytesList.clear();
+								posList.clear();
+								if (typeList.size() == 0)
+									err = CurrentTemplate.FindMultiDatatypePosByCode(params->pathCode, buff, posList, bytesList, typeList);
+								else
+									err = CurrentTemplate.FindMultiDatatypePosByCode(params->pathCode, buff, posList, bytesList);
+								for (int i = 0; i < bytesList.size(); i++)
+								{
+									copyBytes += typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i];
+								}
+							}
+							else
+							{
+								err = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type);
+								copyBytes = type.hasTime ? bytes + 8 : bytes;
 							}
 						}
-						else
-						{
-							err = CurrentTemplate.FindDatatypePosByName(params->valueName, buff, pos, bytes, type);
-							copyBytes = type.hasTime ? bytes + 8 : bytes;
-						}
+
 						if (err != 0)
 						{
 							buffer->buffer = NULL;
@@ -6759,8 +6851,7 @@ int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 							return err;
 						}
 						char copyValue[copyBytes];
-						long sortPos = 0;
-						int compareBytes = 0;
+
 						if (params->byPath)
 						{
 							long lineCur = 0; //记录此行当前写位置
@@ -6848,6 +6939,8 @@ int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 						}
 						delete[] buff;
 					}
+					if (currentFileID.find(fileidEnd) != string::npos)
+						break;
 				}
 			}
 
@@ -6920,9 +7013,9 @@ int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 				long copyBytes = 0;
 				long sortPos = 0;
 				int compareBytes = 0;
-				bool hasIMG = CurrentTemplate.checkHasImage(params->pathCode);
-				bool hasArray = CurrentTemplate.checkHasArray(params->pathCode);
-				bool hasTS = CurrentTemplate.checkHasTimeseries(params->pathCode);
+				bool hasIMG = params->byPath ? CurrentTemplate.checkHasImage(params->pathCode) : CurrentTemplate.checkIsImage(params->valueName);
+				bool hasArray = params->byPath ? CurrentTemplate.checkHasArray(params->pathCode) : CurrentTemplate.checkIsArray(params->valueName);
+				bool hasTS = params->byPath ? CurrentTemplate.checkHasTimeseries(params->pathCode) : CurrentTemplate.checkIsTimeseries(params->valueName);
 				int err;
 				if (!hasIMG) //不包含图片时，每此查询仅需查找一次模版
 				{
@@ -7113,6 +7206,11 @@ int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 		}
 		if (scanNum < params->queryNums)
 		{
+			if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+			{
+				IOBusy = false;
+				return StatusCode::SCHEMA_FILE_NOT_FOUND;
+			}
 			vector<pair<string, long>> dataFiles;
 			readDataFilesWithTimestamps(params->pathToLine, dataFiles);
 			sortByTime(dataFiles, TIME_ASC);
@@ -7121,9 +7219,9 @@ int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 			long copyBytes = 0;
 			long sortPos = 0;
 			int compareBytes = 0;
-			bool hasIMG = CurrentTemplate.checkHasImage(params->pathCode);
-			bool hasArray = CurrentTemplate.checkHasArray(params->pathCode);
-			bool hasTS = CurrentTemplate.checkHasTimeseries(params->pathCode);
+			bool hasIMG = params->byPath ? CurrentTemplate.checkHasImage(params->pathCode) : CurrentTemplate.checkIsImage(params->valueName);
+			bool hasArray = params->byPath ? CurrentTemplate.checkHasArray(params->pathCode) : CurrentTemplate.checkIsArray(params->valueName);
+			bool hasTS = params->byPath ? CurrentTemplate.checkHasTimeseries(params->pathCode) : CurrentTemplate.checkIsTimeseries(params->valueName);
 			int err;
 			if (!hasIMG) //不包含图片时，每此查询仅需查找一次模版
 			{
@@ -7135,7 +7233,7 @@ int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 					IOBusy = false;
 					return err;
 				}
-				copyBytes = CurrentTemplate.GetBytesByCode(params->pathCode);
+				copyBytes = params->byPath ? CurrentTemplate.GetBytesByCode(params->pathCode) : bytes;
 				if (params->byPath && (params->valueName != NULL || strcmp(params->valueName, "") == 0))
 				{
 					sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, params->pathCode, typeList);
@@ -7157,11 +7255,6 @@ int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 					if (file.first.find(".idbzip") != string::npos)
 					{
 						ReZipBuff(buff, (int &)len, params->pathToLine);
-					}
-					if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
-					{
-						IOBusy = false;
-						return StatusCode::SCHEMA_FILE_NOT_FOUND;
 					}
 
 					//获取数据的偏移量和字节数
@@ -8156,6 +8249,11 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			vector<pair<string, long>> dataFiles;
 			readDataFilesWithTimestamps(params->pathToLine, dataFiles);
 			sortByTime(dataFiles, TIME_ASC);
+			if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+			{
+				IOBusy = false;
+				return StatusCode::SCHEMA_FILE_NOT_FOUND;
+			}
 			for (auto &file : dataFiles)
 			{
 				if (scanNum == params->queryNums)
@@ -8170,11 +8268,6 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 					if (file.first.find(".idbzip") != string::npos)
 					{
 						ReZipBuff(buff, (int &)len, params->pathToLine);
-					}
-					if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
-					{
-						IOBusy = false;
-						return StatusCode::SCHEMA_FILE_NOT_FOUND;
 					}
 
 					//获取数据的偏移量和字节数
@@ -8346,147 +8439,146 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 	return StatusCode::DATAFILE_NOT_FOUND;
 }
 
-// int main()
-// {
-// 	// Py_Initialize();
-// 	DataTypeConverter converter;
-// 	DB_QueryParams params;
-// 	params.pathToLine = "RobotDataTwenty";
-// 	params.fileID = "20";
-// 	// params.fileIDend = "JinfeiSixteen12349";
-// 	params.fileIDend = NULL;
-// 	char code[10];
-// 	code[0] = (char)0;
-// 	code[1] = (char)1;
-// 	code[2] = (char)0;
-// 	code[3] = (char)1;
-// 	code[4] = 0;
-// 	code[5] = (char)0;
-// 	code[6] = 0;
-// 	code[7] = (char)0;
-// 	code[8] = (char)0;
-// 	code[9] = (char)0;
-// 	params.pathCode = code;
-// 	// params.valueName = "S1T1A11";
-// 	params.valueName = "S1OFF";
-// 	params.start = 0;
-// 	params.end = 1751269000000;
-// 	params.order = ODR_NONE;
-// 	params.compareType = CMP_NONE;
-// 	params.compareValue = "666";
-// 	params.queryType = FILEID;
-// 	params.byPath = 0;
-// 	params.queryNums = 5;
-// 	DB_DataBuffer buffer;
-// 	buffer.savePath = "/";
-// 	// cout << settings("Pack_Mode") << endl;
-// 	// vector<pair<string, long>> files;
-// 	// readDataFilesWithTimestamps("", files);
-// 	// Packer::Pack("/",files);
-// 	auto startTime = std::chrono::system_clock::now();
-// 	// DB_QueryByTimespan_Single(&buffer, &params);
+int main()
+{
+	// Py_Initialize();
+	DataTypeConverter converter;
+	DB_QueryParams params;
+	params.pathToLine = "RobotTS";
+	params.fileID = "23";
+	params.fileIDend = "25";
+	char code[10];
+	code[0] = (char)0;
+	code[1] = (char)1;
+	code[2] = (char)0;
+	code[3] = (char)1;
+	code[4] = 'M';
+	code[5] = (char)1;
+	code[6] = 0;
+	code[7] = (char)0;
+	code[8] = (char)0;
+	code[9] = (char)0;
+	params.pathCode = code;
+	// params.valueName = "S1T1A11";
+	params.valueName = "S1M1A10";
+	params.start = 0;
+	params.end = 1751269000000;
+	params.order = ODR_NONE;
+	params.compareType = CMP_NONE;
+	params.compareValue = "666";
+	params.queryType = FILEID;
+	params.byPath = 1;
+	params.queryNums = 0;
+	DB_DataBuffer buffer;
+	buffer.savePath = "/";
+	// cout << settings("Pack_Mode") << endl;
+	// vector<pair<string, long>> files;
+	// readDataFilesWithTimestamps("", files);
+	// Packer::Pack("/",files);
+	auto startTime = std::chrono::system_clock::now();
+	// DB_QueryByTimespan_Single(&buffer, &params);
 
-// 	auto endTime = std::chrono::system_clock::now();
-// 	// free(buffer.buffer);
-// 	// TemplateManager::CheckTemplate("RobotData");
-// 	std::cout << "首次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-// 	// free(buffer.buffer);
-// 	//  startTime = std::chrono::system_clock::now();
-// 	//  DB_QueryWholeFile_MultiThread(&buffer, &params);
+	auto endTime = std::chrono::system_clock::now();
+	// free(buffer.buffer);
+	// TemplateManager::CheckTemplate("RobotData");
+	std::cout << "首次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+	// free(buffer.buffer);
+	//  startTime = std::chrono::system_clock::now();
+	//  DB_QueryWholeFile_MultiThread(&buffer, &params);
 
-// 	// endTime = std::chrono::system_clock::now();
-// 	// std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-// 	// free(buffer.buffer);
-// 	// startTime = std::chrono::system_clock::now();
-// 	// // DB_QueryByTimespan_MultiThread(&buffer, &params);
+	// endTime = std::chrono::system_clock::now();
+	// std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+	// free(buffer.buffer);
+	// startTime = std::chrono::system_clock::now();
+	// // DB_QueryByTimespan_MultiThread(&buffer, &params);
 
-// 	// endTime = std::chrono::system_clock::now();
-// 	// std::cout << "第三次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-// 	// // free(buffer.buffer);
-// 	// return 0;
-// 	// // DB_QueryLastRecords_Using_Cache(&buffer, &params);
-// 	// // DB_QueryByTimespan_Using_Cache(&buffer, &params);
-// 	// // DB_QueryByTimespan(&buffer, &params);
-// 	// for (int i = 0; i < 10; i++)
-// 	// {
-// 	//     startTime = std::chrono::system_clock::now();
-// 	//     DB_QueryByTimespan_Single(&buffer, &params);
+	// endTime = std::chrono::system_clock::now();
+	// std::cout << "第三次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+	// // free(buffer.buffer);
+	// return 0;
+	// // DB_QueryLastRecords_Using_Cache(&buffer, &params);
+	// // DB_QueryByTimespan_Using_Cache(&buffer, &params);
+	// // DB_QueryByTimespan(&buffer, &params);
+	// for (int i = 0; i < 10; i++)
+	// {
+	//     startTime = std::chrono::system_clock::now();
+	//     DB_QueryByTimespan_Single(&buffer, &params);
 
-// 	//     endTime = std::chrono::system_clock::now();
-// 	//     std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-// 	//     cout << buffer.length << endl;
-// 	//     free(buffer.buffer);
-// 	//     buffer.length = 0;
-// 	//     buffer.bufferMalloced = 0;
-// 	// }
-// 	// for (int i = 0; i < 10; i++)
-// 	// {
-// 	//     startTime = std::chrono::system_clock::now();
-// 	//     DB_QueryWholeFile(&buffer, &params);
+	//     endTime = std::chrono::system_clock::now();
+	//     std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+	//     cout << buffer.length << endl;
+	//     free(buffer.buffer);
+	//     buffer.length = 0;
+	//     buffer.bufferMalloced = 0;
+	// }
+	// for (int i = 0; i < 10; i++)
+	// {
+	//     startTime = std::chrono::system_clock::now();
+	//     DB_QueryWholeFile(&buffer, &params);
 
-// 	//     endTime = std::chrono::system_clock::now();
-// 	//     std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-// 	//     // cout << buffer.length << endl;
-// 	//     free(buffer.buffer);
-// 	//     buffer.length = 0;
-// 	//     buffer.bufferMalloced = 0;
-// 	// }
-// 	// for (int i = 0; i < 10; i++)
-// 	// {
-// 	//     startTime = std::chrono::system_clock::now();
-// 	//     DB_QueryByTimespan_New(&buffer, &params);
+	//     endTime = std::chrono::system_clock::now();
+	//     std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+	//     // cout << buffer.length << endl;
+	//     free(buffer.buffer);
+	//     buffer.length = 0;
+	//     buffer.bufferMalloced = 0;
+	// }
+	// for (int i = 0; i < 10; i++)
+	// {
+	//     startTime = std::chrono::system_clock::now();
+	//     DB_QueryByTimespan_New(&buffer, &params);
 
-// 	//     endTime = std::chrono::system_clock::now();
-// 	//     std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-// 	//     // cout << buffer.length << endl;
-// 	//     free(buffer.buffer);
-// 	//     buffer.length = 0;
-// 	//     buffer.bufferMalloced = 0;
-// 	// }
-// 	// for (int i = 0; i < 10; i++)
-// 	// {
-// 	//     startTime = std::chrono::system_clock::now();
-// 	//     DB_QueryByTimespan(&buffer, &params);
+	//     endTime = std::chrono::system_clock::now();
+	//     std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+	//     // cout << buffer.length << endl;
+	//     free(buffer.buffer);
+	//     buffer.length = 0;
+	//     buffer.bufferMalloced = 0;
+	// }
+	// for (int i = 0; i < 10; i++)
+	// {
+	//     startTime = std::chrono::system_clock::now();
+	//     DB_QueryByTimespan(&buffer, &params);
 
-// 	//     endTime = std::chrono::system_clock::now();
-// 	//     std::cout << "第" << i + 21 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-// 	//     // cout << buffer.length << endl;
-// 	//     if (buffer.bufferMalloced)
-// 	//         free(buffer.buffer);
-// 	//     buffer.length = 0;
-// 	//     buffer.bufferMalloced = 0;
-// 	// }
-// 	// if (buffer.bufferMalloced)
-// 	// {
-// 	//     char buf[buffer.length];
-// 	//     memcpy(buf, buffer.buffer, buffer.length);
-// 	//     cout << buffer.length << endl;
-// 	//     // for (int i = 0; i < buffer.length; i++)
-// 	//     // {
-// 	//     //     cout << (int)buf[i] << " ";
-// 	//     //     if (i % 11 == 0)
-// 	//     //         cout << endl;
-// 	//     // }
+	//     endTime = std::chrono::system_clock::now();
+	//     std::cout << "第" << i + 21 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+	//     // cout << buffer.length << endl;
+	//     if (buffer.bufferMalloced)
+	//         free(buffer.buffer);
+	//     buffer.length = 0;
+	//     buffer.bufferMalloced = 0;
+	// }
+	// if (buffer.bufferMalloced)
+	// {
+	//     char buf[buffer.length];
+	//     memcpy(buf, buffer.buffer, buffer.length);
+	//     cout << buffer.length << endl;
+	//     // for (int i = 0; i < buffer.length; i++)
+	//     // {
+	//     //     cout << (int)buf[i] << " ";
+	//     //     if (i % 11 == 0)
+	//     //         cout << endl;
+	//     // }
 
-// 	//     free(buffer.buffer);
-// 	// }
-// 	// buffer.bufferMalloced = 0;
-// 	DB_QueryByFileID(&buffer, &params);
+	//     free(buffer.buffer);
+	// }
+	// buffer.bufferMalloced = 0;
+	DB_QueryByFileID_New(&buffer, &params);
 
-// 	if (buffer.bufferMalloced)
-// 	{
-// 		char buf[buffer.length];
-// 		memcpy(buf, buffer.buffer, buffer.length);
-// 		cout << buffer.length << endl;
-// 		for (int i = 0; i < buffer.length; i++)
-// 		{
-// 			cout << (int)buf[i] << " ";
-// 			if (i % 11 == 0)
-// 				cout << endl;
-// 		}
+	if (buffer.bufferMalloced)
+	{
+		char buf[buffer.length];
+		memcpy(buf, buffer.buffer, buffer.length);
+		cout << buffer.length << endl;
+		for (int i = 0; i < buffer.length; i++)
+		{
+			cout << (int)buf[i] << " ";
+			if (i % 11 == 0)
+				cout << endl;
+		}
 
-// 		free(buffer.buffer);
-// 	}
-// 	// buffer.buffer = NULL;
-// 	return 0;
-// }
+		free(buffer.buffer);
+	}
+	// buffer.buffer = NULL;
+	return 0;
+}

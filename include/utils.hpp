@@ -93,6 +93,7 @@ namespace StatusCode
         MIN_CHECK_ERROR = 174,            //最小值不合法
         VALUE_CHECKE_ERROR = 175,         //变量值不合法
         VALUE_RANGE_ERROR = 176,          //变量值范围不合法，例如最小值大于最大值
+        INVALID_QRY_PARAMS = 177,         //查询条件不合法
     };
 }
 namespace ValueType
@@ -338,6 +339,10 @@ public:
     static int CompareValueInBytes(DataType &type, char *compared, const char *toCompare);
 };
 
+void AppendValueToPyList(PyObject *item, char *buffer, int &cur, DataType &type);
+
+void SetValueToPyList(PyObject *item, char *buffer, int &cur, DataType &type, int index);
+
 int getBufferValueType(DataType &type);
 
 class Template //标准模板
@@ -370,6 +375,12 @@ public:
 
     bool checkHasTimeseries(char *pathCode);
 
+    bool checkIsArray(const char *name);
+
+    bool checkIsImage(const char *name);
+
+    bool checkIsTimeseries(const char *name);
+
     int FindDatatypePosByCode(char pathCode[], char buff[], long &position, long &bytes);
 
     int FindDatatypePosByCode(char pathCode[], char buff[], long &position, long &bytes, DataType &type);
@@ -393,6 +404,7 @@ public:
     int writeBufferHead(string name, DataType &type, char *buffer);
 
     long FindSortPosFromSelectedData(vector<long> &bytesList, string name, char *pathCode, vector<DataType> &typeList);
+
     long FindSortPosFromSelectedData(vector<long> &bytesList, string name, vector<PathCode> &pathCodes, vector<DataType> &typeList);
 
     long GetTotalBytes();
@@ -400,7 +412,9 @@ public:
     long GetBytesByCode(char *pathCode);
 
     int GetDataTypeByCode(char *pathCode, DataType &type);
-    int GetDataTypeByCode(char *pathCode, vector<DataType> &types);
+
+    int GetDataTypesByCode(char *pathCode, vector<DataType> &types);
+
     vector<DataType> GetAllTypes(char *pathCode);
 };
 
@@ -468,16 +482,17 @@ public:
             vector<string> paths;
             PathCode pathCode(pathEncode, sizeof(pathEncode) / 2, variable);
             DataType type;
-            if ((int)timeFlag == 1)
-                type.hasTime = true;
-            else
-                type.hasTime = false;
+
             if (DataType::GetDataTypeFromStr(dataType, type) == 0)
             {
                 dataTypes.push_back(type);
             }
             else
                 return errorCode;
+            if ((int)timeFlag == 1 && !type.isTimeseries) //如果是时间序列，即使timeFlag为1，依然不额外携带时间
+                type.hasTime = true;
+            else
+                type.hasTime = false;
             pathEncodes.push_back(pathCode);
         }
         Template tem(pathEncodes, dataTypes, path);

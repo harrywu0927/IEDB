@@ -1,6 +1,207 @@
 #include <utils.hpp>
 
 /**
+ * @brief Append value in buffer to PyList object
+ *
+ * @param item PyList object to set
+ * @param buffer Data buffer
+ * @param cur Offset in buffer
+ * @param type Datatype
+ */
+void AppendValueToPyList(PyObject *item, char *buffer, int &cur, DataType &type)
+{
+    long value;
+    double floatvalue;
+    PyObject *obj;
+    DataTypeConverter converter;
+    switch (type.valueType)
+    {
+    case ValueType::INT:
+    {
+        char val[2];
+        memcpy(val, buffer + cur, 2);
+        cur += type.hasTime ? 10 : 2;
+        value = converter.ToInt16(val);
+        obj = PyLong_FromLong(value);
+        PyList_Append(item, obj);
+        break;
+    }
+    case ValueType::UINT:
+    {
+        char val[2];
+        memcpy(val, buffer + cur, 2);
+        cur += type.hasTime ? 10 : 2;
+        value = converter.ToUInt16(val);
+        obj = PyLong_FromLong(value);
+        PyList_Append(item, obj);
+        break;
+    }
+    case ValueType::DINT:
+    {
+        char val[4];
+        memcpy(val, buffer + cur, 4);
+        cur += type.hasTime ? 12 : 4;
+        value = converter.ToInt32(val);
+        obj = PyLong_FromLong(value);
+        PyList_Append(item, obj);
+        break;
+    }
+    case ValueType::UDINT:
+    {
+        char val[4];
+        memcpy(val, buffer + cur, 4);
+        cur += type.hasTime ? 12 : 4;
+        value = converter.ToUInt32(val);
+        obj = PyLong_FromLong(value);
+        PyList_Append(item, obj);
+        break;
+    }
+    case ValueType::REAL:
+    {
+        char val[4];
+        memcpy(val, buffer + cur, 4);
+        cur += type.hasTime ? 12 : 4;
+        floatvalue = converter.ToFloat(val);
+        obj = PyFloat_FromDouble(value);
+        PyList_Append(item, obj);
+        break;
+    }
+    case ValueType::TIME:
+    {
+        char val[4];
+        memcpy(val, buffer + cur, 4);
+        cur += type.hasTime ? 12 : 4;
+        value = converter.ToUInt32(val);
+        obj = PyLong_FromLong(value);
+        PyList_Append(item, obj);
+        break;
+    }
+    case ValueType::SINT:
+    {
+        char val;
+        value = buffer[cur++];
+        cur += type.hasTime ? 8 : 0;
+        obj = PyLong_FromLong(value);
+        PyList_Append(item, obj);
+        break;
+    }
+    case ValueType::USINT:
+    {
+        unsigned char val;
+        val = buffer[cur++];
+        value = val;
+        cur += type.hasTime ? 8 : 0;
+        obj = PyLong_FromLong(value);
+        PyList_Append(item, obj);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+/**
+ * @brief Set the Value To Py List object
+ *
+ * @param item PyList object to set
+ * @param buffer Data buffer
+ * @param cur Offset in buffer
+ * @param type Datatype
+ * @param index The index of PyList object to set
+ */
+void SetValueToPyList(PyObject *item, char *buffer, int &cur, DataType &type, int index)
+{
+    long value;
+    double floatvalue;
+    PyObject *obj;
+    DataTypeConverter converter;
+    switch (type.valueType)
+    {
+    case ValueType::INT:
+    {
+        char val[2];
+        memcpy(val, buffer + cur, 2);
+        cur += type.hasTime ? 10 : 2;
+        value = converter.ToInt16(val);
+        obj = PyLong_FromLong(value);
+        PyList_SetItem(item, index, obj);
+        break;
+    }
+    case ValueType::UINT:
+    {
+        char val[2];
+        memcpy(val, buffer + cur, 2);
+        cur += type.hasTime ? 10 : 2;
+        value = converter.ToUInt16(val);
+        obj = PyLong_FromLong(value);
+        PyList_SetItem(item, index, obj);
+        break;
+    }
+    case ValueType::DINT:
+    {
+        char val[4];
+        memcpy(val, buffer + cur, 4);
+        cur += type.hasTime ? 12 : 4;
+        value = converter.ToInt32(val);
+        obj = PyLong_FromLong(value);
+        PyList_SetItem(item, index, obj);
+        break;
+    }
+    case ValueType::UDINT:
+    {
+        char val[4];
+        memcpy(val, buffer + cur, 4);
+        cur += type.hasTime ? 12 : 4;
+        value = converter.ToUInt32(val);
+        obj = PyLong_FromLong(value);
+        PyList_SetItem(item, index, obj);
+        break;
+    }
+    case ValueType::REAL:
+    {
+        char val[4];
+        memcpy(val, buffer + cur, 4);
+        cur += type.hasTime ? 12 : 4;
+        floatvalue = converter.ToFloat(val);
+        obj = PyFloat_FromDouble(value);
+        PyList_SetItem(item, index, obj);
+        break;
+    }
+    case ValueType::TIME:
+    {
+        char val[4];
+        memcpy(val, buffer + cur, 4);
+        cur += type.hasTime ? 12 : 4;
+        value = converter.ToUInt32(val);
+        obj = PyLong_FromLong(value);
+        PyList_SetItem(item, index, obj);
+        break;
+    }
+    case ValueType::SINT:
+    {
+        char val;
+        value = buffer[cur++];
+        cur += type.hasTime ? 8 : 0;
+        obj = PyLong_FromLong(value);
+        PyList_SetItem(item, index, obj);
+        break;
+    }
+    case ValueType::USINT:
+    {
+        unsigned char val;
+        val = buffer[cur++];
+        value = val;
+        cur += type.hasTime ? 8 : 0;
+        obj = PyLong_FromLong(value);
+        PyList_SetItem(item, index, obj);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+/**
  * @brief 将查询得到的buffer中的数据提取到python列表中，允许数组(矢量)
  *
  * @param buffer
@@ -225,6 +426,104 @@ PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer)
                 }
                 cur += typeList[j].hasTime ? 8 : 0;
                 PyList_Append(row, arr);
+            }
+        }
+        PyList_SetItem(res, i, row);
+    }
+    return res;
+}
+
+/**
+ * @brief 将查询得到的buffer中的数据提取到python列表中，允许数组(矢量)
+ *
+ * @param buffer
+ * @return PyObject*
+ * @note support timeseries
+ */
+PyObject *ConvertToPyList_ML_New(DB_DataBuffer *buffer)
+{
+    int typeNum = buffer->buffer[0];
+    vector<DataType> typeList;
+    int recordLength = 0; //每行的长度
+    long bufPos = 0;
+    PyObject *res;
+    for (int i = 0; i < typeNum; i++)
+    {
+        DataType type;
+        char pathCode[10];
+        memcpy(pathCode, buffer->buffer + i * 11 + 2, 10);
+        int err = CurrentTemplate.GetDataTypeByCode(pathCode, type);
+        if (err == 0)
+        {
+            if (type.valueType == ValueType::IMAGE)
+            {
+                res = PyList_New(0);
+                return res;
+            }
+            typeList.push_back(type);
+            recordLength += type.isArray ? type.valueBytes * type.arrayLen : type.valueBytes;
+            recordLength += type.hasTime ? 8 : 0;
+        }
+    }
+    int startPos = typeNum * 11 + 1;
+    int rows = (buffer->length - startPos) / recordLength;
+    int cur = startPos;
+    res = PyList_New(rows);
+    for (int i = 0; i < rows; i++)
+    {
+        PyObject *row = PyList_New(0);
+        for (int j = 0; j < typeList.size(); j++)
+        {
+            if (typeList[j].valueType == ValueType::IMAGE)
+                continue;
+            if (!typeList[j].isArray) //标量,转到python中为一维数组
+            {
+                if (typeList[i].isTimeseries) //如果是时间序列，直接全部转为PyLong或PyFloat，在python内部reshape
+                {
+                    PyObject *ts = PyList_New(typeList[j].tsLen * 2);
+                    for (int k = 0; k < typeList[j].tsLen; k++)
+                    {
+                        SetValueToPyList(ts, buffer->buffer, cur, typeList[j], k * 2);
+                        long timestamp = 0;
+                        memcpy(&timestamp, buffer->buffer + cur, 8);
+                        PyList_SetItem(ts, k * 2 + 1, PyLong_FromLong(timestamp)); // insert timestamp to timeseries
+                    }
+                    PyList_Append(row, ts);
+                }
+                else
+                {
+                    AppendValueToPyList(row, buffer->buffer, cur, typeList[j]);
+                }
+            }
+            else //数组类型（矢量），转到python中为二维数组
+            {
+                if (typeList[i].isTimeseries)
+                {
+                    PyObject *ts = PyList_New(typeList[j].tsLen * (typeList[j].arrayLen + 1));
+                    for (int k = 0; k < typeList[j].tsLen; k++)
+                    {
+                        PyObject *arr = PyList_New(typeList[j].arrayLen + 1); //增加一个时间戳位
+                        for (int l = 0; l < typeList[j].arrayLen; l++)
+                        {
+                            SetValueToPyList(arr, buffer->buffer, cur, typeList[j], l);
+                        }
+                        long timestamp = 0;
+                        memcpy(&timestamp, buffer->buffer + cur, 8);
+                        PyList_SetItem(arr, typeList[j].arrayLen + 1, PyLong_FromLong(timestamp)); // insert timestamp to timeseries
+                        PyList_SetItem(ts, k, arr);
+                    }
+                    PyList_Append(row, ts);
+                }
+                else
+                {
+                    PyObject *arr = PyList_New(typeList[j].arrayLen);
+                    for (int k = 0; k < typeList[j].arrayLen; k++)
+                    {
+                        SetValueToPyList(arr, buffer->buffer, cur, typeList[j], k);
+                    }
+                    cur += typeList[j].hasTime ? 8 : 0;
+                    PyList_Append(row, arr);
+                }
             }
         }
         PyList_SetItem(res, i, row);

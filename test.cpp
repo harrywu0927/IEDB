@@ -52,7 +52,8 @@ void checkSettings()
 
 int main()
 {
-    // TemplateManager::SetTemplate("RobotTwenty");
+    TemplateManager::SetTemplate("Robot");
+    return 0;
     // TemplateManager::CheckTemplate("RobotTwenty");
     // return 0;
     // Py_Initialize();

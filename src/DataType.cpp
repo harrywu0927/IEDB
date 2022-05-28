@@ -194,21 +194,36 @@ int DataType::GetDataTypeFromStr(char dataType[], DataType &type)
         //获取数组长度
         arr[0][arr[0].length() - 1] = '\0';
         vector<string> vec = DataType::StringSplit(const_cast<char *>(arr[0].c_str()), "..");
-        type.arrayLen = atoi(const_cast<char *>(vec[1].c_str()));
+        type.arrayLen = atoi(vec[1].c_str());
         type.valueBytes = GetValueBytes(type.valueType);
         return 0;
     }
-    else if (dtype.find("Timeseries") != string::npos)
+    else if (dtype.find("TS") != string::npos)
     {
         type.isTimeseries = true;
         vector<string> arr = StringSplit(const_cast<char *>(dtype.c_str()), " ");
-        type.valueType = JudgeValueType(arr[2]); //值类型
+        type.valueType = JudgeValueType(arr[3]); //值类型
 
         //获取时间序列长度
-        arr[0][arr[0].length() - 1] = '\0';
-        vector<string> vec = DataType::StringSplit(const_cast<char *>(arr[0].c_str()), "..");
-        type.arrayLen = atoi(const_cast<char *>(vec[1].c_str()));
+        arr[1][arr[1].length() - 1] = '\0';
+        vector<string> vec = DataType::StringSplit(const_cast<char *>(arr[1].c_str()), "..");
+        if (vec.size() > 2) //既是TS也是ARRAY
+        {
+            type.isArray = true;
+            type.arrayLen = atoi(vec[2].c_str());
+            for (int i = 0; i < 3; i++)
+            {
+                vec[1].pop_back();
+            }
+            type.tsLen = atoi(vec[1].c_str());
+        }
+        else
+        {
+            type.tsLen = atoi(vec[1].c_str());
+        }
+
         type.valueBytes = GetValueBytes(type.valueType);
+        return 0;
     }
     else if (dtype.find("IMAGE") != string::npos)
     {
