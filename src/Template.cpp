@@ -263,14 +263,17 @@ long Template::GetTotalBytes()
         {
             if (schema.second.isArray)
             {
-                total += (schema.second.valueBytes + 8) * schema.second.arrayLen * schema.second.tsLen;
+                total += (schema.second.valueBytes  * schema.second.arrayLen  + 8 ) * schema.second.tsLen;
             }
             else
             {
                 total += (schema.second.valueBytes + 8) * schema.second.tsLen;
             }
         }
-
+        else if(schema.second.isArray)
+        {
+            total+= schema.second.hasTime ? 8 + schema.second.valueBytes * schema.second.arrayLen : schema.second.valueBytes*schema.second.arrayLen;
+        }
         else
         {
             total += schema.second.hasTime ? 8 + schema.second.valueBytes : schema.second.valueBytes;
@@ -1201,9 +1204,20 @@ long ZipTemplate::GetTotalBytes()
     long total = 0;
     for (auto const &schema : this->schemas)
     {
-        if (schema.second.isArray)
+        if (schema.second.isTimeseries)
         {
-            total += schema.second.hasTime ? 8 + schema.second.valueBytes * schema.second.arrayLen : schema.second.valueBytes * schema.second.arrayLen;
+            if (schema.second.isArray)
+            {
+                total += (schema.second.valueBytes  * schema.second.arrayLen  + 8 ) * schema.second.tsLen;
+            }
+            else
+            {
+                total += (schema.second.valueBytes + 8) * schema.second.tsLen;
+            }
+        }
+        else if(schema.second.isArray)
+        {
+            total+= schema.second.hasTime ? 8 + schema.second.valueBytes * schema.second.arrayLen : schema.second.valueBytes*schema.second.arrayLen;
         }
         else
         {
@@ -1212,3 +1226,4 @@ long ZipTemplate::GetTotalBytes()
     }
     return total;
 }
+
