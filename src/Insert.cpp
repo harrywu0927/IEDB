@@ -349,7 +349,6 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
                 addTime = 0;
         }
     }
-    return errCode;
     string savepath = buffer->savePath;
     if (savepath == "")
     {

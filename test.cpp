@@ -52,10 +52,10 @@ void checkSettings()
 
 int main()
 {
-    //TemplateManager::SetTemplate("Robot");
-    ZipTemplateManager::SetZipTemplate("RobotTsTest");
-    cout<<CurrentZipTemplate.schemas.size()<<endl;
-    return 0;
+    // TemplateManager::SetTemplate("Robot");
+    // ZipTemplateManager::SetZipTemplate("RobotTsTest");
+    // cout << CurrentZipTemplate.schemas.size() << endl;
+    // return 0;
     // TemplateManager::CheckTemplate("RobotTwenty");
     // return 0;
     // Py_Initialize();
@@ -120,7 +120,7 @@ int main()
     code[0] = (char)0;
     code[1] = (char)1;
     code[2] = (char)0;
-    code[3] = (char)1;
+    code[3] = (char)0;
     code[4] = 0;
     code[5] = (char)0;
     code[6] = 0;
@@ -149,7 +149,7 @@ int main()
     // sleep(100);
     // return 0;
     auto startTime = std::chrono::system_clock::now();
-    DB_QueryByFileID(&buffer, &params);
+    DB_MAX(&buffer, &params);
     if (buffer.bufferMalloced)
     {
         char buf[buffer.length];

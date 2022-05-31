@@ -94,12 +94,13 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[2];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                short value = converter.ToInt16(val);
+                // memcpy(val, column + k * 2, 2);
+                // short value = converter.ToInt16(val);
+                short value = __builtin_bswap16(*((short *)column + k));
                 if (max < value)
                 {
                     max = value;
-                    memcpy(res, val, 2);
+                    memcpy(res, column + k * 2, 2);
                 }
             }
             memcpy(newBuffer + newBufCur, res, 2);
@@ -113,15 +114,16 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
             char res[2];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                short value = converter.ToUInt16(val);
+                // memcpy(val, column + k * 2, 2);
+                // unsigned short value = converter.ToUInt16(val);
+                ushort value = __builtin_bswap16(*((ushort *)column + k));
                 if (max < value)
                 {
                     max = value;
-                    memcpy(res, val, 2);
+                    memcpy(res, column + k * 2, 2);
                 }
             }
-            memcpy(newBuffer + newBufCur, val, 2);
+            memcpy(newBuffer + newBufCur, res, 2);
             newBufCur += 2;
             break;
         }
@@ -132,15 +134,16 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
             char res[4];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 4, 4);
-                short value = converter.ToInt32(val);
+                // memcpy(val, column + k * 4, 4);
+                // int value = converter.ToInt32(val);
+                int value = __builtin_bswap32(*((int *)column + k));
                 if (max < value)
                 {
                     max = value;
-                    memcpy(res, val, 4);
+                    memcpy(res, column + k * 4, 4);
                 }
             }
-            memcpy(newBuffer + newBufCur, val, 4);
+            memcpy(newBuffer + newBufCur, res, 4);
             newBufCur += 4;
             break;
         }
@@ -151,15 +154,16 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
             char res[4];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 4, 4);
-                short value = converter.ToUInt32(val);
+                // memcpy(val, column + k * 4, 4);
+                // unsigned int value = converter.ToUInt32(val);
+                uint value = __builtin_bswap32(*((uint *)column + k));
                 if (max < value)
                 {
                     max = value;
-                    memcpy(res, val, 4);
+                    memcpy(res, column + k * 4, 4);
                 }
             }
-            memcpy(newBuffer + newBufCur, val, 4);
+            memcpy(newBuffer + newBufCur, res, 4);
             newBufCur += 4;
             break;
         }
@@ -170,15 +174,16 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
             char res[4];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 4, 4);
-                short value = converter.ToFloat(val);
+                // memcpy(val, column + k * 4, 4);
+                // float value = converter.ToFloat(val);
+                float value = __builtin_bswap32(*((float *)column + k));
                 if (max < value)
                 {
                     max = value;
-                    memcpy(res, val, 4);
+                    memcpy(res, column + k * 4, 4);
                 }
             }
-            memcpy(newBuffer + newBufCur, val, 4);
+            memcpy(newBuffer + newBufCur, res, 4);
             newBufCur += 4;
             break;
         }
@@ -189,15 +194,16 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
             char res[4];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 4, 4);
-                short value = converter.ToInt32(val);
+                // memcpy(val, column + k * 4, 4);
+                // int value = converter.ToInt32(val);
+                int value = __builtin_bswap32(*((int *)column + k));
                 if (max < value)
                 {
                     max = value;
-                    memcpy(res, val, 4);
+                    memcpy(res, column + k * 4, 4);
                 }
             }
-            memcpy(newBuffer + newBufCur, val, 4);
+            memcpy(newBuffer + newBufCur, res, 4);
             newBufCur += 4;
             break;
         }
@@ -312,15 +318,15 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
         {
             short min = INT16_MAX;
             char res[2];
-            char val[2];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                short value = converter.ToInt16(val);
-                if (min > value)
+                // memcpy(val, column + k * 2, 2);
+                // short value = converter.ToInt16(val);
+                short value = __builtin_bswap16(*((short *)column + k));
+                if (min < value)
                 {
                     min = value;
-                    memcpy(res, val, 2);
+                    memcpy(res, column + k * 2, 2);
                 }
             }
             memcpy(newBuffer + newBufCur, res, 2);
@@ -330,95 +336,95 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
         case ValueType::UINT:
         {
             uint16_t min = UINT16_MAX;
-            char val[2];
             char res[2];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                short value = converter.ToUInt16(val);
-                if (min > value)
+                // memcpy(val, column + k * 2, 2);
+                // unsigned short value = converter.ToUInt16(val);
+                ushort value = __builtin_bswap16(*((ushort *)column + k));
+                if (min < value)
                 {
                     min = value;
-                    memcpy(res, val, 2);
+                    memcpy(res, column + k * 2, 2);
                 }
             }
-            memcpy(newBuffer + newBufCur, val, 2);
+            memcpy(newBuffer + newBufCur, res, 2);
             newBufCur += 2;
             break;
         }
         case ValueType::DINT:
         {
             int min = INT_MAX;
-            char val[4];
             char res[4];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 4, 4);
-                short value = converter.ToInt32(val);
-                if (min > value)
+                // memcpy(val, column + k * 4, 4);
+                // int value = converter.ToInt32(val);
+                int value = __builtin_bswap32(*((int *)column + k));
+                if (min < value)
                 {
                     min = value;
-                    memcpy(res, val, 4);
+                    memcpy(res, column + k * 4, 4);
                 }
             }
-            memcpy(newBuffer + newBufCur, val, 4);
+            memcpy(newBuffer + newBufCur, res, 4);
             newBufCur += 4;
             break;
         }
         case ValueType::UDINT:
         {
-            uint min = UINT32_MAX;
-            char val[4];
+            uint min = UINT_MAX;
             char res[4];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 4, 4);
-                short value = converter.ToUInt32(val);
-                if (min > value)
+                // memcpy(val, column + k * 4, 4);
+                // unsigned int value = converter.ToUInt32(val);
+                uint value = __builtin_bswap32(*((uint *)column + k));
+                if (min < value)
                 {
                     min = value;
-                    memcpy(res, val, 4);
+                    memcpy(res, column + k * 4, 4);
                 }
             }
-            memcpy(newBuffer + newBufCur, val, 4);
+            memcpy(newBuffer + newBufCur, res, 4);
             newBufCur += 4;
             break;
         }
         case ValueType::REAL:
         {
             float min = __FLT_MAX__;
-            char val[4];
             char res[4];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 4, 4);
-                short value = converter.ToFloat(val);
+                // memcpy(val, column + k * 4, 4);
+                // float value = converter.ToFloat(val);
+                float value = __builtin_bswap32(*((float *)column + k));
                 if (min > value)
                 {
                     min = value;
-                    memcpy(res, val, 4);
+                    memcpy(res, column + k * 4, 4);
                 }
             }
-            memcpy(newBuffer + newBufCur, val, 4);
+            memcpy(newBuffer + newBufCur, res, 4);
             newBufCur += 4;
             break;
         }
         case ValueType::TIME:
         {
             int min = INT_MAX;
-            char val[4];
             char res[4];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 4, 4);
-                short value = converter.ToInt32(val);
+                // memcpy(val, column + k * 4, 4);
+                // int value = converter.ToInt32(val);
+                int value = __builtin_bswap32(*((int *)column + k));
                 if (min > value)
                 {
                     min = value;
-                    memcpy(res, val, 4);
+                    memcpy(res, column + k * 4, 4);
                 }
             }
-            memcpy(newBuffer + newBufCur, val, 4);
+            memcpy(newBuffer + newBufCur, res, 4);
             newBufCur += 4;
             break;
         }
@@ -536,8 +542,8 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[2];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                sum += converter.ToInt16(val);
+                // memcpy(val, column + k * 2, 2);
+                sum += __builtin_bswap16(*((short *)column + k));
             }
             for (int k = 0; k < 4; k++)
             {
@@ -554,8 +560,8 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[2];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                sum += converter.ToUInt16(val);
+                // memcpy(val, column + k * 2, 2);
+                sum += __builtin_bswap16(*((ushort *)column + k));
             }
             for (int k = 0; k < 4; k++)
             {
@@ -572,8 +578,8 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[4];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 4, 4);
-                sum += converter.ToInt32(val);
+                // memcpy(val, column + k * 4, 4);
+                sum += __builtin_bswap32(*((int *)column + k));
             }
             for (int k = 0; k < 4; k++)
             {
@@ -590,8 +596,8 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[4];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 4, 4);
-                sum += converter.ToUInt32(val);
+                // memcpy(val, column + k * 4, 4);
+                sum += __builtin_bswap32(*((uint *)column + k));
             }
             for (int k = 0; k < 4; k++)
             {
@@ -609,8 +615,8 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[4];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 4, 4);
-                floatSum += converter.ToFloat(val);
+                // memcpy(val, column + k * 4, 4);
+                floatSum += __builtin_bswap32(*((float *)column + k));
             }
             memcpy(newBuffer + newBufCur, &floatSum, 4);
             newBufCur += 4;
@@ -622,8 +628,8 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[4];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 4, 4);
-                sum += converter.ToUInt32(val);
+                // memcpy(val, column + k * 4, 4);
+                sum += __builtin_bswap32(*((int *)column + k));
             }
             for (int k = 0; k < 4; k++)
             {
@@ -761,8 +767,8 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[2];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                sum += converter.ToInt16(val);
+                // memcpy(val, column + k * 2, 2);
+                sum += __builtin_bswap16(*((short *)column + k));
             }
             float res = sum / (float)rows;
             memcpy(newBuffer + newBufCur, &res, 4);
@@ -774,8 +780,8 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[2];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                sum += converter.ToUInt16(val);
+                // memcpy(val, column + k * 2, 2);
+                sum += __builtin_bswap16(*((ushort *)column + k));
             }
             float res = sum / (float)rows;
             memcpy(newBuffer + newBufCur, &res, 4);
@@ -787,8 +793,8 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[4];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 4, 4);
-                sum += converter.ToInt32(val);
+                // memcpy(val, column + k * 4, 4);
+                sum += __builtin_bswap32(*((int *)column + k));
             }
             float res = sum / (float)rows;
             memcpy(newBuffer + newBufCur, &res, 4);
@@ -800,8 +806,8 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[4];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 4, 4);
-                sum += converter.ToUInt32(val);
+                // memcpy(val, column + k * 4, 4);
+                sum += __builtin_bswap32(*((uint *)column + k));
             }
             float res = sum / (float)rows;
             memcpy(newBuffer + newBufCur, &res, 4);
@@ -814,8 +820,8 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[4];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 4, 4);
-                floatSum += converter.ToFloat(val);
+                // memcpy(val, column + k * 4, 4);
+                sum += __builtin_bswap32(*((float *)column + k));
             }
             float res = floatSum / (float)rows;
 
@@ -828,8 +834,8 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[4];
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 4, 4);
-                sum += converter.ToUInt32(val);
+                // memcpy(val, column + k * 4, 4);
+                sum += __builtin_bswap32(*((int *)column + k));
             }
             float res = sum / (float)rows;
             memcpy(newBuffer + newBufCur, &res, 4);
@@ -1047,21 +1053,16 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
         {
         case ValueType::INT:
         {
-            char val[2];
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                float value = (float)converter.ToInt16(val);
+                // memcpy(val, column + k * 2, 2);
+                float value = (float)*((short *)column + k);
                 sum += value;
                 vals.push_back(value);
             }
             float avg = sum / (float)rows;
             float sqrSum = 0;
-            int a[10];
-            Py_Initialize();
-            PyObject *obj = Py_BuildValue("[items]", a);
-            Py_Finalize();
             for (auto &v : vals)
             {
                 sqrSum += powf(v - avg, 2);
@@ -1078,8 +1079,8 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                float value = (float)converter.ToUInt16(val);
+                // memcpy(val, column + k * 2, 2);
+                float value = (float)*((ushort *)column + k);
                 sum += value;
                 vals.push_back(value);
             }
@@ -1100,8 +1101,8 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                float value = (float)converter.ToInt32(val);
+                // memcpy(val, column + k * 2, 2);
+                float value = (float)*((int *)column + k);
                 sum += value;
                 vals.push_back(value);
             }
@@ -1122,8 +1123,8 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                float value = (float)converter.ToUInt32(val);
+                // memcpy(val, column + k * 2, 2);
+                float value = (float)*((uint *)column + k);
                 sum += value;
                 vals.push_back(value);
             }
@@ -1145,8 +1146,8 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                float value = (float)converter.ToUInt16(val);
+                // memcpy(val, column + k * 2, 2);
+                float value = *((float *)column + k);
                 floatSum += value;
                 vals.push_back(value);
             }
@@ -1167,8 +1168,8 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                float value = (float)converter.ToUInt32(val);
+                // memcpy(val, column + k * 2, 2);
+                float value = (float)*((int *)column + k);
                 sum += value;
                 vals.push_back(value);
             }
@@ -1314,8 +1315,8 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                float value = (float)converter.ToInt16(val);
+                // memcpy(val, column + k * 2, 2);
+                float value = (float)*((short *)column + k);
                 sum += value;
                 vals.push_back(value);
             }
@@ -1336,8 +1337,8 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                float value = (float)converter.ToUInt16(val);
+                // memcpy(val, column + k * 2, 2);
+                float value = (float)*((ushort *)column + k);
                 sum += value;
                 vals.push_back(value);
             }
@@ -1358,8 +1359,8 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                float value = (float)converter.ToInt32(val);
+                // memcpy(val, column + k * 2, 2);
+                float value = (float)*((int *)column + k);
                 sum += value;
                 vals.push_back(value);
             }
@@ -1380,8 +1381,8 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                float value = (float)converter.ToUInt32(val);
+                // memcpy(val, column + k * 2, 2);
+                float value = (float)*((uint *)column + k);
                 sum += value;
                 vals.push_back(value);
             }
@@ -1403,8 +1404,8 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                float value = (float)converter.ToUInt16(val);
+                // memcpy(val, column + k * 2, 2);
+                float value = *((float *)column + k);
                 floatSum += value;
                 vals.push_back(value);
             }
@@ -1425,8 +1426,8 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                memcpy(val, column + k * 2, 2);
-                float value = (float)converter.ToUInt32(val);
+                // memcpy(val, column + k * 2, 2);
+                float value = (float)*((int *)column + k);
                 sum += value;
                 vals.push_back(value);
             }
@@ -2829,6 +2830,48 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
         *count = abnormal;
     }
     }
+    return 0;
+}
+
+/**
+ * @brief 根据查询条件筛选后获取异常节拍的数据
+ *
+ * @param buffer
+ * @param params
+ * @param mode 若为1，则根据机器学习结果判断是否异常；若为0，根据压缩模版判断是否异常
+ * @return int
+ */
+int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode)
+{
+    //此处的pathcode和valuename仅仅为比较数值筛选时指定的变量，下方查询时将转为所有变量
+    if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    vector<PathCode> pathCodes;
+    if (params->byPath)
+    {
+        int err = CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
+        if (err != 0)
+            return err;
+        if ((params->queryType != QRY_NONE || params->compareType != CMP_NONE) && pathCodes.size() > 1 && (params->valueName == NULL || strcmp(params->valueName, "") == 0)) //若此编码包含的数据类型大于1，而未指定变量名，又需要比较或排序，返回异常
+            return StatusCode::INVALID_QRY_PARAMS;
+        else
+        {
+            if ((params->valueName == NULL || strcmp(params->valueName, "") == 0) && (params->queryType != QRY_NONE || params->compareType != CMP_NONE)) //由于编码会变为全0，因此若需要排序或比较，需要添加变量名
+            {
+                params->valueName = pathCodes[0].name.c_str();
+            }
+            params->pathCode = const_cast<char *>("\0\0\0\0\0\0\0\0\0\0");
+        }
+    }
+    else
+    {
+        params->byPath = 1;
+        params->pathCode = const_cast<char *>("\0\0\0\0\0\0\0\0\0\0");
+    }
+    int err = DB_ExecuteQuery(buffer, params);
+    if (err != 0)
+        return err;
+
     return 0;
 }
 // int main()

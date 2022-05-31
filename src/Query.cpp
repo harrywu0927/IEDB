@@ -47,56 +47,36 @@ struct Extraction_Params
 	bool hasIMG;
 	bool hasArray;
 	bool hasTS;
-	vector<long> posList;
-	vector<long> bytesList;
-	vector<DataType> typeList;
+	vector<long> posList;	   // position of each value
+	vector<long> bytesList;	   // bytes of each value
+	vector<DataType> typeList; // type of each value
 	vector<PathCode> pathCodes;
 	long bytes;
 	long pos;
-	DataType type;
-	long copyBytes;
+	DataType type;	// the type of the value to compare or sort
+	long copyBytes; // number of bytes to copy
 	int compareBytes;
-	long sortPos;
+	long sortPos; // the position of the value to sort
 };
 
-int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Params, bool &hasIMG)
+int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Params)
 {
-	long bytes = 0, pos = 0;		 //单个变量
-	vector<long> posList, bytesList; //多个变量
-	long copyBytes = 0;
-	long sortPos = 0;
-	int compareBytes = 0;
-	vector<DataType> typeList;
-	DataType type;
-	vector<PathCode> pathCodes;
-	bool hasArray = Qry_Params->byPath ? CurrentTemplate.checkHasArray(Qry_Params->pathCode) : CurrentTemplate.checkIsArray(Qry_Params->valueName);
-	bool hasTS = Qry_Params->byPath ? CurrentTemplate.checkHasTimeseries(Qry_Params->pathCode) : CurrentTemplate.checkIsTimeseries(Qry_Params->valueName);
+	Ext_Params.hasArray = Qry_Params->byPath ? CurrentTemplate.checkHasArray(Qry_Params->pathCode) : CurrentTemplate.checkIsArray(Qry_Params->valueName);
+	Ext_Params.hasTS = Qry_Params->byPath ? CurrentTemplate.checkHasTimeseries(Qry_Params->pathCode) : CurrentTemplate.checkIsTimeseries(Qry_Params->valueName);
+	Ext_Params.hasIMG = Qry_Params->byPath ? CurrentTemplate.checkHasImage(Qry_Params->pathCode) : CurrentTemplate.checkIsImage(Qry_Params->valueName);
 	int err;
-	err = Qry_Params->byPath ? CurrentTemplate.FindMultiDatatypePosByCode(Qry_Params->pathCode, posList, bytesList, typeList) : CurrentTemplate.FindDatatypePosByName(Qry_Params->valueName, pos, bytes, type);
+	err = Qry_Params->byPath ? CurrentTemplate.FindMultiDatatypePosByCode(Qry_Params->pathCode, Ext_Params.posList, Ext_Params.bytesList, Ext_Params.typeList) : CurrentTemplate.FindDatatypePosByName(Qry_Params->valueName, Ext_Params.pos, Ext_Params.bytes, Ext_Params.type);
 	if (err != 0)
 	{
 		IOBusy = false;
 		return err;
 	}
-	copyBytes = Qry_Params->byPath ? CurrentTemplate.GetBytesByCode(Qry_Params->pathCode) : bytes;
+	Ext_Params.copyBytes = Qry_Params->byPath ? CurrentTemplate.GetBytesByCode(Qry_Params->pathCode) : Ext_Params.bytes;
 	if (Qry_Params->byPath && (Qry_Params->valueName != NULL || strcmp(Qry_Params->valueName, "") == 0))
 	{
-		sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, Qry_Params->valueName, Qry_Params->pathCode, typeList);
-		compareBytes = CurrentTemplate.FindDatatypePosByName(Qry_Params->valueName, pos, bytes, type) == 0 ? bytes : 0;
+		Ext_Params.sortPos = CurrentTemplate.FindSortPosFromSelectedData(Ext_Params.bytesList, Qry_Params->valueName, Qry_Params->pathCode, Ext_Params.typeList);
+		Ext_Params.compareBytes = CurrentTemplate.FindDatatypePosByName(Qry_Params->valueName, Ext_Params.pos, Ext_Params.bytes, Ext_Params.type) == 0 ? Ext_Params.bytes : 0;
 	}
-	Ext_Params.hasArray = hasArray;
-	Ext_Params.hasIMG = hasIMG;
-	Ext_Params.hasTS = hasTS;
-	Ext_Params.bytes = bytes;
-	Ext_Params.bytesList = bytesList;
-	Ext_Params.type = type;
-	Ext_Params.typeList = typeList;
-	Ext_Params.compareBytes = compareBytes;
-	Ext_Params.copyBytes = copyBytes;
-	Ext_Params.pos = pos;
-	Ext_Params.posList = posList;
-	Ext_Params.sortPos = sortPos;
-	Ext_Params.pathCodes = pathCodes;
 	return 0;
 }
 
@@ -233,6 +213,19 @@ int DataExtraction(vector<tuple<char *, long, long, long>> &mallocedMemory, Extr
 		mallocedMemory.push_back(make_tuple(memory, Ext_Params.copyBytes, Ext_Params.sortPos, timestamp));
 	}
 	return 0;
+}
+
+/**
+ * @brief Write the selected data to a single buffer
+ *
+ * @param mallocedMemory
+ * @param Ext_Params
+ * @param params
+ * @param length
+ * @return int
+ */
+int WriteDataToBuffer(vector<tuple<char *, long, long, long>> &mallocedMemory, Extraction_Params &Ext_Params, DB_QueryParams *params, long &length)
+{
 }
 
 /**
@@ -2147,50 +2140,10 @@ int DB_QueryByTimespan_Single_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 	vector<tuple<char *, long, long, long>> mallocedMemory; //内存地址-长度-排序值偏移-时间戳元组集
 	long cur = 0;
-	long bytes = 0, pos = 0;		 //单个变量
-	vector<long> posList, bytesList; //多个变量
-	long copyBytes = 0;
-	long sortPos = 0;
-	int compareBytes = 0;
-	DataType type;
-	vector<DataType> typeList, selectedTypes;
-	vector<long> sortDataPoses; //按值排序时要比较的数据的偏移量
-	vector<PathCode> pathCodes;
+
 	int err;
 	Extraction_Params Ext_Params;
-	bool hasIMG = params->byPath ? CurrentTemplate.checkHasImage(params->pathCode) : CurrentTemplate.checkIsImage(params->valueName);
-	bool hasArray = params->byPath ? CurrentTemplate.checkHasArray(params->pathCode) : CurrentTemplate.checkIsArray(params->valueName);
-	bool hasTS = params->byPath ? CurrentTemplate.checkHasTimeseries(params->pathCode) : CurrentTemplate.checkIsTimeseries(params->valueName);
-	if (!hasIMG) //不包含图片时，每此查询仅需查找一次模版
-	{
-		err = params->byPath ? CurrentTemplate.FindMultiDatatypePosByCode(params->pathCode, posList, bytesList, typeList) : CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes, type);
-		if (err != 0)
-		{
-			buffer->buffer = NULL;
-			buffer->bufferMalloced = 0;
-			IOBusy = false;
-			return err;
-		}
-		copyBytes = params->byPath ? CurrentTemplate.GetBytesByCode(params->pathCode) : bytes;
-		if (params->byPath && (params->valueName != NULL || strcmp(params->valueName, "") == 0))
-		{
-			sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, params->pathCode, typeList);
-			compareBytes = CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes, type) == 0 ? bytes : 0;
-		}
-		Ext_Params.hasArray = hasArray;
-		Ext_Params.hasIMG = hasIMG;
-		Ext_Params.hasTS = hasTS;
-		Ext_Params.bytes = bytes;
-		Ext_Params.bytesList = bytesList;
-		Ext_Params.type = type;
-		Ext_Params.typeList = typeList;
-		Ext_Params.compareBytes = compareBytes;
-		Ext_Params.copyBytes = copyBytes;
-		Ext_Params.pos = pos;
-		Ext_Params.posList = posList;
-		Ext_Params.sortPos = sortPos;
-		Ext_Params.pathCodes = pathCodes;
-	}
+	GetExtractionParams(Ext_Params, params);
 
 	//先对时序在前的包文件检索
 	for (auto &pack : selectedPacks)
@@ -2206,7 +2159,7 @@ int DB_QueryByTimespan_Single_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 		// 	return StatusCode::SCHEMA_FILE_NOT_FOUND;
 		if (params->byPath)
 		{
-			CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
+			CurrentTemplate.GetAllPathsByCode(params->pathCode, Ext_Params.pathCodes);
 		}
 		for (int i = 0; i < fileNum; i++)
 		{
@@ -2267,7 +2220,7 @@ int DB_QueryByTimespan_Single_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 			return err;
 	}
 	if (params->order != TIME_ASC && params->order != TIME_DSC) //时间排序仅需在拷贝时反向
-		sortResult(mallocedMemory, params, type);
+		sortResult(mallocedMemory, params, Ext_Params.type);
 	if (cur == 0)
 	{
 		buffer->buffer = NULL;
@@ -2276,13 +2229,13 @@ int DB_QueryByTimespan_Single_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 		return StatusCode::NO_DATA_QUERIED;
 	}
 	//动态分配内存
-	char typeNum = params->byPath ? typeList.size() : 1; //数据类型总数
+	char typeNum = params->byPath ? Ext_Params.typeList.size() : 1; //数据类型总数
 	char *data = (char *)malloc(cur + (int)typeNum * 11 + 1);
-	int startPos;																   //数据区起始位置
-	if (!params->byPath)														   //根据变量名查询，仅单个变量
-		startPos = CurrentTemplate.writeBufferHead(params->valueName, type, data); //写入缓冲区头，获取数据区起始位置
-	else																		   //根据路径编码查询，可能有多个变量
-		startPos = CurrentTemplate.writeBufferHead(params->pathCode, typeList, data);
+	int startPos;																			  //数据区起始位置
+	if (!params->byPath)																	  //根据变量名查询，仅单个变量
+		startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, data); //写入缓冲区头，获取数据区起始位置
+	else																					  //根据路径编码查询，可能有多个变量
+		startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, data);
 	if (data == NULL)
 	{
 		buffer->buffer = NULL;
@@ -3027,51 +2980,9 @@ int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 	vector<tuple<char *, long, long, long>> mallocedMemory; //当前已分配的内存地址-长度-排序值偏移-时间戳元组
 	atomic<long> cur(0);									//已选择的数据总长
 	// atomic<vector<tuple<char *, long, long, long>>> mallocedMemory;
-	DataType type;
-	vector<DataType> typeList, selectedTypes;
-	vector<long> sortDataPoses; //按值排序时要比较的数据的偏移量
-	vector<PathCode> pathCodes;
-	long bytes = 0, pos = 0;		 //单个变量
-	vector<long> posList, bytesList; //多个变量
-	long copyBytes = 0;
-	long sortPos = 0;
-
-	int compareBytes = 0;
 	int err;
 	Extraction_Params Ext_Params;
-	bool hasIMG = params->byPath ? CurrentTemplate.checkHasImage(params->pathCode) : CurrentTemplate.checkIsImage(params->valueName);
-	bool hasArray = params->byPath ? CurrentTemplate.checkHasArray(params->pathCode) : CurrentTemplate.checkIsArray(params->valueName);
-	bool hasTS = params->byPath ? CurrentTemplate.checkHasTimeseries(params->pathCode) : CurrentTemplate.checkIsTimeseries(params->valueName);
-	if (!hasIMG) //不包含图片时，每此查询仅需查找一次模版
-	{
-		err = params->byPath ? CurrentTemplate.FindMultiDatatypePosByCode(params->pathCode, posList, bytesList, typeList) : CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes, type);
-		if (err != 0)
-		{
-			buffer->buffer = NULL;
-			buffer->bufferMalloced = 0;
-			IOBusy = false;
-			return err;
-		}
-		copyBytes = params->byPath ? CurrentTemplate.GetBytesByCode(params->pathCode) : bytes;
-		if (params->byPath && (params->valueName != NULL || strcmp(params->valueName, "") == 0))
-		{
-			sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, params->pathCode, typeList);
-			compareBytes = CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes, type) == 0 ? bytes : 0;
-		}
-		Ext_Params.hasArray = hasArray;
-		Ext_Params.hasIMG = hasIMG;
-		Ext_Params.hasTS = hasTS;
-		Ext_Params.bytes = bytes;
-		Ext_Params.bytesList = bytesList;
-		Ext_Params.type = type;
-		Ext_Params.typeList = typeList;
-		Ext_Params.compareBytes = compareBytes;
-		Ext_Params.copyBytes = copyBytes;
-		Ext_Params.pos = pos;
-		Ext_Params.posList = posList;
-		Ext_Params.sortPos = sortPos;
-		Ext_Params.pathCodes = pathCodes;
-	}
+	GetExtractionParams(Ext_Params, params);
 	//先对时序在前的包文件检索
 	if (selectedPacks.size() > 0)
 	{
@@ -3114,7 +3025,7 @@ int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 	// 	return StatusCode::SCHEMA_FILE_NOT_FOUND;
 	// }
 	if (params->byPath)
-		CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
+		CurrentTemplate.GetAllPathsByCode(params->pathCode, Ext_Params.pathCodes);
 	//对时序在后的普通文件检索
 	long cur_nonatomic = cur; //非原子类型,兼容DataExtraction
 	for (auto &file : selectedFiles)
@@ -4116,51 +4027,14 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 	//取排序后的文件中前queryNums个符合条件的文件的数据
 	vector<tuple<char *, long, long, long>> mallocedMemory;
 	long cur = 0; //记录已选中的数据总长度
-	DataType type;
-	vector<DataType> typeList;
-	long pos = 0, bytes = 0;
-	vector<long> posList, bytesList;
-	long copyBytes = 0;
-	int compareBytes = 0;
 	int err;
 	/*<-----!!!警惕内存泄露!!!----->*/
 	//先对时序在后的普通文件检索
 	int selectedNum = 0;
-	long sortPos = 0;
-	bool hasIMG = params->byPath ? CurrentTemplate.checkHasImage(params->pathCode) : CurrentTemplate.checkIsImage(params->valueName);
-	bool hasArray = params->byPath ? CurrentTemplate.checkHasArray(params->pathCode) : CurrentTemplate.checkIsArray(params->valueName);
-	bool hasTS = params->byPath ? CurrentTemplate.checkHasTimeseries(params->pathCode) : CurrentTemplate.checkIsTimeseries(params->valueName);
 	Extraction_Params Ext_Params;
-	if (!hasIMG) //不包含图片时，每此查询仅需查找一次模版
-	{
-		err = params->byPath ? CurrentTemplate.FindMultiDatatypePosByCode(params->pathCode, posList, bytesList, typeList) : CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes, type);
-		if (err != 0)
-		{
-			buffer->buffer = NULL;
-			buffer->bufferMalloced = 0;
-			IOBusy = false;
-			return err;
-		}
-		copyBytes = params->byPath ? CurrentTemplate.GetBytesByCode(params->pathCode) : bytes;
-		if (params->byPath && (params->valueName != NULL || strcmp(params->valueName, "") == 0))
-		{
-			sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, params->pathCode, typeList);
-			compareBytes = CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes, type) == 0 ? bytes : 0;
-		}
-		Ext_Params.hasArray = hasArray;
-		Ext_Params.hasIMG = hasIMG;
-		Ext_Params.hasTS = hasTS;
-		Ext_Params.bytes = bytes;
-		Ext_Params.bytesList = bytesList;
-		Ext_Params.type = type;
-		Ext_Params.typeList = typeList;
-		Ext_Params.compareBytes = compareBytes;
-		Ext_Params.copyBytes = copyBytes;
-		Ext_Params.pos = pos;
-		Ext_Params.posList = posList;
-		Ext_Params.sortPos = sortPos;
-		Ext_Params.pathCodes = pathCodes;
-	}
+	err = GetExtractionParams(Ext_Params, params);
+	if (err != 0)
+		return err;
 	for (auto &file : selectedFiles)
 	{
 		// typeList.clear();
@@ -4251,8 +4125,6 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 					delete[] buff;
 				if (err == 0)
 					selectedNum++;
-				else
-					return err;
 				if (selectedNum == params->queryNums)
 					break;
 			}
@@ -4345,6 +4217,15 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		if (params->fileIDend != NULL && fileidEnd.find(paths[0]) == string::npos)
 			fileidEnd = paths[0] + fileidEnd;
 	}
+	if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+	{
+		IOBusy = false;
+		return StatusCode::SCHEMA_FILE_NOT_FOUND;
+	}
+	Extraction_Params Ext_Params;
+	int err = GetExtractionParams(Ext_Params, params);
+	if (err != 0)
+		return err;
 	if (params->queryNums == 1 || params->queryNums == 0)
 	{
 		if (params->fileIDend == NULL || strcmp(params->fileIDend, "") == 0) //单个文件查询
@@ -4363,11 +4244,6 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 					long dataPos = packReader.Next(readLength, fileID, zipType);
 					if (fileID == fileid)
 					{
-						if (TemplateManager::CheckTemplate(templateName) != 0)
-						{
-							IOBusy = false;
-							return StatusCode::SCHEMA_FILE_NOT_FOUND;
-						}
 						char *buff = new char[CurrentTemplate.totalBytes];
 						switch (zipType)
 						{
@@ -4477,11 +4353,6 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 					{
 						ReZipBuff(buff, (int &)len, params->pathToLine);
 					}
-					if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
-					{
-						IOBusy = false;
-						return StatusCode::SCHEMA_FILE_NOT_FOUND;
-					}
 
 					//获取数据的偏移量和字节数
 					long bytes = 0, pos = 0;		 //单个变量
@@ -4570,51 +4441,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			vector<PathCode> pathCodes;
 			DataType type;
 			string currentFileID = "";
-			if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
-			{
-				IOBusy = false;
-				return StatusCode::SCHEMA_FILE_NOT_FOUND;
-			}
-			bool hasIMG = CurrentTemplate.checkHasImage(params->pathCode);
-			bool hasArray = CurrentTemplate.checkHasArray(params->pathCode);
-			bool hasTS = CurrentTemplate.checkHasTimeseries(params->pathCode);
-			long bytes = 0, pos = 0;		 //单个变量
-			vector<long> posList, bytesList; //多个变量
-			long sortPos = 0;
-			long copyBytes = 0;
-			int compareBytes = 0;
-			Extraction_Params Ext_Params;
-			int err;
-			if (!hasIMG) //不包含图片时，每此查询仅需查找一次模版
-			{
-				err = params->byPath ? CurrentTemplate.FindMultiDatatypePosByCode(params->pathCode, posList, bytesList, typeList) : CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes, type);
-				if (err != 0)
-				{
-					buffer->buffer = NULL;
-					buffer->bufferMalloced = 0;
-					IOBusy = false;
-					return err;
-				}
-				copyBytes = params->byPath ? CurrentTemplate.GetBytesByCode(params->pathCode) : bytes;
-				if (params->byPath && (params->valueName != NULL || strcmp(params->valueName, "") == 0))
-				{
-					sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, params->pathCode, typeList);
-					compareBytes = CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes, type) == 0 ? bytes : 0;
-				}
-				Ext_Params.hasArray = hasArray;
-				Ext_Params.hasIMG = hasIMG;
-				Ext_Params.hasTS = hasTS;
-				Ext_Params.bytes = bytes;
-				Ext_Params.bytesList = bytesList;
-				Ext_Params.type = type;
-				Ext_Params.typeList = typeList;
-				Ext_Params.compareBytes = compareBytes;
-				Ext_Params.copyBytes = copyBytes;
-				Ext_Params.pos = pos;
-				Ext_Params.posList = posList;
-				Ext_Params.sortPos = sortPos;
-				Ext_Params.pathCodes = pathCodes;
-			}
+
 			for (auto &pack : packs)
 			{
 				if (pack.first != NULL && pack.second != 0)
@@ -4702,7 +4529,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 				}
 			}
 
-			sortResult(mallocedMemory, params, type);
+			sortResult(mallocedMemory, params, Ext_Params.type);
 			if (cur == 0)
 			{
 				buffer->buffer = NULL;
@@ -4711,13 +4538,13 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 				return StatusCode::NO_DATA_QUERIED;
 			}
 			//动态分配内存
-			char typeNum = params->byPath ? typeList.size() : 1; //数据类型总数
+			char typeNum = params->byPath ? Ext_Params.typeList.size() : 1; //数据类型总数
 			char *data = (char *)malloc(cur + (int)typeNum * 11 + 1);
-			int startPos;																   //数据区起始位置
-			if (!params->byPath)														   //根据变量名查询，仅单个变量
-				startPos = CurrentTemplate.writeBufferHead(params->valueName, type, data); //写入缓冲区头，获取数据区起始位置
-			else																		   //根据路径编码查询，可能有多个变量
-				startPos = CurrentTemplate.writeBufferHead(params->pathCode, typeList, data);
+			int startPos;																			  //数据区起始位置
+			if (!params->byPath)																	  //根据变量名查询，仅单个变量
+				startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, data); //写入缓冲区头，获取数据区起始位置
+			else																					  //根据路径编码查询，可能有多个变量
+				startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, data);
 			if (data == NULL)
 			{
 				buffer->buffer = NULL;
@@ -4749,56 +4576,9 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 		vector<tuple<char *, long, long, long>> mallocedMemory; //内存地址-长度-排序值偏移-时间戳元组集
 		long cur = 0;
-		long bytes = 0, pos = 0;		 //单个变量
-		vector<long> posList, bytesList; //多个变量
-		long copyBytes = 0;
-		long sortPos = 0;
-		int compareBytes = 0;
-		vector<DataType> typeList;
-		DataType type;
-		vector<PathCode> pathCodes;
 
 		int scanNum = 0;
-		if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
-		{
-			IOBusy = false;
-			return StatusCode::SCHEMA_FILE_NOT_FOUND;
-		}
-		int err;
-		Extraction_Params Ext_Params;
-		bool hasIMG = params->byPath ? CurrentTemplate.checkHasImage(params->pathCode) : CurrentTemplate.checkIsImage(params->valueName);
-		bool hasArray = params->byPath ? CurrentTemplate.checkHasArray(params->pathCode) : CurrentTemplate.checkIsArray(params->valueName);
-		bool hasTS = params->byPath ? CurrentTemplate.checkHasTimeseries(params->pathCode) : CurrentTemplate.checkIsTimeseries(params->valueName);
-		if (!hasIMG) //不包含图片时，每此查询仅需查找一次模版
-		{
-			err = params->byPath ? CurrentTemplate.FindMultiDatatypePosByCode(params->pathCode, posList, bytesList, typeList) : CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes, type);
-			if (err != 0)
-			{
-				buffer->buffer = NULL;
-				buffer->bufferMalloced = 0;
-				IOBusy = false;
-				return err;
-			}
-			copyBytes = params->byPath ? CurrentTemplate.GetBytesByCode(params->pathCode) : bytes;
-			if (params->byPath && (params->valueName != NULL || strcmp(params->valueName, "") == 0))
-			{
-				sortPos = CurrentTemplate.FindSortPosFromSelectedData(bytesList, params->valueName, params->pathCode, typeList);
-				compareBytes = CurrentTemplate.FindDatatypePosByName(params->valueName, pos, bytes, type) == 0 ? bytes : 0;
-			}
-			Ext_Params.hasArray = hasArray;
-			Ext_Params.hasIMG = hasIMG;
-			Ext_Params.hasTS = hasTS;
-			Ext_Params.bytes = bytes;
-			Ext_Params.bytesList = bytesList;
-			Ext_Params.type = type;
-			Ext_Params.typeList = typeList;
-			Ext_Params.compareBytes = compareBytes;
-			Ext_Params.copyBytes = copyBytes;
-			Ext_Params.pos = pos;
-			Ext_Params.posList = posList;
-			Ext_Params.sortPos = sortPos;
-			Ext_Params.pathCodes = pathCodes;
-		}
+
 		for (auto &pack : packs)
 		{
 			if (pack.first != NULL && pack.second != 0)
@@ -5993,31 +5773,31 @@ int main()
 	// readDataFilesWithTimestamps("", files);
 	// Packer::Pack("/",files);
 	auto startTime = std::chrono::system_clock::now();
-	DB_QueryByTimespan_Single(&buffer, &params);
-
-	auto endTime = std::chrono::system_clock::now();
-	free(buffer.buffer);
-	std::cout << "第一次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-	// free(buffer.buffer);
-	startTime = std::chrono::system_clock::now();
 	DB_QueryByTimespan_Single_New(&buffer, &params);
 
-	endTime = std::chrono::system_clock::now();
-	std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-	free(buffer.buffer);
-	startTime = std::chrono::system_clock::now();
-	DB_QueryByTimespan(&buffer, &params);
+	auto endTime = std::chrono::system_clock::now();
+	// free(buffer.buffer);
+	std::cout << "第一次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+	// free(buffer.buffer);
+	// startTime = std::chrono::system_clock::now();
+	// DB_QueryByTimespan_Single_New(&buffer, &params);
 
-	endTime = std::chrono::system_clock::now();
-	std::cout << "第三次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-	free(buffer.buffer);
-	startTime = std::chrono::system_clock::now();
-	DB_QueryByTimespan_New(&buffer, &params);
+	// endTime = std::chrono::system_clock::now();
+	// std::cout << "第二次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+	// free(buffer.buffer);
+	// startTime = std::chrono::system_clock::now();
+	// DB_QueryByTimespan(&buffer, &params);
 
-	endTime = std::chrono::system_clock::now();
-	std::cout << "第四次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-	free(buffer.buffer);
-	return 0;
+	// endTime = std::chrono::system_clock::now();
+	// std::cout << "第三次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+	// free(buffer.buffer);
+	// startTime = std::chrono::system_clock::now();
+	// DB_QueryByTimespan_New(&buffer, &params);
+
+	// endTime = std::chrono::system_clock::now();
+	// std::cout << "第四次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+	// free(buffer.buffer);
+	// return 0;
 	// // DB_QueryLastRecords_Using_Cache(&buffer, &params);
 	// // DB_QueryByTimespan_Using_Cache(&buffer, &params);
 	// // DB_QueryByTimespan(&buffer, &params);
