@@ -113,14 +113,14 @@ int main()
     // Py_Finalize();
     // return 0;
     DB_QueryParams params;
-    params.pathToLine = "RobotDataTwenty";
+    params.pathToLine = "JinfeiSixteen";
     params.fileID = "RobotDataTwenty50";
     params.fileIDend = NULL;
     char code[10];
     code[0] = (char)0;
     code[1] = (char)1;
     code[2] = (char)0;
-    code[3] = (char)0;
+    code[3] = (char)1;
     code[4] = 0;
     code[5] = (char)0;
     code[6] = 0;
@@ -130,14 +130,14 @@ int main()
     params.pathCode = code;
     params.valueName = "S1ON";
     // params.valueName = NULL;
-    params.start = 0;
-    params.end = 1652099030250;
-    // params.start = 1650093562902;
-    // params.end = 1650163562902;
+    // params.start = 0;
+    // params.end = 1652099030250;
+    params.start = 1553728593562;
+    params.end = 1763728603642;
     params.order = ODR_NONE;
     params.compareType = CMP_NONE;
     params.compareValue = "666";
-    params.queryType = FILEID;
+    params.queryType = TIMESPAN;
     params.byPath = 1;
     params.queryNums = 5;
     DB_DataBuffer buffer;
@@ -149,11 +149,6 @@ int main()
     // sleep(100);
     // return 0;
     auto startTime = std::chrono::system_clock::now();
-    double maxline, minline;
-    // DB_NoveltyFit(&params, &maxline, &minline);
-    // DB_OutlierDetection(&buffer, &params);
-    // cout << maxline << " " << minline << endl;
-    // DB_QueryByTimespan(&buffer, &params);
     DB_QueryByFileID(&buffer, &params);
     if (buffer.bufferMalloced)
     {
