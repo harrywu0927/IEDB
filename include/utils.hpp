@@ -351,7 +351,7 @@ public:
     vector<pair<PathCode, DataType>> schemas;
     string path; //挂载路径
     // char *temFileBuffer; //模版文件缓存
-    long fileLength;
+    // long fileLength;
     long totalBytes;
     bool hasImage = false; //若包含图片，则查询时需要对每一个节拍对照模版遍历；若不包含，则仅需获取数据的绝对偏移，大大节省查询时间
     Template() {}
