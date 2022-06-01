@@ -52,10 +52,10 @@ void checkSettings()
 
 int main()
 {
-    // TemplateManager::SetTemplate("Robot");
-    // ZipTemplateManager::SetZipTemplate("RobotTsTest");
-    // cout << CurrentZipTemplate.schemas.size() << endl;
-    // return 0;
+    TemplateManager::SetTemplate("Robot");
+    ZipTemplateManager::SetZipTemplate("timeseriesSpan");
+    cout << CurrentZipTemplate.schemas.size() << endl;
+    return 0;
     // TemplateManager::CheckTemplate("RobotTwenty");
     // return 0;
     // Py_Initialize();

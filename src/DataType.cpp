@@ -185,6 +185,8 @@ int DataType::GetValueBytes(ValueType::ValueType &type)
 int DataType::GetDataTypeFromStr(char dataType[], DataType &type)
 {
     string dtype = dataType;
+    type.arrayLen = 0;
+    type.tsLen = 0;
     if (dtype.find("ARRAY") != string::npos) //是数组
     {
         type.isArray = true;
