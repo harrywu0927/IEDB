@@ -310,6 +310,8 @@ public:
     static int JudgeByValueType(ValueType::ValueType vType);
     //获取值类型所占字节数
     static int GetValueBytes(ValueType::ValueType &type);
+    //获取此数据类型所占的总字节数
+    static int GetTypeBytes(DataType &type);
     //从字符串中获取数据类型
     static int GetDataTypeFromStr(char dataType[], DataType &type);
 
@@ -855,11 +857,71 @@ public:
 };
 extern FileIDManager fileIDManager;
 
-//用于程序内部交换的数据集
-struct DataSet
+class QueryBufferReader
 {
-    vector<string> nameList;
-    vector<string> valueList;
+private:
+    int cur;
+    int startPos;
+
+public:
+    char *buffer;
+    int rows;
+    long length;
+    int recordLength;
     vector<DataType> typeList;
-    vector<int> timeList;
+    QueryBufferReader(){};
+    QueryBufferReader(DB_DataBuffer *buffer);
+    ~QueryBufferReader()
+    {
+        free(buffer);
+    }
+    /**
+     * @brief Equals to GetRow(). You could use [] to get the specified row.
+     *
+     * @param index
+     * @return char*
+     */
+    char *operator[](const int &index);
+
+    /**
+     * @brief Get the element in specified index of the given memory address of the row.
+     *
+     * @param index Element index in the row
+     * @param row Memory address of row
+     * @return void*
+     */
+    void *FindElementInRow(const int &index, char *row);
+    /**
+     * @brief Get the element by row and col index. Note that this function is not suggested when you read a large number of data.
+     *
+     * @param row
+     * @param col
+     * @return void*
+     */
+    void *FindElement(const int &row, const int &col);
+    /**
+     * @brief Get the memory address of row by the specified index
+     *
+     * @param index
+     * @return char*
+     */
+    char *GetRow(const int &index);
+    /**
+     * @brief When you choose this to read the buffer, it means that you'll read every row in order.
+     *  This function will return the memory address of the row you're going to read.
+     *
+     * @return char*
+     */
+    char *NextRow();
 };
+
+// class QueryBufferRow : public QueryBufferReader
+// {
+// public:
+//     char *rowBuffer; //起始地址
+//     int recordLength;
+//     int rowIndex; //行号
+//     void *operator[](int)
+//     {
+//     }
+// };

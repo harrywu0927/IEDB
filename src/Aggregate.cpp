@@ -2860,13 +2860,15 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
             {
                 params->valueName = pathCodes[0].name.c_str();
             }
-            params->pathCode = const_cast<char *>("\0\0\0\0\0\0\0\0\0\0");
+            char zeros[10] = {0};
+            memcpy(params->pathCode, zeros, 10);
         }
     }
     else
     {
         params->byPath = 1;
-        params->pathCode = const_cast<char *>("\0\0\0\0\0\0\0\0\0\0");
+        char zeros[10] = {0};
+        memcpy(params->pathCode, zeros, 10);
     }
     int err = DB_ExecuteQuery(buffer, params);
     if (err != 0)

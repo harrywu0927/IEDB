@@ -15,11 +15,20 @@ int Template::writeBufferHead(char *pathCode, vector<DataType> &typeList, char *
     this->GetAllPathsByCode(pathCode, pathCodes);
     buffer[0] = (unsigned char)pathCodes.size();
     long cur = 1; //当前数据头写位置
-    for (int i = 0; i < pathCodes.size(); i++)
+    for (int i = 0; i < pathCodes.size(); i++, cur += 10)
     {
-        buffer[cur] = (char)getBufferValueType(typeList[i]);
-        memcpy(buffer + cur + 1, pathCodes[i].code, 10);
-        cur += 11;
+        buffer[cur++] = (char)getBufferValueType(typeList[i]);
+        if (typeList[i].isTimeseries)
+        {
+            memcpy(buffer + cur, &typeList[i].tsLen, 4);
+            cur += 4;
+        }
+        if (typeList[i].isArray)
+        {
+            memcpy(buffer + cur, &typeList[i].arrayLen, 4);
+            cur += 4;
+        }
+        memcpy(buffer + cur, pathCodes[i].code, 10);
     }
     return cur;
 }
@@ -35,17 +44,27 @@ int Template::writeBufferHead(char *pathCode, vector<DataType> &typeList, char *
  */
 int Template::writeBufferHead(string name, DataType &type, char *buffer)
 {
-    for (auto &schema : this->schemas)
+    int cur = 1;
+    for (auto const &schema : this->schemas)
     {
         if (name == schema.first.name)
         {
-            buffer[0] = (char)1;
-            buffer[1] = (char)getBufferValueType(type);
-            memcpy(buffer + 2, schema.first.code, 10);
+            buffer[cur++] = (char)getBufferValueType(type);
+            if (type.isTimeseries)
+            {
+                memcpy(buffer + cur, &type.tsLen, 4);
+                cur += 4;
+            }
+            if (type.isArray)
+            {
+                memcpy(buffer + cur, &type.arrayLen, 4);
+                cur += 4;
+            }
+            memcpy(buffer + cur, schema.first.code, 10);
             break;
         }
     }
-    return 12;
+    return cur;
 }
 
 /**
@@ -78,7 +97,7 @@ int Template::GetAllPathsByCode(char pathCode[], vector<PathCode> &pathCodes)
             pathCodes.push_back(schema.first);
         }
     }
-    return 0;
+    return pathCodes.size() > 0 ? 0 : StatusCode::UNKNOWN_PATHCODE;
 }
 
 /**
@@ -263,16 +282,16 @@ long Template::GetTotalBytes()
         {
             if (schema.second.isArray)
             {
-                total += (schema.second.valueBytes  * schema.second.arrayLen  + 8 ) * schema.second.tsLen;
+                total += (schema.second.valueBytes * schema.second.arrayLen + 8) * schema.second.tsLen;
             }
             else
             {
                 total += (schema.second.valueBytes + 8) * schema.second.tsLen;
             }
         }
-        else if(schema.second.isArray)
+        else if (schema.second.isArray)
         {
-            total+= schema.second.hasTime ? 8 + schema.second.valueBytes * schema.second.arrayLen : schema.second.valueBytes*schema.second.arrayLen;
+            total += schema.second.hasTime ? 8 + schema.second.valueBytes * schema.second.arrayLen : schema.second.valueBytes * schema.second.arrayLen;
         }
         else
         {
@@ -1208,16 +1227,16 @@ long ZipTemplate::GetTotalBytes()
         {
             if (schema.second.isArray)
             {
-                total += (schema.second.valueBytes  * schema.second.arrayLen  + 8 ) * schema.second.tsLen;
+                total += (schema.second.valueBytes * schema.second.arrayLen + 8) * schema.second.tsLen;
             }
             else
             {
                 total += (schema.second.valueBytes + 8) * schema.second.tsLen;
             }
         }
-        else if(schema.second.isArray)
+        else if (schema.second.isArray)
         {
-            total+= schema.second.hasTime ? 8 + schema.second.valueBytes * schema.second.arrayLen : schema.second.valueBytes*schema.second.arrayLen;
+            total += schema.second.hasTime ? 8 + schema.second.valueBytes * schema.second.arrayLen : schema.second.valueBytes * schema.second.arrayLen;
         }
         else
         {
@@ -1226,4 +1245,3 @@ long ZipTemplate::GetTotalBytes()
     }
     return total;
 }
-

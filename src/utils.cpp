@@ -824,12 +824,16 @@ void getMemoryUsage(long &total, long &available)
 int getBufferValueType(DataType &type)
 {
     int baseType = (int)type.valueType;
-    if (type.hasTime && !type.isArray)
+    if (type.hasTime && !type.isArray && !type.isTimeseries)
         return baseType + 10;
-    if (!type.hasTime && type.isArray)
+    if (!type.hasTime && type.isArray && !type.isTimeseries)
         return baseType + 20;
-    if (type.isArray && type.hasTime)
+    if (type.isArray && type.hasTime && !type.isTimeseries)
         return baseType + 30;
+    if (type.isTimeseries && !type.isArray)
+        return baseType + 40;
+    if (type.isTimeseries && type.isArray)
+        return baseType + 50;
     return baseType;
 }
 
@@ -906,7 +910,7 @@ int CheckQueryParams(DB_QueryParams *params)
         {
             return StatusCode::NO_FILEID;
         }
-        if (params->fileID != NULL && params->fileIDend != NULL)
+        if (params->fileID != NULL && (params->fileIDend != NULL))
         {
             if (params->queryNums != 0 && params->queryNums != 1)
                 return StatusCode::AMBIGUOUS_QUERY_PARAMS;

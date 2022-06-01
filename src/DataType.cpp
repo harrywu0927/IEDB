@@ -398,3 +398,28 @@ int DataType::CompareValueInBytes(DataType &type, char *compared, const char *to
         break;
     }
 }
+
+/** 获取此数据类型所占的总字节数
+ * @brief
+ *
+ * @param type
+ * @return int
+ */
+int DataType::GetTypeBytes(DataType &type)
+{
+    if (type.isTimeseries)
+    {
+        if (type.isArray)
+            return (type.arrayLen * type.valueBytes + 8) * type.tsLen;
+        else
+            return (type.valueBytes + 8) * type.tsLen;
+    }
+    else
+    {
+        if (type.isArray)
+            return type.arrayLen * type.valueBytes + (type.hasTime ? 8 : 0);
+        else
+            return type.valueBytes + (type.hasTime ? 8 : 0);
+    }
+    return 0;
+}

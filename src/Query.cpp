@@ -226,6 +226,7 @@ int DataExtraction(vector<tuple<char *, long, long, long>> &mallocedMemory, Extr
  */
 int WriteDataToBuffer(vector<tuple<char *, long, long, long>> &mallocedMemory, Extraction_Params &Ext_Params, DB_QueryParams *params, long &length)
 {
+	return 0;
 }
 
 /**
@@ -1632,50 +1633,38 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
  */
 int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
-	int check = CheckQueryParams(params);
-	if (check != 0)
-		return check;
+	// int check = CheckQueryParams(params);
+	// if (check != 0)
+	// 	return check;
 	if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
 		return StatusCode::SCHEMA_FILE_NOT_FOUND;
 
-	vector<DataType> types;
+	vector<PathCode> pathCodes;
 	if (params->byPath)
 	{
-		int err = CurrentTemplate.GetDataTypesByCode(params->pathCode, types);
+		int err = CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
 		if (err != 0)
 			return err;
-		if ((params->queryType != QRY_NONE || params->compareType != CMP_NONE) && types.size() > 1 && (params->valueName == NULL || strcmp(params->valueName, "") == 0)) //若此编码包含的数据类型大于1，而未指定变量名，又需要比较或排序，返回异常
-			return StatusCode::INVALID_QRY_PARAMS;
+		if (pathCodes.size() > 1)
+		{
+			if ((params->queryType != QRY_NONE || params->compareType != CMP_NONE) && (params->valueName == NULL || strcmp(params->valueName, "") == 0)) //若此编码包含的数据类型大于1，而未指定变量名，又需要比较或排序，返回异常
+				return StatusCode::INVALID_QRY_PARAMS;
+		}
 		else
 		{
 			if ((params->valueName == NULL || strcmp(params->valueName, "") == 0) && (params->queryType != QRY_NONE || params->compareType != CMP_NONE)) //由于编码会变为全0，因此若需要排序或比较，需要添加变量名
 			{
-				vector<PathCode> pathCodes;
-				CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
-				for (auto &code : pathCodes)
-				{
-					bool codeEquals = true;
-					for (size_t k = 0; k < 10; k++) //判断路径编码是否相等
-					{
-						if (code.code[k] != params->pathCode[k])
-						{
-							codeEquals = false;
-						}
-					}
-					if (codeEquals)
-					{
-						params->valueName = code.name.c_str();
-						break;
-					}
-				}
+				params->valueName = pathCodes[0].name.c_str();
 			}
-			params->pathCode = const_cast<char *>("\0\0\0\0\0\0\0\0\0\0");
 		}
+		char zeros[10] = {0};
+		memcpy(params->pathCode, zeros, 10);
 	}
 	else
 	{
 		params->byPath = 1;
-		params->pathCode = const_cast<char *>("\0\0\0\0\0\0\0\0\0\0");
+		char zeros[10] = {0};
+		memcpy(params->pathCode, zeros, 10);
 	}
 	switch (params->queryType)
 	{
@@ -1701,7 +1690,7 @@ int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note   单线程
  */
-int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByTimespan_Single_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
 	IOBusy = true;
 	int check = CheckQueryParams(params);
@@ -2108,7 +2097,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note   单线程
  */
-int DB_QueryByTimespan_Single_New(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
 	IOBusy = true;
 	int check = CheckQueryParams(params);
@@ -2230,12 +2219,13 @@ int DB_QueryByTimespan_Single_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 	}
 	//动态分配内存
 	char typeNum = params->byPath ? Ext_Params.typeList.size() : 1; //数据类型总数
-	char *data = (char *)malloc(cur + (int)typeNum * 11 + 1);
+	char head[(int)typeNum * 19 + 1];
 	int startPos;																			  //数据区起始位置
 	if (!params->byPath)																	  //根据变量名查询，仅单个变量
-		startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, data); //写入缓冲区头，获取数据区起始位置
+		startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, head); //写入缓冲区头，获取数据区起始位置
 	else																					  //根据路径编码查询，可能有多个变量
-		startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, data);
+		startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
+	char *data = (char *)malloc(startPos + cur);
 	if (data == NULL)
 	{
 		buffer->buffer = NULL;
@@ -2468,7 +2458,7 @@ int PackProcess(pair<char *, long> pack, DB_QueryParams *params, atomic<long> *c
  *          others: StatusCode
  * @note   支持idb文件和pak文件混合查询,此处默认pak文件中的时间均早于idb和idbzip文件！！
  */
-int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByTimespan_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
 	IOBusy = true;
 	if (maxThreads <= 2) //线程数量<=2时，多线程已无必要
@@ -2940,7 +2930,7 @@ int PackProcess_BrandNew(pair<char *, long> *pack, DB_QueryParams *params, atomi
  *          others: StatusCode
  * @note   支持idb文件和pak文件混合查询,此处默认pak文件中的时间均早于idb和idbzip文件！！
  */
-int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
 	IOBusy = true;
 	if (maxThreads <= 2) //线程数量<=2时，多线程已无必要
@@ -3055,12 +3045,13 @@ int DB_QueryByTimespan_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 	}
 	//动态分配内存
 	char typeNum = params->byPath ? Ext_Params.typeList.size() : 1; //数据类型总数
-	char *data = (char *)malloc(cur + (int)typeNum * 11 + 1);
+	char head[(int)typeNum * 19 + 1];
 	int startPos;																			  //数据区起始位置
 	if (!params->byPath)																	  //根据变量名查询，仅单个变量
-		startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, data); //写入缓冲区头，获取数据区起始位置
+		startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, head); //写入缓冲区头，获取数据区起始位置
 	else																					  //根据路径编码查询，可能有多个变量
-		startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, data);
+		startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
+	char *data = (char *)malloc(startPos + cur);
 	if (data == NULL)
 	{
 		buffer->buffer = NULL;
@@ -4132,17 +4123,17 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 	}
 	sortResult(mallocedMemory, params, Ext_Params.type);
 	//已获取指定数量的数据，开始拷贝内存
-	char *data;
 	if (cur != 0)
 	{
 		char typeNum = params->byPath ? Ext_Params.typeList.size() : 1; //数据类型总数
 		int startPos;													//数据区起始位置
 
-		data = (char *)malloc(cur + (int)typeNum * 11 + 1);
-		if (!params->byPath)
-			startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, data); //写入缓冲区头，获取数据区起始位置
-		else
-			startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, data);
+		char head[(int)typeNum * 19 + 1];														  //数据区起始位置
+		if (!params->byPath)																	  //根据变量名查询，仅单个变量
+			startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, head); //写入缓冲区头，获取数据区起始位置
+		else																					  //根据路径编码查询，可能有多个变量
+			startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
+		char *data = (char *)malloc(startPos + cur);
 		if (data == NULL)
 		{
 			buffer->buffer = NULL;
@@ -4395,12 +4386,15 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 					char typeNum = typeList.size() == 0 ? 1 : typeList.size(); //数据类型总数
 
-					char *data = (char *)malloc(copyBytes + 1 + (int)typeNum * 11);
+					// char *data = (char *)malloc(copyBytes + 1 + (int)typeNum * 11);
+					char head[(int)typeNum * 19 + 1];
 					int startPos;
 					if (!params->byPath)
-						startPos = CurrentTemplate.writeBufferHead(params->valueName, type, data); //写入缓冲区头，获取数据区起始位置
+						startPos = CurrentTemplate.writeBufferHead(params->valueName, type, head); //写入缓冲区头，获取数据区起始位置
 					else
-						startPos = CurrentTemplate.writeBufferHead(params->pathCode, typeList, data);
+						startPos = CurrentTemplate.writeBufferHead(params->pathCode, typeList, head);
+					char *data = (char *)malloc(startPos + copyBytes);
+					memcpy(data, head, startPos);
 					if (data == NULL)
 					{
 						buffer->buffer = NULL;
@@ -4539,12 +4533,13 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			}
 			//动态分配内存
 			char typeNum = params->byPath ? Ext_Params.typeList.size() : 1; //数据类型总数
-			char *data = (char *)malloc(cur + (int)typeNum * 11 + 1);
+			char head[(int)typeNum * 19 + 1];
 			int startPos;																			  //数据区起始位置
 			if (!params->byPath)																	  //根据变量名查询，仅单个变量
-				startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, data); //写入缓冲区头，获取数据区起始位置
+				startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, head); //写入缓冲区头，获取数据区起始位置
 			else																					  //根据路径编码查询，可能有多个变量
-				startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, data);
+				startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
+			char *data = (char *)malloc(startPos + cur);
 			if (data == NULL)
 			{
 				buffer->buffer = NULL;
@@ -4681,12 +4676,14 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		}
 		//动态分配内存
 		char typeNum = params->byPath ? Ext_Params.typeList.size() : 1; //数据类型总数
-		char *data = (char *)malloc(cur + (int)typeNum * 11 + 1);
+		// char *data = (char *)malloc(cur + (int)typeNum * 11 + 1);
+		char head[(int)typeNum * 19 + 1];
 		int startPos;																			  //数据区起始位置
 		if (!params->byPath)																	  //根据变量名查询，仅单个变量
-			startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, data); //写入缓冲区头，获取数据区起始位置
+			startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, head); //写入缓冲区头，获取数据区起始位置
 		else																					  //根据路径编码查询，可能有多个变量
-			startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, data);
+			startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
+		char *data = (char *)malloc(startPos + cur);
 		if (data == NULL)
 		{
 			buffer->buffer = NULL;
@@ -4715,7 +4712,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 }
 
 /**
- * @brief 根据文件ID和路径编码在某一产线文件夹下的数据文件中查询数据，数据存放在新开辟的缓冲区buffer中
+ * @brief [Deprecated]根据文件ID和路径编码在某一产线文件夹下的数据文件中查询数据，数据存放在新开辟的缓冲区buffer中
  * @param buffer    数据缓冲区
  * @param params    查询请求参数
  *
@@ -5739,33 +5736,33 @@ int main()
 	// Py_Initialize();
 	DataTypeConverter converter;
 	DB_QueryParams params;
-	params.pathToLine = "JinfeiSeven";
-	params.fileID = "23";
+	params.pathToLine = "RobotDataTwentySix";
+	params.fileID = "5";
 	// params.fileIDend = "25";
 	params.fileIDend = NULL;
 	char code[10];
 	code[0] = (char)0;
 	code[1] = (char)1;
 	code[2] = (char)0;
-	code[3] = (char)0;
-	// code[4] = 'M';
-	code[4] = 0;
-	code[5] = (char)0;
+	code[3] = (char)1;
+	code[4] = 'M';
+	// code[4] = 'R';
+	code[5] = (char)1;
 	code[6] = 0;
 	code[7] = (char)0;
 	code[8] = (char)0;
 	code[9] = (char)0;
 	params.pathCode = code;
-	// params.valueName = "S1T1A11";
-	params.valueName = "S1M1A10";
+	params.valueName = "S1T1A11";
+	// params.valueName = NULL;
 	params.start = 1553728593562;
 	params.end = 1763728603642;
 	params.order = ODR_NONE;
 	params.compareType = CMP_NONE;
 	params.compareValue = "666";
-	params.queryType = TIMESPAN;
+	params.queryType = FILEID;
 	params.byPath = 1;
-	params.queryNums = 200;
+	params.queryNums = 5;
 	DB_DataBuffer buffer;
 	buffer.savePath = "/";
 	// cout << settings("Pack_Mode") << endl;
@@ -5773,7 +5770,7 @@ int main()
 	// readDataFilesWithTimestamps("", files);
 	// Packer::Pack("/",files);
 	auto startTime = std::chrono::system_clock::now();
-	DB_QueryByTimespan_Single_New(&buffer, &params);
+	DB_QueryByFileID(&buffer, &params);
 
 	auto endTime = std::chrono::system_clock::now();
 	// free(buffer.buffer);
@@ -5869,15 +5866,17 @@ int main()
 	// DB_QueryByFileID_New(&buffer, &params);
 	if (buffer.bufferMalloced)
 	{
-		// char buf[buffer.length];
-		// memcpy(buf, buffer.buffer, buffer.length);
+		// QueryBufferReader bufferReader(&buffer);
+		// cout << "dfs" << endl;
+		char buf[buffer.length];
+		memcpy(buf, buffer.buffer, buffer.length);
 		cout << buffer.length << endl;
-		// for (int i = 0; i < buffer.length; i++)
-		// {
-		// 	cout << (int)buf[i] << " ";
-		// 	if (i % 11 == 0)
-		// 		cout << endl;
-		// }
+		for (int i = 0; i < buffer.length; i++)
+		{
+			cout << (int)buf[i] << " ";
+			if (i % 11 == 0)
+				cout << endl;
+		}
 
 		free(buffer.buffer);
 	}
