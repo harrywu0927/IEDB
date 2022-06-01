@@ -286,10 +286,11 @@ class DataType
 public:
     bool isArray = false;
     bool hasTime = false;
-    bool isTimeseries = false;      //此值为true时，hasTime不可为true。(时间序列：<timestamp,value>键-值序列)
+    bool isTimeseries = false;      //此值为true时，hasTime不可为true。(时间序列：<value,timestamp>键-值序列)
     int tsLen;                      //时间序列长度
     int arrayLen;                   //数组长度
     int valueBytes;                 //值所占字节
+    long timeseriesSpan;            //时间序列的采样时间
     ValueType::ValueType valueType; //基本数据类型
 
     char maxValue[10];      //最大值
@@ -581,7 +582,7 @@ public:
         vector<DataType> dataTypes;
         while (i < length)
         {
-            char variable[30], dataType[30], standardValue[10], maxValue[10], minValue[10], hasTime[1];
+            char variable[30], dataType[30], standardValue[10], maxValue[10], minValue[10], hasTime[1], timeseriesSpan[4];
             memcpy(variable, buf + i, 30);
             i += 30;
             memcpy(dataType, buf + i, 30);
@@ -594,6 +595,8 @@ public:
             i += 10;
             memcpy(hasTime, buf + i, 1);
             i += 1;
+            memcpy(timeseriesSpan, buf + i, 4);
+            i += 4;
             vector<string> paths;
 
             dataName.push_back(variable);
@@ -606,6 +609,7 @@ public:
             // strcpy(type.standardValue,standardValue);
             // strcpy(type.maxValue,maxValue);
             // strcpy(type.minValue,minValue);
+            type.timeseriesSpan = dtc.ToUInt32_m(timeseriesSpan);
             if (DataType::GetDataTypeFromStr(dataType, type) == 0)
             {
                 if ((bool)hasTime[0] == true && !type.isTimeseries) //如果是时间序列，即使hasTime为1，依然不额外携带时间
