@@ -65,13 +65,13 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     uint32 maxUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
                     uint32 minUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
-                    // 4个字节,暂定，根据后续情况可能进行更改
-                    char value[4] = {0};
-                    memcpy(value, readbuff + readbuff_pos, 4);
-                    uint32 currentUDintValue = converter.ToUInt32(value);
 
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
+                        // 4个字节,暂定，根据后续情况可能进行更改
+                        char value[4] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 4);
+                        uint32 currentUDintValue = converter.ToUInt32(value);
                         if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
                         {
                             //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
@@ -235,12 +235,13 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     char standardUSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                     char maxUSintValue = CurrentZipTemplate.schemas[i].second.maxValue[0];
                     char minUSintValue = CurrentZipTemplate.schemas[i].second.minValue[0];
-                    // 1个字节,暂定，根据后续情况可能进行更改
-                    char value[1] = {0};
-                    memcpy(value, readbuff + readbuff_pos, 1);
-                    char currentUSintValue = value[0];
+
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
+                        // 1个字节,暂定，根据后续情况可能进行更改
+                        char value[1] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 1);
+                        char currentUSintValue = value[0];
                         if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
                         {
                             //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
@@ -404,13 +405,13 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     ushort standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     ushort maxUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
                     ushort minUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
-                    // 2个字节,暂定，根据后续情况可能进行更改
-                    char value[2] = {0};
-                    memcpy(value, readbuff + readbuff_pos, 2);
-                    ushort currentUintValue = converter.ToUInt16(value);
 
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
+                        // 2个字节,暂定，根据后续情况可能进行更改
+                        char value[2] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 2);
+                        ushort currentUintValue = converter.ToUInt16(value);
                         if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
                         {
                             //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
@@ -574,13 +575,13 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     char standardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                     char maxSintValue = CurrentZipTemplate.schemas[i].second.maxValue[0];
                     char minSintValue = CurrentZipTemplate.schemas[i].second.minValue[0];
-                    // 2个字节,暂定，根据后续情况可能进行更改
-                    char value[1] = {0};
-                    memcpy(value, readbuff + readbuff_pos, 1);
-                    char currentSintValue = value[0];
 
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
+                        // 2个字节,暂定，根据后续情况可能进行更改
+                        char value[1] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 1);
+                        char currentSintValue = value[0];
                         if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
                         {
                             //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
@@ -744,13 +745,13 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     short maxIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
                     short minIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
-                    // 2个字节,暂定，根据后续情况可能进行更改
-                    char value[2] = {0};
-                    memcpy(value, readbuff + readbuff_pos, 2);
-                    short currentIntValue = converter.ToInt16(value);
 
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
+                        // 2个字节,暂定，根据后续情况可能进行更改
+                        char value[2] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 2);
+                        short currentIntValue = converter.ToInt16(value);
                         if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
                         {
                             //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
@@ -914,13 +915,13 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     int maxDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
                     int minDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
-                    // 4个字节,暂定，根据后续情况可能进行更改
-                    char value[4] = {0};
-                    memcpy(value, readbuff + readbuff_pos, 4);
-                    int currentDintValue = converter.ToInt32(value);
 
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
+                        // 4个字节,暂定，根据后续情况可能进行更改
+                        char value[4] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 4);
+                        int currentDintValue = converter.ToInt32(value);
                         if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
                         {
                             //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
@@ -1084,13 +1085,13 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     float standardFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     float maxFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.maxValue);
                     float minFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.minValue);
-                    // 4个字节,暂定，根据后续情况可能进行更改
-                    char value[4] = {0};
-                    memcpy(value, readbuff + readbuff_pos, 4);
-                    float currentRealValue = converter.ToFloat(value);
 
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
+                        // 4个字节,暂定，根据后续情况可能进行更改
+                        char value[4] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 4);
+                        float currentRealValue = converter.ToFloat(value);
                         if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
                         {
                             //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节

@@ -226,12 +226,13 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     char standardUSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                     char maxUSintValue = CurrentZipTemplate.schemas[i].second.maxValue[0];
                     char minUSintValue = CurrentZipTemplate.schemas[i].second.minValue[0];
-                    // 1个字节,暂定，根据后续情况可能进行更改
-                    char value[1] = {0};
-                    memcpy(value, readbuff + readbuff_pos, 1);
-                    char currentUSintValue = value[0];
+
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
+                        // 1个字节,暂定，根据后续情况可能进行更改
+                        char value[1] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 1);
+                        char currentUSintValue = value[0];
                         if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
                         {
                             //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
@@ -395,13 +396,13 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     ushort standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     ushort maxUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
                     ushort minUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
-                    // 2个字节,暂定，根据后续情况可能进行更改
-                    char value[2] = {0};
-                    memcpy(value, readbuff + readbuff_pos, 2);
-                    ushort currentUintValue = converter.ToUInt16(value);
 
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
+                        // 2个字节,暂定，根据后续情况可能进行更改
+                        char value[2] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 2);
+                        ushort currentUintValue = converter.ToUInt16(value);
                         if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
                         {
                             //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
@@ -565,13 +566,14 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     uint32 maxUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
                     uint32 minUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
-                    // 4个字节,暂定，根据后续情况可能进行更改
-                    char value[4] = {0};
-                    memcpy(value, readbuff + readbuff_pos, 4);
-                    uint32 currentUDintValue = converter.ToUInt32(value);
 
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
+                        // 4个字节,暂定，根据后续情况可能进行更改
+                        char value[4] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 4);
+                        uint32 currentUDintValue = converter.ToUInt32(value);
+
                         if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
                         {
                             //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
@@ -735,13 +737,13 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     char standardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                     char maxSintValue = CurrentZipTemplate.schemas[i].second.maxValue[0];
                     char minSintValue = CurrentZipTemplate.schemas[i].second.minValue[0];
-                    // 2个字节,暂定，根据后续情况可能进行更改
-                    char value[1] = {0};
-                    memcpy(value, readbuff + readbuff_pos, 1);
-                    char currentSintValue = value[0];
 
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
+                        // 2个字节,暂定，根据后续情况可能进行更改
+                        char value[1] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 1);
+                        char currentSintValue = value[0];
                         if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
                         {
                             //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
@@ -905,13 +907,13 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     short maxIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
                     short minIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
-                    // 2个字节,暂定，根据后续情况可能进行更改
-                    char value[2] = {0};
-                    memcpy(value, readbuff + readbuff_pos, 2);
-                    short currentIntValue = converter.ToInt16(value);
 
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
+                        // 2个字节,暂定，根据后续情况可能进行更改
+                        char value[2] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 2);
+                        short currentIntValue = converter.ToInt16(value);
                         if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
                         {
                             //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
@@ -1075,13 +1077,13 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     int maxDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
                     int minDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
-                    // 4个字节,暂定，根据后续情况可能进行更改
-                    char value[4] = {0};
-                    memcpy(value, readbuff + readbuff_pos, 4);
-                    int currentDintValue = converter.ToInt32(value);
 
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
+                        // 4个字节,暂定，根据后续情况可能进行更改
+                        char value[4] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 4);
+                        int currentDintValue = converter.ToInt32(value);
                         if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
                         {
                             //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
@@ -1245,13 +1247,13 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     float standardFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     float maxFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.maxValue);
                     float minFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.minValue);
-                    // 4个字节,暂定，根据后续情况可能进行更改
-                    char value[4] = {0};
-                    memcpy(value, readbuff + readbuff_pos, 4);
-                    float currentRealValue = converter.ToFloat(value);
 
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
+                        // 4个字节,暂定，根据后续情况可能进行更改
+                        char value[4] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 4);
+                        float currentRealValue = converter.ToFloat(value);
                         if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
                         {
                             //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
@@ -3370,93 +3372,97 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
     return err;
 }
 
-// int main()
-// {
-//     DB_ZipParams param;
-//     param.ZipType=FILE_ID;
-//     param.pathToLine="RobotTS";
-//     param.fileID="RobotTS21";
-//     DB_ZipFileByFileID(&param);
-//     return 0;
-//     // std::cout<<"start 多类型文件 单线程压缩"<<std::endl;
-//     // auto startTime = std::chrono::system_clock::now();
-//     // DB_ZipFile("jinfei","jinfei");
-//     // auto endTime = std::chrono::system_clock::now();
-//     // std::cout << "多类型文件 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     // std::cout<<"end 多类型文件 单线程压缩"<<std::endl<<std::endl;
+int main()
+{
+    DB_ZipParams param;
+    param.ZipType = FILE_ID;
+    param.pathToLine = "RobotTsTest";
+    param.fileID = "RobotTsTest1";
+    DB_ZipFileByFileID(&param);
+    return 0;
+    // std::cout<<"start 多类型文件 单线程压缩"<<std::endl;
+    // auto startTime = std::chrono::system_clock::now();
+    // DB_ZipFile("jinfei","jinfei");
+    // auto endTime = std::chrono::system_clock::now();
+    // std::cout << "多类型文件 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // std::cout<<"end 多类型文件 单线程压缩"<<std::endl<<std::endl;
 
-//     // sleep(3);
-//     // std::cout<<"start 多类型文件 单线程还原"<<std::endl;
-//     // startTime = std::chrono::system_clock::now();
-//     // DB_ReZipFile("jinfei","jinfei");
-//     // endTime = std::chrono::system_clock::now();
-//     // std::cout << "多类型文件 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     // std::cout<<"end 多类型文件 单线程还原"<<std::endl<<std::endl;
+    // sleep(3);
+    // std::cout<<"start 多类型文件 单线程还原"<<std::endl;
+    // startTime = std::chrono::system_clock::now();
+    // DB_ReZipFile("jinfei","jinfei");
+    // endTime = std::chrono::system_clock::now();
+    // std::cout << "多类型文件 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // std::cout<<"end 多类型文件 单线程还原"<<std::endl<<std::endl;
 
-//     // sleep(3);
-//     // std::cout<<"start 多类型文件 多线程压缩"<<std::endl;
-//     // startTime = std::chrono::system_clock::now();
-//     // DB_ZipFile_MultiThread("jinfei", "jinfei");
-//     // endTime = std::chrono::system_clock::now();
-//     // std::cout << "多类型文件 多线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     // std::cout<<"end 多类型文件 多线程压缩"<<std::endl<<std::endl;
+    // sleep(3);
+    // std::cout<<"start 多类型文件 多线程压缩"<<std::endl;
+    // startTime = std::chrono::system_clock::now();
+    // DB_ZipFile_MultiThread("jinfei", "jinfei");
+    // endTime = std::chrono::system_clock::now();
+    // std::cout << "多类型文件 多线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // std::cout<<"end 多类型文件 多线程压缩"<<std::endl<<std::endl;
 
-//     // sleep(3);
-//     // std::cout<<"start 多类型文件 多线程还原"<<std::endl;
-//     // startTime = std::chrono::system_clock::now();
-//     // DB_ReZipFile_MultiThread("jinfei", "jinfei");
-//     // endTime = std::chrono::system_clock::now();
-//     // std::cout << "多类型文件 多线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     // std::cout<<"end 多类型文件 多线程还原"<<std::endl<<std::endl;
+    // sleep(3);
+    // std::cout<<"start 多类型文件 多线程还原"<<std::endl;
+    // startTime = std::chrono::system_clock::now();
+    // DB_ReZipFile_MultiThread("jinfei", "jinfei");
+    // endTime = std::chrono::system_clock::now();
+    // std::cout << "多类型文件 多线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // std::cout<<"end 多类型文件 多线程还原"<<std::endl<<std::endl;
 
-//     struct tm t;
-//     t.tm_year = atoi("2022") - 1900;
-//     t.tm_mon = atoi("5") - 1;
-//     t.tm_mday = atoi("7");
-//     t.tm_hour = atoi("15");
-//     t.tm_min = atoi("0");
-//     t.tm_sec = atoi("0");
-//     t.tm_isdst = -1; //不设置夏令时
-//     time_t seconds = mktime(&t);
-//     int ms = atoi("0");
-//     long start = seconds * 1000 + ms;
-//     cout<<start<<endl;
-//     DB_ZipParams zipParam;
-//     zipParam.pathToLine = "jinfei";
-//     zipParam.start = 1651903200000;
-//     zipParam.end = 1651906800000;
+    struct tm t;
+    t.tm_year = atoi("2022") - 1900;
+    t.tm_mon = atoi("5") - 1;
+    t.tm_mday = atoi("7");
+    t.tm_hour = atoi("15");
+    t.tm_min = atoi("0");
+    t.tm_sec = atoi("0");
+    t.tm_isdst = -1; //不设置夏令时
+    time_t seconds = mktime(&t);
+    int ms = atoi("0");
+    long start = seconds * 1000 + ms;
+    cout << start << endl;
+    DB_ZipParams zipParam;
+    zipParam.pathToLine = "jinfei";
+    zipParam.start = 1651903200000;
+    zipParam.end = 1651906800000;
 
-//     sleep(3);
-//     std::cout<<"start 多类型文件按时间段 单线程压缩"<<std::endl;
-//     auto startTime = std::chrono::system_clock::now();
-//     DB_ZipFileByTimeSpan(&zipParam);
-//     auto endTime = std::chrono::system_clock::now();
-//     std::cout << "多类型文件按时间段 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     std::cout<<"end 多类型文件按时间段 单线程压缩"<<std::endl<<std::endl;
+    sleep(3);
+    std::cout << "start 多类型文件按时间段 单线程压缩" << std::endl;
+    auto startTime = std::chrono::system_clock::now();
+    DB_ZipFileByTimeSpan(&zipParam);
+    auto endTime = std::chrono::system_clock::now();
+    std::cout << "多类型文件按时间段 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    std::cout << "end 多类型文件按时间段 单线程压缩" << std::endl
+              << std::endl;
 
-//     sleep(3);
-//     std::cout<<"start 多类型文件按时间段 单线程还原"<<std::endl;
-//     startTime = std::chrono::system_clock::now();
-//     DB_ReZipFileByTimeSpan(&zipParam);
-//     endTime = std::chrono::system_clock::now();
-//     std::cout << "多类型件按时间段 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     std::cout<<"end 多类型文件按时间段 单线程还原"<<std::endl<<std::endl;
+    sleep(3);
+    std::cout << "start 多类型文件按时间段 单线程还原" << std::endl;
+    startTime = std::chrono::system_clock::now();
+    DB_ReZipFileByTimeSpan(&zipParam);
+    endTime = std::chrono::system_clock::now();
+    std::cout << "多类型件按时间段 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    std::cout << "end 多类型文件按时间段 单线程还原" << std::endl
+              << std::endl;
 
-//     sleep(3);
-//     std::cout<<"start 多类型文件按时间段 多线程压缩"<<std::endl;
-//     startTime = std::chrono::system_clock::now();
-//     DB_ZipFileByTimeSpan(&zipParam);
-//     endTime = std::chrono::system_clock::now();
-//     std::cout << "多类型文件按时间段 多线程时间段压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     std::cout<<"end 多类型文件按时间段 多线程压缩"<<std::endl<<std::endl;
+    sleep(3);
+    std::cout << "start 多类型文件按时间段 多线程压缩" << std::endl;
+    startTime = std::chrono::system_clock::now();
+    DB_ZipFileByTimeSpan(&zipParam);
+    endTime = std::chrono::system_clock::now();
+    std::cout << "多类型文件按时间段 多线程时间段压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    std::cout << "end 多类型文件按时间段 多线程压缩" << std::endl
+              << std::endl;
 
-//     sleep(3);
-//     std::cout<<"start 多类型文件按时间段 多线程还原"<<std::endl;
-//     startTime = std::chrono::system_clock::now();
-//     DB_ReZipFileByTimeSpan(&zipParam);
-//     endTime = std::chrono::system_clock::now();
-//     std::cout << "多类型文件按时间段 多线程时间段还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     std::cout<<"end 多类型文件按时间段 多线程还原"<<std::endl<<std::endl;
+    sleep(3);
+    std::cout << "start 多类型文件按时间段 多线程还原" << std::endl;
+    startTime = std::chrono::system_clock::now();
+    DB_ReZipFileByTimeSpan(&zipParam);
+    endTime = std::chrono::system_clock::now();
+    std::cout << "多类型文件按时间段 多线程时间段还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    std::cout << "end 多类型文件按时间段 多线程还原" << std::endl
+              << std::endl;
 
-//     return 0;
-// }
+    return 0;
+}
