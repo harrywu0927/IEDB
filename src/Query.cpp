@@ -4213,12 +4213,14 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		if (params->fileIDend != NULL && fileidEnd.find(paths[0]) == string::npos)
 			fileidEnd = paths[0] + fileidEnd;
 	}
+	cout << "checking template" << endl;
 	if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
 	{
 		IOBusy = false;
 		return StatusCode::SCHEMA_FILE_NOT_FOUND;
 	}
 	Extraction_Params Ext_Params;
+	cout << "getting extparams" << endl;
 	int err = GetExtractionParams(Ext_Params, params);
 	if (err != 0)
 		return err;
