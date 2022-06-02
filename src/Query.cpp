@@ -64,18 +64,26 @@ int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Param
 	Ext_Params.hasArray = Qry_Params->byPath ? CurrentTemplate.checkHasArray(Qry_Params->pathCode) : CurrentTemplate.checkIsArray(Qry_Params->valueName);
 	Ext_Params.hasTS = Qry_Params->byPath ? CurrentTemplate.checkHasTimeseries(Qry_Params->pathCode) : CurrentTemplate.checkIsTimeseries(Qry_Params->valueName);
 	Ext_Params.hasIMG = Qry_Params->byPath ? CurrentTemplate.checkHasImage(Qry_Params->pathCode) : CurrentTemplate.checkIsImage(Qry_Params->valueName);
+	cout << "hasarray:" << Ext_Params.hasArray << endl;
+	cout << "hasts:" << Ext_Params.hasTS << endl;
+	cout << "hasimg:" << Ext_Params.hasIMG << endl;
+
 	int err;
 	err = Qry_Params->byPath ? CurrentTemplate.FindMultiDatatypePosByCode(Qry_Params->pathCode, Ext_Params.posList, Ext_Params.bytesList, Ext_Params.typeList) : CurrentTemplate.FindDatatypePosByName(Qry_Params->valueName, Ext_Params.pos, Ext_Params.bytes, Ext_Params.type);
+	cout << "err=" << err << endl;
 	if (err != 0)
 	{
 		IOBusy = false;
 		return err;
 	}
 	Ext_Params.copyBytes = Qry_Params->byPath ? CurrentTemplate.GetBytesByCode(Qry_Params->pathCode) : Ext_Params.bytes;
+	cout << "copyBytes size=" << Ext_Params.copyBytes;
 	if (Qry_Params->byPath && (Qry_Params->valueName != NULL || strcmp(Qry_Params->valueName, "") == 0))
 	{
 		Ext_Params.sortPos = CurrentTemplate.FindSortPosFromSelectedData(Ext_Params.bytesList, Qry_Params->valueName, Qry_Params->pathCode, Ext_Params.typeList);
 		Ext_Params.compareBytes = CurrentTemplate.FindDatatypePosByName(Qry_Params->valueName, Ext_Params.pos, Ext_Params.bytes, Ext_Params.type) == 0 ? Ext_Params.bytes : 0;
+		cout << "sortpos=" << Ext_Params.sortPos << endl;
+		cout << "comparebytes=" << Ext_Params.compareBytes << endl;
 	}
 	return 0;
 }
