@@ -3099,7 +3099,7 @@ int DB_ReZipFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint
  * @return 0:success,
  *          others: StatusCode
  */
-int DB_ReZipFileByTimeSpan_MultiThread(struct DB_ZipParams *params)
+int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
 {
     params->ZipType = TIME_SPAN;
     int err = CheckZipParams(params);
