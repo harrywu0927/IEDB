@@ -4620,7 +4620,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 					if (firstIndexFound || fileID == fileid) //找到首个相同ID的文件，故直接取接下来的若干个文件，无需再比较
 					{
-						cout << "id found:" << fileid << endl;
+						cout << "id found:" << fileID << endl;
 						firstIndexFound = true;
 
 						char *buff;
@@ -4681,7 +4681,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 					continue;
 				if (firstIndexFound || vec[0] == fileid)
 				{
-					cout << "id found:" << fileid << endl;
+					cout << "id found:" << vec[0] << endl;
 
 					firstIndexFound = true;
 					long len; //文件长度
@@ -5774,8 +5774,8 @@ int main()
 	// Py_Initialize();
 	DataTypeConverter converter;
 	DB_QueryParams params;
-	params.pathToLine = "RobotTS";
-	params.fileID = "23";
+	params.pathToLine = "Robotsix";
+	params.fileID = "3105";
 	// params.fileIDend = "25";
 	params.fileIDend = NULL;
 	char code[10];
