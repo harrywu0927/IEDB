@@ -340,7 +340,7 @@ int STAT_Process(DB_DataBuffer *buffer, STAT_Type type)
  * @return status code
  * @note 将buffer中的数据处理为python数据结构后作为参数传入相对应的函数中，获取返回值即可
  */
-int DB_MAX(DB_DataBuffer *buffer)
+int DB_MAX(struct DB_DataBuffer *buffer)
 {
     return STAT_Process(buffer, STAT_Type::MAX);
 }
@@ -352,7 +352,7 @@ int DB_MAX(DB_DataBuffer *buffer)
  * @return status code
  * @note 将buffer中的数据处理为python数据结构后作为参数传入相对应的函数中，获取返回值即可
  */
-int DB_MIN(DB_DataBuffer *buffer)
+int DB_MIN(struct DB_DataBuffer *buffer)
 {
     return STAT_Process(buffer, STAT_Type::MIN);
 }
@@ -364,7 +364,7 @@ int DB_MIN(DB_DataBuffer *buffer)
  * @return status code
  * @note 将buffer中的数据处理为python数据结构后作为参数传入相对应的函数中，获取返回值即可
  */
-int DB_STD(DB_DataBuffer *buffer)
+int DB_STD(struct DB_DataBuffer *buffer)
 {
     return STAT_Process(buffer, STAT_Type::STD);
 }
@@ -376,7 +376,7 @@ int DB_STD(DB_DataBuffer *buffer)
  * @return status code
  * @note 将buffer中的数据处理为python数据结构后作为参数传入相对应的函数中，获取返回值即可
  */
-int DB_STDEV(DB_DataBuffer *buffer)
+int DB_STDEV(struct DB_DataBuffer *buffer)
 {
     return STAT_Process(buffer, STAT_Type::STDEV);
 }
@@ -388,7 +388,7 @@ int DB_STDEV(DB_DataBuffer *buffer)
  * @return status code
  * @note 将buffer中的数据处理为python数据结构后作为参数传入相对应的函数中，获取返回值即可
  */
-int DB_AVG(DB_DataBuffer *buffer)
+int DB_AVG(struct DB_DataBuffer *buffer)
 {
     return STAT_Process(buffer, STAT_Type::AVG);
 }
@@ -400,7 +400,7 @@ int DB_AVG(DB_DataBuffer *buffer)
  * @return status code
  * @note 将buffer中的数据处理为python数据结构后作为参数传入相对应的函数中，获取返回值即可
  */
-int DB_MEDIAN(DB_DataBuffer *buffer)
+int DB_MEDIAN(struct DB_DataBuffer *buffer)
 {
     return STAT_Process(buffer, STAT_Type::MEDIAN);
 }
@@ -412,7 +412,7 @@ int DB_MEDIAN(DB_DataBuffer *buffer)
  * @return status code
  * @note 将buffer中的数据处理为python数据结构后作为参数传入相对应的函数中，获取返回值即可
  */
-int DB_PROD(DB_DataBuffer *buffer)
+int DB_PROD(struct DB_DataBuffer *buffer)
 {
     return STAT_Process(buffer, STAT_Type::PROD);
 }
@@ -423,7 +423,7 @@ int DB_PROD(DB_DataBuffer *buffer)
  * @return status code
  * @note 将buffer中的数据处理为python数据结构后作为参数传入相对应的函数中，获取返回值即可
  */
-int DB_SUM(DB_DataBuffer *buffer)
+int DB_SUM(struct DB_DataBuffer *buffer)
 {
     return STAT_Process(buffer, STAT_Type::SUM);
 }

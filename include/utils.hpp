@@ -234,9 +234,9 @@ int DB_OutlierDetection(struct DB_DataBuffer *buffer, struct DB_QueryParams *par
 
 int DB_NoveltyFit(struct DB_QueryParams *params, double *maxLine, double *minLine);
 
-PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer);
+PyObject *ConvertToPyList_ML(struct DB_DataBuffer *buffer);
 
-PyObject *ConvertToPyList_STAT(DB_DataBuffer *buffer);
+PyObject *ConvertToPyList_STAT(struct DB_DataBuffer *buffer);
 
 //检查模板相关输入
 int checkInputVaribaleName(string variableName);

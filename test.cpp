@@ -53,7 +53,7 @@ void checkSettings()
 int main()
 {
     TemplateManager::SetTemplate("Robot");
-    ZipTemplateManager::SetZipTemplate("timeseriesSpan");
+    ZipTemplateManager::SetZipTemplate("test");
     cout << CurrentZipTemplate.schemas.size() << endl;
     return 0;
     // TemplateManager::CheckTemplate("RobotTwenty");
