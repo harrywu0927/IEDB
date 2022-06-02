@@ -4350,7 +4350,14 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			readDataFiles(params->pathToLine, dataFiles);
 			for (string &file : dataFiles)
 			{
-				if (file == fileid)
+				string tmp = file;
+				vector<string> vec = DataType::splitWithStl(tmp, "/");
+				if (vec.size() == 0)
+					continue;
+				vec = DataType::splitWithStl(vec[vec.size() - 1], "_");
+				if (vec.size() == 0)
+					continue;
+				if (vec[0] == fileid)
 				{
 					long len; //文件长度
 					DB_GetFileLengthByPath(const_cast<char *>(file.c_str()), &len);
@@ -4616,11 +4623,9 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 					int readLength, zipType;
 					long timestamp;
 					long dataPos = packReader.Next(readLength, timestamp, fileID, zipType);
-					cout << "finding " << fileID << endl;
 
 					if (firstIndexFound || fileID == fileid) //找到首个相同ID的文件，故直接取接下来的若干个文件，无需再比较
 					{
-						cout << "id found:" << fileID << endl;
 						firstIndexFound = true;
 
 						char *buff;
