@@ -4572,6 +4572,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 	//根据首ID+数量的多文件查询
 	else
 	{
+		cout << "searching packs by id" << endl;
 		auto packs = packManager.GetPackByIDs(params->pathToLine, fileid, params->queryNums);
 		bool firstIndexFound = false;
 
@@ -4579,7 +4580,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		long cur = 0;
 
 		int scanNum = 0;
-
+		cout << "scanning packs" << endl;
 		for (auto &pack : packs)
 		{
 			if (pack.first != NULL && pack.second != 0)
@@ -4597,6 +4598,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 					int readLength, zipType;
 					long timestamp;
 					long dataPos = packReader.Next(readLength, timestamp, fileID, zipType);
+					cout << "finding " << fileID << endl;
 
 					if (firstIndexFound || fileID == fileid) //找到首个相同ID的文件，故直接取接下来的若干个文件，无需再比较
 					{
