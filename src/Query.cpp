@@ -77,7 +77,7 @@ int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Param
 		return err;
 	}
 	Ext_Params.copyBytes = Qry_Params->byPath ? CurrentTemplate.GetBytesByCode(Qry_Params->pathCode) : Ext_Params.bytes;
-	cout << "copyBytes size=" << Ext_Params.copyBytes;
+	cout << "copyBytes size=" << Ext_Params.copyBytes << endl;
 	if (Qry_Params->byPath && (Qry_Params->valueName != NULL || strcmp(Qry_Params->valueName, "") == 0))
 	{
 		Ext_Params.sortPos = CurrentTemplate.FindSortPosFromSelectedData(Ext_Params.bytesList, Qry_Params->valueName, Qry_Params->pathCode, Ext_Params.typeList);
@@ -5759,7 +5759,7 @@ int main()
 	// Py_Initialize();
 	DataTypeConverter converter;
 	DB_QueryParams params;
-	params.pathToLine = "RobotDataTwentySix";
+	params.pathToLine = "Robottest";
 	params.fileID = "5";
 	// params.fileIDend = "25";
 	params.fileIDend = NULL;
@@ -5768,7 +5768,7 @@ int main()
 	code[1] = (char)1;
 	code[2] = (char)0;
 	code[3] = (char)1;
-	code[4] = 'T';
+	code[4] = 'M';
 	// code[4] = 'R';
 	code[5] = (char)1;
 	code[6] = 0;

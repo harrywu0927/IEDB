@@ -1137,11 +1137,12 @@ long Template::GetBytesByCode(char *pathCode)
         }
         else if (type.isArray)
         {
-            total += type.hasTime ? 8 + type.valueBytes * type.arrayLen : type.valueBytes * type.arrayLen;
+            cout << type.valueBytes << " " << type.arrayLen << endl;
+            total += type.hasTime ? (8 + type.valueBytes * type.arrayLen) : (type.valueBytes * type.arrayLen);
         }
         else
         {
-            total += type.hasTime ? 8 + type.valueBytes : type.valueBytes;
+            total += type.hasTime ? (8 + type.valueBytes) : type.valueBytes;
         }
     }
     cout << "total:" << total << endl;
