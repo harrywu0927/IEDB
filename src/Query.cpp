@@ -80,6 +80,7 @@ int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Param
 	cout << "copyBytes size=" << Ext_Params.copyBytes << endl;
 	if (Qry_Params->byPath && (Qry_Params->valueName != NULL || strcmp(Qry_Params->valueName, "") == 0))
 	{
+		cout << "getting sortpos and comparebytes" << endl;
 		Ext_Params.sortPos = CurrentTemplate.FindSortPosFromSelectedData(Ext_Params.bytesList, Qry_Params->valueName, Qry_Params->pathCode, Ext_Params.typeList);
 		Ext_Params.compareBytes = CurrentTemplate.FindDatatypePosByName(Qry_Params->valueName, Ext_Params.pos, Ext_Params.bytes, Ext_Params.type) == 0 ? Ext_Params.bytes : 0;
 		cout << "sortpos=" << Ext_Params.sortPos << endl;
@@ -5768,7 +5769,7 @@ int main()
 	code[1] = (char)1;
 	code[2] = (char)0;
 	code[3] = (char)1;
-	code[4] = 'M';
+	code[4] = 84;
 	// code[4] = 'R';
 	code[5] = (char)1;
 	code[6] = 0;

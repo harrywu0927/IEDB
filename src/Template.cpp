@@ -1122,7 +1122,7 @@ long Template::GetBytesByCode(char *pathCode)
     cout << "getting datatypes" << endl;
     cout << this->GetDataTypesByCode(pathCode, types) << endl;
     cout << "type size:" << types.size() << endl;
-    for (auto &type : types)
+    for (auto const &type : types)
     {
         if (type.isTimeseries)
         {
