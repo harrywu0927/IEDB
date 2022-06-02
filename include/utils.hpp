@@ -873,11 +873,12 @@ public:
     long length;
     int recordLength;
     vector<DataType> typeList;
-    QueryBufferReader(){};
+    QueryBufferReader() { buffer = NULL; };
     QueryBufferReader(DB_DataBuffer *buffer);
     ~QueryBufferReader()
     {
-        free(buffer);
+        if (buffer != NULL)
+            free(buffer);
     }
     /**
      * @brief Equals to GetRow(). You could use [] operator to get the specified row.

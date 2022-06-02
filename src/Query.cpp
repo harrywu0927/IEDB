@@ -4219,7 +4219,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		return err;
 	if (params->queryNums == 1 || params->queryNums == 0)
 	{
-		if (params->fileIDend == NULL || strcmp(params->fileIDend, "") == 0) //单个文件查询
+		if (params->fileIDend == NULL) //单个文件查询
 		{
 			auto pack = packManager.GetPackByID(params->pathToLine, fileid);
 			if (pack.first != NULL && pack.second != 0)
@@ -4334,7 +4334,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			readDataFiles(params->pathToLine, dataFiles);
 			for (string &file : dataFiles)
 			{
-				if (file.find(fileid) != string::npos)
+				if (file == fileid)
 				{
 					long len; //文件长度
 					DB_GetFileLengthByPath(const_cast<char *>(file.c_str()), &len);
@@ -4501,7 +4501,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 				sortByTime(dataFiles, TIME_ASC);
 				for (auto &file : dataFiles)
 				{
-					if (firstIndexFound || file.first.find(fileid) != string::npos)
+					if (firstIndexFound || file.first == fileid)
 					{
 						firstIndexFound = true;
 						currentFileID = file.first;
@@ -4644,7 +4644,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			{
 				if (scanNum == params->queryNums)
 					break;
-				if (firstIndexFound || file.first.find(fileid) != string::npos)
+				if (firstIndexFound || file.first == fileid)
 				{
 					firstIndexFound = true;
 					long len; //文件长度
