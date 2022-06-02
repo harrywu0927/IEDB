@@ -2226,6 +2226,8 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 	else																					  //根据路径编码查询，可能有多个变量
 		startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
 	char *data = (char *)malloc(startPos + cur);
+	memcpy(data, head, startPos);
+
 	if (data == NULL)
 	{
 		buffer->buffer = NULL;
@@ -3052,6 +3054,8 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 	else																					  //根据路径编码查询，可能有多个变量
 		startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
 	char *data = (char *)malloc(startPos + cur);
+	memcpy(data, head, startPos);
+
 	if (data == NULL)
 	{
 		buffer->buffer = NULL;
@@ -4134,6 +4138,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 		else																					  //根据路径编码查询，可能有多个变量
 			startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
 		char *data = (char *)malloc(startPos + cur);
+		memcpy(data, head, startPos);
 		if (data == NULL)
 		{
 			buffer->buffer = NULL;
@@ -4540,6 +4545,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			else																					  //根据路径编码查询，可能有多个变量
 				startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
 			char *data = (char *)malloc(startPos + cur);
+			memcpy(data, head, startPos);
 			if (data == NULL)
 			{
 				buffer->buffer = NULL;
@@ -4594,6 +4600,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 					if (firstIndexFound || fileID == fileid) //找到首个相同ID的文件，故直接取接下来的若干个文件，无需再比较
 					{
+						cout << "id found:" << fileid << endl;
 						firstIndexFound = true;
 
 						char *buff;
@@ -4623,8 +4630,9 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 							return StatusCode::UNKNWON_DATAFILE;
 							break;
 						}
+						cout << "start extraction" << endl;
 						err = DataExtraction(mallocedMemory, Ext_Params, params, cur, timestamp, buff);
-
+						cout << "ext complete errcode=" << err << endl;
 						scanNum++;
 						if (zipType != 0)
 							delete[] buff;
@@ -4646,6 +4654,8 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 					break;
 				if (firstIndexFound || file.first == fileid)
 				{
+					cout << "id found:" << fileid << endl;
+
 					firstIndexFound = true;
 					long len; //文件长度
 					DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
@@ -4655,9 +4665,9 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 					{
 						ReZipBuff(buff, (int &)len, params->pathToLine);
 					}
-
+					cout << "start extraction" << endl;
 					err = DataExtraction(mallocedMemory, Ext_Params, params, cur, file.second, buff);
-
+					cout << "ext complete errcode=" << err << endl;
 					scanNum++;
 					delete[] buff;
 					if (err != 0)
@@ -4684,6 +4694,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		else																					  //根据路径编码查询，可能有多个变量
 			startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
 		char *data = (char *)malloc(startPos + cur);
+		memcpy(data, head, startPos);
 		if (data == NULL)
 		{
 			buffer->buffer = NULL;
@@ -5745,7 +5756,7 @@ int main()
 	code[1] = (char)1;
 	code[2] = (char)0;
 	code[3] = (char)1;
-	code[4] = 'M';
+	code[4] = 'T';
 	// code[4] = 'R';
 	code[5] = (char)1;
 	code[6] = 0;
