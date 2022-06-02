@@ -4517,7 +4517,14 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 				sortByTime(dataFiles, TIME_ASC);
 				for (auto &file : dataFiles)
 				{
-					if (firstIndexFound || file.first == fileid)
+					string tmp = file.first;
+					vector<string> vec = DataType::splitWithStl(tmp, "/");
+					if (vec.size() == 0)
+						continue;
+					vec = DataType::splitWithStl(vec[vec.size() - 1], "_");
+					if (vec.size() == 0)
+						continue;
+					if (firstIndexFound || vec[0] == fileid)
 					{
 						firstIndexFound = true;
 						currentFileID = file.first;
@@ -4665,7 +4672,14 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			{
 				if (scanNum == params->queryNums)
 					break;
-				if (firstIndexFound || file.first == fileid)
+				string tmp = file.first;
+				vector<string> vec = DataType::splitWithStl(tmp, "/");
+				if (vec.size() == 0)
+					continue;
+				vec = DataType::splitWithStl(vec[vec.size() - 1], "_");
+				if (vec.size() == 0)
+					continue;
+				if (firstIndexFound || vec[0] == fileid)
 				{
 					cout << "id found:" << fileid << endl;
 
@@ -5760,8 +5774,8 @@ int main()
 	// Py_Initialize();
 	DataTypeConverter converter;
 	DB_QueryParams params;
-	params.pathToLine = "Robottest";
-	params.fileID = "5";
+	params.pathToLine = "RobotTS";
+	params.fileID = "23";
 	// params.fileIDend = "25";
 	params.fileIDend = NULL;
 	char code[10];
