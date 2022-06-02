@@ -1119,7 +1119,9 @@ long Template::GetBytesByCode(char *pathCode)
 {
     vector<DataType> types;
     long total = 0;
-    this->GetDataTypesByCode(pathCode, types);
+    cout << "getting datatypes" << endl;
+    cout << this->GetDataTypesByCode(pathCode, types) << endl;
+    cout << "type size:" << types.size() << endl;
     for (auto &type : types)
     {
         if (type.isTimeseries)
@@ -1142,6 +1144,7 @@ long Template::GetBytesByCode(char *pathCode)
             total += type.hasTime ? 8 + type.valueBytes : type.valueBytes;
         }
     }
+    cout << "total:" << total << endl;
     return total;
 }
 
