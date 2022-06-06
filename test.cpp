@@ -53,7 +53,7 @@ void checkSettings()
 int main()
 {
     TemplateManager::SetTemplate("Robot");
-    ZipTemplateManager::SetZipTemplate("test");
+    ZipTemplateManager::SetZipTemplate("JinfeiEleven");
     cout << CurrentZipTemplate.schemas.size() << endl;
     return 0;
     // TemplateManager::CheckTemplate("RobotTwenty");

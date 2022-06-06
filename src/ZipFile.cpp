@@ -62,6 +62,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     memcpy(writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
+                    //添加第一个采样的时间戳
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
+                    writebuff_pos += 8;
+
                     char standardBool = CurrentZipTemplate.schemas[i].second.standardValue[0];
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
@@ -74,13 +78,8 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                             writebuff_pos += 2;
 
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 9);
-                            writebuff_pos += 9;
-                        }
-                        else
-                        {
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
-                            writebuff_pos += 8;
+                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
+                            writebuff_pos += 1;
                         }
                         readbuff_pos += 9;
                     }
@@ -223,6 +222,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     memcpy(writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
+                    //添加第一个采样的时间戳
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
+                    writebuff_pos += 8;
+
                     char standardUSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                     char maxUSintValue = CurrentZipTemplate.schemas[i].second.maxValue[0];
                     char minUSintValue = CurrentZipTemplate.schemas[i].second.minValue[0];
@@ -242,13 +245,8 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                             writebuff_pos += 2;
 
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 9);
-                            writebuff_pos += 9;
-                        }
-                        else
-                        {
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
-                            writebuff_pos += 8;
+                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
+                            writebuff_pos += 1;
                         }
                         readbuff_pos += 9;
                     }
@@ -393,6 +391,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     memcpy(writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
+                    //添加第一个采样的时间戳
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 2, 8);
+                    writebuff_pos += 8;
+
                     ushort standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     ushort maxUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
                     ushort minUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
@@ -412,13 +414,8 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                             writebuff_pos += 2;
 
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 10);
-                            writebuff_pos += 10;
-                        }
-                        else
-                        {
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 2, 8);
-                            writebuff_pos += 8;
+                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2);
+                            writebuff_pos += 2;
                         }
                         readbuff_pos += 10;
                     }
@@ -563,6 +560,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     memcpy(writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
+                    //添加第一个采样的时间戳
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
+                    writebuff_pos += 8;
+
                     uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     uint32 maxUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
                     uint32 minUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
@@ -583,13 +584,8 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                             writebuff_pos += 2;
 
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
-                            writebuff_pos += 12;
-                        }
-                        else
-                        {
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
-                            writebuff_pos += 8;
+                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                            writebuff_pos += 4;
                         }
                         readbuff_pos += 12;
                     }
@@ -734,6 +730,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     memcpy(writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
+                    //添加第一个采样的时间戳
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
+                    writebuff_pos += 8;
+
                     char standardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                     char maxSintValue = CurrentZipTemplate.schemas[i].second.maxValue[0];
                     char minSintValue = CurrentZipTemplate.schemas[i].second.minValue[0];
@@ -753,13 +753,8 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                             writebuff_pos += 2;
 
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 9);
-                            writebuff_pos += 9;
-                        }
-                        else
-                        {
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
-                            writebuff_pos += 8;
+                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
+                            writebuff_pos += 1;
                         }
                         readbuff_pos += 9;
                     }
@@ -904,6 +899,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     memcpy(writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
+                    //添加第一个采样的时间戳
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 2, 8);
+                    writebuff_pos += 8;
+
                     short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     short maxIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
                     short minIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
@@ -923,13 +922,8 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                             writebuff_pos += 2;
 
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 10);
-                            writebuff_pos += 10;
-                        }
-                        else
-                        {
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 2, 8);
-                            writebuff_pos += 8;
+                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2);
+                            writebuff_pos += 2;
                         }
                         readbuff_pos += 10;
                     }
@@ -1074,6 +1068,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     memcpy(writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
+                    //添加第一个采样的时间戳
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
+                    writebuff_pos += 8;
+
                     int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     int maxDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
                     int minDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
@@ -1093,13 +1091,8 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                             writebuff_pos += 2;
 
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
-                            writebuff_pos += 12;
-                        }
-                        else
-                        {
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
-                            writebuff_pos += 8;
+                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                            writebuff_pos += 4;
                         }
                         readbuff_pos += 12;
                     }
@@ -1244,6 +1237,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     memcpy(writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
+                    //添加第一个采样的时间戳
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
+                    writebuff_pos += 8;
+
                     float standardFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     float maxFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.maxValue);
                     float minFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.minValue);
@@ -1263,13 +1260,8 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                             writebuff_pos += 2;
 
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
-                            writebuff_pos += 12;
-                        }
-                        else
-                        {
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
-                            writebuff_pos += 8;
+                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                            writebuff_pos += 4;
                         }
                         readbuff_pos += 12;
                     }
@@ -3372,97 +3364,97 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
     return err;
 }
 
-// int main()
-// {
-//     DB_ZipParams param;
-//     param.ZipType = FILE_ID;
-//     param.pathToLine = "RobotTsTest";
-//     param.fileID = "RobotTsTest1";
-//     DB_ZipFileByFileID(&param);
-//     return 0;
-//     // std::cout<<"start 多类型文件 单线程压缩"<<std::endl;
-//     // auto startTime = std::chrono::system_clock::now();
-//     // DB_ZipFile("jinfei","jinfei");
-//     // auto endTime = std::chrono::system_clock::now();
-//     // std::cout << "多类型文件 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     // std::cout<<"end 多类型文件 单线程压缩"<<std::endl<<std::endl;
+int main()
+{
+    DB_ZipParams param;
+    param.ZipType = FILE_ID;
+    param.pathToLine = "RobotTsTest";
+    param.fileID = "RobotTsTest2";
+    DB_ZipFileByFileID(&param);
+    return 0;
+    // std::cout<<"start 多类型文件 单线程压缩"<<std::endl;
+    // auto startTime = std::chrono::system_clock::now();
+    // DB_ZipFile("jinfei","jinfei");
+    // auto endTime = std::chrono::system_clock::now();
+    // std::cout << "多类型文件 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // std::cout<<"end 多类型文件 单线程压缩"<<std::endl<<std::endl;
 
-//     // sleep(3);
-//     // std::cout<<"start 多类型文件 单线程还原"<<std::endl;
-//     // startTime = std::chrono::system_clock::now();
-//     // DB_ReZipFile("jinfei","jinfei");
-//     // endTime = std::chrono::system_clock::now();
-//     // std::cout << "多类型文件 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     // std::cout<<"end 多类型文件 单线程还原"<<std::endl<<std::endl;
+    // sleep(3);
+    // std::cout<<"start 多类型文件 单线程还原"<<std::endl;
+    // startTime = std::chrono::system_clock::now();
+    // DB_ReZipFile("jinfei","jinfei");
+    // endTime = std::chrono::system_clock::now();
+    // std::cout << "多类型文件 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // std::cout<<"end 多类型文件 单线程还原"<<std::endl<<std::endl;
 
-//     // sleep(3);
-//     // std::cout<<"start 多类型文件 多线程压缩"<<std::endl;
-//     // startTime = std::chrono::system_clock::now();
-//     // DB_ZipFile_MultiThread("jinfei", "jinfei");
-//     // endTime = std::chrono::system_clock::now();
-//     // std::cout << "多类型文件 多线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     // std::cout<<"end 多类型文件 多线程压缩"<<std::endl<<std::endl;
+    // sleep(3);
+    // std::cout<<"start 多类型文件 多线程压缩"<<std::endl;
+    // startTime = std::chrono::system_clock::now();
+    // DB_ZipFile_MultiThread("jinfei", "jinfei");
+    // endTime = std::chrono::system_clock::now();
+    // std::cout << "多类型文件 多线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // std::cout<<"end 多类型文件 多线程压缩"<<std::endl<<std::endl;
 
-//     // sleep(3);
-//     // std::cout<<"start 多类型文件 多线程还原"<<std::endl;
-//     // startTime = std::chrono::system_clock::now();
-//     // DB_ReZipFile_MultiThread("jinfei", "jinfei");
-//     // endTime = std::chrono::system_clock::now();
-//     // std::cout << "多类型文件 多线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     // std::cout<<"end 多类型文件 多线程还原"<<std::endl<<std::endl;
+    // sleep(3);
+    // std::cout<<"start 多类型文件 多线程还原"<<std::endl;
+    // startTime = std::chrono::system_clock::now();
+    // DB_ReZipFile_MultiThread("jinfei", "jinfei");
+    // endTime = std::chrono::system_clock::now();
+    // std::cout << "多类型文件 多线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // std::cout<<"end 多类型文件 多线程还原"<<std::endl<<std::endl;
 
-//     struct tm t;
-//     t.tm_year = atoi("2022") - 1900;
-//     t.tm_mon = atoi("5") - 1;
-//     t.tm_mday = atoi("7");
-//     t.tm_hour = atoi("15");
-//     t.tm_min = atoi("0");
-//     t.tm_sec = atoi("0");
-//     t.tm_isdst = -1; //不设置夏令时
-//     time_t seconds = mktime(&t);
-//     int ms = atoi("0");
-//     long start = seconds * 1000 + ms;
-//     cout << start << endl;
-//     DB_ZipParams zipParam;
-//     zipParam.pathToLine = "jinfei";
-//     zipParam.start = 1651903200000;
-//     zipParam.end = 1651906800000;
+    struct tm t;
+    t.tm_year = atoi("2022") - 1900;
+    t.tm_mon = atoi("5") - 1;
+    t.tm_mday = atoi("7");
+    t.tm_hour = atoi("15");
+    t.tm_min = atoi("0");
+    t.tm_sec = atoi("0");
+    t.tm_isdst = -1; //不设置夏令时
+    time_t seconds = mktime(&t);
+    int ms = atoi("0");
+    long start = seconds * 1000 + ms;
+    cout << start << endl;
+    DB_ZipParams zipParam;
+    zipParam.pathToLine = "jinfei";
+    zipParam.start = 1651903200000;
+    zipParam.end = 1651906800000;
 
-//     sleep(3);
-//     std::cout << "start 多类型文件按时间段 单线程压缩" << std::endl;
-//     auto startTime = std::chrono::system_clock::now();
-//     DB_ZipFileByTimeSpan(&zipParam);
-//     auto endTime = std::chrono::system_clock::now();
-//     std::cout << "多类型文件按时间段 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     std::cout << "end 多类型文件按时间段 单线程压缩" << std::endl
-//               << std::endl;
+    sleep(3);
+    std::cout << "start 多类型文件按时间段 单线程压缩" << std::endl;
+    auto startTime = std::chrono::system_clock::now();
+    DB_ZipFileByTimeSpan(&zipParam);
+    auto endTime = std::chrono::system_clock::now();
+    std::cout << "多类型文件按时间段 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    std::cout << "end 多类型文件按时间段 单线程压缩" << std::endl
+              << std::endl;
 
-//     sleep(3);
-//     std::cout << "start 多类型文件按时间段 单线程还原" << std::endl;
-//     startTime = std::chrono::system_clock::now();
-//     DB_ReZipFileByTimeSpan(&zipParam);
-//     endTime = std::chrono::system_clock::now();
-//     std::cout << "多类型件按时间段 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     std::cout << "end 多类型文件按时间段 单线程还原" << std::endl
-//               << std::endl;
+    sleep(3);
+    std::cout << "start 多类型文件按时间段 单线程还原" << std::endl;
+    startTime = std::chrono::system_clock::now();
+    DB_ReZipFileByTimeSpan(&zipParam);
+    endTime = std::chrono::system_clock::now();
+    std::cout << "多类型件按时间段 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    std::cout << "end 多类型文件按时间段 单线程还原" << std::endl
+              << std::endl;
 
-//     sleep(3);
-//     std::cout << "start 多类型文件按时间段 多线程压缩" << std::endl;
-//     startTime = std::chrono::system_clock::now();
-//     DB_ZipFileByTimeSpan(&zipParam);
-//     endTime = std::chrono::system_clock::now();
-//     std::cout << "多类型文件按时间段 多线程时间段压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     std::cout << "end 多类型文件按时间段 多线程压缩" << std::endl
-//               << std::endl;
+    sleep(3);
+    std::cout << "start 多类型文件按时间段 多线程压缩" << std::endl;
+    startTime = std::chrono::system_clock::now();
+    DB_ZipFileByTimeSpan(&zipParam);
+    endTime = std::chrono::system_clock::now();
+    std::cout << "多类型文件按时间段 多线程时间段压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    std::cout << "end 多类型文件按时间段 多线程压缩" << std::endl
+              << std::endl;
 
-//     sleep(3);
-//     std::cout << "start 多类型文件按时间段 多线程还原" << std::endl;
-//     startTime = std::chrono::system_clock::now();
-//     DB_ReZipFileByTimeSpan(&zipParam);
-//     endTime = std::chrono::system_clock::now();
-//     std::cout << "多类型文件按时间段 多线程时间段还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//     std::cout << "end 多类型文件按时间段 多线程还原" << std::endl
-//               << std::endl;
+    sleep(3);
+    std::cout << "start 多类型文件按时间段 多线程还原" << std::endl;
+    startTime = std::chrono::system_clock::now();
+    DB_ReZipFileByTimeSpan(&zipParam);
+    endTime = std::chrono::system_clock::now();
+    std::cout << "多类型文件按时间段 多线程时间段还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    std::cout << "end 多类型文件按时间段 多线程还原" << std::endl
+              << std::endl;
 
-//     return 0;
-// }
+    return 0;
+}

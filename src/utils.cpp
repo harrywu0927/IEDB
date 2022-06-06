@@ -993,7 +993,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                return false;
+                continue;
             }
             else
             {
@@ -1023,7 +1023,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                return false;
+                continue;
             }
             else
             {
@@ -1055,7 +1055,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                return false;
+                continue;
             }
             else
             {
@@ -1087,7 +1087,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                return false;
+                continue;
             }
             else
             {
@@ -1119,7 +1119,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                return false;
+                continue;
             }
             else
             {
@@ -1151,7 +1151,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                return false;
+                continue;
             }
             else
             {
@@ -1183,7 +1183,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                return false;
+                continue;
             }
             else
             {
@@ -1215,7 +1215,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                return false;
+                continue;
             }
             else
             {
@@ -1245,7 +1245,19 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::IMAGE)
         {
-            return false;
+            //暂定图片前面有2字节长度，2字节宽度和2字节通道
+            char length[2] = {0};
+            memcpy(length, readbuff + readbuff_pos, 2);
+            uint16_t imageLength = converter.ToUInt16(length);
+            char width[2] = {0};
+            memcpy(width, readbuff + readbuff_pos + 2, 2);
+            uint16_t imageWidth = converter.ToUInt16(width);
+            char channel[2] = {0};
+            memcpy(channel, readbuff + readbuff_pos + 4, 2);
+            uint16_t imageChannel = converter.ToUInt16(channel);
+            uint32_t imageSize = imageChannel * imageLength * imageWidth;
+            readbuff_pos += imageSize + 6;
+            continue;
         }
     }
     return true;

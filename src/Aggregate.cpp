@@ -2880,7 +2880,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
 // {
 //     // DataTypeConverter converter;
 //     DB_QueryParams params;
-//     params.pathToLine = "JinfeiSixteen";
+//     params.pathToLine = "JinfeiSeven";
 //     params.fileID = "JinfeiSixteen15";
 //     char code[10];
 //     code[0] = (char)0;
@@ -2901,11 +2901,12 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
 //     params.order = ODR_NONE;
 //     params.compareType = CMP_NONE;
 //     params.compareValue = "666";
-//     params.queryType = TIMESPAN;
+//     params.queryType = QRY_NONE;
 //     params.byPath = 0;
 //     params.queryNums = 234;
-//     DB_DataBuffer buffer;
-//     DB_STD(&buffer, &params);
+//     DB_DataBuffer buffer;long count = 0;
+//     DB_GetAbnormalDataCount(&params, &count);
+//     CurrentZipTemplate.schemas.size();
 //     if (buffer.bufferMalloced)
 //     {
 //         char buf[buffer.length];
@@ -2924,7 +2925,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
 //         free(buffer.buffer);
 //     }
 //     return 0;
-//     long count = 0;
+    
 //     auto startTime = std::chrono::system_clock::now();
 //     auto endTime = std::chrono::system_clock::now();
 //     double total = 0;
