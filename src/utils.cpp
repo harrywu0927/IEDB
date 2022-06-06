@@ -991,17 +991,32 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
     {
         if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::BOOL) // BOOL变量
         {
-            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
+            {
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
+                {
+                    continue;
+                }
+                else //只是时间序列类型
+                {
+                    char standardBool = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                    
+                    for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
+                    {
+                        if (standardBool != readbuff[readbuff_pos])
+                            return false;
+                        else
+                            readbuff_pos += 9;
+                    }
+                }
+            }
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
                 continue;
             }
             else
             {
                 char standardBool = CurrentZipTemplate.schemas[i].second.standardValue[0];
-                // 1个字节,暂定，根据后续情况可能进行更改
-                char value[1] = {0};
-                memcpy(value, readbuff + readbuff_pos, 1);
-                char currentUSintValue = value[0];
 
                 if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带时间戳
                 {
@@ -1021,7 +1036,32 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::USINT) // USINT变量
         {
-            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
+            {
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
+                {
+                    continue;
+                }
+                else //只是时间序列类型
+                {
+                    char standardUSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                    char maxUSintValue = CurrentZipTemplate.schemas[i].second.maxValue[0];
+                    char minUSintValue = CurrentZipTemplate.schemas[i].second.minValue[0];
+
+                    for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
+                    {
+                        // 1个字节,暂定，根据后续情况可能进行更改
+                        char value[1] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 1);
+                        char currentUSintValue = value[0];
+                        if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
+                            return false;
+                        else
+                            readbuff_pos += 9;
+                    }
+                }
+            }
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
                 continue;
             }
@@ -1053,7 +1093,32 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::UINT) // UINT变量
         {
-            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
+            {
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
+                {
+                    continue;
+                }
+                else //只是时间序列类型
+                {
+                    ushort standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                    ushort maxUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                    ushort minUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
+
+                    for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
+                    {
+                        // 2个字节,暂定，根据后续情况可能进行更改
+                        char value[2] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 2);
+                        ushort currentUintValue = converter.ToUInt16(value);
+                        if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
+                            return false;
+                        else
+                            readbuff_pos += 10;
+                    }
+                }
+            }
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
                 continue;
             }
@@ -1085,7 +1150,33 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::UDINT) // UDINT变量
         {
-            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
+            {
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
+                {
+                    continue;
+                }
+                else //只是时间序列类型
+                {
+                    uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                    uint32 maxUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                    uint32 minUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
+
+                    for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
+                    {
+                        // 4个字节,暂定，根据后续情况可能进行更改
+                        char value[4] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 4);
+                        uint32 currentUDintValue = converter.ToUInt32(value);
+
+                        if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
+                            return false;
+                        else
+                            readbuff_pos += 12;
+                    }
+                }
+            }
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
                 continue;
             }
@@ -1117,7 +1208,32 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::SINT) // SINT变量
         {
-            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
+            {
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
+                {
+                    continue;
+                }
+                else //只是时间序列类型
+                {
+                    char standardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                    char maxSintValue = CurrentZipTemplate.schemas[i].second.maxValue[0];
+                    char minSintValue = CurrentZipTemplate.schemas[i].second.minValue[0];
+
+                    for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
+                    {
+                        // 2个字节,暂定，根据后续情况可能进行更改
+                        char value[1] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 1);
+                        char currentSintValue = value[0];
+                        if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
+                            return false;
+                        else
+                            readbuff_pos += 9;
+                    }
+                }
+            }
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
                 continue;
             }
@@ -1149,7 +1265,32 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::INT) // INT变量
         {
-            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
+            {
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
+                {
+                    continue;
+                }
+                else //只是时间序列类型
+                {
+                    short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                    short maxIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                    short minIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.minValue);
+
+                    for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
+                    {
+                        // 2个字节,暂定，根据后续情况可能进行更改
+                        char value[2] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 2);
+                        short currentIntValue = converter.ToInt16(value);
+                        if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
+                            return false;
+                        else
+                            readbuff_pos += 10;
+                    }
+                }
+            }
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
                 continue;
             }
@@ -1181,7 +1322,32 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::DINT) // DINT变量
         {
-            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
+            {
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
+                {
+                    continue;
+                }
+                else //只是时间序列类型
+                {
+                    int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                    int maxDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                    int minDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
+
+                    for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
+                    {
+                        // 4个字节,暂定，根据后续情况可能进行更改
+                        char value[4] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 4);
+                        int currentDintValue = converter.ToInt32(value);
+                        if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
+                            return false;
+                        else
+                            readbuff_pos += 12;
+                    }
+                }
+            }
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
                 continue;
             }
@@ -1213,7 +1379,32 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::REAL) // REAL变量
         {
-            if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
+            {
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
+                {
+                    continue;
+                }
+                else //只是时间序列类型
+                {
+                    float standardFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                    float maxFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                    float minFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.minValue);
+
+                    for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
+                    {
+                        // 4个字节,暂定，根据后续情况可能进行更改
+                        char value[4] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 4);
+                        float currentRealValue = converter.ToFloat(value);
+                        if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
+                            return false;
+                        else
+                            readbuff_pos += 12;
+                    }
+                }
+            }
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
                 continue;
             }
