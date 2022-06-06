@@ -2836,15 +2836,17 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
 /**
  * @brief 根据查询条件筛选后获取异常节拍的数据
  *
- * @param buffer
- * @param params
- * @param mode 若为1，则根据机器学习结果判断是否异常；若为0，根据压缩模版判断是否异常
+ * @param buffer    数据缓冲区
+ * @param params    查询请求参数
+ * @param mode 若为1，则根据机器学习结果判断是否异常；否则，根据压缩模版判断是否异常
  * @return int
  */
 int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode)
 {
     //此处的pathcode和valuename仅仅为比较数值筛选时指定的变量，下方查询时将转为所有变量
     if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    if (ZipTemplateManager::CheckZipTemplate(params->pathToLine) != 0)
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     vector<PathCode> pathCodes;
     if (params->byPath)
@@ -2873,85 +2875,171 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
     int err = DB_ExecuteQuery(buffer, params);
     if (err != 0)
         return err;
+    QueryBufferReader reader(buffer);
 
+    if (mode == 1) // using machine learning
+    {
+        PyObject *table = ConvertToPyList_ML(buffer);
+        char *set = new char[reader.rows]; //此数组中值为1的下标表示异常数据在查询结果中的行
+        memset(set, 0, reader.rows);
+        for (int i = 0; i < reader.typeList.size(); i++)
+        {
+            PyObject *col = PyList_New(reader.rows);
+            for (int j = 0; j < reader.rows; j++)
+            {
+                PyList_SetItem(col, j, PyList_GetItem(PyList_GetItem(table, j), i));
+            }
+            PyObject *args = PyTuple_New(2);
+            PyTuple_SetItem(args, 0, col);
+            PyTuple_SetItem(args, 1, Py_BuildValue("i", reader.typeList[i].isArray ? reader.typeList[i].arrayLen : 1));
+            PyObject *ret = PythonCall(args, "Novelty_Outlier", "Outliers");
+            int len = PyObject_Size(ret);
+            for (int j = 0; j < len; j++)
+            {
+                if (PyLong_AsLong(PyList_GetItem(ret, j)) == -1)
+                {
+                    *(set + j) = 1;
+                }
+            }
+        }
+    }
+    else // using ziptemplate
+    {
+        if (CurrentTemplate.hasImage)
+        {
+            vector<pair<char *, int>> abnormalData;
+            for (int i = 0; i < reader.rows; i++)
+            {
+                int rowlen = 0;
+                char *row = reader.NextRow(rowlen);
+                if (!IsNormalIDBFile(row, params->pathToLine))
+                {
+                    abnormalData.push_back({row, rowlen});
+                }
+            }
+            if (abnormalData.size() == 0)
+                return StatusCode::NO_DATA_QUERIED;
+            char *newBuffer = (char *)malloc(abnormalData.size() * reader.recordLength + reader.startPos);
+            memcpy(newBuffer, buffer->buffer, reader.startPos);
+            long cur = reader.startPos;
+            for (auto &mem : abnormalData)
+            {
+                memcpy(newBuffer + cur, mem.first, mem.second);
+                cur += mem.second;
+            }
+
+            buffer->buffer = newBuffer;
+            buffer->length = cur;
+        }
+        else
+        {
+            vector<char *> abnormalData;
+            for (int i = 0; i < reader.rows; i++)
+            {
+                char *row = reader.NextRow();
+                // for (int j = 0; j < reader.recordLength; j++)
+                // {
+                //     cout << (int)*(row + j) << " ";
+                // }
+                // cout << endl;
+
+                if (!IsNormalIDBFile(row, params->pathToLine))
+                {
+                    abnormalData.push_back(row);
+                }
+            }
+            if (abnormalData.size() == 0)
+                return StatusCode::NO_DATA_QUERIED;
+            char *newBuffer = (char *)malloc(abnormalData.size() * reader.recordLength + reader.startPos);
+            memcpy(newBuffer, buffer->buffer, reader.startPos);
+            long cur = reader.startPos;
+            for (auto &mem : abnormalData)
+            {
+                memcpy(newBuffer + cur, mem, reader.recordLength);
+                cur += reader.recordLength;
+            }
+
+            buffer->buffer = newBuffer;
+            buffer->length = cur;
+        }
+    }
     return 0;
 }
-// int main()
-// {
-//     // DataTypeConverter converter;
-//     DB_QueryParams params;
-//     params.pathToLine = "JinfeiSixteen";
-//     params.fileID = "JinfeiSixteen15";
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)0;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     params.pathCode = code;
-//     params.valueName = "S1ON";
-//     // params.valueName = NULL;
-//     params.start = 0;
-//     params.end = 1751165600000;
-//     params.order = ODR_NONE;
-//     params.compareType = CMP_NONE;
-//     params.compareValue = "666";
-//     params.queryType = TIMESPAN;
-//     params.byPath = 0;
-//     params.queryNums = 234;
-//     DB_DataBuffer buffer;
-//     DB_STD(&buffer, &params);
-//     if (buffer.bufferMalloced)
-//     {
-//         char buf[buffer.length];
-//         memcpy(buf, buffer.buffer, buffer.length);
-//         cout << buffer.length << endl;
-//         float f;
-//         memcpy(&f, buf + 12, 4);
-//         cout << f << endl;
-//         for (int i = 0; i < buffer.length; i++)
-//         {
-//             cout << (int)buf[i] << " ";
-//             if (i % 11 == 0)
-//                 cout << endl;
-//         }
+int main()
+{
+    // DataTypeConverter converter;
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiSeven";
+    params.fileID = "JinfeiSeven15";
+    params.fileIDend = NULL;
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)0;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueName = "S1ON";
+    // params.valueName = NULL;
+    params.start = 0;
+    params.end = 1751165600000;
+    params.order = ODR_NONE;
+    params.compareType = CMP_NONE;
+    params.compareValue = "666";
+    params.queryType = FILEID;
+    params.byPath = 1;
+    params.queryNums = 234;
+    DB_DataBuffer buffer;
+    DB_GetAbnormalRhythm(&buffer, &params, 0);
+    long count;
+    // DB_GetAbnormalDataCount(&params, &count);
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
 
-//         free(buffer.buffer);
-//     }
-//     return 0;
-//     long count = 0;
-//     auto startTime = std::chrono::system_clock::now();
-//     auto endTime = std::chrono::system_clock::now();
-//     double total = 0;
-//     for (int i = 0; i < 10; i++)
-//     {
-//         startTime = std::chrono::system_clock::now();
-//         DB_GetAbnormalDataCount_Single(&params, &count);
+        free(buffer.buffer);
+    }
+    return 0;
+    auto startTime = std::chrono::system_clock::now();
+    auto endTime = std::chrono::system_clock::now();
+    double total = 0;
+    for (int i = 0; i < 10; i++)
+    {
+        startTime = std::chrono::system_clock::now();
+        DB_GetAbnormalDataCount_Single(&params, &count);
 
-//         endTime = std::chrono::system_clock::now();
-//         std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-//         // cout << buffer.length << endl;
+        endTime = std::chrono::system_clock::now();
+        std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+        // cout << buffer.length << endl;
 
-//         total += (endTime - startTime).count();
-//     }
-//     cout << "不使用缓存和多线程的平均查询时间:" << total / 10 << endl;
-//     total = 0;
-//     for (int i = 0; i < 10; i++)
-//     {
-//         startTime = std::chrono::system_clock::now();
-//         DB_GetAbnormalDataCount(&params, &count);
+        total += (endTime - startTime).count();
+    }
+    cout << "不使用缓存和多线程的平均查询时间:" << total / 10 << endl;
+    total = 0;
+    for (int i = 0; i < 10; i++)
+    {
+        startTime = std::chrono::system_clock::now();
+        DB_GetAbnormalDataCount(&params, &count);
 
-//         endTime = std::chrono::system_clock::now();
-//         std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+        endTime = std::chrono::system_clock::now();
+        std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
 
-//         total += (endTime - startTime).count();
-//     }
-//     cout << "使用缓存和多线程的平均查询时间:" << total / 10 << endl;
-//     total = 0;
-//     return 0;
-// }
+        total += (endTime - startTime).count();
+    }
+    cout << "使用缓存和多线程的平均查询时间:" << total / 10 << endl;
+    total = 0;
+    return 0;
+}

@@ -207,7 +207,7 @@ void SetValueToPyList(PyObject *item, char *buffer, int &cur, DataType &type, in
  * @param buffer
  * @return PyObject*
  */
-PyObject *ConvertToPyList_ML(struct DB_DataBuffer *buffer)
+PyObject *ConvertToPyList_ML_Old(struct DB_DataBuffer *buffer)
 {
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
@@ -440,7 +440,7 @@ PyObject *ConvertToPyList_ML(struct DB_DataBuffer *buffer)
  * @return PyObject*
  * @note support timeseries
  */
-PyObject *ConvertToPyList_ML_New(struct DB_DataBuffer *buffer)
+PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer)
 {
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
@@ -582,6 +582,7 @@ int DB_OutlierDetection(DB_DataBuffer *buffer, DB_QueryParams *params)
                 // cout << val << " ";
                 res[i] = (char)val;
             }
+            free(buffer->buffer);
             buffer->length = len;
             buffer->buffer = res;
             buffer->bufferMalloced = 1;

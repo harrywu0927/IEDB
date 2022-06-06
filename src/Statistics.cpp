@@ -18,7 +18,7 @@ enum STAT_Type
  * @param buffer
  * @return PyObject*
  */
-PyObject *ConvertToPyList_STAT(DB_DataBuffer *buffer)
+PyObject *ConvertToPyList_STAT_Old(DB_DataBuffer *buffer)
 {
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
@@ -159,7 +159,7 @@ PyObject *ConvertToPyList_STAT(DB_DataBuffer *buffer)
  * @param buffer
  * @return PyObject*
  */
-PyObject *ConvertToPyList_STAT_New(DB_DataBuffer *buffer)
+PyObject *ConvertToPyList_STAT(DB_DataBuffer *buffer)
 {
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;

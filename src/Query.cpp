@@ -64,27 +64,19 @@ int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Param
 	Ext_Params.hasArray = Qry_Params->byPath ? CurrentTemplate.checkHasArray(Qry_Params->pathCode) : CurrentTemplate.checkIsArray(Qry_Params->valueName);
 	Ext_Params.hasTS = Qry_Params->byPath ? CurrentTemplate.checkHasTimeseries(Qry_Params->pathCode) : CurrentTemplate.checkIsTimeseries(Qry_Params->valueName);
 	Ext_Params.hasIMG = Qry_Params->byPath ? CurrentTemplate.checkHasImage(Qry_Params->pathCode) : CurrentTemplate.checkIsImage(Qry_Params->valueName);
-	cout << "hasarray:" << Ext_Params.hasArray << endl;
-	cout << "hasts:" << Ext_Params.hasTS << endl;
-	cout << "hasimg:" << Ext_Params.hasIMG << endl;
 
 	int err;
 	err = Qry_Params->byPath ? CurrentTemplate.FindMultiDatatypePosByCode(Qry_Params->pathCode, Ext_Params.posList, Ext_Params.bytesList, Ext_Params.typeList) : CurrentTemplate.FindDatatypePosByName(Qry_Params->valueName, Ext_Params.pos, Ext_Params.bytes, Ext_Params.type);
-	cout << "err=" << err << endl;
 	if (err != 0)
 	{
 		IOBusy = false;
 		return err;
 	}
 	Ext_Params.copyBytes = Qry_Params->byPath ? CurrentTemplate.GetBytesByCode(Qry_Params->pathCode) : Ext_Params.bytes;
-	cout << "copyBytes size=" << Ext_Params.copyBytes << endl;
 	if (Qry_Params->byPath && (Qry_Params->valueName != NULL || strcmp(Qry_Params->valueName, "") == 0))
 	{
-		cout << "getting sortpos and comparebytes" << endl;
 		Ext_Params.sortPos = CurrentTemplate.FindSortPosFromSelectedData(Ext_Params.bytesList, Qry_Params->valueName, Qry_Params->pathCode, Ext_Params.typeList);
 		Ext_Params.compareBytes = CurrentTemplate.FindDatatypePosByName(Qry_Params->valueName, Ext_Params.pos, Ext_Params.bytes, Ext_Params.type) == 0 ? Ext_Params.bytes : 0;
-		cout << "sortpos=" << Ext_Params.sortPos << endl;
-		cout << "comparebytes=" << Ext_Params.compareBytes << endl;
 	}
 	return 0;
 }
@@ -4222,14 +4214,12 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		if (params->fileIDend != NULL && fileidEnd.find(paths[0]) == string::npos)
 			fileidEnd = paths[0] + fileidEnd;
 	}
-	cout << "checking template" << endl;
 	if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
 	{
 		IOBusy = false;
 		return StatusCode::SCHEMA_FILE_NOT_FOUND;
 	}
 	Extraction_Params Ext_Params;
-	cout << "getting extparams" << endl;
 	int err = GetExtractionParams(Ext_Params, params);
 	if (err != 0)
 		return err;
@@ -4597,7 +4587,6 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 	//根据首ID+数量的多文件查询
 	else
 	{
-		cout << "searching packs by id" << endl;
 		auto packs = packManager.GetPackByIDs(params->pathToLine, fileid, params->queryNums);
 		bool firstIndexFound = false;
 
@@ -4605,7 +4594,6 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		long cur = 0;
 
 		int scanNum = 0;
-		cout << "scanning packs" << endl;
 		for (auto &pack : packs)
 		{
 			if (pack.first != NULL && pack.second != 0)
@@ -4655,9 +4643,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 							return StatusCode::UNKNWON_DATAFILE;
 							break;
 						}
-						cout << "start extraction" << endl;
 						err = DataExtraction(mallocedMemory, Ext_Params, params, cur, timestamp, buff);
-						cout << "ext complete errcode=" << err << endl;
 						scanNum++;
 						if (zipType != 0)
 							delete[] buff;
@@ -4686,7 +4672,6 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 					continue;
 				if (firstIndexFound || vec[0] == fileid)
 				{
-					cout << "id found:" << vec[0] << endl;
 
 					firstIndexFound = true;
 					long len; //文件长度
@@ -4697,9 +4682,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 					{
 						ReZipBuff(buff, (int &)len, params->pathToLine);
 					}
-					cout << "start extraction" << endl;
 					err = DataExtraction(mallocedMemory, Ext_Params, params, cur, file.second, buff);
-					cout << "ext complete errcode=" << err << endl;
 					scanNum++;
 					delete[] buff;
 					if (err != 0)

@@ -12,6 +12,39 @@ neb::CJsonObject settings = FileIDManager::GetSetting();
 unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
 PackManager packManager(atoi(settings("Pack_Cache_Size").c_str()) * 1024);
 
+/**
+ * @brief Call functions defined in python script and get the object it returns.
+ *
+ * @param Args Arguments to transfer in, it should be a tuple
+ * @param moduleName Name of the python script
+ * @param funcName Name of the function
+ * @return PyObject*
+ */
+PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcName)
+{
+    if (!Py_IsInitialized())
+        Py_Initialize();
+    // 指定py文件目录
+    PyRun_SimpleString("import sys");
+    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
+
+    PyObject *mymodule = PyImport_ImportModule(moduleName);
+    PyObject *pValue, *pArgs, *pFunc, *ret;
+    long res = 0;
+    if (mymodule != NULL)
+    {
+        // 从模块中获取函数
+        pFunc = PyObject_GetAttrString(mymodule, funcName);
+
+        if (pFunc && PyCallable_Check(pFunc))
+        {
+            // 函数执行
+            ret = PyObject_CallObject(pFunc, pArgs);
+        }
+    }
+    return ret;
+}
+
 //递归获取所有子文件夹
 void readAllDirs(vector<string> &dirs, string basePath)
 {

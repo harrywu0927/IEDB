@@ -52,10 +52,6 @@ void checkSettings()
 
 int main()
 {
-    TemplateManager::SetTemplate("Robot");
-    ZipTemplateManager::SetZipTemplate("test");
-    cout << CurrentZipTemplate.schemas.size() << endl;
-    return 0;
     // TemplateManager::CheckTemplate("RobotTwenty");
     // return 0;
     // Py_Initialize();
@@ -113,7 +109,7 @@ int main()
     // Py_Finalize();
     // return 0;
     DB_QueryParams params;
-    params.pathToLine = "JinfeiSixteen";
+    params.pathToLine = "JinfeiSeven";
     params.fileID = "RobotDataTwenty50";
     params.fileIDend = NULL;
     char code[10];
@@ -137,11 +133,12 @@ int main()
     params.order = ODR_NONE;
     params.compareType = CMP_NONE;
     params.compareValue = "666";
-    params.queryType = TIMESPAN;
+    params.queryType = QRY_NONE;
     params.byPath = 1;
     params.queryNums = 5;
     DB_DataBuffer buffer;
     buffer.savePath = "JinfeiTTE";
+    long count;
     // char x[3] = {'1', '2', '3'};
     // buffer.buffer = x;
     // buffer.length = 3;
@@ -149,7 +146,8 @@ int main()
     // sleep(100);
     // return 0;
     auto startTime = std::chrono::system_clock::now();
-    DB_MAX(&buffer, &params);
+    // DB_MAX(&buffer, &params);
+    DB_GetAbnormalDataCount(&params, &count);
     if (buffer.bufferMalloced)
     {
         char buf[buffer.length];
