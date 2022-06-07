@@ -13,11 +13,11 @@ unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
 PackManager packManager(atoi(settings("Pack_Cache_Size").c_str()) * 1024);
 
 /**
- * @brief Call functions defined in python script and get the object it returns.
+ * @brief 调取在python脚本中定义的函数，并获取返回结果
  *
- * @param Args Arguments to transfer in, it should be a tuple
- * @param moduleName Name of the python script
- * @param funcName Name of the function
+ * @param Args 传入参数，必须为元组类型
+ * @param moduleName .py文件名
+ * @param funcName 函数名
  * @return PyObject*
  */
 PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcName)
@@ -30,7 +30,6 @@ PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcNam
 
     PyObject *mymodule = PyImport_ImportModule(moduleName);
     PyObject *pValue, *pArgs, *pFunc, *ret;
-    long res = 0;
     if (mymodule != NULL)
     {
         // 从模块中获取函数
@@ -39,7 +38,7 @@ PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcNam
         if (pFunc && PyCallable_Check(pFunc))
         {
             // 函数执行
-            ret = PyObject_CallObject(pFunc, pArgs);
+            ret = PyObject_CallObject(pFunc, Args);
         }
     }
     return ret;
@@ -1033,7 +1032,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                 else //只是时间序列类型
                 {
                     char standardBool = CurrentZipTemplate.schemas[i].second.standardValue[0];
-                    
+
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
                         if (standardBool != readbuff[readbuff_pos])

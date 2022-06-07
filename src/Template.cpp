@@ -49,6 +49,7 @@ int Template::writeBufferHead(string name, DataType &type, char *buffer)
     {
         if (name == schema.first.name)
         {
+            buffer[0] = 1;
             buffer[cur++] = (char)getBufferValueType(type);
             if (type.isTimeseries)
             {
@@ -61,6 +62,7 @@ int Template::writeBufferHead(string name, DataType &type, char *buffer)
                 cur += 4;
             }
             memcpy(buffer + cur, schema.first.code, 10);
+            cur += 10;
             break;
         }
     }

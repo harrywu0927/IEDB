@@ -2832,7 +2832,6 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
     }
     return 0;
 }
-
 /**
  * @brief 根据查询条件筛选后获取异常节拍的数据
  *
@@ -2872,6 +2871,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
         char zeros[10] = {0};
         memcpy(params->pathCode, zeros, 10);
     }
+
     int err = DB_ExecuteQuery(buffer, params);
     if (err != 0)
         return err;
@@ -2884,7 +2884,9 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
         memset(set, 0, reader.rows);
         for (int i = 0; i < reader.typeList.size(); i++)
         {
-            PyObject *col = PyList_New(reader.rows);
+            if (reader.typeList[i].valueType == ValueType::IMAGE) //图片不判断
+                continue;
+            PyObject *col = PyList_New(reader.rows); //逐列数据判断是否异常
             for (int j = 0; j < reader.rows; j++)
             {
                 PyList_SetItem(col, j, PyList_GetItem(PyList_GetItem(table, j), i));
@@ -2893,7 +2895,13 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
             PyTuple_SetItem(args, 0, col);
             PyTuple_SetItem(args, 1, Py_BuildValue("i", reader.typeList[i].isArray ? reader.typeList[i].arrayLen : 1));
             PyObject *ret = PythonCall(args, "Novelty_Outlier", "Outliers");
+
             int len = PyObject_Size(ret);
+            if (len == 0)
+            {
+                delete[] set;
+                return StatusCode::NO_DATA_QUERIED;
+            }
             for (int j = 0; j < len; j++)
             {
                 if (PyLong_AsLong(PyList_GetItem(ret, j)) == -1)
@@ -2902,12 +2910,62 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
                 }
             }
         }
+        if (CurrentTemplate.hasImage)
+        {
+            vector<pair<char *, int>> abnormalData;
+            long cur = reader.startPos;
+            for (int i = 0; i < reader.rows; i++)
+            {
+                if (*(set + i) == 1)
+                {
+                    int rowlen;
+                    char *memaddr = reader.GetRow(i, rowlen);
+                    abnormalData.push_back({memaddr, rowlen});
+                    cur += rowlen;
+                }
+            }
+            char *newBuffer = (char *)malloc(cur);
+            cur = reader.startPos;
+            for (auto &mem : abnormalData)
+            {
+                memcpy(newBuffer + cur, mem.first, mem.second);
+                cur += mem.second;
+            }
+            memcpy(newBuffer, reader.buffer, reader.startPos);
+            buffer->buffer = newBuffer;
+            buffer->length = cur;
+        }
+        else
+        {
+            vector<char *> abnormalData;
+            long cur = reader.startPos;
+            for (int i = 0; i < reader.rows; i++)
+            {
+                if (*(set + i) == 1)
+                {
+                    abnormalData.push_back(reader.GetRow(i));
+                    cur += reader.recordLength;
+                }
+            }
+            char *newBuffer = (char *)malloc(cur);
+            cur = reader.startPos;
+            memcpy(newBuffer, reader.buffer, reader.startPos);
+            for (auto &mem : abnormalData)
+            {
+                memcpy(newBuffer + cur, mem, reader.recordLength);
+                cur += reader.recordLength;
+            }
+            buffer->buffer = newBuffer;
+            buffer->length = cur;
+        }
+        delete[] set;
     }
     else // using ziptemplate
     {
         if (CurrentTemplate.hasImage)
         {
             vector<pair<char *, int>> abnormalData;
+            long cur = reader.startPos;
             for (int i = 0; i < reader.rows; i++)
             {
                 int rowlen = 0;
@@ -2915,19 +2973,20 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
                 if (!IsNormalIDBFile(row, params->pathToLine))
                 {
                     abnormalData.push_back({row, rowlen});
+                    cur += rowlen;
                 }
             }
             if (abnormalData.size() == 0)
                 return StatusCode::NO_DATA_QUERIED;
-            char *newBuffer = (char *)malloc(abnormalData.size() * reader.recordLength + reader.startPos);
+            char *newBuffer = (char *)malloc(cur);
             memcpy(newBuffer, buffer->buffer, reader.startPos);
-            long cur = reader.startPos;
+            cur = reader.startPos;
             for (auto &mem : abnormalData)
             {
                 memcpy(newBuffer + cur, mem.first, mem.second);
                 cur += mem.second;
             }
-
+            memcpy(newBuffer, reader.buffer, reader.startPos);
             buffer->buffer = newBuffer;
             buffer->length = cur;
         }
@@ -2958,7 +3017,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
                 memcpy(newBuffer + cur, mem, reader.recordLength);
                 cur += reader.recordLength;
             }
-
+            memcpy(newBuffer, reader.buffer, reader.startPos);
             buffer->buffer = newBuffer;
             buffer->length = cur;
         }
@@ -2984,7 +3043,7 @@ int main()
     code[8] = (char)0;
     code[9] = (char)0;
     params.pathCode = code;
-    params.valueName = "S1ON";
+    params.valueName = "S1OFF";
     // params.valueName = NULL;
     params.start = 0;
     params.end = 1751165600000;
@@ -2992,12 +3051,34 @@ int main()
     params.compareType = CMP_NONE;
     params.compareValue = "666";
     params.queryType = FILEID;
-    params.byPath = 1;
-    params.queryNums = 234;
+    params.byPath = 0;
+    params.queryNums = 40;
     DB_DataBuffer buffer;
-    DB_GetAbnormalRhythm(&buffer, &params, 0);
+    DB_GetAbnormalRhythm(&buffer, &params, 1);
     long count;
     // DB_GetAbnormalDataCount(&params, &count);
+    // DB_QueryByFileID(&buffer, &params);
+    // char *newbuf = (char *)malloc(212);
+    // memcpy(newbuf, buffer.buffer, 12);
+    // DataTypeConverter converter;
+    // for (int i = 0; i < 50; i++)
+    // {
+    //     uint v;
+    //     v = 95 + rand() % 5;
+    //     char buf[4];
+    //     converter.ToUInt32Buff(v, buf);
+    //     memcpy(newbuf + 12 + i * 4, buf, 4);
+    // }
+    // free(buffer.buffer);
+    // buffer.buffer = newbuf;
+    // buffer.length = 212;
+    // PyObject *arr = ConvertToPyList_ML(&buffer);
+    // PyObject *args = PyTuple_New(3);
+    // PyTuple_SetItem(args, 0, arr);
+    // PyTuple_SetItem(args, 1, Py_BuildValue("i", 1));
+    // PyTuple_SetItem(args, 2, PyBytes_FromString("S1ON"));
+    // PyObject *ret = PythonCall(args, "Novelty_Outlier", "NoveltyModelTrain");
+    // return 0;
     if (buffer.bufferMalloced)
     {
         char buf[buffer.length];
@@ -3012,34 +3093,5 @@ int main()
 
         free(buffer.buffer);
     }
-    return 0;
-    auto startTime = std::chrono::system_clock::now();
-    auto endTime = std::chrono::system_clock::now();
-    double total = 0;
-    for (int i = 0; i < 10; i++)
-    {
-        startTime = std::chrono::system_clock::now();
-        DB_GetAbnormalDataCount_Single(&params, &count);
-
-        endTime = std::chrono::system_clock::now();
-        std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-        // cout << buffer.length << endl;
-
-        total += (endTime - startTime).count();
-    }
-    cout << "不使用缓存和多线程的平均查询时间:" << total / 10 << endl;
-    total = 0;
-    for (int i = 0; i < 10; i++)
-    {
-        startTime = std::chrono::system_clock::now();
-        DB_GetAbnormalDataCount(&params, &count);
-
-        endTime = std::chrono::system_clock::now();
-        std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-
-        total += (endTime - startTime).count();
-    }
-    cout << "使用缓存和多线程的平均查询时间:" << total / 10 << endl;
-    total = 0;
     return 0;
 }

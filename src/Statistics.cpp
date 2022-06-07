@@ -161,47 +161,23 @@ PyObject *ConvertToPyList_STAT_Old(DB_DataBuffer *buffer)
  */
 PyObject *ConvertToPyList_STAT(DB_DataBuffer *buffer)
 {
-    int typeNum = buffer->buffer[0];
-    vector<DataType> typeList;
-    int recordLength = 0; //每行的长度
-    long bufPos = 0;
-    PyObject *res;
-    for (int i = 0; i < typeNum; i++)
-    {
-        DataType type;
-        char pathCode[10];
-        memcpy(pathCode, buffer->buffer + i * 11 + 2, 10);
-        int err = CurrentTemplate.GetDataTypeByCode(pathCode, type);
-        if (err == 0)
-        {
-            if (type.valueType == ValueType::IMAGE)
-            {
-                res = PyList_New(0);
-                return res;
-            }
-            typeList.push_back(type);
-            recordLength += type.isArray ? type.valueBytes * type.arrayLen : type.valueBytes;
-            recordLength += type.hasTime ? 8 : 0;
-        }
-    }
-    int startPos = typeNum * 11 + 1;
-    long rows = (buffer->length - startPos) / recordLength;
-    int cur = startPos;
-    res = PyList_New(rows);
+    QueryBufferReader reader(buffer, false);
+    int cur = reader.startPos;
+    PyObject *res = PyList_New(reader.rows);
     DataTypeConverter converter;
-    for (int i = 0; i < rows; i++)
+    for (int i = 0; i < reader.rows; i++)
     {
         PyObject *row = PyList_New(0);
-        for (int j = 0; j < typeList.size(); j++)
+        for (auto &type : reader.typeList)
         {
-            if (typeList[j].isTimeseries)
+            if (type.isTimeseries)
             {
-                if (!typeList[j].isArray && typeList[j].valueType != ValueType::IMAGE)
+                if (!type.isArray && type.valueType != ValueType::IMAGE)
                 {
-                    PyObject *ts = PyList_New(typeList[j].tsLen * 2);
-                    for (int k = 0; k < typeList[j].tsLen; k++)
+                    PyObject *ts = PyList_New(type.tsLen * 2);
+                    for (int k = 0; k < type.tsLen; k++)
                     {
-                        SetValueToPyList(ts, buffer->buffer, cur, typeList[j], k * 2);
+                        SetValueToPyList(ts, buffer->buffer, cur, type, k * 2);
                         long timestamp = 0;
                         memcpy(&timestamp, buffer->buffer + cur, 8);
                         PyList_SetItem(ts, k * 2 + 1, PyLong_FromLong(timestamp)); // insert timestamp to timeseries
@@ -210,18 +186,18 @@ PyObject *ConvertToPyList_STAT(DB_DataBuffer *buffer)
                 }
                 else
                 {
-                    cur += typeList[j].arrayLen * typeList[j].tsLen * (typeList[j].valueBytes + 8);
+                    cur += type.arrayLen * type.tsLen * (type.valueBytes + 8);
                 }
             }
             else
             {
-                if (!typeList[j].isArray && typeList[j].valueType != ValueType::IMAGE)
+                if (!type.isArray && type.valueType != ValueType::IMAGE)
                 {
-                    AppendValueToPyList(row, buffer->buffer, cur, typeList[j]);
+                    AppendValueToPyList(row, buffer->buffer, cur, type);
                 }
                 else
                 {
-                    cur += typeList[j].hasTime ? typeList[j].valueBytes * typeList[j].arrayLen + 8 : typeList[j].valueBytes * typeList[j].arrayLen;
+                    cur += type.hasTime ? type.valueBytes * type.arrayLen + 8 : type.valueBytes * type.arrayLen;
                 }
             }
         }

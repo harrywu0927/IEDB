@@ -94,6 +94,7 @@ namespace StatusCode
         VALUE_CHECKE_ERROR = 175,         //变量值不合法
         VALUE_RANGE_ERROR = 176,          //变量值范围不合法，例如最小值大于最大值
         INVALID_QRY_PARAMS = 177,         //查询条件不合法
+        INVALID_QUERY_BUFFER = 178,       //查询缓存不合法
     };
 }
 namespace ValueType
@@ -867,7 +868,7 @@ class QueryBufferReader
 {
 private:
     int cur;
-
+    bool freeit;
     bool hasIMG;
 
 public:
@@ -878,11 +879,14 @@ public:
     int recordLength;
     vector<DataType> typeList;
     QueryBufferReader() { buffer = NULL; };
-    QueryBufferReader(DB_DataBuffer *buffer);
+    QueryBufferReader(DB_DataBuffer *buffer, bool freeit = true); //当freeit设置为false时，不会自动清空buffer
     ~QueryBufferReader()
     {
-        if (buffer != NULL)
+        if (freeit && buffer != NULL)
+        {
             free(buffer);
+            buffer = NULL;
+        }
     }
     /**
      * @brief Equals to GetRow(). You could use [] operator to get the specified row.
@@ -935,6 +939,12 @@ public:
      * @return char*
      */
     char *NextRow(int &rowLength);
+
+    /**
+     * @brief 重置当前读的位置
+     *
+     */
+    void Reset() { cur = startPos; }
 };
 
 // class QueryBufferRow : public QueryBufferReader

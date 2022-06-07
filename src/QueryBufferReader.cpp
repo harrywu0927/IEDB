@@ -37,14 +37,16 @@ char *QueryBufferReader::operator[](const int &index)
     return buffer + offset;
 }
 
-QueryBufferReader::QueryBufferReader(DB_DataBuffer *buffer)
+QueryBufferReader::QueryBufferReader(DB_DataBuffer *buffer, bool freeit)
 {
+    this->freeit = freeit;
     this->buffer = buffer->buffer;
     this->length = buffer->length;
     int typeNum = this->buffer[0];
     int pos = 1;
     recordLength = 0;
     rows = 0;
+    // Reconstruct the info of each value
     for (int i = 0; i < typeNum; i++, pos += 10)
     {
         DataType type;

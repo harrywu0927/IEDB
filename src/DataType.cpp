@@ -401,7 +401,7 @@ int DataType::CompareValueInBytes(DataType &type, char *compared, const char *to
     }
 }
 
-/** 获取此数据类型所占的总字节数
+/** 获取此数据类型所占的总字节数,包含时间
  * @brief
  *
  * @param type
