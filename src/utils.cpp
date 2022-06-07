@@ -993,7 +993,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
             {
-                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组
                 {
                     continue;
                 }
@@ -1010,7 +1010,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                     }
                 }
             }
-            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型
             {
                 continue;
             }
@@ -1038,7 +1038,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
             {
-                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组
                 {
                     continue;
                 }
@@ -1061,7 +1061,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                     }
                 }
             }
-            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型
             {
                 continue;
             }
@@ -1095,7 +1095,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
             {
-                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组
                 {
                     continue;
                 }
@@ -1118,7 +1118,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                     }
                 }
             }
-            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型
             {
                 continue;
             }
@@ -1152,7 +1152,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
             {
-                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组
                 {
                     continue;
                 }
@@ -1176,7 +1176,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                     }
                 }
             }
-            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型
             {
                 continue;
             }
@@ -1210,7 +1210,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
             {
-                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组
                 {
                     continue;
                 }
@@ -1233,7 +1233,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                     }
                 }
             }
-            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型
             {
                 continue;
             }
@@ -1267,7 +1267,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
             {
-                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组
                 {
                     continue;
                 }
@@ -1290,7 +1290,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                     }
                 }
             }
-            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型
             {
                 continue;
             }
@@ -1324,7 +1324,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
             {
-                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组
                 {
                     continue;
                 }
@@ -1347,7 +1347,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                     }
                 }
             }
-            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型
             {
                 continue;
             }
@@ -1381,7 +1381,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
         {
             if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
             {
-                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组
                 {
                     continue;
                 }
@@ -1404,7 +1404,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                     }
                 }
             }
-            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型
             {
                 continue;
             }
