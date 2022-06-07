@@ -94,6 +94,7 @@ namespace StatusCode
         VALUE_CHECKE_ERROR = 175,         //变量值不合法
         VALUE_RANGE_ERROR = 176,          //变量值范围不合法，例如最小值大于最大值
         INVALID_QRY_PARAMS = 177,         //查询条件不合法
+        INVALID_QUERY_BUFFER = 178,       //查询缓存不合法
     };
 }
 namespace ValueType
@@ -234,9 +235,11 @@ int DB_OutlierDetection(struct DB_DataBuffer *buffer, struct DB_QueryParams *par
 
 int DB_NoveltyFit(struct DB_QueryParams *params, double *maxLine, double *minLine);
 
-PyObject *ConvertToPyList_ML(struct DB_DataBuffer *buffer);
+PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer);
 
-PyObject *ConvertToPyList_STAT(struct DB_DataBuffer *buffer);
+PyObject *ConvertToPyList_STAT(DB_DataBuffer *buffer);
+
+PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcName);
 
 //检查模板相关输入
 int checkInputVaribaleName(string variableName);
@@ -865,20 +868,25 @@ class QueryBufferReader
 {
 private:
     int cur;
-    int startPos;
+    bool freeit;
+    bool hasIMG;
 
 public:
     char *buffer;
+    int startPos;
     int rows;
     long length;
     int recordLength;
     vector<DataType> typeList;
     QueryBufferReader() { buffer = NULL; };
-    QueryBufferReader(DB_DataBuffer *buffer);
+    QueryBufferReader(DB_DataBuffer *buffer, bool freeit = true); //当freeit设置为false时，不会自动清空buffer
     ~QueryBufferReader()
     {
-        if (buffer != NULL)
+        if (freeit && buffer != NULL)
+        {
             free(buffer);
+            buffer = NULL;
+        }
     }
     /**
      * @brief Equals to GetRow(). You could use [] operator to get the specified row.
@@ -911,12 +919,32 @@ public:
      */
     char *GetRow(const int &index);
     /**
+     * @brief Get the memory address of row by the specified index.This function is called when there is some data with uncertain length like image. It will return the memory address of the row you're going to read and tell you the length. Yet it may cause some speed loss accordingly.
+     *
+     * @param index
+     * @return char*
+     */
+    char *GetRow(const int &index, int &rowLength);
+    /**
      * @brief When you choose this to read the buffer, it means that you'll read every row in order.
      *  This function will return the memory address of the row you're going to read.
      *
      * @return char*
      */
     char *NextRow();
+    /**
+     * @brief When you choose this to read the buffer, it means that you'll read every row in order.
+     *  This function is suggested to be called when there is some data with uncertain length like image. It will return the memory address of the row you're going to read and tell you the length. Yet it may cause some speed loss accordingly.
+     *
+     * @return char*
+     */
+    char *NextRow(int &rowLength);
+
+    /**
+     * @brief 重置当前读的位置
+     *
+     */
+    void Reset() { cur = startPos; }
 };
 
 // class QueryBufferRow : public QueryBufferReader

@@ -207,7 +207,7 @@ void SetValueToPyList(PyObject *item, char *buffer, int &cur, DataType &type, in
  * @param buffer
  * @return PyObject*
  */
-PyObject *ConvertToPyList_ML(struct DB_DataBuffer *buffer)
+PyObject *ConvertToPyList_ML_Old(struct DB_DataBuffer *buffer)
 {
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
@@ -440,50 +440,29 @@ PyObject *ConvertToPyList_ML(struct DB_DataBuffer *buffer)
  * @return PyObject*
  * @note support timeseries
  */
-PyObject *ConvertToPyList_ML_New(struct DB_DataBuffer *buffer)
+PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer)
 {
-    int typeNum = buffer->buffer[0];
-    vector<DataType> typeList;
-    int recordLength = 0; //每行的长度
-    long bufPos = 0;
+    QueryBufferReader reader(buffer, false);
+    int cur = reader.startPos;
     PyObject *res;
-    for (int i = 0; i < typeNum; i++)
-    {
-        DataType type;
-        char pathCode[10];
-        memcpy(pathCode, buffer->buffer + i * 11 + 2, 10);
-        int err = CurrentTemplate.GetDataTypeByCode(pathCode, type);
-        if (err == 0)
-        {
-            if (type.valueType == ValueType::IMAGE)
-            {
-                res = PyList_New(0);
-                return res;
-            }
-            typeList.push_back(type);
-            recordLength += type.isArray ? type.valueBytes * type.arrayLen : type.valueBytes;
-            recordLength += type.hasTime ? 8 : 0;
-        }
-    }
-    int startPos = typeNum * 11 + 1;
-    int rows = (buffer->length - startPos) / recordLength;
-    int cur = startPos;
-    res = PyList_New(rows);
-    for (int i = 0; i < rows; i++)
+    if (!Py_IsInitialized())
+        Py_Initialize();
+    res = PyList_New(reader.rows);
+    for (int i = 0; i < reader.rows; i++)
     {
         PyObject *row = PyList_New(0);
-        for (int j = 0; j < typeList.size(); j++)
+        for (auto &type : reader.typeList)
         {
-            if (typeList[j].valueType == ValueType::IMAGE)
+            if (type.valueType == ValueType::IMAGE)
                 continue;
-            if (!typeList[j].isArray) //标量,转到python中为一维数组
+            if (!type.isArray) //标量,转到python中为一维数组
             {
-                if (typeList[i].isTimeseries) //如果是时间序列，直接全部转为PyLong或PyFloat，在python内部reshape
+                if (type.isTimeseries) //如果是时间序列，直接全部转为PyLong或PyFloat，在python内部reshape
                 {
-                    PyObject *ts = PyList_New(typeList[j].tsLen * 2);
-                    for (int k = 0; k < typeList[j].tsLen; k++)
+                    PyObject *ts = PyList_New(type.tsLen * 2);
+                    for (int k = 0; k < type.tsLen; k++)
                     {
-                        SetValueToPyList(ts, buffer->buffer, cur, typeList[j], k * 2);
+                        SetValueToPyList(ts, buffer->buffer, cur, type, k * 2);
                         long timestamp = 0;
                         memcpy(&timestamp, buffer->buffer + cur, 8);
                         PyList_SetItem(ts, k * 2 + 1, PyLong_FromLong(timestamp)); // insert timestamp to timeseries
@@ -492,36 +471,36 @@ PyObject *ConvertToPyList_ML_New(struct DB_DataBuffer *buffer)
                 }
                 else
                 {
-                    AppendValueToPyList(row, buffer->buffer, cur, typeList[j]);
+                    AppendValueToPyList(row, buffer->buffer, cur, type);
                 }
             }
             else //数组类型（矢量），转到python中为二维数组
             {
-                if (typeList[i].isTimeseries)
+                if (type.isTimeseries)
                 {
-                    PyObject *ts = PyList_New(typeList[j].tsLen * (typeList[j].arrayLen + 1));
-                    for (int k = 0; k < typeList[j].tsLen; k++)
+                    PyObject *ts = PyList_New(type.tsLen * (type.arrayLen + 1));
+                    for (int k = 0; k < type.tsLen; k++)
                     {
-                        PyObject *arr = PyList_New(typeList[j].arrayLen + 1); //增加一个时间戳位
-                        for (int l = 0; l < typeList[j].arrayLen; l++)
+                        PyObject *arr = PyList_New(type.arrayLen + 1); //增加一个时间戳位
+                        for (int l = 0; l < type.arrayLen; l++)
                         {
-                            SetValueToPyList(arr, buffer->buffer, cur, typeList[j], l);
+                            SetValueToPyList(arr, buffer->buffer, cur, type, l);
                         }
                         long timestamp = 0;
                         memcpy(&timestamp, buffer->buffer + cur, 8);
-                        PyList_SetItem(arr, typeList[j].arrayLen + 1, PyLong_FromLong(timestamp)); // insert timestamp to timeseries
+                        PyList_SetItem(arr, type.arrayLen + 1, PyLong_FromLong(timestamp)); // insert timestamp to timeseries
                         PyList_SetItem(ts, k, arr);
                     }
                     PyList_Append(row, ts);
                 }
                 else
                 {
-                    PyObject *arr = PyList_New(typeList[j].arrayLen);
-                    for (int k = 0; k < typeList[j].arrayLen; k++)
+                    PyObject *arr = PyList_New(type.arrayLen);
+                    for (int k = 0; k < type.arrayLen; k++)
                     {
-                        SetValueToPyList(arr, buffer->buffer, cur, typeList[j], k);
+                        SetValueToPyList(arr, buffer->buffer, cur, type, k);
                     }
-                    cur += typeList[j].hasTime ? 8 : 0;
+                    cur += type.hasTime ? 8 : 0;
                     PyList_Append(row, arr);
                 }
             }
@@ -550,14 +529,14 @@ int DB_OutlierDetection(DB_DataBuffer *buffer, DB_QueryParams *params)
     if (!Py_IsInitialized())
         Py_Initialize();
     PyObject *arr = ConvertToPyList_ML(buffer);
-
+    if (PyObject_Size(arr) == 0)
+        return StatusCode::INVALID_QUERY_BUFFER;
     // 指定py文件目录
     PyRun_SimpleString("import sys");
     PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
 
     PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
     PyObject *pValue, *pArgs, *pFunc;
-    long res = 0;
     if (mymodule != NULL)
     {
         // 从模块中获取函数
@@ -582,6 +561,7 @@ int DB_OutlierDetection(DB_DataBuffer *buffer, DB_QueryParams *params)
                 // cout << val << " ";
                 res[i] = (char)val;
             }
+            free(buffer->buffer);
             buffer->length = len;
             buffer->buffer = res;
             buffer->bufferMalloced = 1;

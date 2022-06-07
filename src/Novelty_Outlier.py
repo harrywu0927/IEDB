@@ -40,11 +40,11 @@ def NoveltyModelTrain(lst, dimension, valName):
     points = np.array(lst)
     neighbors = 20
     if(len(points) < 50):
-        neighbors = len(points)/10
+        neighbors = len(points)/5
     if len(lst) % dimension == 0:
         rows = len(lst)/dimension
         points = points.reshape(int(rows), dimension)
-        clf = LocalOutlierFactor(novelty=True, n_neighbors=neighbors)
+        clf = LocalOutlierFactor(novelty=True, n_neighbors=int(neighbors))
         clf.fit(points)
         joblib.dump(clf, valName.decode()+'_novelty_model.pkl')
         return 0

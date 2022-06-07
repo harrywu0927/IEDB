@@ -12,6 +12,38 @@ neb::CJsonObject settings = FileIDManager::GetSetting();
 unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
 PackManager packManager(atoi(settings("Pack_Cache_Size").c_str()) * 1024);
 
+/**
+ * @brief 调取在python脚本中定义的函数，并获取返回结果
+ *
+ * @param Args 传入参数，必须为元组类型
+ * @param moduleName .py文件名
+ * @param funcName 函数名
+ * @return PyObject*
+ */
+PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcName)
+{
+    if (!Py_IsInitialized())
+        Py_Initialize();
+    // 指定py文件目录
+    PyRun_SimpleString("import sys");
+    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
+
+    PyObject *mymodule = PyImport_ImportModule(moduleName);
+    PyObject *pValue, *pArgs, *pFunc, *ret;
+    if (mymodule != NULL)
+    {
+        // 从模块中获取函数
+        pFunc = PyObject_GetAttrString(mymodule, funcName);
+
+        if (pFunc && PyCallable_Check(pFunc))
+        {
+            // 函数执行
+            ret = PyObject_CallObject(pFunc, Args);
+        }
+    }
+    return ret;
+}
+
 //递归获取所有子文件夹
 void readAllDirs(vector<string> &dirs, string basePath)
 {
@@ -1000,7 +1032,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                 else //只是时间序列类型
                 {
                     char standardBool = CurrentZipTemplate.schemas[i].second.standardValue[0];
-                    
+
                     for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
                     {
                         if (standardBool != readbuff[readbuff_pos])

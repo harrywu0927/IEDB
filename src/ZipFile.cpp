@@ -3364,97 +3364,97 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
     return err;
 }
 
-int main()
-{
-    DB_ZipParams param;
-    param.ZipType = FILE_ID;
-    param.pathToLine = "RobotTsTest";
-    param.fileID = "RobotTsTest2";
-    DB_ZipFileByFileID(&param);
-    return 0;
-    // std::cout<<"start 多类型文件 单线程压缩"<<std::endl;
-    // auto startTime = std::chrono::system_clock::now();
-    // DB_ZipFile("jinfei","jinfei");
-    // auto endTime = std::chrono::system_clock::now();
-    // std::cout << "多类型文件 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    // std::cout<<"end 多类型文件 单线程压缩"<<std::endl<<std::endl;
+// int main()
+// {
+//     DB_ZipParams param;
+//     param.ZipType = FILE_ID;
+//     param.pathToLine = "RobotTsTest";
+//     param.fileID = "RobotTsTest2";
+//     DB_ZipFileByFileID(&param);
+//     return 0;
+//     // std::cout<<"start 多类型文件 单线程压缩"<<std::endl;
+//     // auto startTime = std::chrono::system_clock::now();
+//     // DB_ZipFile("jinfei","jinfei");
+//     // auto endTime = std::chrono::system_clock::now();
+//     // std::cout << "多类型文件 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     // std::cout<<"end 多类型文件 单线程压缩"<<std::endl<<std::endl;
 
-    // sleep(3);
-    // std::cout<<"start 多类型文件 单线程还原"<<std::endl;
-    // startTime = std::chrono::system_clock::now();
-    // DB_ReZipFile("jinfei","jinfei");
-    // endTime = std::chrono::system_clock::now();
-    // std::cout << "多类型文件 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    // std::cout<<"end 多类型文件 单线程还原"<<std::endl<<std::endl;
+//     // sleep(3);
+//     // std::cout<<"start 多类型文件 单线程还原"<<std::endl;
+//     // startTime = std::chrono::system_clock::now();
+//     // DB_ReZipFile("jinfei","jinfei");
+//     // endTime = std::chrono::system_clock::now();
+//     // std::cout << "多类型文件 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     // std::cout<<"end 多类型文件 单线程还原"<<std::endl<<std::endl;
 
-    // sleep(3);
-    // std::cout<<"start 多类型文件 多线程压缩"<<std::endl;
-    // startTime = std::chrono::system_clock::now();
-    // DB_ZipFile_MultiThread("jinfei", "jinfei");
-    // endTime = std::chrono::system_clock::now();
-    // std::cout << "多类型文件 多线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    // std::cout<<"end 多类型文件 多线程压缩"<<std::endl<<std::endl;
+//     // sleep(3);
+//     // std::cout<<"start 多类型文件 多线程压缩"<<std::endl;
+//     // startTime = std::chrono::system_clock::now();
+//     // DB_ZipFile_MultiThread("jinfei", "jinfei");
+//     // endTime = std::chrono::system_clock::now();
+//     // std::cout << "多类型文件 多线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     // std::cout<<"end 多类型文件 多线程压缩"<<std::endl<<std::endl;
 
-    // sleep(3);
-    // std::cout<<"start 多类型文件 多线程还原"<<std::endl;
-    // startTime = std::chrono::system_clock::now();
-    // DB_ReZipFile_MultiThread("jinfei", "jinfei");
-    // endTime = std::chrono::system_clock::now();
-    // std::cout << "多类型文件 多线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    // std::cout<<"end 多类型文件 多线程还原"<<std::endl<<std::endl;
+//     // sleep(3);
+//     // std::cout<<"start 多类型文件 多线程还原"<<std::endl;
+//     // startTime = std::chrono::system_clock::now();
+//     // DB_ReZipFile_MultiThread("jinfei", "jinfei");
+//     // endTime = std::chrono::system_clock::now();
+//     // std::cout << "多类型文件 多线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     // std::cout<<"end 多类型文件 多线程还原"<<std::endl<<std::endl;
 
-    struct tm t;
-    t.tm_year = atoi("2022") - 1900;
-    t.tm_mon = atoi("5") - 1;
-    t.tm_mday = atoi("7");
-    t.tm_hour = atoi("15");
-    t.tm_min = atoi("0");
-    t.tm_sec = atoi("0");
-    t.tm_isdst = -1; //不设置夏令时
-    time_t seconds = mktime(&t);
-    int ms = atoi("0");
-    long start = seconds * 1000 + ms;
-    cout << start << endl;
-    DB_ZipParams zipParam;
-    zipParam.pathToLine = "jinfei";
-    zipParam.start = 1651903200000;
-    zipParam.end = 1651906800000;
+//     struct tm t;
+//     t.tm_year = atoi("2022") - 1900;
+//     t.tm_mon = atoi("5") - 1;
+//     t.tm_mday = atoi("7");
+//     t.tm_hour = atoi("15");
+//     t.tm_min = atoi("0");
+//     t.tm_sec = atoi("0");
+//     t.tm_isdst = -1; //不设置夏令时
+//     time_t seconds = mktime(&t);
+//     int ms = atoi("0");
+//     long start = seconds * 1000 + ms;
+//     cout << start << endl;
+//     DB_ZipParams zipParam;
+//     zipParam.pathToLine = "jinfei";
+//     zipParam.start = 1651903200000;
+//     zipParam.end = 1651906800000;
 
-    sleep(3);
-    std::cout << "start 多类型文件按时间段 单线程压缩" << std::endl;
-    auto startTime = std::chrono::system_clock::now();
-    DB_ZipFileByTimeSpan(&zipParam);
-    auto endTime = std::chrono::system_clock::now();
-    std::cout << "多类型文件按时间段 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    std::cout << "end 多类型文件按时间段 单线程压缩" << std::endl
-              << std::endl;
+//     sleep(3);
+//     std::cout << "start 多类型文件按时间段 单线程压缩" << std::endl;
+//     auto startTime = std::chrono::system_clock::now();
+//     DB_ZipFileByTimeSpan(&zipParam);
+//     auto endTime = std::chrono::system_clock::now();
+//     std::cout << "多类型文件按时间段 单线程压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     std::cout << "end 多类型文件按时间段 单线程压缩" << std::endl
+//               << std::endl;
 
-    sleep(3);
-    std::cout << "start 多类型文件按时间段 单线程还原" << std::endl;
-    startTime = std::chrono::system_clock::now();
-    DB_ReZipFileByTimeSpan(&zipParam);
-    endTime = std::chrono::system_clock::now();
-    std::cout << "多类型件按时间段 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    std::cout << "end 多类型文件按时间段 单线程还原" << std::endl
-              << std::endl;
+//     sleep(3);
+//     std::cout << "start 多类型文件按时间段 单线程还原" << std::endl;
+//     startTime = std::chrono::system_clock::now();
+//     DB_ReZipFileByTimeSpan(&zipParam);
+//     endTime = std::chrono::system_clock::now();
+//     std::cout << "多类型件按时间段 单线程还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     std::cout << "end 多类型文件按时间段 单线程还原" << std::endl
+//               << std::endl;
 
-    sleep(3);
-    std::cout << "start 多类型文件按时间段 多线程压缩" << std::endl;
-    startTime = std::chrono::system_clock::now();
-    DB_ZipFileByTimeSpan(&zipParam);
-    endTime = std::chrono::system_clock::now();
-    std::cout << "多类型文件按时间段 多线程时间段压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    std::cout << "end 多类型文件按时间段 多线程压缩" << std::endl
-              << std::endl;
+//     sleep(3);
+//     std::cout << "start 多类型文件按时间段 多线程压缩" << std::endl;
+//     startTime = std::chrono::system_clock::now();
+//     DB_ZipFileByTimeSpan(&zipParam);
+//     endTime = std::chrono::system_clock::now();
+//     std::cout << "多类型文件按时间段 多线程时间段压缩耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     std::cout << "end 多类型文件按时间段 多线程压缩" << std::endl
+//               << std::endl;
 
-    sleep(3);
-    std::cout << "start 多类型文件按时间段 多线程还原" << std::endl;
-    startTime = std::chrono::system_clock::now();
-    DB_ReZipFileByTimeSpan(&zipParam);
-    endTime = std::chrono::system_clock::now();
-    std::cout << "多类型文件按时间段 多线程时间段还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    std::cout << "end 多类型文件按时间段 多线程还原" << std::endl
-              << std::endl;
+//     sleep(3);
+//     std::cout << "start 多类型文件按时间段 多线程还原" << std::endl;
+//     startTime = std::chrono::system_clock::now();
+//     DB_ReZipFileByTimeSpan(&zipParam);
+//     endTime = std::chrono::system_clock::now();
+//     std::cout << "多类型文件按时间段 多线程时间段还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+//     std::cout << "end 多类型文件按时间段 多线程还原" << std::endl
+//               << std::endl;
 
-    return 0;
-}
+//     return 0;
+// }
