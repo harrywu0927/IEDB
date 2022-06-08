@@ -29,7 +29,7 @@ PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcNam
     PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
 
     PyObject *mymodule = PyImport_ImportModule(moduleName);
-    PyObject *pValue, *pArgs, *pFunc, *ret;
+    PyObject *pFunc, *ret;
     if (mymodule != NULL)
     {
         // 从模块中获取函数
@@ -41,6 +41,8 @@ PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcNam
             ret = PyObject_CallObject(pFunc, Args);
         }
     }
+    Py_XDECREF(pFunc);
+    Py_XDECREF(mymodule);
     return ret;
 }
 
@@ -811,7 +813,7 @@ void get_procmeminfo(MEM_OCCUPY *lpMemory)
 #endif
 
 /**
- * @brief Get the Memory Usage object
+ * @brief Get the Memory Usage
  *
  * @param total
  * @param available

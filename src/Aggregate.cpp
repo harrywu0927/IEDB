@@ -2832,12 +2832,13 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
     }
     return 0;
 }
+
 /**
  * @brief 根据查询条件筛选后获取异常节拍的数据
  *
  * @param buffer    数据缓冲区
  * @param params    查询请求参数
- * @param mode 若为1，则根据机器学习结果判断是否异常；否则，根据压缩模版判断是否异常
+ * @param mode 若为1，则使用LOF算法即时训练指定数据来判断数据是否异常；若为0，则根据已训练的模型检测指定数据的新颖性（异常性）；否则，根据压缩模版判断是否异常
  * @return int
  */
 int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode)
@@ -2893,7 +2894,8 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
             }
             PyObject *args = PyTuple_New(2);
             PyTuple_SetItem(args, 0, col);
-            PyTuple_SetItem(args, 1, Py_BuildValue("i", reader.typeList[i].isArray ? reader.typeList[i].arrayLen : 1));
+            PyObject *dim = PyLong_FromLong(reader.typeList[i].isArray ? reader.typeList[i].arrayLen : 1);
+            PyTuple_SetItem(args, 1, dim);
             PyObject *ret = PythonCall(args, "Novelty_Outlier", "Outliers");
 
             int len = PyObject_Size(ret);
@@ -2909,7 +2911,104 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
                     *(set + j) = 1;
                 }
             }
+            Py_DECREF(args);
+            Py_XDECREF(ret);
+            if (i == reader.typeList.size() - 1)
+                PyObject_Free(dim);
+            int a = 1;
         }
+        PyObject_FREE(table);
+        if (CurrentTemplate.hasImage)
+        {
+            vector<pair<char *, int>> abnormalData;
+            long cur = reader.startPos;
+            for (int i = 0; i < reader.rows; i++)
+            {
+                if (*(set + i) == 1)
+                {
+                    int rowlen;
+                    char *memaddr = reader.GetRow(i, rowlen);
+                    abnormalData.push_back({memaddr, rowlen});
+                    cur += rowlen;
+                }
+            }
+            char *newBuffer = (char *)malloc(cur);
+            cur = reader.startPos;
+            for (auto &mem : abnormalData)
+            {
+                memcpy(newBuffer + cur, mem.first, mem.second);
+                cur += mem.second;
+            }
+            memcpy(newBuffer, reader.buffer, reader.startPos);
+            buffer->buffer = newBuffer;
+            buffer->length = cur;
+        }
+        else
+        {
+            vector<char *> abnormalData;
+            long cur = reader.startPos;
+            for (int i = 0; i < reader.rows; i++)
+            {
+                if (*(set + i) == 1)
+                {
+                    abnormalData.push_back(reader.GetRow(i));
+                    cur += reader.recordLength;
+                }
+            }
+            char *newBuffer = (char *)malloc(cur);
+            cur = reader.startPos;
+            memcpy(newBuffer, reader.buffer, reader.startPos);
+            for (auto &mem : abnormalData)
+            {
+                memcpy(newBuffer + cur, mem, reader.recordLength);
+                cur += reader.recordLength;
+            }
+            buffer->buffer = newBuffer;
+            buffer->length = cur;
+        }
+        delete[] set;
+    }
+    else if (mode == 0)
+    {
+        PyObject *table = ConvertToPyList_ML(buffer);
+        char *set = new char[reader.rows]; //此数组中值为1的下标表示异常数据在查询结果中的行
+        memset(set, 0, reader.rows);
+        for (int i = 0; i < reader.typeList.size(); i++)
+        {
+            if (reader.typeList[i].valueType == ValueType::IMAGE) //图片不判断
+                continue;
+            PyObject *col = PyList_New(reader.rows); //逐列数据判断是否异常
+            for (int j = 0; j < reader.rows; j++)
+            {
+                PyList_SetItem(col, j, PyList_GetItem(PyList_GetItem(table, j), i));
+            }
+            PyObject *args = PyTuple_New(3);
+            PyTuple_SetItem(args, 0, col);
+            PyObject *dim = PyLong_FromLong(reader.typeList[i].isArray ? reader.typeList[i].arrayLen : 1);
+            PyTuple_SetItem(args, 1, dim);
+            PyObject *name = PyBytes_FromString(CurrentTemplate.schemas[i].first.name.c_str());
+            PyTuple_SetItem(args, 2, name);
+            PyObject *ret = PythonCall(args, "Novelty_Outlier", "Novelty_Single_Column");
+
+            int len = PyObject_Size(ret);
+            if (len == 0)
+            {
+                delete[] set;
+                return StatusCode::NO_DATA_QUERIED;
+            }
+            for (int j = 0; j < len; j++)
+            {
+                if (PyLong_AsLong(PyList_GetItem(ret, j)) == -1)
+                {
+                    *(set + j) = 1;
+                }
+            }
+            Py_DECREF(args);
+            Py_XDECREF(ret);
+            if (i == reader.typeList.size() - 1)
+                PyObject_Free(dim);
+        }
+        PyObject_FREE(table);
         if (CurrentTemplate.hasImage)
         {
             vector<pair<char *, int>> abnormalData;
@@ -2996,12 +3095,6 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
             for (int i = 0; i < reader.rows; i++)
             {
                 char *row = reader.NextRow();
-                // for (int j = 0; j < reader.recordLength; j++)
-                // {
-                //     cout << (int)*(row + j) << " ";
-                // }
-                // cout << endl;
-
                 if (!IsNormalIDBFile(row, params->pathToLine))
                 {
                     abnormalData.push_back(row);
@@ -3054,7 +3147,7 @@ int main()
     params.byPath = 0;
     params.queryNums = 40;
     DB_DataBuffer buffer;
-    DB_GetAbnormalRhythm(&buffer, &params, 1);
+    DB_GetAbnormalRhythm(&buffer, &params, 0);
     long count;
     // DB_GetAbnormalDataCount(&params, &count);
     // DB_QueryByFileID(&buffer, &params);

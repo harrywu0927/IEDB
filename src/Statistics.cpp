@@ -180,7 +180,8 @@ PyObject *ConvertToPyList_STAT(DB_DataBuffer *buffer)
                         SetValueToPyList(ts, buffer->buffer, cur, type, k * 2);
                         long timestamp = 0;
                         memcpy(&timestamp, buffer->buffer + cur, 8);
-                        PyList_SetItem(ts, k * 2 + 1, PyLong_FromLong(timestamp)); // insert timestamp to timeseries
+                        PyObject *time = PyLong_FromLong(timestamp);
+                        PyList_SetItem(ts, k * 2 + 1, time); // insert timestamp to timeseries
                     }
                     PyList_Append(row, ts);
                 }
@@ -250,7 +251,7 @@ int STAT_Process(DB_DataBuffer *buffer, STAT_Type type)
     PyRun_SimpleString("import sys");
     PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
     PyObject *statistics = PyImport_ImportModule("Statistics");
-    PyObject *pFunc, *pArgs, *pValue;
+    PyObject *pFunc, *pArgs;
     if (statistics != NULL)
     {
         // 从模块中获取函数
@@ -302,6 +303,9 @@ int STAT_Process(DB_DataBuffer *buffer, STAT_Type type)
             }
         }
     }
+    PyObject_Free(arr);
+    Py_XDECREF(pFunc);
+    Py_XDECREF(statistics);
     free(buffer->buffer);
     buffer->buffer = NULL;
     buffer->buffer = newBuffer;

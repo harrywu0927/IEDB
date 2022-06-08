@@ -465,7 +465,8 @@ PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer)
                         SetValueToPyList(ts, buffer->buffer, cur, type, k * 2);
                         long timestamp = 0;
                         memcpy(&timestamp, buffer->buffer + cur, 8);
-                        PyList_SetItem(ts, k * 2 + 1, PyLong_FromLong(timestamp)); // insert timestamp to timeseries
+                        PyObject *time = PyLong_FromLong(timestamp);
+                        PyList_SetItem(ts, k * 2 + 1, time); // insert timestamp to timeseries
                     }
                     PyList_Append(row, ts);
                 }
@@ -488,7 +489,8 @@ PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer)
                         }
                         long timestamp = 0;
                         memcpy(&timestamp, buffer->buffer + cur, 8);
-                        PyList_SetItem(arr, type.arrayLen + 1, PyLong_FromLong(timestamp)); // insert timestamp to timeseries
+                        PyObject *time = PyLong_FromLong(timestamp);
+                        PyList_SetItem(arr, type.arrayLen + 1, time); // insert timestamp to timeseries
                         PyList_SetItem(ts, k, arr);
                     }
                     PyList_Append(row, ts);
@@ -536,7 +538,7 @@ int DB_OutlierDetection(DB_DataBuffer *buffer, DB_QueryParams *params)
     PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
 
     PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
-    PyObject *pValue, *pArgs, *pFunc;
+    PyObject *pArgs, *pFunc;
     if (mymodule != NULL)
     {
         // 从模块中获取函数
@@ -567,6 +569,9 @@ int DB_OutlierDetection(DB_DataBuffer *buffer, DB_QueryParams *params)
             buffer->bufferMalloced = 1;
         }
     }
+    PyObject_Free(arr);
+    Py_XDECREF(pFunc);
+    Py_XDECREF(mymodule);
     return 0;
 }
 
@@ -595,7 +600,7 @@ int DB_NoveltyFit(DB_QueryParams *params, double *maxLine, double *minLine)
     PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
 
     PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
-    PyObject *pValue, *pArgs, *pFunc;
+    PyObject *pArgs, *pFunc;
     long res = 0;
     if (mymodule != NULL)
     {
@@ -614,6 +619,9 @@ int DB_NoveltyFit(DB_QueryParams *params, double *maxLine, double *minLine)
             *minLine = PyFloat_AsDouble(PyTuple_GetItem(ret, 1));
         }
     }
+    PyObject_Free(arr);
+    Py_XDECREF(pFunc);
+    Py_XDECREF(mymodule);
     return 0;
 }
 
@@ -671,6 +679,9 @@ int DB_NoveltyTraining(const char *pathToLine)
                     return StatusCode::UNKNWON_DATAFILE;
             }
         }
+        PyObject_Free(arr);
+        Py_XDECREF(pFunc);
+        Py_XDECREF(mymodule);
     }
     return 0;
 }

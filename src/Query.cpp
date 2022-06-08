@@ -4055,6 +4055,9 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 			break;
 	}
 
+	char *completeZiped = new char[CurrentTemplate.totalBytes];
+	int rezipedlen = 0;
+	ReZipBuff(completeZiped, rezipedlen, params->pathToLine);
 	if (selectedNum < params->queryNums)
 	{
 		//检索到的数量不够，继续从打包文件中获取
@@ -4100,8 +4103,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 				}
 				case 1:
 				{
-					buff = new char[CurrentTemplate.totalBytes];
-					ReZipBuff(buff, readLength, params->pathToLine);
+					buff = completeZiped;
 					break;
 				}
 				case 2:
@@ -4126,6 +4128,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 			}
 		}
 	}
+	delete[] completeZiped;
 	sortResult(mallocedMemory, params, Ext_Params.type);
 	//已获取指定数量的数据，开始拷贝内存
 	if (cur != 0)
