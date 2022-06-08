@@ -18,8 +18,8 @@ void *checkTime(void *ptr)
         while (IOBusy)
         {
         }
-        if (settings("Pack_Mode") == "auto")
-            return;
+        // if (settings("Pack_Mode") == "auto")
+        //     return;
         if (timerStarted == false)
             pthread_exit(NULL);
         long curTime = getMilliTime();
@@ -80,7 +80,7 @@ void autoPacker()
         }
         if (settings("Pack_Mode") != "auto")
             return;
-        }
+    }
 }
 // thread settingsWatcher;
 pthread_t settingsWatcher;

@@ -108,6 +108,12 @@ int main()
     // }
     // Py_Finalize();
     // return 0;
+    long timestart = 1763728603642;
+    DataTypeConverter dt;
+    char time[8] = {0};
+    dt.ToLong64Buff(timestart, time);
+    return 0;
+
     DB_QueryParams params;
     params.pathToLine = "JinfeiSeven";
     params.fileID = "RobotDataTwenty50";

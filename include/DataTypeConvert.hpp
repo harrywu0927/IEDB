@@ -20,12 +20,14 @@ public:
     int ToInt32(const char *str);
     float ToFloat(const char *str);
     uint32_t ToUInt32(const char *str);
+    uint64_t ToLong64(const char *str);
     //指定数据类型转成对应的字符数组
     void ToInt16Buff(short num, char *buff);
     void ToUInt16Buff(uint16_t num, char *buff);
     void ToInt32Buff(int num, char *buff);
     void ToUInt32Buff(uint32_t num, char *buff);
     void ToFloatBuff(float num, char *buff);
+    void ToLong64Buff(uint64_t num,char *buff);
 
     //小端存储方式
     //字符数组转成指定数据类型
@@ -34,10 +36,12 @@ public:
     int ToInt32_m(const char *str);
     float ToFloat_m(const char *str);
     uint32_t ToUInt32_m(const char *str);
+    uint64_t ToLong64_m(const char *str);
     //指定数据类型转成对应的字符数组
     void ToInt16Buff_m(short num, char *buff);
     void ToUInt16Buff_m(uint16_t num, char *buff);
     void ToInt32Buff_m(int num, char *buff);
     void ToUInt32Buff_m(uint32_t num, char *buff);
     void ToFloatBuff_m(float num, char *buff);
-};
+    void ToLong64Buff_m(uint64_t num,char *buff);
+    };

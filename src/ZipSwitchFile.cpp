@@ -28,50 +28,9 @@ int ZipSwitchBuf(char *readbuff, char *writebuff, long &writebuff_pos)
     {
         if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::UDINT) //开关量的持续时长
         {
-            uint32 standardBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
-            uint32 maxBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
-            uint32 minBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
-            // 4个字节的持续时长,暂定，根据后续情况可能进行更改
-            char value[4] = {0};
-            memcpy(value, readbuff + readbuff_pos, 4);
-            uint32 currentBoolTime = converter.ToUInt32(value);
-
-            if (CurrentZipTemplate.schemas[i].second.hasTime) //带时间戳
+            if (CurrentZipTemplate.schemas[i].second.isTimeseries == true) //是时间序列类型
             {
-                //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                uint16_t posNum = i;
-                char zipPosNum[2] = {0};
-                converter.ToUInt16Buff(posNum, zipPosNum);
-                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
-                writebuff_pos += 2;
-
-                if (currentBoolTime != standardBoolTime && (currentBoolTime < minBoolTime || currentBoolTime > maxBoolTime))
-                {
-                    //既有数据又有时间
-                    char zipType[1] = {0};
-                    zipType[0] = (char)2;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
-                    writebuff_pos += 1;
-
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
-                    writebuff_pos += 12;
-                }
-                else
-                {
-                    //只有时间
-                    char zipType[1] = {0};
-                    zipType[0] = (char)1;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
-                    writebuff_pos += 1;
-
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
-                    writebuff_pos += 8;
-                }
-                readbuff_pos += 12;
-            }
-            else //不带时间戳
-            {
-                if (currentBoolTime != standardBoolTime && (currentBoolTime < minBoolTime || currentBoolTime > maxBoolTime))
+                if (CurrentZipTemplate.schemas[i].second.isArray == true) //既是时间序列又是数组，则不压缩
                 {
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                     uint16_t posNum = i;
@@ -80,21 +39,166 @@ int ZipSwitchBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     memcpy(writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
+                    //既是时间序列又是数组
+                    char zipType[1] = {0};
+                    zipType[0] = (char)3;
+                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    writebuff_pos += 1;
+
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
+                    writebuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
+                    readbuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
+                }
+                else //只是时间序列类型
+                {
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    converter.ToUInt16Buff(posNum, zipPosNum);
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+
+                    //只是时间序列
+                    char zipType[1] = {0};
+                    zipType[0] = (char)4;
+                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    writebuff_pos += 1;
+
+                    //添加第一个采样的时间戳
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
+                    writebuff_pos += 8;
+
+                    uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                    uint32 maxUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                    uint32 minUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
+
+                    for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
+                    {
+                        // 4个字节,暂定，根据后续情况可能进行更改
+                        char value[4] = {0};
+                        memcpy(value, readbuff + readbuff_pos, 4);
+                        uint32 currentUDintValue = converter.ToUInt32(value);
+
+                        if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
+                        {
+                            //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
+                            uint16_t posNum = j;
+                            char zipPosNum[2] = {0};
+                            converter.ToUInt16Buff(posNum, zipPosNum);
+                            memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                            writebuff_pos += 2;
+
+                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                            writebuff_pos += 4;
+                        }
+                        readbuff_pos += 12;
+                    }
+                }
+            }
+            else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
+            {
+                //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                uint16_t posNum = i;
+                char zipPosNum[2] = {0};
+                converter.ToUInt16Buff(posNum, zipPosNum);
+                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                writebuff_pos += 2;
+
+                if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带有时间戳
+                {
+                    //既有数据又有时间
+                    char zipType[1] = {0};
+                    zipType[0] = (char)2;
+                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    writebuff_pos += 1;
+
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                    writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                    readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
+                }
+                else
+                {
                     //只有数据
                     char zipType[1] = {0};
                     zipType[0] = (char)0;
                     memcpy(writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
-                    writebuff_pos += 4;
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen);
+                    writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
+                    readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
-                readbuff_pos += 4;
+            }
+            else
+            {
+                uint32 standardBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                uint32 maxBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.maxValue);
+                uint32 minBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.minValue);
+                // 4个字节的持续时长,暂定，根据后续情况可能进行更改
+                char value[4] = {0};
+                memcpy(value, readbuff + readbuff_pos, 4);
+                uint32 currentBoolTime = converter.ToUInt32(value);
+
+                if (CurrentZipTemplate.schemas[i].second.hasTime) //带时间戳
+                {
+                    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                    uint16_t posNum = i;
+                    char zipPosNum[2] = {0};
+                    converter.ToUInt16Buff(posNum, zipPosNum);
+                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    writebuff_pos += 2;
+
+                    if (currentBoolTime != standardBoolTime && (currentBoolTime < minBoolTime || currentBoolTime > maxBoolTime))
+                    {
+                        //既有数据又有时间
+                        char zipType[1] = {0};
+                        zipType[0] = (char)2;
+                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        writebuff_pos += 1;
+
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
+                        writebuff_pos += 12;
+                    }
+                    else
+                    {
+                        //只有时间
+                        char zipType[1] = {0};
+                        zipType[0] = (char)1;
+                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        writebuff_pos += 1;
+
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
+                        writebuff_pos += 8;
+                    }
+                    readbuff_pos += 12;
+                }
+                else //不带时间戳
+                {
+                    if (currentBoolTime != standardBoolTime && (currentBoolTime < minBoolTime || currentBoolTime > maxBoolTime))
+                    {
+                        //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+                        uint16_t posNum = i;
+                        char zipPosNum[2] = {0};
+                        converter.ToUInt16Buff(posNum, zipPosNum);
+                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        writebuff_pos += 2;
+
+                        //只有数据
+                        char zipType[1] = {0};
+                        zipType[0] = (char)0;
+                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        writebuff_pos += 1;
+
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                        writebuff_pos += 4;
+                    }
+                    readbuff_pos += 4;
+                }
             }
         }
         else
         {
-            cout << "存在开关量以外的类型，请检查模板或者更换功能块" << endl;
+            cout << "存在开关量以外的类型(本功能针对开关量的持续时间,而不是bool值,如果是请替换为ZipFile功能)，请检查模板或者更换功能块" << endl;
             return StatusCode::DATA_TYPE_MISMATCH_ERROR;
         }
     }
@@ -1416,4 +1520,8 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
 //     // std::cout<<"end 开关量文件按时间段 多线程还原"<<std::endl<<std::endl;
 
 //     return 0;
+// }
+// int main()
+// {
+//     DB_ZipSwitchFile("RobotTsTest","RobotTsTest");
 // }
