@@ -2404,7 +2404,7 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
     DataTypeConverter converter;
 
     long pos = -1;                      //用于定位是修改模板的第几条
-    for (long i = 0; i < len / 91; i++) //寻找是否有相同变量名
+    for (long i = 0; i < len / 95; i++) //寻找是否有相同变量名
     {
         char existValueName[30];
         memcpy(existValueName, readBuf + readbuf_pos, 30);
@@ -2412,7 +2412,7 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
         {
             pos = i; //记录这条记录的位置
         }
-        readbuf_pos += 91;
+        readbuf_pos += 95;
     }
     if (pos == -1)
     {
@@ -2421,7 +2421,7 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
     }
 
     readbuf_pos = 0;
-    for (long i = 0; i < len / 71; i++) //寻找模板是否有与更新参数相同的变量名
+    for (long i = 0; i < len / 95; i++) //寻找模板是否有与更新参数相同的变量名
     {
         char existValueName[30];
         memcpy(existValueName, readBuf + readbuf_pos, 30);
@@ -2430,7 +2430,7 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
             cout << "更新参数存在模板已有的变量名" << endl;
             return StatusCode::VARIABLE_NAME_EXIST;
         }
-        readbuf_pos += 91;
+        readbuf_pos += 95;
     }
 
     //检查更新后是否为数组是否合法
@@ -2447,12 +2447,13 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
         return StatusCode::HASTIME_ERROR;
     }
 
-    char valueNmae[30], valueType[30], standardValue[10], maxValue[10], minValue[10], hasTime[1]; //先初始化为0
+    char valueNmae[30], valueType[30], standardValue[10], maxValue[10], minValue[10], hasTime[1], timeseriesSpan[4]; //先初始化为0
     memset(valueNmae, 0, sizeof(valueNmae));
     memset(valueType, 0, sizeof(valueType));
     memset(standardValue, 0, sizeof(standardValue));
     memset(maxValue, 0, sizeof(maxValue));
     memset(minValue, 0, sizeof(minValue));
+    memset(timeseriesSpan, 0, sizeof(timeseriesSpan));
 
     if (newZipParams->isArrary == 1) //是数组类型,拼接字符串
     {
@@ -2649,12 +2650,13 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
         return StatusCode::UNKNOWN_TYPE;
 
     //将所有参数传入readBuf中，已覆盖写的方式写入已有模板文件中
-    memcpy(readBuf + 91 * pos, valueNmae, 30);
-    memcpy(readBuf + 91 * pos + 30, valueType, 30);
-    memcpy(readBuf + 91 * pos + 60, standardValue, 10);
-    memcpy(readBuf + 91 * pos + 70, maxValue, 10);
-    memcpy(readBuf + 91 * pos + 80, minValue, 10);
-    memcpy(readBuf + 91 * pos + 90, hasTime, 1);
+    memcpy(readBuf + 95 * pos, valueNmae, 30);
+    memcpy(readBuf + 95 * pos + 30, valueType, 30);
+    memcpy(readBuf + 95 * pos + 60, standardValue, 10);
+    memcpy(readBuf + 95 * pos + 70, maxValue, 10);
+    memcpy(readBuf + 95 * pos + 80, minValue, 10);
+    memcpy(readBuf + 95 * pos + 90, hasTime, 1);
+    memcpy(readBuf + 95 * pos, timeseriesSpan, 4);
 
     //打开文件并覆盖写入
     long fp;
@@ -2740,7 +2742,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
     DataTypeConverter converter;
 
     long pos = -1;                      //用于定位是修改模板的第几条
-    for (long i = 0; i < len / 91; i++) //寻找是否有相同变量名
+    for (long i = 0; i < len / 95; i++) //寻找是否有相同变量名
     {
         char existValueName[30];
         memcpy(existValueName, readBuf + readbuf_pos, 30);
@@ -2748,7 +2750,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
         {
             pos = i; //记录这条记录的位置
         }
-        readbuf_pos += 91;
+        readbuf_pos += 95;
     }
     if (pos == -1)
     {
@@ -2757,7 +2759,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
     }
 
     readbuf_pos = 0;
-    for (long i = 0; i < len / 71; i++) //寻找模板是否有与更新参数相同的变量名
+    for (long i = 0; i < len / 95; i++) //寻找模板是否有与更新参数相同的变量名
     {
         char existValueName[30];
         memcpy(existValueName, readBuf + readbuf_pos, 30);
@@ -2766,7 +2768,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
             cout << "更新参数存在模板已有的变量名" << endl;
             return StatusCode::VARIABLE_NAME_EXIST;
         }
-        readbuf_pos += 91;
+        readbuf_pos += 95;
     }
 
     //检查更新后是否为数组是否合法
@@ -2783,12 +2785,13 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
         return StatusCode::HASTIME_ERROR;
     }
 
-    char valueNmae[30], valueType[30], standardValue[10], maxValue[10], minValue[10], hasTime[1]; //先初始化为0
+    char valueNmae[30], valueType[30], standardValue[10], maxValue[10], minValue[10], hasTime[1], timeseriesSpan[4]; //先初始化为0
     memset(valueNmae, 0, sizeof(valueNmae));
     memset(valueType, 0, sizeof(valueType));
     memset(standardValue, 0, sizeof(standardValue));
     memset(maxValue, 0, sizeof(maxValue));
     memset(minValue, 0, sizeof(minValue));
+    memset(timeseriesSpan, 0, sizeof(timeseriesSpan));
 
     if (newZipParams->isArrary == 1) //是数组类型,拼接字符串
     {
@@ -2985,12 +2988,13 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
         return StatusCode::UNKNOWN_TYPE;
 
     //将所有参数传入readBuf中，已覆盖写的方式写入已有模板文件中
-    memcpy(readBuf + 91 * pos, valueNmae, 30);
-    memcpy(readBuf + 91 * pos + 30, valueType, 30);
-    memcpy(readBuf + 91 * pos + 60, standardValue, 10);
-    memcpy(readBuf + 91 * pos + 70, maxValue, 10);
-    memcpy(readBuf + 91 * pos + 80, minValue, 10);
-    memcpy(readBuf + 91 * pos + 90, hasTime, 1);
+    memcpy(readBuf + 95 * pos, valueNmae, 30);
+    memcpy(readBuf + 95 * pos + 30, valueType, 30);
+    memcpy(readBuf + 95 * pos + 60, standardValue, 10);
+    memcpy(readBuf + 95 * pos + 70, maxValue, 10);
+    memcpy(readBuf + 95 * pos + 80, minValue, 10);
+    memcpy(readBuf + 95 * pos + 90, hasTime, 1);
+    memcpy(readBuf + 95 * pos, timeseriesSpan, 4);
 
     //创建一个新的.ziptem文件，根据当前已存在的压缩模板数量进行编号
     long fp;
@@ -3099,7 +3103,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     DataTypeConverter converter;
 
     long pos = -1;                      //用于定位是修改模板的第几条
-    for (long i = 0; i < len / 91; i++) //寻找是否有相同变量名
+    for (long i = 0; i < len / 95; i++) //寻找是否有相同变量名
     {
         char existValueName[30];
         memcpy(existValueName, readBuf + readbuf_pos, 30);
@@ -3107,7 +3111,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
         {
             pos = i; //记录这条记录的位置
         }
-        readbuf_pos += 91;
+        readbuf_pos += 95;
     }
     if (pos == -1)
     {
@@ -3116,7 +3120,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     }
 
     readbuf_pos = 0;
-    for (long i = 0; i < len / 71; i++) //寻找模板是否有与更新参数相同的变量名
+    for (long i = 0; i < len / 95; i++) //寻找模板是否有与更新参数相同的变量名
     {
         char existValueName[30];
         memcpy(existValueName, readBuf + readbuf_pos, 30);
@@ -3125,7 +3129,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
             cout << "更新参数存在模板已有的变量名" << endl;
             return StatusCode::VARIABLE_NAME_EXIST;
         }
-        readbuf_pos += 91;
+        readbuf_pos += 95;
     }
 
     //检查更新后是否为数组是否合法
@@ -3142,12 +3146,13 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
         return StatusCode::HASTIME_ERROR;
     }
 
-    char valueNmae[30], valueType[30], standardValue[10], maxValue[10], minValue[10], hasTime[1]; //先初始化为0
+    char valueNmae[30], valueType[30], standardValue[10], maxValue[10], minValue[10], hasTime[1], timeseriesSpan[4]; //先初始化为0
     memset(valueNmae, 0, sizeof(valueNmae));
     memset(valueType, 0, sizeof(valueType));
     memset(standardValue, 0, sizeof(standardValue));
     memset(maxValue, 0, sizeof(maxValue));
     memset(minValue, 0, sizeof(minValue));
+    memset(timeseriesSpan, 0, sizeof(timeseriesSpan));
 
     if (newZipParams->isArrary == 1) //是数组类型,拼接字符串
     {
@@ -3344,12 +3349,13 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
         return StatusCode::UNKNOWN_TYPE;
 
     //将所有参数传入readBuf中，已覆盖写的方式写入已有模板文件中
-    memcpy(readBuf + 91 * pos, valueNmae, 30);
-    memcpy(readBuf + 91 * pos + 30, valueType, 30);
-    memcpy(readBuf + 91 * pos + 60, standardValue, 10);
-    memcpy(readBuf + 91 * pos + 70, maxValue, 10);
-    memcpy(readBuf + 91 * pos + 80, minValue, 10);
-    memcpy(readBuf + 91 * pos + 90, hasTime, 1);
+    memcpy(readBuf + 95 * pos, valueNmae, 30);
+    memcpy(readBuf + 95 * pos + 30, valueType, 30);
+    memcpy(readBuf + 95 * pos + 60, standardValue, 10);
+    memcpy(readBuf + 95 * pos + 70, maxValue, 10);
+    memcpy(readBuf + 95 * pos + 80, minValue, 10);
+    memcpy(readBuf + 95 * pos + 90, hasTime, 1);
+    memcpy(readBuf + 95 * pos, timeseriesSpan, 4);
 
     //创建一个新的.ziptem文件，根据当前已存在的压缩模板数量进行编号
     long fp;

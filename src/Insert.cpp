@@ -490,39 +490,39 @@ int DB_InsertRecords(DB_DataBuffer buffer[], int recordsNum, int addTime)
 //     return 0;
 // }
 
-int main()
-{
-    DB_DataBuffer buffer;
-    uint32_t uintval = 200;
-    char uintarr[4] = {0};
-    DataTypeConverter converter;
-    converter.ToInt32Buff(uintval,uintarr);
-    buffer.buffer = new char[60];
-    memcpy(buffer.buffer,uintarr,4);
-    memcpy(buffer.buffer+4,uintarr,4);
-    memcpy(buffer.buffer+8,uintarr,4);
-    uintval = 300;
-    converter.ToInt32Buff(uintval,uintarr);
-    memcpy(buffer.buffer+12,uintarr,4);
-    memcpy(buffer.buffer+16,uintarr,4);
-    memcpy(buffer.buffer+20,uintarr,4);
-    uintval = 200;
-    converter.ToInt32Buff(uintval,uintarr);
-    memcpy(buffer.buffer+24,uintarr,4);
-    memcpy(buffer.buffer+28,uintarr,4);
-    memcpy(buffer.buffer+32,uintarr,4);
-    uintval = 300;
-    converter.ToInt32Buff(uintval,uintarr);
-    memcpy(buffer.buffer+36,uintarr,4);
-    memcpy(buffer.buffer+40,uintarr,4);
-    memcpy(buffer.buffer+44,uintarr,4);
-    uintval = 200;
-    converter.ToInt32Buff(uintval,uintarr);
-    memcpy(buffer.buffer+48,uintarr,4);
-    memcpy(buffer.buffer+52,uintarr,4);
-    memcpy(buffer.buffer+56,uintarr,4);
-    buffer.length = 60;
-    buffer.savePath="RobotTsTest";
-    DB_InsertRecord(&buffer,0);
-    return 0;
-}
+// int main()
+// {
+//     DB_DataBuffer buffer;
+//     uint32_t uintval = 200;
+//     char uintarr[4] = {0};
+//     DataTypeConverter converter;
+//     converter.ToInt32Buff(uintval,uintarr);
+//     buffer.buffer = new char[60];
+//     memcpy(buffer.buffer,uintarr,4);
+//     memcpy(buffer.buffer+4,uintarr,4);
+//     memcpy(buffer.buffer+8,uintarr,4);
+//     uintval = 300;
+//     converter.ToInt32Buff(uintval,uintarr);
+//     memcpy(buffer.buffer+12,uintarr,4);
+//     memcpy(buffer.buffer+16,uintarr,4);
+//     memcpy(buffer.buffer+20,uintarr,4);
+//     uintval = 200;
+//     converter.ToInt32Buff(uintval,uintarr);
+//     memcpy(buffer.buffer+24,uintarr,4);
+//     memcpy(buffer.buffer+28,uintarr,4);
+//     memcpy(buffer.buffer+32,uintarr,4);
+//     uintval = 300;
+//     converter.ToInt32Buff(uintval,uintarr);
+//     memcpy(buffer.buffer+36,uintarr,4);
+//     memcpy(buffer.buffer+40,uintarr,4);
+//     memcpy(buffer.buffer+44,uintarr,4);
+//     uintval = 200;
+//     converter.ToInt32Buff(uintval,uintarr);
+//     memcpy(buffer.buffer+48,uintarr,4);
+//     memcpy(buffer.buffer+52,uintarr,4);
+//     memcpy(buffer.buffer+56,uintarr,4);
+//     buffer.length = 60;
+//     buffer.savePath="RobotTsTest";
+//     DB_InsertRecord(&buffer,0);
+//     return 0;
+// }

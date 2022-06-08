@@ -7,6 +7,7 @@ using namespace std;
 short DataTypeConverter::ToInt16(const char *str)
 {
     short value = 0;
+
     void *pf;
     pf = &value;
     for (char i = 0; i < 2; i++)
@@ -37,7 +38,7 @@ uint16_t DataTypeConverter::ToUInt16(const char *str)
 int DataTypeConverter::ToInt32(const char *str)
 {
     int value = 0;
-    ;
+
     void *pf;
     pf = &value;
     for (char i = 0; i < 4; i++)
@@ -49,7 +50,7 @@ int DataTypeConverter::ToInt32(const char *str)
 uint32_t DataTypeConverter::ToUInt32(const char *str)
 {
     uint32_t value = 0;
-    ;
+
     void *pf;
     pf = &value;
     for (char i = 0; i < 4; i++)
@@ -61,6 +62,7 @@ uint32_t DataTypeConverter::ToUInt32(const char *str)
 float DataTypeConverter::ToFloat(const char *str)
 {
     float floatVariable;
+
     void *pf;
     pf = &floatVariable;
     for (char i = 0; i < 4; i++)
@@ -70,10 +72,24 @@ float DataTypeConverter::ToFloat(const char *str)
     return floatVariable;
 }
 
+uint64_t DataTypeConverter::ToLong64(const char *str)
+{
+    uint64_t value = 0;
+
+    void *pf;
+    pf = &value;
+    for (char i = 0; i < 8; i++)
+    {
+        *((unsigned char *)pf + i) = str[7 - i];
+    }
+    return value;
+}
+
 //将小端存储方式的字符数组转换为指定类型数值
 short DataTypeConverter::ToInt16_m(const char *str)
 {
     short value = 0;
+
     void *pf;
     pf = &value;
     for (char i = 0; i < 2; i++)
@@ -103,7 +119,7 @@ uint16_t DataTypeConverter::ToUInt16_m(const char *str)
 int DataTypeConverter::ToInt32_m(const char *str)
 {
     int value = 0;
-    ;
+
     void *pf;
     pf = &value;
     for (char i = 0; i < 4; i++)
@@ -115,6 +131,7 @@ int DataTypeConverter::ToInt32_m(const char *str)
 uint32_t DataTypeConverter::ToUInt32_m(const char *str)
 {
     uint32_t value = 0;
+
     void *pf;
     pf = &value;
     for (char i = 0; i < 4; i++)
@@ -126,6 +143,7 @@ uint32_t DataTypeConverter::ToUInt32_m(const char *str)
 float DataTypeConverter::ToFloat_m(const char *str)
 {
     float floatVariable;
+
     void *pf;
     pf = &floatVariable;
     for (char i = 0; i < 4; i++)
@@ -135,10 +153,24 @@ float DataTypeConverter::ToFloat_m(const char *str)
     return floatVariable;
 }
 
+uint64_t DataTypeConverter::ToLong64_m(const char *str)
+{
+    uint64_t value = 0;
+
+    void *pf;
+    pf = &value;
+    for (char i = 0; i < 8; i++)
+    {
+        *((unsigned char *)pf + i) = str[i];
+    }
+    return value;
+}
+
 //将指定类型的数值转换为大端存储方式的字符数组
 void DataTypeConverter::ToInt16Buff(short num, char *buff)
 {
     char IntValue[2] = {0};
+
     for (int j = 0; j < 2; j++)
     {
         IntValue[1 - j] |= num;
@@ -150,6 +182,7 @@ void DataTypeConverter::ToInt16Buff(short num, char *buff)
 void DataTypeConverter::ToUInt16Buff(uint16_t num, char *buff)
 {
     char UIntValue[2] = {0};
+
     for (int j = 0; j < 2; j++)
     {
         UIntValue[1 - j] |= num;
@@ -161,6 +194,7 @@ void DataTypeConverter::ToUInt16Buff(uint16_t num, char *buff)
 void DataTypeConverter::ToInt32Buff(int num, char *buff)
 {
     char DIntValue[4] = {0};
+
     for (int j = 0; j < 4; j++)
     {
         DIntValue[3 - j] |= num;
@@ -172,6 +206,7 @@ void DataTypeConverter::ToInt32Buff(int num, char *buff)
 void DataTypeConverter::ToUInt32Buff(uint32_t num, char *buff)
 {
     char UDintValue[4] = {0};
+
     for (int j = 0; j < 4; j++)
     {
         UDintValue[3 - j] |= num;
@@ -183,6 +218,7 @@ void DataTypeConverter::ToUInt32Buff(uint32_t num, char *buff)
 void DataTypeConverter::ToFloatBuff(float num, char *buff)
 {
     char RealValue[4] = {0};
+
     void *pf;
     pf = &num;
     for (int j = 0; j < 4; j++)
@@ -192,10 +228,23 @@ void DataTypeConverter::ToFloatBuff(float num, char *buff)
     memcpy(buff, RealValue, 4);
 }
 
+void DataTypeConverter::ToLong64Buff(uint64_t num, char *buff)
+{
+    char LongValue[8] = {0};
+
+    for (int j = 0; j < 8; j++)
+    {
+        LongValue[7 - j] |= num;
+        num >>= 8;
+    }
+    memcpy(buff, LongValue, 8);
+}
+
 //将指定类型的数值转换为小端存储方式的字符数组
 void DataTypeConverter::ToInt16Buff_m(short num, char *buff)
 {
     char IntValue[2] = {0};
+
     for (int j = 0; j < 2; j++)
     {
         IntValue[j] |= num;
@@ -207,6 +256,7 @@ void DataTypeConverter::ToInt16Buff_m(short num, char *buff)
 void DataTypeConverter::ToUInt16Buff_m(uint16_t num, char *buff)
 {
     char UIntValue[2] = {0};
+
     for (int j = 0; j < 2; j++)
     {
         UIntValue[j] |= num;
@@ -218,6 +268,7 @@ void DataTypeConverter::ToUInt16Buff_m(uint16_t num, char *buff)
 void DataTypeConverter::ToInt32Buff_m(int num, char *buff)
 {
     char DIntValue[4] = {0};
+
     for (int j = 0; j < 4; j++)
     {
         DIntValue[j] |= num;
@@ -229,6 +280,7 @@ void DataTypeConverter::ToInt32Buff_m(int num, char *buff)
 void DataTypeConverter::ToUInt32Buff_m(uint32_t num, char *buff)
 {
     char UDintValue[4] = {0};
+
     for (int j = 0; j < 4; j++)
     {
         UDintValue[j] |= num;
@@ -240,6 +292,7 @@ void DataTypeConverter::ToUInt32Buff_m(uint32_t num, char *buff)
 void DataTypeConverter::ToFloatBuff_m(float num, char *buff)
 {
     char RealValue[4] = {0};
+
     void *pf;
     pf = &num;
     for (int j = 0; j < 4; j++)
@@ -247,4 +300,16 @@ void DataTypeConverter::ToFloatBuff_m(float num, char *buff)
         *((unsigned char *)pf + j) = RealValue[j];
     }
     memcpy(buff, RealValue, 4);
+}
+
+void DataTypeConverter::ToLong64Buff_m(uint64_t num,char *buff)
+{
+    char LongValue[8] = {0};
+
+    for (int j = 0; j < 8; j++)
+    {
+        LongValue[j] |= num;
+        num >>= 8;
+    }
+    memcpy(buff, LongValue, 8);
 }
