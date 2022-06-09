@@ -275,10 +275,7 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
                                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                                         readbuff_pos += 4;
                                         writebuff_pos += 4;
-<<<<<<< HEAD
-
-=======
->>>>>>> 9520d0ec81ebe39828577f8689e701769085c267
+                                        
                                         //添加上时间戳
                                         uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
                                         char zipTimeBuff[8] = {0};
