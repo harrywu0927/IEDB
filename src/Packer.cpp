@@ -30,7 +30,8 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
 {
     IOBusy = true;
     packMutex.lock();
-    TemplateManager::CheckTemplate(pathToLine);
+    if (TemplateManager::CheckTemplate(pathToLine) != 0)
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
     if (filesWithTime.size() < 1)
         return -1;
     //升序排序
@@ -166,7 +167,11 @@ int Packer::RePack(string pathToLine)
          {
              return std::get<0>(iter1) < std::get<0>(iter2);
          });
-    int packThreshold = atol(settings("Pack_Max_Size").c_str());
+    int packThreshold;
+    if (settings("Pack_Mode") != "auto")
+        packThreshold = atol(settings("Pack_Max_Size").c_str());
+    else
+        packThreshold = RepackThreshold;
     int cursize = 0;
     string lastTemName = "";
     for (auto &pack : packsWithTime)

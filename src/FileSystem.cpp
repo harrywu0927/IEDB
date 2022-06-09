@@ -180,6 +180,29 @@ bool LoopMode(char buf[], long length)
     struct dirent *ptr;
     vector<string> files;
     // char *path = "./";
+    long needSpace = length + 1;
+    if (needSpace > availableSpace) //空间不足
+    {
+        cout << "Need space:" << needSpace / 1024 << "KB Available:" << availableSpace / 1024 << "KB" << endl;
+
+        while (availableSpace < needSpace && !fileQueue.empty()) //删除文件直至可用容量大于需求容量
+        {
+            string file = fileQueue.front();
+            fileQueue.pop();
+            if (remove(file.c_str()) == 0)
+            {
+                getDiskSpaces();
+            }
+        }
+        if (availableSpace >= needSpace)
+            return true;
+    }
+    else
+    {
+        return true;
+    }
+    return false;
+
     if (readFileList_FS(labelPath, &files) == 1)
     {
         long needSpace = length + 1;

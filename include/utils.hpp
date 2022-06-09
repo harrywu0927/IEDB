@@ -121,6 +121,8 @@ extern int maxThreads; //此设备支持的最大线程数
 
 extern bool IOBusy; // IO繁忙
 
+extern int RepackThreshold; //再打包的最大大小
+
 extern neb::CJsonObject settings;
 //获取某一目录下的所有文件
 //不递归子文件夹

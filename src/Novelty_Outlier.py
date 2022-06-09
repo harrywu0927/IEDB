@@ -29,10 +29,22 @@ def Outliers(lst, dimension):
 def Novelty(vals, dimensions, names):
     res = []
     for i in range(len(vals)):
+        print(names[i].decode())
         clf = joblib.load(names[i].decode()+'_novelty_model.pkl')
         points = np.array(vals[i])
         points = points.reshape((len(points)/dimensions[i]), dimensions[i])
         res.append(clf.predict(points))
+    return list(res)
+
+
+def Novelty_Single_Column(vals, dim, name):
+    res = []
+    print(name.decode())
+    clf = joblib.load(name.decode()+'_novelty_model.pkl')
+    points = np.array(vals)
+    points = points.reshape(int(len(points)/dim), dim)
+    res = clf.predict(points)
+    print(res)
     return list(res)
 
 

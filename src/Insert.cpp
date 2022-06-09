@@ -5,8 +5,10 @@ using namespace std;
 #ifndef WIN32
 void *checkSettings(void *ptr);
 pthread_t timer; //计时器，另开一个新的线程
+thread autoPackManager;
 int timerStarted = false;
 bool IOBusy = false;
+int RepackThreshold = 0;
 void *checkTime(void *ptr)
 {
     timerStarted = true;
@@ -16,6 +18,8 @@ void *checkTime(void *ptr)
         while (IOBusy)
         {
         }
+        if (settings("Pack_Mode") == "auto")
+            return NULL;
         if (timerStarted == false)
             pthread_exit(NULL);
         long curTime = getMilliTime();
@@ -69,6 +73,14 @@ void *checkSettings(void *ptr)
  */
 void autoPacker()
 {
+    while (1)
+    {
+        while (IOBusy)
+        {
+        }
+        if (settings("Pack_Mode") != "auto")
+            return;
+    }
 }
 // thread settingsWatcher;
 pthread_t settingsWatcher;
@@ -89,7 +101,7 @@ int checkNovelty(DB_DataBuffer *buffer)
     PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
 
     PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
-    PyObject *pValue, *pArgs, *pFunc;
+    PyObject *pArgs, *pFunc;
     PyObject *vals, *names, *dimensions;
     names = PyList_New(0);
     vals = PyList_New(0);
@@ -100,10 +112,11 @@ int checkNovelty(DB_DataBuffer *buffer)
     {
         PyObject *name = PyBytes_FromString(schema.first.name.c_str());
         PyList_Append(names, name);
-        PyObject *val, *dim;
+        PyObject *val;
         if (schema.second.isArray)
         {
-            PyList_Append(dimensions, PyLong_FromLong(schema.second.arrayLen));
+            PyObject *dim = PyLong_FromLong(schema.second.arrayLen);
+            PyList_Append(dimensions, dim);
             val = PyList_New(schema.second.arrayLen);
             if (schema.second.valueType == ValueType::REAL)
             {
@@ -111,7 +124,8 @@ int checkNovelty(DB_DataBuffer *buffer)
                 for (int i = 0; i < schema.second.arrayLen; i++)
                 {
                     memcpy(&v, buffer->buffer + cur, 4);
-                    PyList_SetItem(val, i, PyFloat_FromDouble(v));
+                    PyObject *value = PyFloat_FromDouble(v);
+                    PyList_SetItem(val, i, value);
                     cur += 4;
                 }
                 PyList_Append(vals, val);
@@ -197,7 +211,8 @@ int checkNovelty(DB_DataBuffer *buffer)
         }
         else
         {
-            PyList_Append(dimensions, PyLong_FromLong(1));
+            PyObject *dim = PyLong_FromLong(1);
+            PyList_Append(dimensions, dim);
             if (schema.second.valueType == ValueType::REAL)
             {
                 float v = 0;
@@ -302,6 +317,11 @@ int checkNovelty(DB_DataBuffer *buffer)
             return 0;
         }
     }
+    PyObject_Free(vals);
+    PyObject_Free(names);
+    PyObject_Free(dimensions);
+    Py_XDECREF(pFunc);
+    Py_XDECREF(mymodule);
     return StatusCode::PYTHON_SCRIPT_NOT_FOUND;
 }
 /**
@@ -322,16 +342,18 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
         pthread_create(&settingsWatcher, NULL, checkSettings, NULL);
         settingsWatcherStarted = true;
     }
-    // if (!timerStarted && settings("Pack_Mode") == "timed")
-    // {
-    //     int ret = pthread_create(&timer, NULL, checkTime, NULL);
-    //     if (ret != 0)
-    //     {
-    //         cout << "pthread_create error: error_code=" << ret << endl;
-    //     }
-    // }
+    if (!timerStarted && settings("Pack_Mode") == "timed")
+    {
+        int ret = pthread_create(&timer, NULL, checkTime, NULL);
+        if (ret != 0)
+        {
+            cout << "pthread_create error: error_code=" << ret << endl;
+        }
+    }
     else if (settings("Pack_Mode") == "auto")
     {
+        autoPackManager = thread(autoPacker);
+        autoPackManager.detach();
     }
 #endif
     int errCode = 0;
@@ -496,33 +518,33 @@ int DB_InsertRecords(DB_DataBuffer buffer[], int recordsNum, int addTime)
 //     uint32_t uintval = 200;
 //     char uintarr[4] = {0};
 //     DataTypeConverter converter;
-//     converter.ToInt32Buff(uintval,uintarr);
+//     converter.ToInt32Buff(uintval, uintarr);
 //     buffer.buffer = new char[60];
-//     memcpy(buffer.buffer,uintarr,4);
-//     memcpy(buffer.buffer+4,uintarr,4);
-//     memcpy(buffer.buffer+8,uintarr,4);
+//     memcpy(buffer.buffer, uintarr, 4);
+//     memcpy(buffer.buffer + 4, uintarr, 4);
+//     memcpy(buffer.buffer + 8, uintarr, 4);
 //     uintval = 300;
-//     converter.ToInt32Buff(uintval,uintarr);
-//     memcpy(buffer.buffer+12,uintarr,4);
-//     memcpy(buffer.buffer+16,uintarr,4);
-//     memcpy(buffer.buffer+20,uintarr,4);
+//     converter.ToInt32Buff(uintval, uintarr);
+//     memcpy(buffer.buffer + 12, uintarr, 4);
+//     memcpy(buffer.buffer + 16, uintarr, 4);
+//     memcpy(buffer.buffer + 20, uintarr, 4);
 //     uintval = 200;
-//     converter.ToInt32Buff(uintval,uintarr);
-//     memcpy(buffer.buffer+24,uintarr,4);
-//     memcpy(buffer.buffer+28,uintarr,4);
-//     memcpy(buffer.buffer+32,uintarr,4);
+//     converter.ToInt32Buff(uintval, uintarr);
+//     memcpy(buffer.buffer + 24, uintarr, 4);
+//     memcpy(buffer.buffer + 28, uintarr, 4);
+//     memcpy(buffer.buffer + 32, uintarr, 4);
 //     uintval = 300;
-//     converter.ToInt32Buff(uintval,uintarr);
-//     memcpy(buffer.buffer+36,uintarr,4);
-//     memcpy(buffer.buffer+40,uintarr,4);
-//     memcpy(buffer.buffer+44,uintarr,4);
+//     converter.ToInt32Buff(uintval, uintarr);
+//     memcpy(buffer.buffer + 36, uintarr, 4);
+//     memcpy(buffer.buffer + 40, uintarr, 4);
+//     memcpy(buffer.buffer + 44, uintarr, 4);
 //     uintval = 200;
-//     converter.ToInt32Buff(uintval,uintarr);
-//     memcpy(buffer.buffer+48,uintarr,4);
-//     memcpy(buffer.buffer+52,uintarr,4);
-//     memcpy(buffer.buffer+56,uintarr,4);
+//     converter.ToInt32Buff(uintval, uintarr);
+//     memcpy(buffer.buffer + 48, uintarr, 4);
+//     memcpy(buffer.buffer + 52, uintarr, 4);
+//     memcpy(buffer.buffer + 56, uintarr, 4);
 //     buffer.length = 60;
-//     buffer.savePath="RobotTsTest";
-//     DB_InsertRecord(&buffer,0);
+//     buffer.savePath = "RobotTsTest";
+//     DB_InsertRecord(&buffer, 0);
 //     return 0;
 // }
