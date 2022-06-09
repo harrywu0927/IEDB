@@ -223,7 +223,7 @@ void DataTypeConverter::ToFloatBuff(float num, char *buff)
     pf = &num;
     for (int j = 0; j < 4; j++)
     {
-        *((unsigned char *)pf + j) = RealValue[j];
+        RealValue[j] = *((unsigned char *)pf + j);
     }
     memcpy(buff, RealValue, 4);
 }
@@ -297,7 +297,7 @@ void DataTypeConverter::ToFloatBuff_m(float num, char *buff)
     pf = &num;
     for (int j = 0; j < 4; j++)
     {
-        *((unsigned char *)pf + j) = RealValue[j];
+        RealValue[j] = *((unsigned char *)pf + j) ;
     }
     memcpy(buff, RealValue, 4);
 }

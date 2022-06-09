@@ -111,7 +111,14 @@ int main()
     long timestart = 1763728603642;
     DataTypeConverter dt;
     char time[8] = {0};
-    dt.ToLongBuff(timestart,time);
+    dt.ToLong64Buff(timestart,time);
+    float f = 31.5;
+    char ff[4] = {0};
+    dt.ToFloatBuff(f,ff);
+    float fff = dt.ToFloat(ff);
+    char ffff[4]= {0};
+    dt.ToFloatBuff_m(f,ffff);
+    float fffff = dt.ToFloat_m(ffff);
     return 0;
 
     DB_QueryParams params;

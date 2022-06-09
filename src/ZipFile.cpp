@@ -1256,7 +1256,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         char value[4] = {0};
                         memcpy(value, readbuff + readbuff_pos, 4);
                         float currentRealValue = converter.ToFloat(value);
-                        
+
                         if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
                         {
                             //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
@@ -1467,6 +1467,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                     char zipPosNum[2] = {0};
                     memcpy(zipPosNum, readbuff + readbuff_pos, 2);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
+
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
@@ -1555,6 +1556,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                     char zipPosNum[2] = {0};
                     memcpy(zipPosNum, readbuff + readbuff_pos, 2);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
+
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
@@ -1648,6 +1650,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                     char zipPosNum[2] = {0};
                     memcpy(zipPosNum, readbuff + readbuff_pos, 2);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
+
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
@@ -1741,6 +1744,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                     char zipPosNum[2] = {0};
                     memcpy(zipPosNum, readbuff + readbuff_pos, 2);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
+
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
@@ -1834,6 +1838,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                     char zipPosNum[2] = {0};
                     memcpy(zipPosNum, readbuff + readbuff_pos, 2);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
+
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
@@ -1927,6 +1932,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                     char zipPosNum[2] = {0};
                     memcpy(zipPosNum, readbuff + readbuff_pos, 2);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
+
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
@@ -2020,6 +2026,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                     char zipPosNum[2] = {0};
                     memcpy(zipPosNum, readbuff + readbuff_pos, 2);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
+
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
@@ -2113,6 +2120,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                     char zipPosNum[2] = {0};
                     memcpy(zipPosNum, readbuff + readbuff_pos, 2);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
+
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
@@ -2194,6 +2202,7 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
             char zipPosNum[2] = {0};
             memcpy(zipPosNum, readbuff + readbuff_pos, 2);
             uint16_t posCmp = converter.ToUInt16(zipPosNum);
+            
             if (posCmp == i) //是未压缩数据的编号
             {
                 readbuff_pos += 2;
