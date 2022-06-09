@@ -2382,7 +2382,7 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
     vector<string> files;
     readFileList(ZipParams->pathToLine, files);
     string temPath = "";
-    for (string file : files) //找到带有后缀tem的文件
+    for (string file : files) //找到带有后缀ziptem的文件
     {
         string s = file;
         vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
@@ -2656,7 +2656,7 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
     memcpy(readBuf + 95 * pos + 70, maxValue, 10);
     memcpy(readBuf + 95 * pos + 80, minValue, 10);
     memcpy(readBuf + 95 * pos + 90, hasTime, 1);
-    memcpy(readBuf + 95 * pos, timeseriesSpan, 4);
+    memcpy(readBuf + 95 * pos + 91, timeseriesSpan, 4);
 
     //打开文件并覆盖写入
     long fp;
@@ -2720,7 +2720,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
     vector<string> files;
     readFileList(ZipParams->pathToLine, files);
     string temPath = "";
-    for (string file : files) //找到带有后缀tem的文件
+    for (string file : files) //找到带有后缀ziptem的文件
     {
         string s = file;
         vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
@@ -2994,7 +2994,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
     memcpy(readBuf + 95 * pos + 70, maxValue, 10);
     memcpy(readBuf + 95 * pos + 80, minValue, 10);
     memcpy(readBuf + 95 * pos + 90, hasTime, 1);
-    memcpy(readBuf + 95 * pos, timeseriesSpan, 4);
+    memcpy(readBuf + 95 * pos + 91, timeseriesSpan, 4);
 
     //创建一个新的.ziptem文件，根据当前已存在的压缩模板数量进行编号
     long fp;
@@ -3081,7 +3081,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     vector<string> files;
     readFileList(ZipParams->pathToLine, files);
     string temPath = "";
-    for (string file : files) //找到带有后缀tem的文件
+    for (string file : files) //找到带有后缀ziptem的文件
     {
         string s = file;
         vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
@@ -3355,7 +3355,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     memcpy(readBuf + 95 * pos + 70, maxValue, 10);
     memcpy(readBuf + 95 * pos + 80, minValue, 10);
     memcpy(readBuf + 95 * pos + 90, hasTime, 1);
-    memcpy(readBuf + 95 * pos, timeseriesSpan, 4);
+    memcpy(readBuf + 95 * pos + 91, timeseriesSpan, 4);
 
     //创建一个新的.ziptem文件，根据当前已存在的压缩模板数量进行编号
     long fp;
@@ -3733,3 +3733,20 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 // DB_UpdateNodeToZipSchema(&params,&newparams);
 //     return 0;
 // }
+int main()
+{
+    DB_LoadZipSchema("JinfeiSeven");
+    DataTypeConverter dt;
+    DB_ZipNodeParams params;
+    params.valueName = const_cast<char *>(CurrentZipTemplate.schemas[0].first.c_str());
+    params.valueType = 3;
+    params.minValue = "90";
+    params.maxValue = "110";
+    params.hasTime = CurrentZipTemplate.schemas[0].second.hasTime;
+    params.isArrary = CurrentZipTemplate.schemas[0].second.isArray;
+    params.arrayLen = CurrentZipTemplate.schemas[0].second.arrayLen;
+    params.pathToLine = "JinfeiSeven";
+    params.standardValue = "100";
+    DB_UpdateNodeToZipSchema(&params, &params);
+    return 0;
+}
