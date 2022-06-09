@@ -2917,7 +2917,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
                 PyObject_Free(dim);
             int a = 1;
         }
-        PyObject_FREE(table);
+        Py_DECREF(table);
         if (CurrentTemplate.hasImage)
         {
             vector<pair<char *, int>> abnormalData;
@@ -2991,7 +2991,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
             PyObject *ret = PythonCall(args, "Novelty_Outlier", "Novelty_Single_Column");
 
             int len = PyObject_Size(ret);
-            if (len == 0)
+            if (len == -1)
             {
                 delete[] set;
                 return StatusCode::NO_DATA_QUERIED;
@@ -3008,7 +3008,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
             if (i == reader.typeList.size() - 1)
                 PyObject_Free(dim);
         }
-        PyObject_FREE(table);
+        Py_DECREF(table);
         if (CurrentTemplate.hasImage)
         {
             vector<pair<char *, int>> abnormalData;
@@ -3186,5 +3186,6 @@ int main()
 
         free(buffer.buffer);
     }
+    Py_Finalize();
     return 0;
 }

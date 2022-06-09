@@ -1,13 +1,12 @@
 # Novelty and Outlier Detection
 
-from ctypes.wintypes import FLOAT, LONG
 import numpy as np
 from sklearn.neighbors import LocalOutlierFactor
 import joblib
 
 
 def Outliers(lst, dimension):
-    points = np.array(lst, dtype=LONG)
+    points = np.array(lst)
     neighbors = 20
     if(len(points) < 50):
         neighbors = 5
@@ -15,7 +14,7 @@ def Outliers(lst, dimension):
         rows = len(lst)/dimension
         points = points.reshape(int(rows), dimension)
         # print(points)
-        clf = LocalOutlierFactor(n_neighbors=neighbors)
+        clf = LocalOutlierFactor(n_neighbors=int(neighbors))
         res = clf.fit_predict(points)
         return list(res)
     else:
@@ -69,7 +68,6 @@ def NoveltyFit(lst):
     points = np.array(lst)
     rows = len(lst)
     points = points.reshape(int(rows), 1)
-    print(points)
     y = Outliers(lst, 1)
     y = np.array(y)
     rang = np.where(y > 0)
