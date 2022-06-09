@@ -226,6 +226,7 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
         {
             if (len == 0) //表示文件完全压缩
             {
+                //添加上标准值到writebuff
                 uint32 standardBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char boolTime[4] = {0};
                 converter.ToUInt32Buff(standardBoolTime, boolTime);
@@ -267,21 +268,22 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
                                     memcpy(zipTsPosNum, readbuff + readbuff_pos, 2);
                                     uint16_t tsPosCmp = converter.ToUInt16(zipTsPosNum);
 
-                                    if (tsPosCmp == j)//是未压缩时间序列的编号
+                                    if (tsPosCmp == j) //是未压缩时间序列的编号
                                     {
                                         //将未压缩的数据拷贝到writebuff
                                         readbuff_pos += 2;
                                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
-                                        readbuff_pos+=4;
-                                        writebuff_pos+=4;
+                                        readbuff_pos += 4;
+                                        writebuff_pos += 4;
+
                                         //添加上时间戳
                                         uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
                                         char zipTimeBuff[8] = {0};
                                         converter.ToLong64Buff(zipTime, zipTimeBuff);
                                         memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
-                                        writebuff_pos+=8;
+                                        writebuff_pos += 8;
                                     }
-                                    else//不是未压缩时间序列的编号
+                                    else //不是未压缩时间序列的编号
                                     {
                                         //将标准值数据拷贝到writebuff
                                         uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
@@ -295,7 +297,7 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
                                         char zipTimeBuff[8] = {0};
                                         converter.ToLong64Buff(zipTime, zipTimeBuff);
                                         memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
-                                        writebuff_pos+=8;
+                                        writebuff_pos += 8;
                                     }
                                 }
                             }
@@ -1615,5 +1617,11 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
 // }
 int main()
 {
-    DB_ZipSwitchFile("RobotTsTest", "RobotTsTest");
+    // DB_ZipSwitchFile("RobotTsTest", "RobotTsTest");
+    DB_ZipParams param;
+    param.ZipType = FILE_ID;
+    param.pathToLine = "RobotTsTest";
+    param.fileID = "RobotTsTest2";
+    DB_ReZipSwitchFileByFileID(&param);
+    return 0;
 }

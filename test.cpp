@@ -54,70 +54,70 @@ int main()
 {
     // TemplateManager::CheckTemplate("RobotTwenty");
     // return 0;
-    // Py_Initialize();
-    // // 指定py文件目录
-    // PyRun_SimpleString("import sys");
-    // PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
-    // PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
-    // PyObject *mymodule2 = PyImport_ImportModule("Statistics");
-    // for (int a = 0; a < 5; a++)
-    // {
-    //     PyObject *arr = PyList_New(100);
-    //     PyObject *lstitem;
-    //     for (int i = 0; i < 100; i++)
-    //     {
-    //         lstitem = PyLong_FromLong(i % 20 == 0 ? rand() % 100 : rand() % 10);
-    //         PyList_SetItem(arr, i, lstitem);
-    //         // PyList_Append(test, lstitem);
-    //     }
+    Py_Initialize();
+    // 指定py文件目录
+    PyRun_SimpleString("import sys");
+    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
+    PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
+    PyObject *mymodule2 = PyImport_ImportModule("Statistics");
+    for (int a = 0; a < 5; a++)
+    {
+        PyObject *arr = PyList_New(100);
+        PyObject *lstitem;
+        for (int i = 0; i < 100; i++)
+        {
+            lstitem = PyLong_FromLong(i % 20 == 0 ? rand() % 100 : rand() % 10);
+            PyList_SetItem(arr, i, lstitem);
+            // PyList_Append(test, lstitem);
+        }
 
-    //     PyObject *obj;
+        PyObject *obj;
 
-    //     // PyObject *pname = Py_BuildValue("s", "testpy");
+        // PyObject *pname = Py_BuildValue("s", "testpy");
 
-    //     // PyObject *numpy = PyImport_ImportModule("numpy");
-    //     // PyObject *std = PyObject_GetAttrString(numpy, "fft");
-    //     PyObject *pValue, *pArgs, *pFunc;
-    //     long res = 0;
-    //     if (mymodule != NULL)
-    //     {
-    //         // 从模块中获取函数
-    //         pFunc = PyObject_GetAttrString(mymodule, "Outliers");
+        // PyObject *numpy = PyImport_ImportModule("numpy");
+        // PyObject *std = PyObject_GetAttrString(numpy, "fft");
+        PyObject *pValue, *pArgs, *pFunc;
+        long res = 0;
+        if (mymodule != NULL)
+        {
+            // 从模块中获取函数
+            pFunc = PyObject_GetAttrString(mymodule, "Outliers");
 
-    //         if (pFunc && PyCallable_Check(pFunc))
-    //         {
-    //             // 创建参数元组
-    //             pArgs = PyTuple_New(2);
-    //             PyTuple_SetItem(pArgs, 0, arr);
-    //             PyTuple_SetItem(pArgs, 1, PyLong_FromLong(1));
-    //             // 函数执行
-    //             PyObject *ret = PyObject_CallObject(pFunc, pArgs);
-    //             PyObject *item;
-    //             long val;
-    //             int len = PyObject_Size(ret);
-    //             for (int i = 0; i < len; i++)
-    //             {
-    //                 item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
-    //                 val = PyLong_AsLong(item);     //转换为c类型的数据
-    //                 cout << val << " ";
-    //             }
-    //             // res = PyLong_AsLong(PyList_GetItem(pValue, 1));
-    //             // cout << pValue->ob_type->tp_name << endl;
-    //         }
-    //     }
-    // }
-    // Py_Finalize();
-    // return 0;
+            if (pFunc && PyCallable_Check(pFunc))
+            {
+                // 创建参数元组
+                pArgs = PyTuple_New(2);
+                PyTuple_SetItem(pArgs, 0, arr);
+                PyTuple_SetItem(pArgs, 1, PyLong_FromLong(1));
+                // 函数执行
+                PyObject *ret = PyObject_CallObject(pFunc, pArgs);
+                PyObject *item;
+                long val;
+                int len = PyObject_Size(ret);
+                for (int i = 0; i < len; i++)
+                {
+                    item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
+                    val = PyLong_AsLong(item);     //转换为c类型的数据
+                    cout << val << " ";
+                }
+                // res = PyLong_AsLong(PyList_GetItem(pValue, 1));
+                // cout << pValue->ob_type->tp_name << endl;
+            }
+        }
+    }
+    Py_Finalize();
+    return 0;
     long timestart = 1763728603642;
     DataTypeConverter dt;
     char time[8] = {0};
-    dt.ToLong64Buff(timestart,time);
+    dt.ToLong64Buff(timestart, time);
     float f = 31.5;
     char ff[4] = {0};
-    dt.ToFloatBuff(f,ff);
+    dt.ToFloatBuff(f, ff);
     float fff = dt.ToFloat(ff);
-    char ffff[4]= {0};
-    dt.ToFloatBuff_m(f,ffff);
+    char ffff[4] = {0};
+    dt.ToFloatBuff_m(f, ffff);
     float fffff = dt.ToFloat_m(ffff);
     return 0;
 

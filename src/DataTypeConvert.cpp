@@ -297,12 +297,12 @@ void DataTypeConverter::ToFloatBuff_m(float num, char *buff)
     pf = &num;
     for (int j = 0; j < 4; j++)
     {
-        RealValue[j] = *((unsigned char *)pf + j) ;
+        RealValue[j] = *((unsigned char *)pf + j);
     }
     memcpy(buff, RealValue, 4);
 }
 
-void DataTypeConverter::ToLong64Buff_m(uint64_t num,char *buff)
+void DataTypeConverter::ToLong64Buff_m(uint64_t num, char *buff)
 {
     char LongValue[8] = {0};
 
