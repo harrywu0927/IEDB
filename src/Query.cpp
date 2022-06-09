@@ -73,6 +73,7 @@ int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Param
 		return err;
 	}
 	Ext_Params.copyBytes = Qry_Params->byPath ? CurrentTemplate.GetBytesByCode(Qry_Params->pathCode) : Ext_Params.bytes;
+	Ext_Params.sortPos = 0;
 	if (Qry_Params->byPath && (Qry_Params->valueName != NULL || strcmp(Qry_Params->valueName, "") == 0))
 	{
 		Ext_Params.sortPos = CurrentTemplate.FindSortPosFromSelectedData(Ext_Params.bytesList, Qry_Params->valueName, Qry_Params->pathCode, Ext_Params.typeList);
@@ -5786,11 +5787,11 @@ int DB_QueryByFileID_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 // 	// params.valueName = NULL;
 // 	params.start = 1553728593562;
 // 	params.end = 1763728603642;
-// 	params.order = ODR_NONE;
-// 	params.compareType = CMP_NONE;
+// 	params.order = TIME_ASC;
+// 	params.compareType = LT;
 // 	params.compareValue = "666";
 // 	params.queryType = FILEID;
-// 	params.byPath = 1;
+// 	params.byPath = 0;
 // 	params.queryNums = 5;
 // 	DB_DataBuffer buffer;
 // 	buffer.savePath = "/";

@@ -14,7 +14,7 @@ def Outliers(lst, dimension):  # 对输入的一组点集寻找离群点，输�
         rows = len(lst)/dimension
         points = points.reshape(int(rows), dimension)
         # print(points)
-        clf = LocalOutlierFactor(n_neighbors=neighbors)
+        clf = LocalOutlierFactor(n_neighbors=int(neighbors))
         res = clf.fit_predict(points)
         return list(res)
     else:

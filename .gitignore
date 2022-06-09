@@ -69,3 +69,5 @@ src/__pycache__/
 /.ipynb_checkpoints/
 *.pkl
 src/Aggregate
+src/MachineLearning
+src/Inseert

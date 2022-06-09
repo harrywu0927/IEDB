@@ -303,7 +303,7 @@ int STAT_Process(DB_DataBuffer *buffer, STAT_Type type)
             }
         }
     }
-    PyObject_Free(arr);
+    Py_DECREF(arr);
     Py_XDECREF(pFunc);
     Py_XDECREF(statistics);
     free(buffer->buffer);
