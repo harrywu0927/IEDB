@@ -2880,26 +2880,36 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
 
     if (mode == 1) // using machine learning
     {
+        vector<int> typeIndexes;
+        for (int i = 0; i < pathCodes.size(); i++)
+        {
+            for (int j = 0; j < CurrentTemplate.schemas.size(); j++)
+            {
+                if (memcmp(CurrentTemplate.schemas[j].first.code, pathCodes[i].code, 10) == 0)
+                    typeIndexes.push_back(j);
+            }
+        }
+
         PyObject *table = ConvertToPyList_ML(buffer);
         char *set = new char[reader.rows]; //此数组中值为1的下标表示异常数据在查询结果中的行
         memset(set, 0, reader.rows);
-        for (int i = 0; i < reader.typeList.size(); i++)
+        for (int i = 0; i < typeIndexes.size(); i++)
         {
             if (reader.typeList[i].valueType == ValueType::IMAGE) //图片不判断
                 continue;
             PyObject *col = PyList_New(reader.rows); //逐列数据判断是否异常
             for (int j = 0; j < reader.rows; j++)
             {
-                PyList_SetItem(col, j, PyList_GetItem(PyList_GetItem(table, j), i));
+                PyList_SetItem(col, j, PyList_GetItem(PyList_GetItem(table, j), typeIndexes[i]));
             }
             PyObject *args = PyTuple_New(2);
             PyTuple_SetItem(args, 0, col);
-            PyObject *dim = PyLong_FromLong(reader.typeList[i].isArray ? reader.typeList[i].arrayLen : 1);
+            PyObject *dim = PyLong_FromLong(reader.typeList[typeIndexes[i]].isArray ? reader.typeList[typeIndexes[i]].arrayLen : 1);
             PyTuple_SetItem(args, 1, dim);
             PyObject *ret = PythonCall(args, "Novelty_Outlier", "Outliers");
 
             int len = PyObject_Size(ret);
-            if (len == 0)
+            if (len == -1)
             {
                 delete[] set;
                 return StatusCode::NO_DATA_QUERIED;
@@ -2913,7 +2923,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
             }
             Py_DECREF(args);
             Py_XDECREF(ret);
-            if (i == reader.typeList.size() - 1)
+            if (i == typeIndexes.size() - 1)
                 PyObject_Free(dim);
             int a = 1;
         }

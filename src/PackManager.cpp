@@ -1,6 +1,76 @@
 #include <utils.hpp>
 
 /**
+ * @brief Construct a new Pack Manager:: Pack Manager object
+ *
+ * @param memcap Memory amount pack manager can use.
+ */
+PackManager::PackManager(long memcap) //初始化allPacks
+{
+    vector<string> packList, dirs;
+
+    readAllDirs(dirs, settings("Filename_Label"));
+    for (auto &d : dirs)
+    {
+        DIR *dir = opendir(d.c_str());
+        struct dirent *ptr;
+        if (dir == NULL)
+            continue;
+        while ((ptr = readdir(dir)) != NULL)
+        {
+            if (ptr->d_name[0] == '.')
+                continue;
+            if (ptr->d_type == 8)
+            {
+                string fileName = ptr->d_name;
+                string dirWithoutPrefix = d + "/" + fileName;
+                string fileLabel = settings("Filename_Label");
+                while (fileLabel[fileLabel.length() - 1] == '/')
+                {
+                    fileLabel.pop_back();
+                }
+                for (int i = 0; i <= fileLabel.length(); i++)
+                {
+                    dirWithoutPrefix.erase(dirWithoutPrefix.begin());
+                }
+                string pathToLine = DataType::splitWithStl(dirWithoutPrefix, "/")[0];
+                if (fileName.find(".pak") != string::npos)
+                {
+                    string str = d;
+                    for (int i = 0; i <= settings("Filename_Label").length(); i++)
+                    {
+                        str.erase(str.begin());
+                    }
+                    string tmp = fileName;
+                    while (tmp.back() == '/')
+                        tmp.pop_back();
+                    vector<string> vec = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
+                    string packName = vec[vec.size() - 1];
+                    vector<string> timespan = DataType::StringSplit(const_cast<char *>(packName.c_str()), "-");
+                    if (timespan.size() > 0)
+                    {
+                        long start = atol(timespan[0].c_str());
+                        long end = atol(timespan[1].c_str());
+                        allPacks[pathToLine].push_back(make_pair(str + "/" + fileName, make_tuple(start, end)));
+                    }
+                }
+            }
+        }
+        closedir(dir);
+    }
+    for (auto &iter : allPacks)
+    {
+        sort(iter.second.begin(), iter.second.end(),
+             [](pair<string, tuple<long, long>> iter1, pair<string, tuple<long, long>> iter2) -> bool
+             {
+                 return get<0>(iter1.second) < get<0>(iter2.second);
+             });
+    }
+
+    memCapacity = memcap;
+}
+
+/**
  * @brief 根据时间段获取所有包含此时间区间的包文件,由于缓存容量有限，故只返回文件名和时间范围，不读取包
  *
  * @param pathToLine 到产线的路径

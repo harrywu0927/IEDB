@@ -36,6 +36,14 @@ int DB_UnloadSchema(const char *pathToUnset)
 	return TemplateManager::UnsetTemplate(pathToUnset);
 }
 
+void GarbageMemCollection(vector<tuple<char *, long, long, long>> &mallocedMemory)
+{
+	for (auto &mem : mallocedMemory)
+	{
+		free(std::get<0>(mem));
+	}
+}
+
 /**
  * @brief 提取数据时可用到的静态参数，避免DataExtration函数的参数过多，略微影响性能
  *
@@ -59,6 +67,13 @@ struct Extraction_Params
 	long sortPos; // the position of the value to sort
 };
 
+/**
+ * @brief Get the Extraction Params object
+ *
+ * @param Ext_Params
+ * @param Qry_Params
+ * @return int
+ */
 int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Params)
 {
 	Ext_Params.hasArray = Qry_Params->byPath ? CurrentTemplate.checkHasArray(Qry_Params->pathCode) : CurrentTemplate.checkIsArray(Qry_Params->valueName);
@@ -85,14 +100,14 @@ int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Param
 /**
  * @brief 从文件中提取合适的数据到堆区的内存中
  *
- * @param mallocedMemory
- * @param Ext_Params
- * @param Qry_params
- * @param cur
- * @param timestamp
- * @param buff
+ * @param mallocedMemory 已分配内存
+ * @param Ext_Params 提取参数
+ * @param Qry_params 查询参数
+ * @param cur 当前已选择的总字节数
+ * @param timestamp 时间戳
+ * @param buff 数据内容
  * @return int
- * @note 尽可能将参数个数控制在7个以内
+ * @note 尽可能将函数的参数个数控制在7个以内
  */
 int DataExtraction(vector<tuple<char *, long, long, long>> &mallocedMemory, Extraction_Params &Ext_Params, DB_QueryParams *Qry_params, long &cur, long &timestamp, char *buff)
 {
@@ -499,7 +514,7 @@ int DB_ExecuteQuery(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note 单线程
  */
-int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryWholeFile_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
 	IOBusy = true;
 	int check = CheckQueryParams(params);
@@ -1633,7 +1648,7 @@ int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note
  */
-int DB_QueryWholeFile_New(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
 	// int check = CheckQueryParams(params);
 	// if (check != 0)

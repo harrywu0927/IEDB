@@ -49,7 +49,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
     DB_Open(const_cast<char *>(pakPath.c_str()), mode, &fp);
     int filesNum = filesWithTime.size();
     long temBytes = CurrentTemplate.GetTotalBytes();
-    int MAXSIZE = 2048 * 1024; // 2MB
+    int MAXSIZE = 2048 * 10240; // 20MB
     char *packBuffer = (char *)malloc(MAXSIZE);
     memset(packBuffer, 0, MAXSIZE);
     DB_DataBuffer buffer;
@@ -129,10 +129,11 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
  * @brief 对某一路径下体积较小的包文件再次合并
  *
  * @param pathToLine 存储路径
+ * @param packThres 最大大小,默认0
  * @return int
  * @note 需要修改allPacks中的元素，pak文件名，删除原pak
  */
-int Packer::RePack(string pathToLine)
+int Packer::RePack(string pathToLine, int packThres)
 {
     IOBusy = true;
     vector<string> packs;
@@ -170,8 +171,8 @@ int Packer::RePack(string pathToLine)
     int packThreshold;
     if (settings("Pack_Mode") != "auto")
         packThreshold = atol(settings("Pack_Max_Size").c_str());
-    else
-        packThreshold = RepackThreshold;
+    else if (packThres != 0)
+        packThreshold = packThres;
     int cursize = 0;
     string lastTemName = "";
     for (auto &pack : packsWithTime)
@@ -250,6 +251,47 @@ int Packer::RePack(string pathToLine)
     packMutex.unlock();
     IOBusy = false;
     return 0;
+}
+
+/**
+ * @brief Construct a new Pack File Reader:: Pack File Reader object
+ *
+ * @param pathFilePath
+ */
+PackFileReader::PackFileReader(string pathFilePath)
+{
+    DB_DataBuffer buffer;
+    buffer.savePath = pathFilePath.c_str();
+    int err = DB_ReadFile(&buffer);
+    if (buffer.bufferMalloced)
+    {
+        packBuffer = buffer.buffer;
+        buffer.buffer = NULL;
+        packLength = buffer.length;
+        curPos = 24;
+        usingcache = false;
+    }
+    else
+    {
+        packBuffer = NULL;
+    }
+    if (err != 0)
+        errorCode = err;
+}
+
+/**
+ * @brief Construct a new Pack File Reader:: Pack File Reader object
+ *
+ * @param buffer
+ * @param length
+ */
+PackFileReader::PackFileReader(char *buffer, long length)
+{
+    packBuffer = buffer;
+    // buffer = NULL;
+    packLength = length;
+    curPos = 24;
+    usingcache = true;
 }
 
 /**

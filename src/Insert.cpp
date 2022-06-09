@@ -73,13 +73,37 @@ void *checkSettings(void *ptr)
  */
 void autoPacker()
 {
+    long total, available;
+    getMemoryUsage(total, available);
+    vector<string> dirs;
+    readAllDirs(dirs, settings("Filename_Label"));
+    vector<int> packNums; //每个文件夹的建议打包数量
+    for (auto &dir : dirs)
+    {
+        if (TemplateManager::SetTemplate(dir.c_str()) != 0)
+            continue;
+        int rhythmSize = CurrentTemplate.totalBytes; //除去图片的节拍大小
+        packNums.push_back(1024 * 1024 * 10 / rhythmSize);
+    }
+
     while (1)
     {
         while (IOBusy)
         {
         }
+        IOBusy = true;
         if (settings("Pack_Mode") != "auto")
             return;
+        dirs.clear();
+        readAllDirs(dirs, settings("Filename_Label"));
+        vector<pair<string, long>> files;
+        for (int i = 0; i < dirs.size(); i++)
+        {
+            files.clear();
+            readDataFilesWithTimestamps(dirs[i].c_str(), files);
+        }
+        IOBusy = false;
+        sleep(3);
     }
 }
 // thread settingsWatcher;

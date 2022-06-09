@@ -3733,20 +3733,20 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 // DB_UpdateNodeToZipSchema(&params,&newparams);
 //     return 0;
 // }
-int main()
-{
-    DB_LoadZipSchema("JinfeiSeven");
-    DataTypeConverter dt;
-    DB_ZipNodeParams params;
-    params.valueName = const_cast<char *>(CurrentZipTemplate.schemas[0].first.c_str());
-    params.valueType = 3;
-    params.minValue = "90";
-    params.maxValue = "110";
-    params.hasTime = CurrentZipTemplate.schemas[0].second.hasTime;
-    params.isArrary = CurrentZipTemplate.schemas[0].second.isArray;
-    params.arrayLen = CurrentZipTemplate.schemas[0].second.arrayLen;
-    params.pathToLine = "JinfeiSeven";
-    params.standardValue = "100";
-    DB_UpdateNodeToZipSchema(&params, &params);
-    return 0;
-}
+// int main()
+// {
+//     DB_LoadZipSchema("JinfeiSeven");
+//     DataTypeConverter dt;
+//     DB_ZipNodeParams params;
+//     params.valueName = const_cast<char *>(CurrentZipTemplate.schemas[0].first.c_str());
+//     params.valueType = 3;
+//     params.minValue = "90";
+//     params.maxValue = "110";
+//     params.hasTime = CurrentZipTemplate.schemas[0].second.hasTime;
+//     params.isArrary = CurrentZipTemplate.schemas[0].second.isArray;
+//     params.arrayLen = CurrentZipTemplate.schemas[0].second.arrayLen;
+//     params.pathToLine = "JinfeiSeven";
+//     params.standardValue = "100";
+//     DB_UpdateNodeToZipSchema(&params, &params);
+//     return 0;
+// }

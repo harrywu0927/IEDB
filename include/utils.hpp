@@ -241,7 +241,7 @@ PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer);
 
 PyObject *ConvertToPyList_STAT(DB_DataBuffer *buffer);
 
-PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcName);
+PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcName, const char *path = "./");
 
 //检查模板相关输入
 int checkInputVaribaleName(string variableName);
@@ -670,7 +670,7 @@ class Packer
 public:
     static int Pack(string pathToLine, vector<pair<string, long>> &filesWithTime);
 
-    static int RePack(string pathToLine);
+    static int RePack(string pathToLine, int packThres = 0);
 };
 
 class PackFileReader
@@ -682,34 +682,8 @@ private:
 
 public:
     char *packBuffer = NULL; // pak缓存地址
-    PackFileReader(string pathFilePath)
-    {
-        DB_DataBuffer buffer;
-        buffer.savePath = pathFilePath.c_str();
-        int err = DB_ReadFile(&buffer);
-        if (buffer.bufferMalloced)
-        {
-            packBuffer = buffer.buffer;
-            buffer.buffer = NULL;
-            packLength = buffer.length;
-            curPos = 24;
-            usingcache = false;
-        }
-        else
-        {
-            packBuffer = NULL;
-        }
-        if (err != 0)
-            errorCode = err;
-    }
-    PackFileReader(char *buffer, long length)
-    {
-        packBuffer = buffer;
-        // buffer = NULL;
-        packLength = length;
-        curPos = 24;
-        usingcache = true;
-    }
+    PackFileReader(string pathFilePath);
+    PackFileReader(char *buffer, long length);
     ~PackFileReader()
     {
         if (packBuffer != NULL && !usingcache)
@@ -750,70 +724,7 @@ private:
     unordered_map<string, list<pair<string, pair<char *, long>>>::iterator> key2pos;
 
 public:
-    PackManager(long memcap) //初始化allPacks
-    {
-        vector<string> packList, dirs;
-
-        readAllDirs(dirs, settings("Filename_Label"));
-        for (auto &d : dirs)
-        {
-            DIR *dir = opendir(d.c_str());
-            struct dirent *ptr;
-            if (dir == NULL)
-                continue;
-            while ((ptr = readdir(dir)) != NULL)
-            {
-                if (ptr->d_name[0] == '.')
-                    continue;
-                if (ptr->d_type == 8)
-                {
-                    string fileName = ptr->d_name;
-                    string dirWithoutPrefix = d + "/" + fileName;
-                    string fileLabel = settings("Filename_Label");
-                    while (fileLabel[fileLabel.length() - 1] == '/')
-                    {
-                        fileLabel.pop_back();
-                    }
-                    for (int i = 0; i <= fileLabel.length(); i++)
-                    {
-                        dirWithoutPrefix.erase(dirWithoutPrefix.begin());
-                    }
-                    string pathToLine = DataType::splitWithStl(dirWithoutPrefix, "/")[0];
-                    if (fileName.find(".pak") != string::npos)
-                    {
-                        string str = d;
-                        for (int i = 0; i <= settings("Filename_Label").length(); i++)
-                        {
-                            str.erase(str.begin());
-                        }
-                        string tmp = fileName;
-                        while (tmp.back() == '/')
-                            tmp.pop_back();
-                        vector<string> vec = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
-                        string packName = vec[vec.size() - 1];
-                        vector<string> timespan = DataType::StringSplit(const_cast<char *>(packName.c_str()), "-");
-                        if (timespan.size() > 0)
-                        {
-                            long start = atol(timespan[0].c_str());
-                            long end = atol(timespan[1].c_str());
-                            allPacks[pathToLine].push_back(make_pair(str + "/" + fileName, make_tuple(start, end)));
-                        }
-                    }
-                }
-            }
-            closedir(dir);
-        }
-        for (auto &iter : allPacks)
-        {
-            sort(iter.second.begin(), iter.second.end(),
-                 [](pair<string, tuple<long, long>> iter1, pair<string, tuple<long, long>> iter2) -> bool
-                 {
-                     return get<0>(iter1.second) < get<0>(iter2.second);
-                 });
-        }
-
-        memCapacity = memcap;
-    }
+    PackManager(long memcap); //初始化allPacks
     ~PackManager()
     {
         for (auto &pack : packsInMem)

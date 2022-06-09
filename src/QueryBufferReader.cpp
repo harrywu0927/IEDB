@@ -37,6 +37,12 @@ char *QueryBufferReader::operator[](const int &index)
     return buffer + offset;
 }
 
+/**
+ * @brief Construct a new Query Buffer Reader:: Query Buffer Reader object
+ *
+ * @param buffer
+ * @param freeit Decide whether free or reserve the buffer when being destoryed.
+ */
 QueryBufferReader::QueryBufferReader(DB_DataBuffer *buffer, bool freeit)
 {
     this->freeit = freeit;
