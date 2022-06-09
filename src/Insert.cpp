@@ -18,8 +18,8 @@ void *checkTime(void *ptr)
         while (IOBusy)
         {
         }
-        // if (settings("Pack_Mode") == "auto")
-        //     return;
+        if (settings("Pack_Mode") == "auto")
+            return NULL;
         if (timerStarted == false)
             pthread_exit(NULL);
         long curTime = getMilliTime();
@@ -342,14 +342,14 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
         pthread_create(&settingsWatcher, NULL, checkSettings, NULL);
         settingsWatcherStarted = true;
     }
-    // if (!timerStarted && settings("Pack_Mode") == "timed")
-    // {
-    //     int ret = pthread_create(&timer, NULL, checkTime, NULL);
-    //     if (ret != 0)
-    //     {
-    //         cout << "pthread_create error: error_code=" << ret << endl;
-    //     }
-    // }
+    if (!timerStarted && settings("Pack_Mode") == "timed")
+    {
+        int ret = pthread_create(&timer, NULL, checkTime, NULL);
+        if (ret != 0)
+        {
+            cout << "pthread_create error: error_code=" << ret << endl;
+        }
+    }
     else if (settings("Pack_Mode") == "auto")
     {
         autoPackManager = thread(autoPacker);

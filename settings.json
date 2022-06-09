@@ -1,7 +1,7 @@
 {
     "Filename_Label": "testIEDB",
     "FileOverFlowMode": "limit",
-    "Pack_Mode": "timed",
+    "Pack_Mode": "auto",
     "Pack_Num": 100000,
     "Pack_Interval": 3000000000,
     "Pack_Cache_Size": 50240,
