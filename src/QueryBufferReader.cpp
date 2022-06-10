@@ -124,6 +124,15 @@ QueryBufferReader::QueryBufferReader(DB_DataBuffer *buffer, bool freeit)
     startPos = pos;
     rows = (length - pos) / recordLength;
     cur = startPos;
+    if (hasIMG)
+    {
+        rows = 0;
+        while (NextRow() != NULL)
+        {
+            rows++;
+        }
+        Reset();
+    }
 }
 
 /**
@@ -134,6 +143,8 @@ QueryBufferReader::QueryBufferReader(DB_DataBuffer *buffer, bool freeit)
  */
 char *QueryBufferReader::NextRow()
 {
+    if (cur == length)
+        return NULL;
     char *res = buffer + cur;
     if (!hasIMG)
         cur += recordLength;
@@ -165,6 +176,8 @@ char *QueryBufferReader::NextRow()
  */
 char *QueryBufferReader::NextRow(int &rowLength)
 {
+    if (cur == length)
+        return NULL;
     char *res = buffer + cur;
     if (!hasIMG)
         cur += recordLength;

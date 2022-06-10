@@ -5,14 +5,14 @@ using namespace std;
 class DataTypeConverter
 {
 private:
-    bool isBigEndian;
-
 public:
+    bool isBigEndian;
     void CheckBigEndian()
     {
         static int chk = 0x0201; // used to distinguish CPU's type (BigEndian or LittleEndian)
         isBigEndian = (0x01 != *(char *)(&chk));
     }
+    DataTypeConverter() { CheckBigEndian(); }
     //大端存储方式
     //字符数组转成指定数据类型
     short ToInt16(const char *str);
@@ -27,7 +27,7 @@ public:
     void ToInt32Buff(int num, char *buff);
     void ToUInt32Buff(uint32_t num, char *buff);
     void ToFloatBuff(float num, char *buff);
-    void ToLong64Buff(uint64_t num,char *buff);
+    void ToLong64Buff(uint64_t num, char *buff);
 
     //小端存储方式
     //字符数组转成指定数据类型
@@ -43,5 +43,5 @@ public:
     void ToInt32Buff_m(int num, char *buff);
     void ToUInt32Buff_m(uint32_t num, char *buff);
     void ToFloatBuff_m(float num, char *buff);
-    void ToLong64Buff_m(uint64_t num,char *buff);
-    };
+    void ToLong64Buff_m(uint64_t num, char *buff);
+};

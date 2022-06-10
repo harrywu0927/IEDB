@@ -275,7 +275,7 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
                                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                                         readbuff_pos += 4;
                                         writebuff_pos += 4;
-                                        
+
                                         //添加上时间戳
                                         uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
                                         char zipTimeBuff[8] = {0};
@@ -1615,13 +1615,13 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
 
 //     return 0;
 // }
-int main()
-{
-    // DB_ZipSwitchFile("RobotTsTest", "RobotTsTest");
-    DB_ZipParams param;
-    param.ZipType = FILE_ID;
-    param.pathToLine = "RobotTsTest";
-    param.fileID = "RobotTsTest2";
-    DB_ReZipSwitchFileByFileID(&param);
-    return 0;
-}
+// int main()
+// {
+//     // DB_ZipSwitchFile("RobotTsTest", "RobotTsTest");
+//     DB_ZipParams param;
+//     param.ZipType = FILE_ID;
+//     param.pathToLine = "RobotTsTest";
+//     param.fileID = "RobotTsTest2";
+//     DB_ReZipSwitchFileByFileID(&param);
+//     return 0;
+// }

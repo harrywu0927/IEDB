@@ -7,7 +7,15 @@ using namespace std;
 short DataTypeConverter::ToInt16(const char *str)
 {
     short value = 0;
-
+    if (this->isBigEndian)
+    {
+        value = *((short *)str);
+    }
+    else
+    {
+        value = __builtin_bswap16(*(short *)str);
+    }
+    return value;
     void *pf;
     pf = &value;
     for (char i = 0; i < 2; i++)
@@ -23,7 +31,15 @@ short DataTypeConverter::ToInt16(const char *str)
 uint16_t DataTypeConverter::ToUInt16(const char *str)
 {
     uint16_t value = 0;
-
+    if (this->isBigEndian)
+    {
+        value = *((unsigned short *)str);
+    }
+    else
+    {
+        value = __builtin_bswap16(*(unsigned short *)str);
+    }
+    return value;
     void *pf;
     pf = &value;
     for (char i = 0; i < 2; i++)
@@ -38,7 +54,15 @@ uint16_t DataTypeConverter::ToUInt16(const char *str)
 int DataTypeConverter::ToInt32(const char *str)
 {
     int value = 0;
-
+    if (this->isBigEndian)
+    {
+        value = *((int *)str);
+    }
+    else
+    {
+        value = __builtin_bswap32(*(int *)str);
+    }
+    return value;
     void *pf;
     pf = &value;
     for (char i = 0; i < 4; i++)
@@ -50,7 +74,15 @@ int DataTypeConverter::ToInt32(const char *str)
 uint32_t DataTypeConverter::ToUInt32(const char *str)
 {
     uint32_t value = 0;
-
+    if (this->isBigEndian)
+    {
+        value = *((uint32_t *)str);
+    }
+    else
+    {
+        value = __builtin_bswap32(*(uint32_t *)str);
+    }
+    return value;
     void *pf;
     pf = &value;
     for (char i = 0; i < 4; i++)
@@ -62,7 +94,15 @@ uint32_t DataTypeConverter::ToUInt32(const char *str)
 float DataTypeConverter::ToFloat(const char *str)
 {
     float floatVariable;
-
+    if (isBigEndian)
+    {
+        floatVariable = *((float *)str);
+    }
+    else
+    {
+        floatVariable = __builtin_bswap32(*(float *)str);
+    }
+    return floatVariable;
     void *pf;
     pf = &floatVariable;
     for (char i = 0; i < 4; i++)
@@ -75,7 +115,15 @@ float DataTypeConverter::ToFloat(const char *str)
 uint64_t DataTypeConverter::ToLong64(const char *str)
 {
     uint64_t value = 0;
-
+    if (isBigEndian)
+    {
+        value = *((uint64_t *)str);
+    }
+    else
+    {
+        value = __builtin_bswap64(*(uint64_t *)str);
+    }
+    return value;
     void *pf;
     pf = &value;
     for (char i = 0; i < 8; i++)
@@ -89,7 +137,15 @@ uint64_t DataTypeConverter::ToLong64(const char *str)
 short DataTypeConverter::ToInt16_m(const char *str)
 {
     short value = 0;
-
+    if (!isBigEndian)
+    {
+        value = *((short *)str);
+    }
+    else
+    {
+        value = __builtin_bswap16(*(short *)str);
+    }
+    return value;
     void *pf;
     pf = &value;
     for (char i = 0; i < 2; i++)
@@ -104,7 +160,15 @@ short DataTypeConverter::ToInt16_m(const char *str)
 uint16_t DataTypeConverter::ToUInt16_m(const char *str)
 {
     uint16_t value = 0;
-
+    if (!isBigEndian)
+    {
+        value = *((uint16_t *)str);
+    }
+    else
+    {
+        value = __builtin_bswap16(*(uint16_t *)str);
+    }
+    return value;
     void *pf;
     pf = &value;
     for (char i = 0; i < 2; i++)
@@ -119,7 +183,15 @@ uint16_t DataTypeConverter::ToUInt16_m(const char *str)
 int DataTypeConverter::ToInt32_m(const char *str)
 {
     int value = 0;
-
+    if (!isBigEndian)
+    {
+        value = *((int *)str);
+    }
+    else
+    {
+        value = __builtin_bswap32(*(int *)str);
+    }
+    return value;
     void *pf;
     pf = &value;
     for (char i = 0; i < 4; i++)
@@ -131,7 +203,15 @@ int DataTypeConverter::ToInt32_m(const char *str)
 uint32_t DataTypeConverter::ToUInt32_m(const char *str)
 {
     uint32_t value = 0;
-
+    if (!isBigEndian)
+    {
+        value = *((uint32_t *)str);
+    }
+    else
+    {
+        value = __builtin_bswap32(*(uint32_t *)str);
+    }
+    return value;
     void *pf;
     pf = &value;
     for (char i = 0; i < 4; i++)
@@ -143,7 +223,15 @@ uint32_t DataTypeConverter::ToUInt32_m(const char *str)
 float DataTypeConverter::ToFloat_m(const char *str)
 {
     float floatVariable;
-
+    if (!isBigEndian)
+    {
+        floatVariable = *((float *)str);
+    }
+    else
+    {
+        floatVariable = __builtin_bswap32(*(float *)str);
+    }
+    return floatVariable;
     void *pf;
     pf = &floatVariable;
     for (char i = 0; i < 4; i++)
@@ -156,7 +244,15 @@ float DataTypeConverter::ToFloat_m(const char *str)
 uint64_t DataTypeConverter::ToLong64_m(const char *str)
 {
     uint64_t value = 0;
-
+    if (!isBigEndian)
+    {
+        value = *((uint64_t *)str);
+    }
+    else
+    {
+        value = __builtin_bswap64(*(uint64_t *)str);
+    }
+    return value;
     void *pf;
     pf = &value;
     for (char i = 0; i < 8; i++)

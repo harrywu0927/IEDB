@@ -2881,12 +2881,26 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
     if (mode == 1) // using machine learning
     {
         vector<int> typeIndexes;
-        for (int i = 0; i < pathCodes.size(); i++)
+        if (pathCodes.size() > 0)
         {
-            for (int j = 0; j < CurrentTemplate.schemas.size(); j++)
+            for (int i = 0; i < pathCodes.size(); i++)
             {
-                if (memcmp(CurrentTemplate.schemas[j].first.code, pathCodes[i].code, 10) == 0)
-                    typeIndexes.push_back(j);
+                for (int j = 0; j < CurrentTemplate.schemas.size(); j++)
+                {
+                    if (memcmp(CurrentTemplate.schemas[j].first.code, pathCodes[i].code, 10) == 0)
+                        typeIndexes.push_back(j);
+                }
+            }
+        }
+        else
+        {
+            for (int i = 0; i < CurrentTemplate.schemas.size(); i++)
+            {
+                if (strcmp(CurrentTemplate.schemas[i].first.name.c_str(), params->valueName) == 0)
+                {
+                    typeIndexes.push_back(i);
+                    break;
+                }
             }
         }
 
@@ -2925,7 +2939,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
             Py_XDECREF(ret);
             if (i == typeIndexes.size() - 1)
                 PyObject_Free(dim);
-            int a = 1;
+            // int a = 1;
         }
         Py_DECREF(table);
         if (CurrentTemplate.hasImage)
@@ -2980,23 +2994,46 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
     }
     else if (mode == 0)
     {
+        vector<int> typeIndexes;
+        if (pathCodes.size() > 0)
+        {
+            for (int i = 0; i < pathCodes.size(); i++)
+            {
+                for (int j = 0; j < CurrentTemplate.schemas.size(); j++)
+                {
+                    if (memcmp(CurrentTemplate.schemas[j].first.code, pathCodes[i].code, 10) == 0)
+                        typeIndexes.push_back(j);
+                }
+            }
+        }
+        else
+        {
+            for (int i = 0; i < CurrentTemplate.schemas.size(); i++)
+            {
+                if (strcmp(CurrentTemplate.schemas[i].first.name.c_str(), params->valueName) == 0)
+                {
+                    typeIndexes.push_back(i);
+                    break;
+                }
+            }
+        }
         PyObject *table = ConvertToPyList_ML(buffer);
         char *set = new char[reader.rows]; //此数组中值为1的下标表示异常数据在查询结果中的行
         memset(set, 0, reader.rows);
-        for (int i = 0; i < reader.typeList.size(); i++)
+        for (int i = 0; i < typeIndexes.size(); i++)
         {
             if (reader.typeList[i].valueType == ValueType::IMAGE) //图片不判断
                 continue;
             PyObject *col = PyList_New(reader.rows); //逐列数据判断是否异常
             for (int j = 0; j < reader.rows; j++)
             {
-                PyList_SetItem(col, j, PyList_GetItem(PyList_GetItem(table, j), i));
+                PyList_SetItem(col, j, PyList_GetItem(PyList_GetItem(table, j), typeIndexes[i]));
             }
             PyObject *args = PyTuple_New(3);
             PyTuple_SetItem(args, 0, col);
-            PyObject *dim = PyLong_FromLong(reader.typeList[i].isArray ? reader.typeList[i].arrayLen : 1);
+            PyObject *dim = PyLong_FromLong(reader.typeList[typeIndexes[i]].isArray ? reader.typeList[typeIndexes[i]].arrayLen : 1);
             PyTuple_SetItem(args, 1, dim);
-            PyObject *name = PyBytes_FromString(CurrentTemplate.schemas[i].first.name.c_str());
+            PyObject *name = PyBytes_FromString(CurrentTemplate.schemas[typeIndexes[i]].first.name.c_str());
             PyTuple_SetItem(args, 2, name);
             PyObject *ret = PythonCall(args, "Novelty_Outlier", "Novelty_Single_Column");
 
@@ -3015,7 +3052,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
             }
             Py_DECREF(args);
             Py_XDECREF(ret);
-            if (i == reader.typeList.size() - 1)
+            if (i == typeIndexes.size() - 1)
                 PyObject_Free(dim);
         }
         Py_DECREF(table);
@@ -3127,75 +3164,75 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
     }
     return 0;
 }
-// int main()
-// {
-//     // DataTypeConverter converter;
-//     DB_QueryParams params;
-//     params.pathToLine = "JinfeiSeven";
-//     params.fileID = "JinfeiSeven15";
-//     params.fileIDend = NULL;
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)0;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     params.pathCode = code;
-//     params.valueName = "S1OFF";
-//     // params.valueName = NULL;
-//     params.start = 0;
-//     params.end = 1751165600000;
-//     params.order = ODR_NONE;
-//     params.compareType = CMP_NONE;
-//     params.compareValue = "666";
-//     params.queryType = FILEID;
-//     params.byPath = 0;
-//     params.queryNums = 40;
-//     DB_DataBuffer buffer;
-//     DB_GetAbnormalRhythm(&buffer, &params, 0);
-//     long count;
-//     // DB_GetAbnormalDataCount(&params, &count);
-//     // DB_QueryByFileID(&buffer, &params);
-//     // char *newbuf = (char *)malloc(212);
-//     // memcpy(newbuf, buffer.buffer, 12);
-//     // DataTypeConverter converter;
-//     // for (int i = 0; i < 50; i++)
-//     // {
-//     //     uint v;
-//     //     v = 95 + rand() % 5;
-//     //     char buf[4];
-//     //     converter.ToUInt32Buff(v, buf);
-//     //     memcpy(newbuf + 12 + i * 4, buf, 4);
-//     // }
-//     // free(buffer.buffer);
-//     // buffer.buffer = newbuf;
-//     // buffer.length = 212;
-//     // PyObject *arr = ConvertToPyList_ML(&buffer);
-//     // PyObject *args = PyTuple_New(3);
-//     // PyTuple_SetItem(args, 0, arr);
-//     // PyTuple_SetItem(args, 1, Py_BuildValue("i", 1));
-//     // PyTuple_SetItem(args, 2, PyBytes_FromString("S1ON"));
-//     // PyObject *ret = PythonCall(args, "Novelty_Outlier", "NoveltyModelTrain");
-//     // return 0;
-//     if (buffer.bufferMalloced)
-//     {
-//         char buf[buffer.length];
-//         memcpy(buf, buffer.buffer, buffer.length);
-//         cout << buffer.length << endl;
-//         for (int i = 0; i < buffer.length; i++)
-//         {
-//             cout << (int)buf[i] << " ";
-//             if (i % 11 == 0)
-//                 cout << endl;
-//         }
+int main()
+{
+    // DataTypeConverter converter;
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiSeven";
+    params.fileID = "JinfeiSeven15";
+    params.fileIDend = NULL;
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)0;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueName = "S1OFF";
+    // params.valueName = NULL;
+    params.start = 0;
+    params.end = 1751165600000;
+    params.order = ODR_NONE;
+    params.compareType = CMP_NONE;
+    params.compareValue = "666";
+    params.queryType = FILEID;
+    params.byPath = 0;
+    params.queryNums = 40;
+    DB_DataBuffer buffer;
+    DB_GetAbnormalRhythm(&buffer, &params, 1);
+    long count;
+    // DB_GetAbnormalDataCount(&params, &count);
+    // DB_QueryByFileID(&buffer, &params);
+    // char *newbuf = (char *)malloc(212);
+    // memcpy(newbuf, buffer.buffer, 12);
+    // DataTypeConverter converter;
+    // for (int i = 0; i < 50; i++)
+    // {
+    //     uint v;
+    //     v = 95 + rand() % 5;
+    //     char buf[4];
+    //     converter.ToUInt32Buff(v, buf);
+    //     memcpy(newbuf + 12 + i * 4, buf, 4);
+    // }
+    // free(buffer.buffer);
+    // buffer.buffer = newbuf;
+    // buffer.length = 212;
+    // PyObject *arr = ConvertToPyList_ML(&buffer);
+    // PyObject *args = PyTuple_New(3);
+    // PyTuple_SetItem(args, 0, arr);
+    // PyTuple_SetItem(args, 1, Py_BuildValue("i", 1));
+    // PyTuple_SetItem(args, 2, PyBytes_FromString("S1ON"));
+    // PyObject *ret = PythonCall(args, "Novelty_Outlier", "NoveltyModelTrain");
+    // return 0;
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
 
-//         free(buffer.buffer);
-//     }
-//     Py_Finalize();
-//     return 0;
-// }
+        free(buffer.buffer);
+    }
+    Py_Finalize();
+    return 0;
+}
