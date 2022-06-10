@@ -90,6 +90,15 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             writebuff_pos += 4;
                         }
                         readbuff_pos += 12;
+
+                        //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
+                        if (j == CurrentZipTemplate.schemas[i].second.tsLen - 1)
+                        {
+                            char isTsEnd[1] = {0};
+                            isTsEnd[0] = (char)-1;
+                            memcpy(writebuff + writebuff_pos, isTsEnd, 1);
+                            writebuff_pos += 1;
+                        }
                     }
                 }
             }
@@ -260,6 +269,15 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             writebuff_pos += 1;
                         }
                         readbuff_pos += 9;
+
+                        //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
+                        if (j == CurrentZipTemplate.schemas[i].second.tsLen - 1)
+                        {
+                            char isTsEnd[1] = {0};
+                            isTsEnd[0] = (char)-1;
+                            memcpy(writebuff + writebuff_pos, isTsEnd, 1);
+                            writebuff_pos += 1;
+                        }
                     }
                 }
             }
@@ -430,6 +448,15 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             writebuff_pos += 2;
                         }
                         readbuff_pos += 10;
+
+                        //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
+                        if (j == CurrentZipTemplate.schemas[i].second.tsLen - 1)
+                        {
+                            char isTsEnd[1] = {0};
+                            isTsEnd[0] = (char)-1;
+                            memcpy(writebuff + writebuff_pos, isTsEnd, 1);
+                            writebuff_pos += 1;
+                        }
                     }
                 }
             }
@@ -600,6 +627,15 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             writebuff_pos += 1;
                         }
                         readbuff_pos += 9;
+
+                        //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
+                        if (j == CurrentZipTemplate.schemas[i].second.tsLen - 1)
+                        {
+                            char isTsEnd[1] = {0};
+                            isTsEnd[0] = (char)-1;
+                            memcpy(writebuff + writebuff_pos, isTsEnd, 1);
+                            writebuff_pos += 1;
+                        }
                     }
                 }
             }
@@ -770,6 +806,15 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             writebuff_pos += 2;
                         }
                         readbuff_pos += 10;
+
+                        //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
+                        if (j == CurrentZipTemplate.schemas[i].second.tsLen - 1)
+                        {
+                            char isTsEnd[1] = {0};
+                            isTsEnd[0] = (char)-1;
+                            memcpy(writebuff + writebuff_pos, isTsEnd, 1);
+                            writebuff_pos += 1;
+                        }
                     }
                 }
             }
@@ -940,6 +985,15 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             writebuff_pos += 4;
                         }
                         readbuff_pos += 12;
+
+                        //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
+                        if (j == CurrentZipTemplate.schemas[i].second.tsLen - 1)
+                        {
+                            char isTsEnd[1] = {0};
+                            isTsEnd[0] = (char)-1;
+                            memcpy(writebuff + writebuff_pos, isTsEnd, 1);
+                            writebuff_pos += 1;
+                        }
                     }
                 }
             }
@@ -1110,6 +1164,15 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             writebuff_pos += 4;
                         }
                         readbuff_pos += 12;
+
+                        //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
+                        if (j == CurrentZipTemplate.schemas[i].second.tsLen - 1)
+                        {
+                            char isTsEnd[1] = {0};
+                            isTsEnd[0] = (char)-1;
+                            memcpy(writebuff + writebuff_pos, isTsEnd, 1);
+                            writebuff_pos += 1;
+                        }
                     }
                 }
             }
@@ -1243,6 +1306,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
         {
             if (len == 0) //表示文件完全压缩
             {
+                //添加上标准值到writebuff
                 uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char UDintValue[4] = {0};
                 converter.ToUInt32Buff(standardUDintValue, UDintValue);
@@ -1260,16 +1324,102 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
-                        if (CurrentZipTemplate.schemas[i].second.isArray == true)
+                        if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
+                        {
+                            if (readbuff[readbuff_pos - 1] == (char)3) //既是时间序列又是数组
+                            {
+                                //直接拷贝
+                                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
+                                writebuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
+                                readbuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
+                            }
+                            else if (readbuff[readbuff_pos - 1] == (char)4) //只是时间序列
+                            {
+                                //先获得第一次采样的时间
+                                char time[8];
+                                memcpy(time, readbuff + readbuff_pos, 8);
+                                uint64_t startTime = converter.ToLong64(time);
+                                readbuff_pos += 8;
+
+                                for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
+                                {
+                                    if (readbuff[readbuff_pos] == (char)-1) //说明没有未压缩的时间序列了
+                                    {
+                                        //将标准值数据拷贝到writebuff
+                                        uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                                        char UDintValue[4] = {0};
+                                        converter.ToUInt32Buff(standardUDintValue, UDintValue);
+                                        memcpy(writebuff + writebuff_pos, UDintValue, 4); // UDINT标准值
+                                        writebuff_pos += 4;
+
+                                        //添加上时间戳
+                                        uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                        char zipTimeBuff[8] = {0};
+                                        converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                        memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                        writebuff_pos += 8;
+                                    }
+                                    else
+                                    {
+                                        //对比编号是否等于未压缩的时间序列编号
+                                        char zipTsPosNum[2] = {0};
+                                        memcpy(zipTsPosNum, readbuff + readbuff_pos, 2);
+                                        uint16_t tsPosCmp = converter.ToUInt16(zipTsPosNum);
+
+                                        if (tsPosCmp == j) //是未压缩时间序列的编号
+                                        {
+                                            //将未压缩的数据拷贝到writebuff
+                                            readbuff_pos += 2;
+                                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                                            readbuff_pos += 4;
+                                            writebuff_pos += 4;
+
+                                            //添加上时间戳
+                                            uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                            char zipTimeBuff[8] = {0};
+                                            converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                            memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                            writebuff_pos += 8;
+                                        }
+                                        else //不是未压缩时间序列的编号
+                                        {
+                                            //将标准值数据拷贝到writebuff
+                                            uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                                            char UDintValue[4] = {0};
+                                            converter.ToUInt32Buff(standardUDintValue, UDintValue);
+                                            memcpy(writebuff + writebuff_pos, UDintValue, 4); // UDINT标准值
+                                            writebuff_pos += 4;
+
+                                            //添加上时间戳
+                                            uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                            char zipTimeBuff[8] = {0};
+                                            converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                            memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                            writebuff_pos += 8;
+                                        }
+                                    }
+                                    if (j == CurrentZipTemplate.schemas[i].second.tsLen - 1) //时间序列还原结束，readbuff_pos+1跳过0xFF标志
+                                        readbuff_pos += 1;
+                                }
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
+                        }
+                        else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
                             if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
                                 writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                                 readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen);
                                 writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
                                 readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
@@ -1284,24 +1434,28 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                         {
                             if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
                                 writebuff_pos += 12;
                                 readbuff_pos += 12;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)1) //只有时间
                             {
+                                //先添加上标准值到writebuff
                                 uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                                 char UDintValue[4] = {0};
                                 converter.ToUInt32Buff(standardUDintValue, UDintValue);
                                 memcpy(writebuff + writebuff_pos, UDintValue, 4); // UDINT标准值
                                 writebuff_pos += 4;
 
+                                //再拷贝时间
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 8);
                                 writebuff_pos += 8;
                                 readbuff_pos += 8;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                                 writebuff_pos += 4;
                                 readbuff_pos += 4;
@@ -1315,6 +1469,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     }
                     else //不是未压缩的编号
                     {
+                        //将标准值数据拷贝到writebuff
                         uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char UDintValue[4] = {0};
                         converter.ToUInt32Buff(standardUDintValue, UDintValue);
@@ -1324,6 +1479,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                 }
                 else //没有未压缩的数据了
                 {
+                    //将标准值数据拷贝到writebuff
                     uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char UDintValue[4] = {0};
                     converter.ToUInt32Buff(standardUDintValue, UDintValue);
@@ -1336,6 +1492,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
         {
             if (len == 0) //表示文件完全压缩
             {
+                //添加上标准值到writebuff
                 char StandardUsintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                 char UsintValue[1] = {0};
                 UsintValue[0] = StandardUsintValue;
@@ -1353,16 +1510,102 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
-                        if (CurrentZipTemplate.schemas[i].second.isArray == true)
+                        if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
+                        {
+                            if (readbuff[readbuff_pos - 1] == (char)3) //既是时间序列又是数组
+                            {
+                                //直接拷贝
+                                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
+                                writebuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
+                                readbuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
+                            }
+                            else if (readbuff[readbuff_pos - 1] == (char)4) //只是时间序列
+                            {
+                                //先获得第一次采样的时间
+                                char time[8];
+                                memcpy(time, readbuff + readbuff_pos, 8);
+                                uint64_t startTime = converter.ToLong64(time);
+                                readbuff_pos += 8;
+
+                                for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
+                                {
+                                    if (readbuff[readbuff_pos] == (char)-1) //说明没有未压缩的时间序列了
+                                    {
+                                        //将标准值数据拷贝到writebuff
+                                        char StandardUsintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                                        char UsintValue[1] = {0};
+                                        UsintValue[0] = StandardUsintValue;
+                                        memcpy(writebuff + writebuff_pos, UsintValue, 1); // USINT标准值
+                                        writebuff_pos += 1;
+
+                                        //添加上时间戳
+                                        uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                        char zipTimeBuff[8] = {0};
+                                        converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                        memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                        writebuff_pos += 8;
+                                    }
+                                    else
+                                    {
+                                        //对比编号是否等于未压缩的时间序列编号
+                                        char zipTsPosNum[2] = {0};
+                                        memcpy(zipTsPosNum, readbuff + readbuff_pos, 2);
+                                        uint16_t tsPosCmp = converter.ToUInt16(zipTsPosNum);
+
+                                        if (tsPosCmp == j) //是未压缩时间序列的编号
+                                        {
+                                            //将未压缩的数据拷贝到writebuff
+                                            readbuff_pos += 2;
+                                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                                            readbuff_pos += 4;
+                                            writebuff_pos += 4;
+
+                                            //添加上时间戳
+                                            uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                            char zipTimeBuff[8] = {0};
+                                            converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                            memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                            writebuff_pos += 8;
+                                        }
+                                        else //不是未压缩时间序列的编号
+                                        {
+                                            //将标准值数据拷贝到writebuff
+                                            char StandardUsintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                                            char UsintValue[1] = {0};
+                                            UsintValue[0] = StandardUsintValue;
+                                            memcpy(writebuff + writebuff_pos, UsintValue, 1); // USINT标准值
+                                            writebuff_pos += 1;
+
+                                            //添加上时间戳
+                                            uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                            char zipTimeBuff[8] = {0};
+                                            converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                            memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                            writebuff_pos += 8;
+                                        }
+                                    }
+                                    if (j == CurrentZipTemplate.schemas[i].second.tsLen - 1) //时间序列还原结束，readbuff_pos+1跳过0xFF标志
+                                        readbuff_pos += 1;
+                                }
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
+                        }
+                        else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
                             if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen + 8);
                                 writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                                 readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen);
                                 writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
                                 readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
@@ -1377,24 +1620,28 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                         {
                             if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 9);
                                 writebuff_pos += 9;
                                 readbuff_pos += 9;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)1) //只有时间
                             {
+                                //先添加上标准值到writebuff
                                 char StandardUsintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                                 char UsintValue[1] = {0};
                                 UsintValue[0] = StandardUsintValue;
                                 memcpy(writebuff + writebuff_pos, UsintValue, 1); // USINT标准值
                                 writebuff_pos += 1;
 
+                                //再拷贝时间
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 8);
                                 writebuff_pos += 8;
                                 readbuff_pos += 8;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
                                 writebuff_pos += 1;
                                 readbuff_pos += 1;
@@ -1408,6 +1655,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     }
                     else //不是未压缩的编号
                     {
+                        //将标准值数据拷贝到writebuff
                         char StandardUsintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                         char UsintValue[1] = {0};
                         UsintValue[0] = StandardUsintValue;
@@ -1417,6 +1665,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                 }
                 else //没有未压缩的数据了
                 {
+                    //将标准值数据拷贝到writebuff
                     char StandardUsintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                     char UsintValue[1] = {0};
                     UsintValue[0] = StandardUsintValue;
@@ -1429,6 +1678,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
         {
             if (len == 0) //表示文件完全压缩
             {
+                //添加上标准值到writebuff
                 uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char UintValue[2] = {0};
                 converter.ToUInt16Buff(standardUintValue, UintValue);
@@ -1446,16 +1696,102 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
-                        if (CurrentZipTemplate.schemas[i].second.isArray == true)
+                        if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
+                        {
+                            if (readbuff[readbuff_pos - 1] == (char)3) //既是时间序列又是数组
+                            {
+                                //直接拷贝
+                                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
+                                writebuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
+                                readbuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
+                            }
+                            else if (readbuff[readbuff_pos - 1] == (char)4) //只是时间序列
+                            {
+                                //先获得第一次采样的时间
+                                char time[8];
+                                memcpy(time, readbuff + readbuff_pos, 8);
+                                uint64_t startTime = converter.ToLong64(time);
+                                readbuff_pos += 8;
+
+                                for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
+                                {
+                                    if (readbuff[readbuff_pos] == (char)-1) //说明没有未压缩的时间序列了
+                                    {
+                                        //将标准值数据拷贝到writebuff
+                                        uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                                        char UintValue[2] = {0};
+                                        converter.ToUInt16Buff(standardUintValue, UintValue);
+                                        memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
+                                        writebuff_pos += 2;
+
+                                        //添加上时间戳
+                                        uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                        char zipTimeBuff[8] = {0};
+                                        converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                        memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                        writebuff_pos += 8;
+                                    }
+                                    else
+                                    {
+                                        //对比编号是否等于未压缩的时间序列编号
+                                        char zipTsPosNum[2] = {0};
+                                        memcpy(zipTsPosNum, readbuff + readbuff_pos, 2);
+                                        uint16_t tsPosCmp = converter.ToUInt16(zipTsPosNum);
+
+                                        if (tsPosCmp == j) //是未压缩时间序列的编号
+                                        {
+                                            //将未压缩的数据拷贝到writebuff
+                                            readbuff_pos += 2;
+                                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                                            readbuff_pos += 4;
+                                            writebuff_pos += 4;
+
+                                            //添加上时间戳
+                                            uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                            char zipTimeBuff[8] = {0};
+                                            converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                            memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                            writebuff_pos += 8;
+                                        }
+                                        else //不是未压缩时间序列的编号
+                                        {
+                                            //将标准值数据拷贝到writebuff
+                                            uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                                            char UintValue[2] = {0};
+                                            converter.ToUInt16Buff(standardUintValue, UintValue);
+                                            memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
+                                            writebuff_pos += 2;
+
+                                            //添加上时间戳
+                                            uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                            char zipTimeBuff[8] = {0};
+                                            converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                            memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                            writebuff_pos += 8;
+                                        }
+                                    }
+                                    if (j == CurrentZipTemplate.schemas[i].second.tsLen - 1) //时间序列还原结束，readbuff_pos+1跳过0xFF标志
+                                        readbuff_pos += 1;
+                                }
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
+                        }
+                        else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
                             if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
                                 writebuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                                 readbuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen);
                                 writebuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen;
                                 readbuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen;
@@ -1470,24 +1806,28 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                         {
                             if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 10);
                                 writebuff_pos += 10;
                                 readbuff_pos += 10;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)1) //只有时间
                             {
+                                //先添加上标准值到writebuff
                                 uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                                 char UintValue[2] = {0};
                                 converter.ToUInt16Buff(standardUintValue, UintValue);
                                 memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
                                 writebuff_pos += 2;
 
+                                //再拷贝时间
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 8);
                                 writebuff_pos += 8;
                                 readbuff_pos += 8;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2);
                                 writebuff_pos += 2;
                                 readbuff_pos += 2;
@@ -1501,6 +1841,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     }
                     else //不是未压缩的编号
                     {
+                        //添加上标准值到writebuff
                         uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char UintValue[2] = {0};
                         converter.ToUInt16Buff(standardUintValue, UintValue);
@@ -1510,6 +1851,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                 }
                 else //没有未压缩的数据了
                 {
+                    //添加上标准值到writebuff
                     uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char UintValue[2] = {0};
                     converter.ToUInt16Buff(standardUintValue, UintValue);
@@ -1522,6 +1864,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
         {
             if (len == 0) //表示文件完全压缩
             {
+                //添加上标准值到writebuff
                 char StandardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                 char SintValue[1] = {0};
                 SintValue[0] = StandardSintValue;
@@ -1539,16 +1882,102 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
-                        if (CurrentZipTemplate.schemas[i].second.isArray == true)
+                        if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
+                        {
+                            if (readbuff[readbuff_pos - 1] == (char)3) //既是时间序列又是数组
+                            {
+                                //直接拷贝
+                                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
+                                writebuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
+                                readbuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
+                            }
+                            else if (readbuff[readbuff_pos - 1] == (char)4) //只是时间序列
+                            {
+                                //先获得第一次采样的时间
+                                char time[8];
+                                memcpy(time, readbuff + readbuff_pos, 8);
+                                uint64_t startTime = converter.ToLong64(time);
+                                readbuff_pos += 8;
+
+                                for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
+                                {
+                                    if (readbuff[readbuff_pos] == (char)-1) //说明没有未压缩的时间序列了
+                                    {
+                                        //将标准值数据拷贝到writebuff
+                                        char StandardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                                        char SintValue[1] = {0};
+                                        SintValue[0] = StandardSintValue;
+                                        memcpy(writebuff + writebuff_pos, SintValue, 1); // SINT标准值
+                                        writebuff_pos += 1;
+
+                                        //添加上时间戳
+                                        uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                        char zipTimeBuff[8] = {0};
+                                        converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                        memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                        writebuff_pos += 8;
+                                    }
+                                    else
+                                    {
+                                        //对比编号是否等于未压缩的时间序列编号
+                                        char zipTsPosNum[2] = {0};
+                                        memcpy(zipTsPosNum, readbuff + readbuff_pos, 2);
+                                        uint16_t tsPosCmp = converter.ToUInt16(zipTsPosNum);
+
+                                        if (tsPosCmp == j) //是未压缩时间序列的编号
+                                        {
+                                            //将未压缩的数据拷贝到writebuff
+                                            readbuff_pos += 2;
+                                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                                            readbuff_pos += 4;
+                                            writebuff_pos += 4;
+
+                                            //添加上时间戳
+                                            uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                            char zipTimeBuff[8] = {0};
+                                            converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                            memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                            writebuff_pos += 8;
+                                        }
+                                        else //不是未压缩时间序列的编号
+                                        {
+                                            //将标准值数据拷贝到writebuff
+                                            char StandardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
+                                            char SintValue[1] = {0};
+                                            SintValue[0] = StandardSintValue;
+                                            memcpy(writebuff + writebuff_pos, SintValue, 1); // SINT标准值
+                                            writebuff_pos += 1;
+
+                                            //添加上时间戳
+                                            uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                            char zipTimeBuff[8] = {0};
+                                            converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                            memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                            writebuff_pos += 8;
+                                        }
+                                    }
+                                    if (j == CurrentZipTemplate.schemas[i].second.tsLen - 1) //时间序列还原结束，readbuff_pos+1跳过0xFF标志
+                                        readbuff_pos += 1;
+                                }
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
+                        }
+                        else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
                             if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen + 8);
                                 writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                                 readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen);
                                 writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
                                 readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
@@ -1563,24 +1992,28 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                         {
                             if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 9);
                                 writebuff_pos += 9;
                                 readbuff_pos += 9;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)1) //只有时间
                             {
+                                //先添加上标准值到writebuff
                                 char StandardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                                 char SintValue[1] = {0};
                                 SintValue[0] = StandardSintValue;
                                 memcpy(writebuff + writebuff_pos, SintValue, 1); // SINT标准值
                                 writebuff_pos += 1;
 
+                                //再拷贝时间
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 8);
                                 writebuff_pos += 8;
                                 readbuff_pos += 8;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
                                 writebuff_pos += 1;
                                 readbuff_pos += 1;
@@ -1594,6 +2027,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     }
                     else //不是未压缩的编号
                     {
+                        //添加上标准值到writebuff
                         char StandardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                         char SintValue[1] = {0};
                         SintValue[0] = StandardSintValue;
@@ -1603,6 +2037,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                 }
                 else //没有未压缩的数据了
                 {
+                    //添加上标准值到writebuff
                     char StandardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                     char SintValue[1] = {0};
                     SintValue[0] = StandardSintValue;
@@ -1615,6 +2050,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
         {
             if (len == 0) //表示文件完全压缩
             {
+                //添加上标准值到writebuff
                 short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char IntValue[2] = {0};
                 converter.ToInt16Buff(standardIntValue, IntValue);
@@ -1632,16 +2068,102 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
-                        if (CurrentZipTemplate.schemas[i].second.isArray == true)
+                        if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
+                        {
+                            if (readbuff[readbuff_pos - 1] == (char)3) //既是时间序列又是数组
+                            {
+                                //直接拷贝
+                                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
+                                writebuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
+                                readbuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
+                            }
+                            else if (readbuff[readbuff_pos - 1] == (char)4) //只是时间序列
+                            {
+                                //先获得第一次采样的时间
+                                char time[8];
+                                memcpy(time, readbuff + readbuff_pos, 8);
+                                uint64_t startTime = converter.ToLong64(time);
+                                readbuff_pos += 8;
+
+                                for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
+                                {
+                                    if (readbuff[readbuff_pos] == (char)-1) //说明没有未压缩的时间序列了
+                                    {
+                                        //将标准值数据拷贝到writebuff
+                                        short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                                        char IntValue[2] = {0};
+                                        converter.ToInt16Buff(standardIntValue, IntValue);
+                                        memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
+                                        writebuff_pos += 2;
+
+                                        //添加上时间戳
+                                        uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                        char zipTimeBuff[8] = {0};
+                                        converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                        memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                        writebuff_pos += 8;
+                                    }
+                                    else
+                                    {
+                                        //对比编号是否等于未压缩的时间序列编号
+                                        char zipTsPosNum[2] = {0};
+                                        memcpy(zipTsPosNum, readbuff + readbuff_pos, 2);
+                                        uint16_t tsPosCmp = converter.ToUInt16(zipTsPosNum);
+
+                                        if (tsPosCmp == j) //是未压缩时间序列的编号
+                                        {
+                                            //将未压缩的数据拷贝到writebuff
+                                            readbuff_pos += 2;
+                                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                                            readbuff_pos += 4;
+                                            writebuff_pos += 4;
+
+                                            //添加上时间戳
+                                            uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                            char zipTimeBuff[8] = {0};
+                                            converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                            memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                            writebuff_pos += 8;
+                                        }
+                                        else //不是未压缩时间序列的编号
+                                        {
+                                            //将标准值数据拷贝到writebuff
+                                            short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                                            char IntValue[2] = {0};
+                                            converter.ToInt16Buff(standardIntValue, IntValue);
+                                            memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
+                                            writebuff_pos += 2;
+
+                                            //添加上时间戳
+                                            uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                            char zipTimeBuff[8] = {0};
+                                            converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                            memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                            writebuff_pos += 8;
+                                        }
+                                    }
+                                    if (j == CurrentZipTemplate.schemas[i].second.tsLen - 1) //时间序列还原结束，readbuff_pos+1跳过0xFF标志
+                                        readbuff_pos += 1;
+                                }
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
+                        }
+                        else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
                             if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
                                 writebuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                                 readbuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen);
                                 writebuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen;
                                 readbuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen;
@@ -1656,24 +2178,28 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                         {
                             if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 10);
                                 writebuff_pos += 10;
                                 readbuff_pos += 10;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)1) //只有时间
                             {
+                                //先添加上标准值到writebuff
                                 short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                                 char IntValue[2] = {0};
                                 converter.ToInt16Buff(standardIntValue, IntValue);
                                 memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
                                 writebuff_pos += 2;
 
+                                //再拷贝时间
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 8);
                                 writebuff_pos += 8;
                                 readbuff_pos += 8;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2);
                                 writebuff_pos += 2;
                                 readbuff_pos += 2;
@@ -1687,6 +2213,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     }
                     else //不是未压缩的编号
                     {
+                        //添加上标准值到writebuff
                         short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char IntValue[2] = {0};
                         converter.ToInt16Buff(standardIntValue, IntValue);
@@ -1696,6 +2223,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                 }
                 else //没有未压缩的数据了
                 {
+                    //添加上标准值到writebuff
                     short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char IntValue[2] = {0};
                     converter.ToInt16Buff(standardIntValue, IntValue);
@@ -1708,6 +2236,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
         {
             if (len == 0) //表示文件完全压缩
             {
+                //添加上标准值到writebuff
                 int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char DintValue[4] = {0};
                 converter.ToInt32Buff(standardDintValue, DintValue);
@@ -1725,16 +2254,102 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
-                        if (CurrentZipTemplate.schemas[i].second.isArray == true)
+                        if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
+                        {
+                            if (readbuff[readbuff_pos - 1] == (char)3) //既是时间序列又是数组
+                            {
+                                //直接拷贝
+                                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
+                                writebuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
+                                readbuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
+                            }
+                            else if (readbuff[readbuff_pos - 1] == (char)4) //只是时间序列
+                            {
+                                //先获得第一次采样的时间
+                                char time[8];
+                                memcpy(time, readbuff + readbuff_pos, 8);
+                                uint64_t startTime = converter.ToLong64(time);
+                                readbuff_pos += 8;
+
+                                for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
+                                {
+                                    if (readbuff[readbuff_pos] == (char)-1) //说明没有未压缩的时间序列了
+                                    {
+                                        //将标准值数据拷贝到writebuff
+                                        int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                                        char DintValue[4] = {0};
+                                        converter.ToInt32Buff(standardDintValue, DintValue);
+                                        memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
+                                        writebuff_pos += 4;
+
+                                        //添加上时间戳
+                                        uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                        char zipTimeBuff[8] = {0};
+                                        converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                        memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                        writebuff_pos += 8;
+                                    }
+                                    else
+                                    {
+                                        //对比编号是否等于未压缩的时间序列编号
+                                        char zipTsPosNum[2] = {0};
+                                        memcpy(zipTsPosNum, readbuff + readbuff_pos, 2);
+                                        uint16_t tsPosCmp = converter.ToUInt16(zipTsPosNum);
+
+                                        if (tsPosCmp == j) //是未压缩时间序列的编号
+                                        {
+                                            //将未压缩的数据拷贝到writebuff
+                                            readbuff_pos += 2;
+                                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                                            readbuff_pos += 4;
+                                            writebuff_pos += 4;
+
+                                            //添加上时间戳
+                                            uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                            char zipTimeBuff[8] = {0};
+                                            converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                            memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                            writebuff_pos += 8;
+                                        }
+                                        else //不是未压缩时间序列的编号
+                                        {
+                                            //将标准值数据拷贝到writebuff
+                                            int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                                            char DintValue[4] = {0};
+                                            converter.ToInt32Buff(standardDintValue, DintValue);
+                                            memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
+                                            writebuff_pos += 4;
+
+                                            //添加上时间戳
+                                            uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                            char zipTimeBuff[8] = {0};
+                                            converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                            memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                            writebuff_pos += 8;
+                                        }
+                                    }
+                                    if (j == CurrentZipTemplate.schemas[i].second.tsLen - 1) //时间序列还原结束，readbuff_pos+1跳过0xFF标志
+                                        readbuff_pos += 1;
+                                }
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
+                        }
+                        else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
                             if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
                                 writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                                 readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen);
                                 writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
                                 readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
@@ -1749,24 +2364,28 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                         {
                             if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
                                 writebuff_pos += 12;
                                 readbuff_pos += 12;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)1) //只有时间
                             {
+                                //先添加上标准值到writebuff
                                 int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                                 char DintValue[4] = {0};
                                 converter.ToInt32Buff(standardDintValue, DintValue);
                                 memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
                                 writebuff_pos += 4;
 
+                                //再拷贝时间
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 8);
                                 writebuff_pos += 8;
                                 readbuff_pos += 8;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                                 writebuff_pos += 4;
                                 readbuff_pos += 4;
@@ -1780,6 +2399,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     }
                     else //不是未压缩的编号
                     {
+                        //添加上标准值到writebuff
                         int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char DintValue[4] = {0};
                         converter.ToInt32Buff(standardDintValue, DintValue);
@@ -1789,6 +2409,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                 }
                 else //没有未压缩的数据了
                 {
+                    //添加上标准值到writebuff
                     int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char DintValue[4] = {0};
                     converter.ToInt32Buff(standardDintValue, DintValue);
@@ -1801,6 +2422,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
         {
             if (len == 0) //表示文件完全压缩
             {
+                //添加上标准值到writebuff
                 float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                 char RealValue[4] = {0};
                 converter.ToFloatBuff(standardRealValue, RealValue);
@@ -1818,16 +2440,102 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
-                        if (CurrentZipTemplate.schemas[i].second.isArray == true)
+                        if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
+                        {
+                            if (readbuff[readbuff_pos - 1] == (char)3) //既是时间序列又是数组
+                            {
+                                //直接拷贝
+                                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
+                                writebuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
+                                readbuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
+                            }
+                            else if (readbuff[readbuff_pos - 1] == (char)4) //只是时间序列
+                            {
+                                //先获得第一次采样的时间
+                                char time[8];
+                                memcpy(time, readbuff + readbuff_pos, 8);
+                                uint64_t startTime = converter.ToLong64(time);
+                                readbuff_pos += 8;
+
+                                for (auto j = 0; j < CurrentZipTemplate.schemas[i].second.tsLen; j++)
+                                {
+                                    if (readbuff[readbuff_pos] == (char)-1) //说明没有未压缩的时间序列了
+                                    {
+                                        //将标准值数据拷贝到writebuff
+                                        float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                                        char RealValue[4] = {0};
+                                        converter.ToFloatBuff(standardRealValue, RealValue);
+                                        memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
+                                        writebuff_pos += 4;
+
+                                        //添加上时间戳
+                                        uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                        char zipTimeBuff[8] = {0};
+                                        converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                        memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                        writebuff_pos += 8;
+                                    }
+                                    else
+                                    {
+                                        //对比编号是否等于未压缩的时间序列编号
+                                        char zipTsPosNum[2] = {0};
+                                        memcpy(zipTsPosNum, readbuff + readbuff_pos, 2);
+                                        uint16_t tsPosCmp = converter.ToUInt16(zipTsPosNum);
+
+                                        if (tsPosCmp == j) //是未压缩时间序列的编号
+                                        {
+                                            //将未压缩的数据拷贝到writebuff
+                                            readbuff_pos += 2;
+                                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                                            readbuff_pos += 4;
+                                            writebuff_pos += 4;
+
+                                            //添加上时间戳
+                                            uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                            char zipTimeBuff[8] = {0};
+                                            converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                            memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                            writebuff_pos += 8;
+                                        }
+                                        else //不是未压缩时间序列的编号
+                                        {
+                                            //将标准值数据拷贝到writebuff
+                                            float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
+                                            char RealValue[4] = {0};
+                                            converter.ToFloatBuff(standardRealValue, RealValue);
+                                            memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
+                                            writebuff_pos += 4;
+
+                                            //添加上时间戳
+                                            uint64_t zipTime = startTime + CurrentZipTemplate.schemas[i].second.timeseriesSpan * j;
+                                            char zipTimeBuff[8] = {0};
+                                            converter.ToLong64Buff(zipTime, zipTimeBuff);
+                                            memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
+                                            writebuff_pos += 8;
+                                        }
+                                    }
+                                    if (j == CurrentZipTemplate.schemas[i].second.tsLen - 1) //时间序列还原结束，readbuff_pos+1跳过0xFF标志
+                                        readbuff_pos += 1;
+                                }
+                            }
+                            else
+                            {
+                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
+                            }
+                        }
+                        else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
                             if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
                                 writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                                 readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen);
                                 writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
                                 readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
@@ -1842,24 +2550,28 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                         {
                             if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
                                 writebuff_pos += 12;
                                 readbuff_pos += 12;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)1) //只有时间
                             {
+                                //先添加上标准值到writebuff
                                 float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                                 char RealValue[4] = {0};
                                 converter.ToFloatBuff(standardRealValue, RealValue);
                                 memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
                                 writebuff_pos += 4;
 
+                                //再拷贝时间
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 8);
                                 writebuff_pos += 8;
                                 readbuff_pos += 8;
                             }
                             else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
                             {
+                                //直接拷贝
                                 memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                                 writebuff_pos += 4;
                                 readbuff_pos += 4;
@@ -1873,6 +2585,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     }
                     else //不是未压缩的编号
                     {
+                        //添加上标准值到writebuff
                         float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                         char RealValue[4] = {0};
                         converter.ToFloatBuff(standardRealValue, RealValue);
@@ -1882,6 +2595,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                 }
                 else //没有未压缩的数据了
                 {
+                    //添加上标准值到writebuff
                     float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
                     char RealValue[4] = {0};
                     converter.ToFloatBuff(standardRealValue, RealValue);
@@ -2254,7 +2968,7 @@ int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如直接使用单线程
     {
-        err = DB_ZipAnalogFile_Single(ZipTemPath, pathToLine);
+        err = DB_ReZipAnalogFile_Single(ZipTemPath, pathToLine);
         return err;
     }
     IOBusy = true;
@@ -2277,7 +2991,7 @@ int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
     if (filesWithTime.size() < 1000)
     {
         IOBusy = false;
-        err = DB_ZipAnalogFile_Single(ZipTemPath, pathToLine);
+        err = DB_ReZipAnalogFile_Single(ZipTemPath, pathToLine);
         return err;
     }
     sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
@@ -3107,5 +3821,11 @@ int DB_ReZipAnalogFileByFileID(struct DB_ZipParams *params)
 //     std::cout << "模拟量文件按时间段 多线程时间段还原耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
 //     std::cout<<"end 模拟量文件按时间段 多线程还原"<<std::endl<<std::endl;
 
+//     return 0;
+// }
+// int main()
+// {
+//     // DB_ZipAnalogFile("RobotTsTest","RobotTsTest");
+//     DB_ReZipAnalogFile("RobotTsTest","RobotTsTest");
 //     return 0;
 // }
