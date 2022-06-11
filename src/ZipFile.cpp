@@ -4301,14 +4301,14 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
 
 //     return 0;
 // }
-int main()
-{
-    DB_ZipParams param;
-    param.ZipType = FILE_ID;
-    param.pathToLine = "RbTsImageEle";
-    param.fileID = "RbTsImageEle2";
-    DB_ZipFileByFileID(&param);
-    // DB_ZipFile("RbTsImageEle","RbTsImageEle");
-    // DB_ReZipFile("RobotTsTest","RobotTsTest");
-    return 0;
-}
+// int main()
+// {
+//     DB_ZipParams param;
+//     param.ZipType = FILE_ID;
+//     param.pathToLine = "RbTsImageEle";
+//     param.fileID = "RbTsImageEle2";
+//     DB_ZipFileByFileID(&param);
+//     // DB_ZipFile("RbTsImageEle","RbTsImageEle");
+//     // DB_ReZipFile("RobotTsTest","RobotTsTest");
+//     return 0;
+// }

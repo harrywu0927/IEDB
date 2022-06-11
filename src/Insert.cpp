@@ -82,10 +82,10 @@ void autoPacker()
     {
         if (TemplateManager::SetTemplate(dir.c_str()) != 0)
             continue;
-        int rhythmSize = CurrentTemplate.totalBytes; //除去图片的节拍大小
-        packNums.push_back(1024 * 1024 * 10 / rhythmSize);
+        int rhythmSize = CurrentTemplate.totalBytes;       //除去图片的节拍大小
+        packNums.push_back(1024 * 1024 * 10 / rhythmSize); //初次打包时设定为10MB大小
     }
-
+    Packer packer;
     while (1)
     {
         while (IOBusy)
@@ -101,9 +101,21 @@ void autoPacker()
         {
             files.clear();
             readDataFilesWithTimestamps(dirs[i].c_str(), files);
+            if (files.size() >= packNums[i])
+            {
+                packer.Pack(dirs[i], files);
+            }
+        }
+        long curTime = getMilliTime();
+        if (curTime % (3600 * 1000 * 24) == 0)
+        {
+            for (int i = 0; i < dirs.size(); i++)
+            {
+                packer.RePack(dirs[i]);
+            }
         }
         IOBusy = false;
-        sleep(3);
+        sleep(5);
     }
 }
 // thread settingsWatcher;
@@ -351,14 +363,14 @@ int checkNovelty(DB_DataBuffer *buffer)
 /**
  * @brief 将一个缓冲区中的一条数据(文件)存放在指定路径下，以文件ID+时间的方式命名
  * @param buffer    数据缓冲区
- * @param addTime    是否添加时间戳
+ * @param zip    是否压缩
  *
  * @return  0:success,
  *          others: StatusCode
  * @note 文件ID的暂定的命名方式为当前文件夹下的文件数量+1，
  *  时间戳格式为yyyy-mm-dd-hh-min-ss-ms
  */
-int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
+int DB_InsertRecord(DB_DataBuffer *buffer, int zip)
 {
 #ifndef WIN32
     if (!settingsWatcherStarted)
@@ -392,7 +404,7 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
         {
             errCode = checkNovelty(buffer); //此处若检测奇异性过程中出现异常，不会中止插入数据
             if (errCode == 0)
-                addTime = 0;
+                zip = 0;
         }
     }
     string savepath = buffer->savePath;
@@ -409,7 +421,7 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int addTime)
     string finalPath = "";
     finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000));
     char mode[2] = {'a', 'b'};
-    if (addTime == 0)
+    if (zip == 0)
     {
         finalPath.append(".idb");
         int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);

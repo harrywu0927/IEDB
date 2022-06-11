@@ -36,6 +36,7 @@
 #include <thread>
 #include <future>
 #include <chrono>
+#include <stdarg.h>
 using namespace std;
 #pragma once
 
@@ -242,6 +243,8 @@ PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer);
 PyObject *ConvertToPyList_STAT(DB_DataBuffer *buffer);
 
 PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcName, const char *path = "./");
+
+PyObject *PythonCall(const char *moduleName, const char *funcName, const char *path, int num, ...);
 
 //检查模板相关输入
 int checkInputVaribaleName(string variableName);
@@ -868,7 +871,7 @@ public:
      *
      * @return vector<PathCode>
      */
-    vector<PathCode> GetPathcodes();
+    void GetPathcodes(vector<PathCode> &pathCodes);
 };
 
 // class QueryBufferRow : public QueryBufferReader

@@ -2833,35 +2833,6 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
     return 0;
 }
 
-PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcName, const char *path)
-{
-    if (!Py_IsInitialized())
-        Py_Initialize();
-    string pySentence = "";
-    pySentence.append("if '").append(path).append("' not in sys.path: sys.path.append('").append(path).append("')");
-    // 指定py文件目录
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString(pySentence.c_str());
-    cout << pySentence.c_str() << endl;
-
-    PyObject *mymodule = PyImport_ImportModule(moduleName);
-    PyObject *pFunc, *ret;
-    if (mymodule != NULL)
-    {
-        // 从模块中获取函数
-        pFunc = PyObject_GetAttrString(mymodule, funcName);
-
-        if (pFunc && PyCallable_Check(pFunc))
-        {
-            // 函数执行
-            ret = PyObject_CallObject(pFunc, Args);
-        }
-    }
-    Py_XDECREF(pFunc);
-    Py_XDECREF(mymodule);
-    return ret;
-}
-
 /**
  * @brief 根据查询条件筛选后获取异常节拍的数据
  *
@@ -2908,10 +2879,12 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
         if (err != 0)
             return err;
     }
+    else if (buffer->buffer == NULL)
+        return StatusCode::INVALID_QUERY_BUFFER;
     QueryBufferReader reader(buffer);
     if (no_query)
     {
-        pathCodes = reader.GetPathcodes();
+        reader.GetPathcodes(pathCodes);
     }
     if (mode == 1) // using machine learning
     {
@@ -2955,8 +2928,8 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
             PyTuple_SetItem(args, 0, col);
             PyObject *dim = PyLong_FromLong(reader.typeList[typeIndexes[i]].isArray ? reader.typeList[typeIndexes[i]].arrayLen : 1);
             PyTuple_SetItem(args, 1, dim);
-            PyObject *ret = PythonCall(args, "Novelty_Outlier", "Outliers");
-
+            // PyObject *ret = PythonCall(args, "Novelty_Outlier", "Outliers");
+            PyObject *ret = PythonCall("Novelty_Outlier", "Outliers", "./", 2, col, dim);
             int len = PyObject_Size(ret);
             if (len == -1)
             {
@@ -2970,7 +2943,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
                     *(set + j) = 1;
                 }
             }
-            Py_DECREF(args);
+            // Py_DECREF(args);
             Py_XDECREF(ret);
             if (i == typeIndexes.size() - 1)
                 PyObject_Free(dim);
@@ -3199,76 +3172,66 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
     }
     return 0;
 }
-// int main()
-// {
-//     // DataTypeConverter converter;
-//     DB_QueryParams params;
-//     params.pathToLine = "JinfeiSeven";
-//     params.fileID = "JinfeiSeven15";
-//     params.fileIDend = NULL;
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)0;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     params.pathCode = code;
-//     params.valueName = "S1OFF";
-//     // params.valueName = NULL;
-//     params.start = 0;
-//     params.end = 1751165600000;
-//     params.order = ODR_NONE;
-//     params.compareType = CMP_NONE;
-//     params.compareValue = "666";
-//     params.queryType = FILEID;
-//     params.byPath = 0;
-//     params.queryNums = 40;
-//     DB_DataBuffer buffer;
-//     DB_ExecuteQuery(&buffer, &params);
-//     DB_GetAbnormalRhythm(&buffer, &params, 1, 1);
-//     long count;
-//     // DB_GetAbnormalDataCount(&params, &count);
-//     // DB_QueryByFileID(&buffer, &params);
-//     // char *newbuf = (char *)malloc(212);
-//     // memcpy(newbuf, buffer.buffer, 12);
-//     // DataTypeConverter converter;
-//     // for (int i = 0; i < 50; i++)
-//     // {
-//     //     uint v;
-//     //     v = 95 + rand() % 5;
-//     //     char buf[4];
-//     //     converter.ToUInt32Buff(v, buf);
-//     //     memcpy(newbuf + 12 + i * 4, buf, 4);
-//     // }
-//     // free(buffer.buffer);
-//     // buffer.buffer = newbuf;
-//     // buffer.length = 212;
-//     // PyObject *arr = ConvertToPyList_ML(&buffer);
-//     // PyObject *args = PyTuple_New(3);
-//     // PyTuple_SetItem(args, 0, arr);
-//     // PyTuple_SetItem(args, 1, Py_BuildValue("i", 1));
-//     // PyTuple_SetItem(args, 2, PyBytes_FromString("S1ON"));
-//     // PyObject *ret = PythonCall(args, "Novelty_Outlier", "NoveltyModelTrain");
-//     // return 0;
-//     if (buffer.bufferMalloced)
-//     {
-//         char buf[buffer.length];
-//         memcpy(buf, buffer.buffer, buffer.length);
-//         cout << buffer.length << endl;
-//         for (int i = 0; i < buffer.length; i++)
-//         {
-//             cout << (int)buf[i] << " ";
-//             if (i % 11 == 0)
-//                 cout << endl;
-//         }
+int main()
+{
+    // DataTypeConverter converter;
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiSeven";
+    params.fileID = "JinfeiSeven15";
+    params.fileIDend = NULL;
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)1;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueName = "S1OFF";
+    // params.valueName = NULL;
+    params.start = 0;
+    params.end = 1751165600000;
+    params.order = ODR_NONE;
+    params.compareType = CMP_NONE;
+    params.compareValue = "666";
+    params.queryType = FILEID;
+    params.byPath = 1;
+    params.queryNums = 40;
+    DB_DataBuffer buffer;
+    DB_ExecuteQuery(&buffer, &params);
+    DB_GetAbnormalRhythm(&buffer, &params, 1, 1);
+    long count;
+    // DB_GetAbnormalDataCount(&params, &count);
+    // DB_QueryByFileID(&buffer, &params);
+    // char *newbuf = (char *)malloc(212);
+    // memcpy(newbuf, buffer.buffer, 12);
+    // DataTypeConverter converter;
+    // for (int i = 0; i < 50; i++)
+    // {
+    //     uint v;
+    //     v = 95 + rand() % 5;
+    //     char buf[4];
+    //     converter.ToUInt32Buff(v, buf);
+    //     memcpy(newbuf + 12 + i * 4, buf, 4);
+    // }
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
 
-//         free(buffer.buffer);
-//     }
-//     Py_Finalize();
-//     return 0;
-// }
+        free(buffer.buffer);
+    }
+    Py_Finalize();
+    return 0;
+}

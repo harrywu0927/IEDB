@@ -371,7 +371,7 @@ void *QueryBufferReader::FindElementInRow(const int &index, char *row)
  *
  * @return vector<PathCode>
  */
-vector<PathCode> QueryBufferReader::GetPathcodes()
+void QueryBufferReader::GetPathcodes(vector<PathCode> &pathCodes)
 {
     int pos = 1;
     vector<PathCode> res;
@@ -418,10 +418,9 @@ vector<PathCode> QueryBufferReader::GetPathcodes()
         {
             if (memcmp(CurrentTemplate.schemas[j].first.code, code, 10) == 0)
             {
-                res.push_back(CurrentTemplate.schemas[j].first);
+                pathCodes.push_back(CurrentTemplate.schemas[j].first);
                 break;
             }
         }
     }
-    return res;
 }
