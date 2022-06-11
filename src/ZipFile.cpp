@@ -4036,16 +4036,18 @@ int DB_ZipFileByFileID(struct DB_ZipParams *params)
             fileid = paths[0] + fileid;
     }
 
-    vector<string> Files;
-    readIDBFilesList(params->pathToLine, Files);
+    vector<pair<string, long>> Files;
+    readIDBFilesWithTimestamps(params->pathToLine, Files);
     if (Files.size() == 0)
     {
         cout << "没有文件！" << endl;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
-    for (string &file : Files) //遍历寻找ID
+    sortByTime(Files, TIME_ASC);
+
+    for (auto &file : Files) //遍历寻找ID
     {
-        if (file.find(fileid) != string::npos)
+        if (file.first.find(fileid) != string::npos)
         {
             err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
             if (err)
@@ -4056,12 +4058,12 @@ int DB_ZipFileByFileID(struct DB_ZipParams *params)
             DataTypeConverter converter;
 
             long len;
-            DB_GetFileLengthByPath(const_cast<char *>(file.c_str()), &len);
-            char readbuff[len];                            //文件内容
-            char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
+            DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+            char *readbuff = new char[len];                            //文件内容
+            char *writebuff = new char[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
             long writebuff_pos = 0;
 
-            if (DB_OpenAndRead(const_cast<char *>(file.c_str()), readbuff)) //将文件内容读取到readbuff
+            if (DB_OpenAndRead(const_cast<char *>(file.first.c_str()), readbuff)) //将文件内容读取到readbuff
             {
                 cout << "未找到文件" << endl;
                 return StatusCode::DATAFILE_NOT_FOUND;
@@ -4071,7 +4073,7 @@ int DB_ZipFileByFileID(struct DB_ZipParams *params)
 
             if (writebuff_pos >= len) //表明数据没有被压缩,不做处理
             {
-                cout << file + "文件数据没有被压缩!" << endl;
+                cout << file.first + "文件数据没有被压缩!" << endl;
                 // return 1;//1表示数据没有被压缩
                 char *data = (char *)malloc(len);
                 memcpy(data, readbuff, len);
@@ -4085,9 +4087,9 @@ int DB_ZipFileByFileID(struct DB_ZipParams *params)
                 params->buffer = data; //将压缩后数据记录在params->buffer中
                 params->bufferLen = writebuff_pos;
 
-                DB_DeleteFile(const_cast<char *>(file.c_str())); //删除原文件
+                DB_DeleteFile(const_cast<char *>(file.first.c_str())); //删除原文件
                 long fp;
-                string finalpath = file.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
+                string finalpath = file.first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
                 //创建新文件并写入
                 char mode[2] = {'w', 'b'};
                 err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
@@ -4102,6 +4104,8 @@ int DB_ZipFileByFileID(struct DB_ZipParams *params)
                     }
                 }
             }
+            delete[] readbuff;
+            delete[] writebuff;
             break;
         }
     }
@@ -4141,17 +4145,18 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
             fileid = paths[0] + fileid;
     }
 
-    vector<string> Files;
-    readIDBZIPFilesList(params->pathToLine, Files);
+    vector<pair<string, long>> Files;
+    readIDBZIPFilesWithTimestamps(params->pathToLine, Files);
     if (Files.size() == 0)
     {
         cout << "没有文件！" << endl;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
+    sortByTime(Files, TIME_ASC);
 
-    for (string &file : Files) //遍历寻找ID
+    for (auto &file : Files) //遍历寻找ID
     {
-        if (file.find(fileid) != string::npos)
+        if (file.first.find(fileid) != string::npos)
         {
             err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
             if (err)
@@ -4162,12 +4167,12 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
             DataTypeConverter converter;
 
             long len;
-            DB_GetFileLengthByPath(const_cast<char *>(file.c_str()), &len);
-            char readbuff[len];                            //文件内容
-            char writebuff[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
+            DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+            char *readbuff = new char[len];                            //文件内容
+            char *writebuff = new char[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
             long writebuff_pos = 0;
 
-            if (DB_OpenAndRead(const_cast<char *>(file.c_str()), readbuff)) //将文件内容读取到readbuff
+            if (DB_OpenAndRead(const_cast<char *>(file.first.c_str()), readbuff)) //将文件内容读取到readbuff
             {
                 cout << "未找到文件" << endl;
                 return StatusCode::DATAFILE_NOT_FOUND;
@@ -4179,9 +4184,9 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
             params->buffer = data; //将还原后的数据记录在params->buffer中
             params->bufferLen = writebuff_pos;
 
-            DB_DeleteFile(const_cast<char *>(file.c_str())); //删除原文件
+            DB_DeleteFile(const_cast<char *>(file.first.c_str())); //删除原文件
             long fp;
-            string finalpath = file.substr(0, file.length() - 3); //去掉后缀的zip
+            string finalpath = file.first.substr(0, file.first.length() - 3); //去掉后缀的zip
             //创建新文件并写入
             char mode[2] = {'w', 'b'};
             err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
@@ -4194,6 +4199,8 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
                     DB_Close(fp);
                 }
             }
+            delete[] readbuff;
+            delete[] writebuff;
             break;
         }
     }
@@ -4296,7 +4303,12 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
 // }
 int main()
 {
-    // DB_ZipFile("RobotTsTest","RobotTsTest");
-    DB_ReZipFile("RobotTsTest","RobotTsTest");
+    DB_ZipParams param;
+    param.ZipType = FILE_ID;
+    param.pathToLine = "RbTsImageEle";
+    param.fileID = "RbTsImageEle2";
+    DB_ZipFileByFileID(&param);
+    // DB_ZipFile("RbTsImageEle","RbTsImageEle");
+    // DB_ReZipFile("RobotTsTest","RobotTsTest");
     return 0;
 }

@@ -51,6 +51,7 @@ src/Query
 src/ZipSwitchFile
 src/ZipAnalogFile
 /.vscode/*
+/testIEDB/*
 *.json
 *.dat
 *.idb
