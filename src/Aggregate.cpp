@@ -2833,15 +2833,45 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
     return 0;
 }
 
+PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcName, const char *path)
+{
+    if (!Py_IsInitialized())
+        Py_Initialize();
+    string pySentence = "";
+    pySentence.append("if '").append(path).append("' not in sys.path: sys.path.append('").append(path).append("')");
+    // 指定py文件目录
+    PyRun_SimpleString("import sys");
+    PyRun_SimpleString(pySentence.c_str());
+    cout << pySentence.c_str() << endl;
+
+    PyObject *mymodule = PyImport_ImportModule(moduleName);
+    PyObject *pFunc, *ret;
+    if (mymodule != NULL)
+    {
+        // 从模块中获取函数
+        pFunc = PyObject_GetAttrString(mymodule, funcName);
+
+        if (pFunc && PyCallable_Check(pFunc))
+        {
+            // 函数执行
+            ret = PyObject_CallObject(pFunc, Args);
+        }
+    }
+    Py_XDECREF(pFunc);
+    Py_XDECREF(mymodule);
+    return ret;
+}
+
 /**
  * @brief 根据查询条件筛选后获取异常节拍的数据
  *
  * @param buffer    数据缓冲区
  * @param params    查询请求参数
  * @param mode 若为1，则使用LOF算法即时训练指定数据来判断数据是否异常；若为0，则根据已训练的模型检测指定数据的新颖性（异常性）；否则，根据压缩模版判断是否异常
+ * @param no_query 是否组态
  * @return int
  */
-int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode)
+int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode, int no_query)
 {
     //此处的pathcode和valuename仅仅为比较数值筛选时指定的变量，下方查询时将转为所有变量
     if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
@@ -2849,35 +2879,40 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
     if (ZipTemplateManager::CheckZipTemplate(params->pathToLine) != 0)
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     vector<PathCode> pathCodes;
-    if (params->byPath)
+    if (!no_query)
     {
-        int err = CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
-        if (err != 0)
-            return err;
-        if ((params->queryType != QRY_NONE || params->compareType != CMP_NONE) && pathCodes.size() > 1 && (params->valueName == NULL || strcmp(params->valueName, "") == 0)) //若此编码包含的数据类型大于1，而未指定变量名，又需要比较或排序，返回异常
-            return StatusCode::INVALID_QRY_PARAMS;
+        if (params->byPath)
+        {
+            int err = CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
+            if (err != 0)
+                return err;
+            if ((params->queryType != QRY_NONE || params->compareType != CMP_NONE) && pathCodes.size() > 1 && (params->valueName == NULL || strcmp(params->valueName, "") == 0)) //若此编码包含的数据类型大于1，而未指定变量名，又需要比较或排序，返回异常
+                return StatusCode::INVALID_QRY_PARAMS;
+            else
+            {
+                if ((params->valueName == NULL || strcmp(params->valueName, "") == 0) && (params->queryType != QRY_NONE || params->compareType != CMP_NONE)) //由于编码会变为全0，因此若需要排序或比较，需要添加变量名
+                {
+                    params->valueName = pathCodes[0].name.c_str();
+                }
+                char zeros[10] = {0};
+                memcpy(params->pathCode, zeros, 10);
+            }
+        }
         else
         {
-            if ((params->valueName == NULL || strcmp(params->valueName, "") == 0) && (params->queryType != QRY_NONE || params->compareType != CMP_NONE)) //由于编码会变为全0，因此若需要排序或比较，需要添加变量名
-            {
-                params->valueName = pathCodes[0].name.c_str();
-            }
+            params->byPath = 1;
             char zeros[10] = {0};
             memcpy(params->pathCode, zeros, 10);
         }
+        int err = DB_ExecuteQuery(buffer, params);
+        if (err != 0)
+            return err;
     }
-    else
-    {
-        params->byPath = 1;
-        char zeros[10] = {0};
-        memcpy(params->pathCode, zeros, 10);
-    }
-
-    int err = DB_ExecuteQuery(buffer, params);
-    if (err != 0)
-        return err;
     QueryBufferReader reader(buffer);
-
+    if (no_query)
+    {
+        pathCodes = reader.GetPathcodes();
+    }
     if (mode == 1) // using machine learning
     {
         vector<int> typeIndexes;
@@ -2887,7 +2922,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
             {
                 for (int j = 0; j < CurrentTemplate.schemas.size(); j++)
                 {
-                    if (memcmp(CurrentTemplate.schemas[j].first.code, pathCodes[i].code, 10) == 0)
+                    if (CurrentTemplate.schemas[j].first == pathCodes[i])
                         typeIndexes.push_back(j);
                 }
             }
@@ -3001,7 +3036,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
             {
                 for (int j = 0; j < CurrentTemplate.schemas.size(); j++)
                 {
-                    if (memcmp(CurrentTemplate.schemas[j].first.code, pathCodes[i].code, 10) == 0)
+                    if (CurrentTemplate.schemas[j].first == pathCodes[i])
                         typeIndexes.push_back(j);
                 }
             }
@@ -3194,7 +3229,8 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
 //     params.byPath = 0;
 //     params.queryNums = 40;
 //     DB_DataBuffer buffer;
-//     DB_GetAbnormalRhythm(&buffer, &params, 1);
+//     DB_ExecuteQuery(&buffer, &params);
+//     DB_GetAbnormalRhythm(&buffer, &params, 1, 1);
 //     long count;
 //     // DB_GetAbnormalDataCount(&params, &count);
 //     // DB_QueryByFileID(&buffer, &params);

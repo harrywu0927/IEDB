@@ -612,20 +612,20 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
         else
         {
             int num = 1;
-            if (schema.second.isArray || schema.second.isTimeseries)
+            if (schema.second.isTimeseries)
             {
-                if (schema.second.valueType == ValueType::IMAGE)
+                if (schema.second.isArray)
                 {
-                    char length[2], width[2], channels[2];
-                    memcpy(length, buff + pos, 2);
-                    pos += 2;
-                    memcpy(width, buff + pos, 2);
-                    pos += 2;
-                    memcpy(channels, buff + pos, 2);
-                    num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels) + 2;
+                    num = schema.second.arrayLen * schema.second.tsLen;
                 }
                 else
-                    num = schema.second.arrayLen;
+                {
+                    num = schema.second.tsLen;
+                }
+            }
+            else if (schema.second.isArray)
+            {
+                num = schema.second.arrayLen;
             }
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
             pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;

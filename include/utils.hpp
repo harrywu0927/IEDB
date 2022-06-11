@@ -284,6 +284,10 @@ public:
             this->code[i] = pathEncode[i];
         }
     }
+    bool operator==(const PathCode &pathCode)
+    {
+        return memcmp(code, pathCode.code, 10) == 0 ? true : false;
+    }
 };
 
 class DataType
@@ -858,6 +862,13 @@ public:
      *
      */
     void Reset() { cur = startPos; }
+
+    /**
+     * @brief Get the Pathcodes object from buffer head
+     *
+     * @return vector<PathCode>
+     */
+    vector<PathCode> GetPathcodes();
 };
 
 // class QueryBufferRow : public QueryBufferReader
