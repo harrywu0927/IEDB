@@ -21,33 +21,33 @@ PackManager packManager(atoi(settings("Pack_Cache_Size").c_str()) * 1024);
  * @param path 可选，python脚本所在文件夹的路径
  * @return PyObject*
  */
-PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcName, const char *path)
-{
-    if (!Py_IsInitialized())
-        Py_Initialize();
-    string pySentence = "";
-    pySentence.append("if '").append(path).append("' not in sys.path: sys.path.append('").append(path).append("')");
-    // 指定py文件目录
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString(pySentence.c_str());
+// PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcName, const char *path)
+// {
+//     if (!Py_IsInitialized())
+//         Py_Initialize();
+//     string pySentence = "";
+//     pySentence.append("if '").append(path).append("' not in sys.path: sys.path.append('").append(path).append("')");
+//     // 指定py文件目录
+//     PyRun_SimpleString("import sys");
+//     PyRun_SimpleString(pySentence.c_str());
 
-    PyObject *mymodule = PyImport_ImportModule(moduleName);
-    PyObject *pFunc, *ret;
-    if (mymodule != NULL)
-    {
-        // 从模块中获取函数
-        pFunc = PyObject_GetAttrString(mymodule, funcName);
+//     PyObject *mymodule = PyImport_ImportModule(moduleName);
+//     PyObject *pFunc, *ret;
+//     if (mymodule != NULL)
+//     {
+//         // 从模块中获取函数
+//         pFunc = PyObject_GetAttrString(mymodule, funcName);
 
-        if (pFunc && PyCallable_Check(pFunc))
-        {
-            // 函数执行
-            ret = PyObject_CallObject(pFunc, Args);
-        }
-    }
-    Py_XDECREF(pFunc);
-    Py_XDECREF(mymodule);
-    return ret;
-}
+//         if (pFunc && PyCallable_Check(pFunc))
+//         {
+//             // 函数执行
+//             ret = PyObject_CallObject(pFunc, Args);
+//         }
+//     }
+//     Py_XDECREF(pFunc);
+//     Py_XDECREF(mymodule);
+//     return ret;
+// }
 
 //递归获取所有子文件夹
 void readAllDirs(vector<string> &dirs, string basePath)

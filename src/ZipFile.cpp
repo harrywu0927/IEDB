@@ -4294,9 +4294,9 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
 
 //     return 0;
 // }
-int main()
-{
-    // DB_ZipFile("RobotTsTest","RobotTsTest");
-    DB_ReZipFile("RobotTsTest","RobotTsTest");
-    return 0;
-}
+// int main()
+// {
+//     // DB_ZipFile("RobotTsTest","RobotTsTest");
+//     DB_ReZipFile("RobotTsTest","RobotTsTest");
+//     return 0;
+// }

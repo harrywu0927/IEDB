@@ -365,3 +365,63 @@ void *QueryBufferReader::FindElementInRow(const int &index, char *row)
     }
     return row + offset;
 }
+
+/**
+ * @brief Get the Pathcodes object from buffer head
+ *
+ * @return vector<PathCode>
+ */
+vector<PathCode> QueryBufferReader::GetPathcodes()
+{
+    int pos = 1;
+    vector<PathCode> res;
+    for (size_t i = 0; i < typeList.size(); i++)
+    {
+        int typeVal = this->buffer[pos++];
+        switch ((typeVal - 1) / 10)
+        {
+        case 0:
+        {
+            break;
+        }
+        case 1:
+        {
+            break;
+        }
+        case 2:
+        {
+            pos += 4;
+            break;
+        }
+        case 3:
+        {
+            pos += 4;
+            break;
+        }
+        case 4:
+        {
+            pos += 4;
+            break;
+        }
+        case 5:
+        {
+            pos += 8;
+            break;
+        }
+        default:
+            break;
+        }
+        char code[10];
+        memcpy(code, buffer + pos, 10);
+        pos += 10;
+        for (size_t j = 0; j < CurrentTemplate.schemas.size(); j++)
+        {
+            if (memcmp(CurrentTemplate.schemas[j].first.code, code, 10) == 0)
+            {
+                res.push_back(CurrentTemplate.schemas[j].first);
+                break;
+            }
+        }
+    }
+    return res;
+}
