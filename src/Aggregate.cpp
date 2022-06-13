@@ -2071,7 +2071,211 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
     }
     case FILEID:
     {
-        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+        string pathToLine = params->pathToLine;
+        string fileid = params->fileID;
+        string fileidEnd = params->fileIDend == NULL ? "" : params->fileIDend;
+        while (pathToLine[pathToLine.length() - 1] == '/')
+        {
+            pathToLine.pop_back();
+        }
+
+        vector<string> paths = DataType::splitWithStl(pathToLine, "/");
+        if (paths.size() > 0)
+        {
+            if (fileid.find(paths[paths.size() - 1]) == string::npos)
+                fileid = paths[paths.size() - 1] + fileid;
+            if (params->fileIDend != NULL && fileidEnd.find(paths[paths.size() - 1]) == string::npos)
+                fileidEnd = paths[paths.size() - 1] + fileidEnd;
+        }
+        else
+        {
+            if (fileid.find(paths[0]) == string::npos)
+                fileid = paths[0] + fileid;
+            if (params->fileIDend != NULL && fileidEnd.find(paths[0]) == string::npos)
+                fileidEnd = paths[0] + fileidEnd;
+        }
+        readDataFilesWithTimestamps(params->pathToLine, dataWithTime);
+        sortByTime(dataWithTime, TIME_ASC);
+        bool firstIndexFound = false;
+        string currentFileID;
+        if ((params->queryNums == 1 || params->queryNums == 0) && params->fileIDend != NULL) //首尾ID方式
+        {
+            auto packs = packManager.GetPackByIDs(params->pathToLine, params->fileID, params->fileIDend);
+            for (auto &pack : packs)
+            {
+                PackFileReader packReader(pack.first, pack.second);
+                int fileNum;
+                string templateName;
+                packReader.ReadPackHead(fileNum, templateName);
+                for (int i = 0; i < fileNum; i++)
+                {
+                    int zipType, readLength;
+                    long dataPos = packReader.Next(readLength, currentFileID, zipType);
+                    if (fileid == currentFileID)
+                        firstIndexFound = true;
+                    if (firstIndexFound)
+                    {
+                        if (zipType != 2)
+                        {
+                            if (zipType == 0)
+                            {
+                                char buff[readLength];
+                                memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                                if (IsNormalIDBFile(buff, params->pathToLine))
+                                {
+                                    normal++;
+                                }
+                            }
+                            else
+                                normal++;
+                        }
+                    }
+                    if (currentFileID == fileidEnd)
+                        break;
+                }
+            }
+            if (currentFileID != fileidEnd) //还未结束
+            {
+                for (auto &file : dataWithTime)
+                {
+                    if (!firstIndexFound)
+                    {
+                        vector<string> vec;
+                        string tmp = fileid;
+                        vec = DataType::splitWithStl(tmp, "/");
+                        if (vec.size() == 0)
+                            continue;
+                        vec = DataType::splitWithStl(vec[vec.size() - 1], "_");
+                        if (vec.size() == 0)
+                            continue;
+                        if (vec[0] == fileid)
+                            firstIndexFound = true;
+                    }
+                    else
+                    {
+                        currentFileID = file.first;
+                        if (file.first.back() != 'p') // is .idb
+                        {
+                            long fp, len;
+                            char mode[2] = {'r', 'b'};
+                            DB_Open(const_cast<char *>(file.first.c_str()), mode, &fp);
+                            DB_GetFileLengthByFilePtr(fp, &len);
+                            char *buff = new char[len];
+                            DB_Read(fp, buff);
+                            DB_Close(fp);
+                            if (IsNormalIDBFile(buff, params->pathToLine))
+                            {
+                                normal++;
+                            }
+                            delete[] buff;
+                        }
+                        else
+                        {
+                            long len;
+                            DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+                            if (len != 0)
+                            {
+                                normal++;
+                            }
+                        }
+                        if (currentFileID.find(fileidEnd) != string::npos)
+                            break;
+                    }
+                }
+            }
+        }
+        else //首ID + 数量
+        {
+            auto packs = packManager.GetPackByIDs(params->pathToLine, fileid, params->queryNums);
+            int scanNum = 0;
+            for (auto &pack : packs)
+            {
+                if (pack.first != NULL && pack.second != 0)
+                {
+                    PackFileReader packReader(pack.first, pack.second);
+                    int fileNum;
+                    string templateName;
+                    packReader.ReadPackHead(fileNum, templateName);
+                    for (int i = 0; i < fileNum; i++)
+                    {
+                        if (scanNum == params->queryNums)
+                            break;
+                        int readLength, zipType;
+                        long dataPos = packReader.Next(readLength, currentFileID, zipType);
+                        if (fileid == currentFileID)
+                            firstIndexFound = true;
+                        if (firstIndexFound)
+                        {
+                            if (zipType != 2)
+                            {
+                                if (zipType == 0)
+                                {
+                                    char buff[readLength];
+                                    memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                                    if (IsNormalIDBFile(buff, params->pathToLine))
+                                    {
+                                        normal++;
+                                    }
+                                }
+                                else
+                                    normal++;
+                            }
+                            scanNum++;
+                        }
+                    }
+                }
+            }
+            if (scanNum < params->queryNums)
+            {
+                for (auto &file : dataWithTime)
+                {
+                    if (scanNum == params->queryNums)
+                        break;
+                    if (!firstIndexFound)
+                    {
+                        vector<string> vec;
+                        string tmp = fileid;
+                        vec = DataType::splitWithStl(tmp, "/");
+                        if (vec.size() == 0)
+                            continue;
+                        vec = DataType::splitWithStl(vec[vec.size() - 1], "_");
+                        if (vec.size() == 0)
+                            continue;
+                        if (vec[0] == fileid)
+                            firstIndexFound = true;
+                    }
+                    else
+                    {
+                        if (file.first.back() != 'p') // is .idb
+                        {
+                            long fp, len;
+                            char mode[2] = {'r', 'b'};
+                            DB_Open(const_cast<char *>(file.first.c_str()), mode, &fp);
+                            DB_GetFileLengthByFilePtr(fp, &len);
+                            char *buff = new char[len];
+                            DB_Read(fp, buff);
+                            DB_Close(fp);
+                            if (!IsNormalIDBFile(buff, params->pathToLine))
+                            {
+                                normal++;
+                            }
+                            delete[] buff;
+                        }
+                        else
+                        {
+                            long len;
+                            DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+                            if (len != 0)
+                            {
+                                normal++;
+                            }
+                        }
+                        scanNum++;
+                    }
+                }
+            }
+        }
+        *count = normal;
         break;
     }
     default:
@@ -2495,7 +2699,9 @@ int CountSinglePack_Abnormal(DB_QueryParams *param, pair<char *, long> pack)
         break;
     }
     case FILEID:
+    {
         break;
+    }
     default:
     {
         PackFileReader packReader(pack.first, pack.second);
@@ -2541,7 +2747,6 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
     err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
     if (err)
     {
-        cout << "未加载模板" << endl;
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     long abnormal = 0;
@@ -2773,44 +2978,187 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
                 fileidEnd = paths[0] + fileidEnd;
         }
         readDataFilesWithTimestamps(params->pathToLine, dataWithTime);
+        sortByTime(dataWithTime, TIME_ASC);
         bool firstIndexFound = false;
-        string curFilename;
-        for (auto &file : dataWithTime)
+        string currentFileID;
+        if ((params->queryNums == 1 || params->queryNums == 0) && params->fileIDend != NULL) //首尾ID方式
         {
-            if (!firstIndexFound)
+            auto packs = packManager.GetPackByIDs(params->pathToLine, params->fileID, params->fileIDend);
+            for (auto &pack : packs)
             {
-                vector<string> vec;
-                string tmp = fileid;
-                vec = DataType::splitWithStl(tmp, "/");
-                if (vec.size() == 0)
-                    continue;
-                vec = DataType::splitWithStl(vec[vec.size() - 1], "_");
-                if (vec.size() == 0)
-                    continue;
-                if (vec[0] == fileid)
-                    firstIndexFound = true;
-            }
-            else
-            {
-                curFilename = file.first;
-                if (file.first.back() != 'p') // is .idb
+                PackFileReader packReader(pack.first, pack.second);
+                int fileNum;
+                string templateName;
+                packReader.ReadPackHead(fileNum, templateName);
+                for (int i = 0; i < fileNum; i++)
                 {
-                    long fp, len;
-                    char mode[2] = {'r', 'b'};
-                    DB_Open(const_cast<char *>(file.first.c_str()), mode, &fp);
-                    DB_GetFileLengthByFilePtr(fp, &len);
-                    char *buff = new char[len];
-                    DB_Read(fp, buff);
-                    DB_Close(fp);
-                    if (!IsNormalIDBFile(buff, params->pathToLine))
+                    int zipType, readLength;
+                    long dataPos = packReader.Next(readLength, currentFileID, zipType);
+                    if (fileid == currentFileID)
+                        firstIndexFound = true;
+                    if (firstIndexFound)
                     {
-                        abnormal++;
+                        if (zipType != 1)
+                        {
+                            if (zipType == 0)
+                            {
+                                char buff[readLength];
+                                memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                                if (!IsNormalIDBFile(buff, params->pathToLine))
+                                {
+                                    abnormal++;
+                                }
+                            }
+                            else
+                                abnormal++;
+                        }
                     }
-                    delete[] buff;
+                    if (currentFileID == fileidEnd)
+                        break;
+                }
+            }
+            if (currentFileID != fileidEnd) //还未结束
+            {
+                for (auto &file : dataWithTime)
+                {
+                    if (!firstIndexFound)
+                    {
+                        vector<string> vec;
+                        string tmp = fileid;
+                        vec = DataType::splitWithStl(tmp, "/");
+                        if (vec.size() == 0)
+                            continue;
+                        vec = DataType::splitWithStl(vec[vec.size() - 1], "_");
+                        if (vec.size() == 0)
+                            continue;
+                        if (vec[0] == fileid)
+                            firstIndexFound = true;
+                    }
+                    else
+                    {
+                        currentFileID = file.first;
+                        if (file.first.back() != 'p') // is .idb
+                        {
+                            long fp, len;
+                            char mode[2] = {'r', 'b'};
+                            DB_Open(const_cast<char *>(file.first.c_str()), mode, &fp);
+                            DB_GetFileLengthByFilePtr(fp, &len);
+                            char *buff = new char[len];
+                            DB_Read(fp, buff);
+                            DB_Close(fp);
+                            if (!IsNormalIDBFile(buff, params->pathToLine))
+                            {
+                                abnormal++;
+                            }
+                            delete[] buff;
+                        }
+                        else
+                        {
+                            long len;
+                            DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+                            if (len != 0)
+                            {
+                                abnormal++;
+                            }
+                        }
+                        if (currentFileID.find(fileidEnd) != string::npos)
+                            break;
+                    }
                 }
             }
         }
-
+        else //首ID + 数量
+        {
+            auto packs = packManager.GetPackByIDs(params->pathToLine, fileid, params->queryNums);
+            int scanNum = 0;
+            for (auto &pack : packs)
+            {
+                if (pack.first != NULL && pack.second != 0)
+                {
+                    PackFileReader packReader(pack.first, pack.second);
+                    int fileNum;
+                    string templateName;
+                    packReader.ReadPackHead(fileNum, templateName);
+                    for (int i = 0; i < fileNum; i++)
+                    {
+                        if (scanNum == params->queryNums)
+                            break;
+                        int readLength, zipType;
+                        long dataPos = packReader.Next(readLength, currentFileID, zipType);
+                        if (fileid == currentFileID)
+                            firstIndexFound = true;
+                        if (firstIndexFound)
+                        {
+                            if (zipType != 1)
+                            {
+                                if (zipType == 0)
+                                {
+                                    char buff[readLength];
+                                    memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                                    if (!IsNormalIDBFile(buff, params->pathToLine))
+                                    {
+                                        abnormal++;
+                                    }
+                                }
+                                else
+                                    abnormal++;
+                            }
+                            scanNum++;
+                        }
+                    }
+                }
+            }
+            if (scanNum < params->queryNums)
+            {
+                for (auto &file : dataWithTime)
+                {
+                    if (scanNum == params->queryNums)
+                        break;
+                    if (!firstIndexFound)
+                    {
+                        vector<string> vec;
+                        string tmp = fileid;
+                        vec = DataType::splitWithStl(tmp, "/");
+                        if (vec.size() == 0)
+                            continue;
+                        vec = DataType::splitWithStl(vec[vec.size() - 1], "_");
+                        if (vec.size() == 0)
+                            continue;
+                        if (vec[0] == fileid)
+                            firstIndexFound = true;
+                    }
+                    else
+                    {
+                        if (file.first.back() != 'p') // is .idb
+                        {
+                            long fp, len;
+                            char mode[2] = {'r', 'b'};
+                            DB_Open(const_cast<char *>(file.first.c_str()), mode, &fp);
+                            DB_GetFileLengthByFilePtr(fp, &len);
+                            char *buff = new char[len];
+                            DB_Read(fp, buff);
+                            DB_Close(fp);
+                            if (!IsNormalIDBFile(buff, params->pathToLine))
+                            {
+                                abnormal++;
+                            }
+                            delete[] buff;
+                        }
+                        else
+                        {
+                            long len;
+                            DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+                            if (len != 0)
+                            {
+                                abnormal++;
+                            }
+                        }
+                        scanNum++;
+                    }
+                }
+            }
+        }
+        *count = abnormal;
         break;
     }
     default:
@@ -3007,7 +3355,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
             Py_DECREF(args);
             Py_XDECREF(ret);
             // if (i == typeIndexes.size() - 1)
-                //PyObject_Free(dim);
+            //     PyObject_Free(dim);
             // int a = 1;
         }
         Py_DECREF(table);
@@ -3121,8 +3469,8 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
             }
             Py_DECREF(args);
             Py_XDECREF(ret);
-            if (i == typeIndexes.size() - 1)
-                PyObject_Free(dim);
+            // if (i == typeIndexes.size() - 1)
+            //     PyObject_Free(dim);
         }
         Py_DECREF(table);
         if (CurrentTemplate.hasImage)
@@ -3233,63 +3581,64 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
     }
     return 0;
 }
-// int main()
-// {
-//     // DataTypeConverter converter;
-//     DB_QueryParams params;
-//     params.pathToLine = "JinfeiSeven";
-//     params.fileID = "JinfeiSeven1526986";
-//     params.fileIDend = NULL;
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)1;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     params.pathCode = code;
-//     params.valueName = "S1OFF";
-//     // params.valueName = NULL;
-//     params.start = 0;
-//     params.end = 1751165600000;
-//     params.order = ODR_NONE;
-//     params.compareType = CMP_NONE;
-//     params.compareValue = "666";
-//     params.queryType = FILEID;
-//     params.byPath = 0;
-//     params.queryNums = 40;
-//     DB_DataBuffer buffer;
-//     //DB_ExecuteQuery(&buffer, &params);
-//     DB_GetAbnormalRhythm(&buffer, &params, 1, 0);
-//     long count;
-//     // DB_GetAbnormalDataCount(&params, &count);
-//     // DB_QueryByFileID(&buffer, &params);
-//     // char *newbuf = (char *)malloc(212);
-//     // memcpy(newbuf, buffer.buffer, 12);
-//     // DataTypeConverter converter;
-//     // for (int i = 0; i < 50; i++)
-//     // {
-//     //     uint v;
-//     //     v = 95 + rand() % 5;
-//     //     char buf[4];
-//     //     converter.ToUInt32Buff(v, buf);
-//     //     memcpy(newbuf + 12 + i * 4, buf, 4);
-//     // }
-//     if (buffer.bufferMalloced)
-//     {
-//         char buf[buffer.length];
-//         memcpy(buf, buffer.buffer, buffer.length);
-//         cout << buffer.length << endl;
-//         for (int i = 0; i < buffer.length; i++)
-//         {
-//             cout << (int)buf[i] << " ";
-//             if (i % 11 == 0)
-//                 cout << endl;
-//         }
+int main()
+{
+    // DataTypeConverter converter;
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiSeven";
+    params.fileID = "JinfeiSeven1526986";
+    params.fileIDend = NULL;
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)1;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueName = "S1OFF";
+    // params.valueName = NULL;
+    params.start = 0;
+    params.end = 1751165600000;
+    params.order = ODR_NONE;
+    params.compareType = CMP_NONE;
+    params.compareValue = "666";
+    params.queryType = FILEID;
+    params.byPath = 0;
+    params.queryNums = 40;
+    DB_DataBuffer buffer;
+    // DB_ExecuteQuery(&buffer, &params);
+    // DB_GetAbnormalRhythm(&buffer, &params, 1, 1);
+    long count, count2;
+    DB_GetAbnormalDataCount(&params, &count);
+    DB_GetNormalDataCount(&params, &count2);
+    // DB_QueryByFileID(&buffer, &params);
+    // char *newbuf = (char *)malloc(212);
+    // memcpy(newbuf, buffer.buffer, 12);
+    // DataTypeConverter converter;
+    // for (int i = 0; i < 50; i++)
+    // {
+    //     uint v;
+    //     v = 95 + rand() % 5;
+    //     char buf[4];
+    //     converter.ToUInt32Buff(v, buf);
+    //     memcpy(newbuf + 12 + i * 4, buf, 4);
+    // }
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
 
 //         free(buffer.buffer);
 //     }

@@ -1469,7 +1469,7 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
             uint32_t imageSize = imageChannel * imageLength * imageWidth;
             char *writebuff_new = new char[CurrentZipTemplate.totalBytes + imageSize + 6 + 8];
             memcpy(writebuff_new, *writebuff, writebuff_pos);
-            delete[] *writebuff;
+            delete[] * writebuff;
             *writebuff = writebuff_new;
 
             if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带有时间戳
@@ -4312,14 +4312,14 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
 
 //     return 0;
 // }
-int main()
-{
-    DB_ZipParams param;
-    param.ZipType = FILE_ID;
-    param.pathToLine = "RbTsImageEle";
-    param.fileID = "RbTsImageEle2";
-    // DB_ZipFileByFileID(&param);
-     DB_ZipFile("RbTsImageEle", "RbTsImageEle");
-    // DB_ReZipFile("RobotTsTest","RobotTsTest");
-    return 0;
-}
+// int main()
+// {
+//     DB_ZipParams param;
+//     param.ZipType = FILE_ID;
+//     param.pathToLine = "RbTsImageEle";
+//     param.fileID = "RbTsImageEle2";
+//     // DB_ZipFileByFileID(&param);
+//      DB_ZipFile("RbTsImageEle", "RbTsImageEle");
+//     // DB_ReZipFile("RobotTsTest","RobotTsTest");
+//     return 0;
+// }
