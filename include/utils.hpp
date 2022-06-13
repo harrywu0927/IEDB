@@ -233,12 +233,7 @@ int DB_DeleteNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams);
 
 int DB_DeleteNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams);
 
-int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode, int no_query);
-
 // python相关
-int DB_OutlierDetection(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
-
-int DB_NoveltyFit(struct DB_QueryParams *params, double *maxLine, double *minLine);
 
 PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer);
 

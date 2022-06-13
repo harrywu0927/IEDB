@@ -171,6 +171,7 @@ int DB_GetFileLengthByFilePtr(long fileptr, long *length)
         return errno;
     }
     long len = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
     *length = len;
     return 0;
 }

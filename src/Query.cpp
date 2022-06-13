@@ -4546,7 +4546,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 						currentFileID = file.first;
 						long len; //文件长度
 						DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
-						char *buff = new char[CurrentTemplate.totalBytes];
+						char *buff = new char[len];
 						DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 						if (file.first.find(".idbzip") != string::npos)
 						{
@@ -4695,7 +4695,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 					firstIndexFound = true;
 					long len; //文件长度
 					DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
-					char *buff = new char[CurrentTemplate.totalBytes];
+					char *buff = new char[len];
 					DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 					if (file.first.find(".idbzip") != string::npos)
 					{

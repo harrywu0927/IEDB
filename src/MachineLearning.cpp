@@ -580,9 +580,10 @@ int DB_OutlierDetection(DB_DataBuffer *buffer, DB_QueryParams *params)
             buffer->buffer = res;
             buffer->bufferMalloced = 1;
         }
+        Py_XDECREF(pFunc);
     }
     Py_DECREF(arr);
-    Py_XDECREF(pFunc);
+
     Py_XDECREF(mymodule);
     return 0;
 }
@@ -630,9 +631,10 @@ int DB_NoveltyFit(DB_QueryParams *params, double *maxLine, double *minLine)
             *maxLine = PyFloat_AsDouble(PyTuple_GetItem(ret, 0)); //转换为c类型的数据
             *minLine = PyFloat_AsDouble(PyTuple_GetItem(ret, 1));
         }
+        Py_XDECREF(pFunc);
     }
     Py_DECREF(arr);
-    Py_XDECREF(pFunc);
+
     Py_XDECREF(mymodule);
     return 0;
 }
@@ -690,9 +692,10 @@ int DB_NoveltyTraining(const char *pathToLine)
                 if (PyLong_AsLong(ret) != 0)
                     return StatusCode::UNKNWON_DATAFILE;
             }
+            Py_XDECREF(pFunc);
         }
         Py_DECREF(arr);
-        Py_XDECREF(pFunc);
+
         Py_XDECREF(mymodule);
     }
     return 0;
@@ -730,6 +733,7 @@ int DB_NoveltyTraining(const char *pathToLine)
 //     params.queryNums = 50;
 //     DB_DataBuffer buffer;
 //     double maxline, minline;
+//     DB_NoveltyFit(&params, &maxline, &minline);
 //     DB_NoveltyFit(&params, &maxline, &minline);
 //     Py_Finalize();
 //     return 0;

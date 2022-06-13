@@ -101,7 +101,7 @@ int DB_QueryWholeFile(struct DB_DataBuffer *buffer, struct DB_QueryParams *param
 int DB_ExecuteQuery(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
 
 //插入一条记录
-int DB_InsertRecord(struct DB_DataBuffer *buffer, int addTime);
+int DB_InsertRecord(struct DB_DataBuffer *buffer, int zip);
 
 //插入多条记录
 int DB_InsertRecords(struct DB_DataBuffer buffer[], int recordsNum, int addTime);
@@ -160,6 +160,13 @@ int DB_PROD(struct DB_DataBuffer *buffer);
 //离群点检测
 int DB_Outlier_Detection(struct DB_QueryParams *params);
 
+//异常节拍检测
+int DB_GetAbnormalRhythm(struct DB_DataBuffer *buffer, struct DB_QueryParams *params, int mode, int no_query);
+
+int DB_OutlierDetection(struct DB_DataBuffer *buffer, struct DB_QueryParams *params);
+
+int DB_NoveltyFit(struct DB_QueryParams *params, double *maxLine, double *minLine);
+
 //文件打包
 int DB_Pack(const char *pathToLine, int num, int packAll);
 
@@ -173,32 +180,32 @@ int DB_GetAbnormalDataCount(struct DB_QueryParams *params, long *count);
 int DB_ReadFile(struct DB_DataBuffer *buffer);
 //打开文件
 // mode为打开文件的方式,如“wb”,"rb"等
-int DB_Open(char path[], char mode[], long *fptr);
+int DB_Open(char *path, char *mode, long *fptr);
 
 //写入数据
-int DB_Write(long fp, char buf[], long length);
+int DB_Write(long fp, char *buf, long length);
 
 //读取文件,数据将存放在buf数组中，在Open过后使用
-int DB_Read(long fp, char buf[]);
+int DB_Read(long fp, char *buf);
 
 //根据路径直接读取文件
-int DB_OpenAndRead(char path[], char buf[]);
+int DB_OpenAndRead(char *path, char *buf);
 
 //关闭文件
 int DB_Close(long fp);
 
 //创建文件夹
-int DB_CreateDirectory(char path[]);
+int DB_CreateDirectory(char *path);
 
 //删除文件夹
-int DB_DeleteDirectory(char path[]);
+int DB_DeleteDirectory(char *path);
 
 //删除文件
-int DB_DeleteFile(char path[]);
+int DB_DeleteFile(char *path);
 
 //获取文件长度
-int DB_GetFileLengthByPath(char path[], long *length); //需要在Close过后使用
-int DB_GetFileLengthByFilePtr(long fileptr, long *length);
+int DB_GetFileLengthByPath(char *path, long *length);      //需要在Close过后使用
+int DB_GetFileLengthByFilePtr(long fileptr, long *length); //使用此方式获取长度后，使用者有责任关闭文件
 //标准模板数据信息
 struct DB_TreeNodeParams
 {
@@ -207,6 +214,9 @@ struct DB_TreeNodeParams
     int valueType;   //数据类型
     int isArrary;
     int arrayLen;
+    int isTS;
+    int tsLen;
+    unsigned int tsSpan;    //采样频率
     long startTime;         //开始时间
     long endTime;           //结束时间
     int hasTime;            //带８字节时间戳
@@ -224,6 +234,9 @@ struct DB_ZipNodeParams
     char *minValue;      //最小值
     int isArrary;
     int arrayLen;
+    int isTS;
+    int tsLen;
+    unsigned int tsSpan;    //采样频率
     int hasTime;            //带八字节时间戳
     const char *pathToLine; //到产线层级的路径
     const char *newPath;
@@ -288,10 +301,12 @@ enum DB_ZipType
 };
 struct DB_ZipParams
 {
-    const char *pathToLine;  //到产线级的路径
-    long start;              //开始时间
-    long end;                //结束时间
-    const char *fileID;      //文件ID
+    const char *pathToLine; //到产线级的路径
+    long start;             //开始时间
+    long end;               //结束时间
+    const char *fileID;     //文件ID
+    long zipNums;
+    const char *EID;
     enum DB_ZipType ZipType; //压缩方式
     char *buffer;            //数据缓存
     long bufferLen;          //数据长度

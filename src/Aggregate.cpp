@@ -2749,7 +2749,68 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
     }
     case FILEID:
     {
-        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+        string pathToLine = params->pathToLine;
+        string fileid = params->fileID;
+        string fileidEnd = params->fileIDend == NULL ? "" : params->fileIDend;
+        while (pathToLine[pathToLine.length() - 1] == '/')
+        {
+            pathToLine.pop_back();
+        }
+
+        vector<string> paths = DataType::splitWithStl(pathToLine, "/");
+        if (paths.size() > 0)
+        {
+            if (fileid.find(paths[paths.size() - 1]) == string::npos)
+                fileid = paths[paths.size() - 1] + fileid;
+            if (params->fileIDend != NULL && fileidEnd.find(paths[paths.size() - 1]) == string::npos)
+                fileidEnd = paths[paths.size() - 1] + fileidEnd;
+        }
+        else
+        {
+            if (fileid.find(paths[0]) == string::npos)
+                fileid = paths[0] + fileid;
+            if (params->fileIDend != NULL && fileidEnd.find(paths[0]) == string::npos)
+                fileidEnd = paths[0] + fileidEnd;
+        }
+        readDataFilesWithTimestamps(params->pathToLine, dataWithTime);
+        bool firstIndexFound = false;
+        string curFilename;
+        for (auto &file : dataWithTime)
+        {
+            if (!firstIndexFound)
+            {
+                vector<string> vec;
+                string tmp = fileid;
+                vec = DataType::splitWithStl(tmp, "/");
+                if (vec.size() == 0)
+                    continue;
+                vec = DataType::splitWithStl(vec[vec.size() - 1], "_");
+                if (vec.size() == 0)
+                    continue;
+                if (vec[0] == fileid)
+                    firstIndexFound = true;
+            }
+            else
+            {
+                curFilename = file.first;
+                if (file.first.back() != 'p') // is .idb
+                {
+                    long fp, len;
+                    char mode[2] = {'r', 'b'};
+                    DB_Open(const_cast<char *>(file.first.c_str()), mode, &fp);
+                    DB_GetFileLengthByFilePtr(fp, &len);
+                    char *buff = new char[len];
+                    DB_Read(fp, buff);
+                    DB_Close(fp);
+                    if (!IsNormalIDBFile(buff, params->pathToLine))
+                    {
+                        abnormal++;
+                    }
+                    delete[] buff;
+                }
+            }
+        }
+
         break;
     }
     default:
