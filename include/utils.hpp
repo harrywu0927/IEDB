@@ -81,21 +81,23 @@ namespace StatusCode
         ISARRAY_ERROR = 161,              // isArray只能为0或者1
         HASTIME_ERROR = 162,              // hasTime只能为0或者1
         ARRAYLEN_ERROR = 163,             // arrayLen不能小于１
-        DIR_INCLUDE_NUMBER = 164,         //文件夹名包含数字
-        AMBIGUOUS_QUERY_PARAMS = 165,     //查询条件有歧义
-        ML_TYPE_NOT_SUPPORT = 166,        //不支持的机器学习条件
-        NOVEL_DATA_DETECTED = 167,        //检测到奇异数据
-        PYTHON_SCRIPT_NOT_FOUND = 168,    //未找到python脚本文件
-        METHOD_NOT_FOUND_IN_PYTHON = 169, // python脚本中未找到相应的方法
-        VARIABLE_NAME_CHECK_ERROR = 170,  //变量名不合法
-        PATHCODE_CHECK_ERROR = 171,       //路径编码不合法
-        STANDARD_CHECK_ERROR = 172,       //标准值不合法
-        MAX_CHECK_ERROR = 173,            //最大值不合法
-        MIN_CHECK_ERROR = 174,            //最小值不合法
-        VALUE_CHECKE_ERROR = 175,         //变量值不合法
-        VALUE_RANGE_ERROR = 176,          //变量值范围不合法，例如最小值大于最大值
-        INVALID_QRY_PARAMS = 177,         //查询条件不合法
-        INVALID_QUERY_BUFFER = 178,       //查询缓存不合法
+        ISTS_ERROR = 164,                 // isTS只能为0或者1
+        TSLEN_ERROR = 165,                // TsLen不能小于１
+        DIR_INCLUDE_NUMBER = 166,         //文件夹名包含数字
+        AMBIGUOUS_QUERY_PARAMS = 167,     //查询条件有歧义
+        ML_TYPE_NOT_SUPPORT = 168,        //不支持的机器学习条件
+        NOVEL_DATA_DETECTED = 169,        //检测到奇异数据
+        PYTHON_SCRIPT_NOT_FOUND = 170,    //未找到python脚本文件
+        METHOD_NOT_FOUND_IN_PYTHON = 171, // python脚本中未找到相应的方法
+        VARIABLE_NAME_CHECK_ERROR = 172,  //变量名不合法
+        PATHCODE_CHECK_ERROR = 173,       //路径编码不合法
+        STANDARD_CHECK_ERROR = 174,       //标准值不合法
+        MAX_CHECK_ERROR = 175,            //最大值不合法
+        MIN_CHECK_ERROR = 176,            //最小值不合法
+        VALUE_CHECKE_ERROR = 177,         //变量值不合法
+        VALUE_RANGE_ERROR = 178,          //变量值范围不合法，例如最小值大于最大值
+        INVALID_QRY_PARAMS = 179,         //查询条件不合法
+        INVALID_QUERY_BUFFER = 180,       //查询缓存不合法
     };
 }
 namespace ValueType

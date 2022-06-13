@@ -3004,10 +3004,10 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
                     *(set + j) = 1;
                 }
             }
-            // Py_DECREF(args);
+            Py_DECREF(args);
             Py_XDECREF(ret);
-            if (i == typeIndexes.size() - 1)
-                PyObject_Free(dim);
+            // if (i == typeIndexes.size() - 1)
+                //PyObject_Free(dim);
             // int a = 1;
         }
         Py_DECREF(table);
@@ -3238,7 +3238,7 @@ int main()
     // DataTypeConverter converter;
     DB_QueryParams params;
     params.pathToLine = "JinfeiSeven";
-    params.fileID = "JinfeiSeven15";
+    params.fileID = "JinfeiSeven1526986";
     params.fileIDend = NULL;
     char code[10];
     code[0] = (char)0;
@@ -3260,11 +3260,11 @@ int main()
     params.compareType = CMP_NONE;
     params.compareValue = "666";
     params.queryType = FILEID;
-    params.byPath = 1;
+    params.byPath = 0;
     params.queryNums = 40;
     DB_DataBuffer buffer;
-    DB_ExecuteQuery(&buffer, &params);
-    DB_GetAbnormalRhythm(&buffer, &params, 1, 1);
+    //DB_ExecuteQuery(&buffer, &params);
+    DB_GetAbnormalRhythm(&buffer, &params, 1, 0);
     long count;
     // DB_GetAbnormalDataCount(&params, &count);
     // DB_QueryByFileID(&buffer, &params);

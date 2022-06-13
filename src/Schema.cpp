@@ -92,6 +92,13 @@ int DB_AddNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams)
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查是否为时间序列是否合法
+    if (TreeParams->isTS != 0 && TreeParams->isTS != 1)
+    {
+        cout << "isTs只能为0或1" << endl;
+        return StatusCode::ISTS_ERROR;
+    }
+
     //检查是否带时间戳是否合法
     if (TreeParams->hasTime != 0 && TreeParams->hasTime != 1)
     {
@@ -104,7 +111,43 @@ int DB_AddNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams)
     memset(valueType, 0, sizeof(valueType));
     memset(pathCode, 0, sizeof(pathCode));
 
-    if (TreeParams->isArrary == 1) //是数组类型,拼接字符串
+    if (TreeParams->isTS == 1) //是Ts类型,拼接字符串
+    {
+        if (TreeParams->tsLen < 1)
+        {
+            cout << "Ts长度不能小于1" << endl;
+            return StatusCode::TSLEN_ERROR;
+        }
+        if (TreeParams->isArrary)
+        {
+            if (TreeParams->arrayLen < 1)
+            {
+                cout << "数组长度不能小于１" << endl;
+                return StatusCode::ARRAYLEN_ERROR;
+            }
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", TreeParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "][0..");
+            sprintf(s, "%d", TreeParams->arrayLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(TreeParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+        else
+        {
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", TreeParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(TreeParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+    }
+    else if (TreeParams->isArrary == 1) //是数组类型,拼接字符串
     {
         if (TreeParams->arrayLen < 1)
         {
@@ -233,6 +276,13 @@ int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查是否为数组是否合法
+    if (TreeParams->isTS != 0 && TreeParams->isTS != 1)
+    {
+        cout << "isTS只能为0或1" << endl;
+        return StatusCode::ISTS_ERROR;
+    }
+
     //检查是否带时间戳是否合法
     if (TreeParams->hasTime != 0 && TreeParams->hasTime != 1)
     {
@@ -245,7 +295,43 @@ int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
     memset(valueType, 0, sizeof(valueType));
     memset(pathCode, 0, sizeof(pathCode));
 
-    if (TreeParams->isArrary == 1) //是数组类型,拼接字符串
+    if (TreeParams->isTS == 1) //是Ts类型,拼接字符串
+    {
+        if (TreeParams->tsLen < 1)
+        {
+            cout << "Ts长度不能小于1" << endl;
+            return StatusCode::TSLEN_ERROR;
+        }
+        if (TreeParams->isArrary)
+        {
+            if (TreeParams->arrayLen < 1)
+            {
+                cout << "数组长度不能小于１" << endl;
+                return StatusCode::ARRAYLEN_ERROR;
+            }
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", TreeParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "][0..");
+            sprintf(s, "%d", TreeParams->arrayLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(TreeParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+        else
+        {
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", TreeParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(TreeParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+    }
+    else if (TreeParams->isArrary == 1) //是数组类型,拼接字符串
     {
         if (TreeParams->arrayLen < 1)
         {
@@ -390,6 +476,13 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查是否为时间序列是否合法
+    if (TreeParams->isTS != 0 && TreeParams->isTS != 1)
+    {
+        cout << "isTs只能为0或1" << endl;
+        return StatusCode::ISTS_ERROR;
+    }
+
     //检查是否带时间戳是否合法
     if (TreeParams->hasTime != 0 && TreeParams->hasTime != 1)
     {
@@ -402,7 +495,43 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
     memset(valueType, 0, sizeof(valueType));
     memset(pathCode, 0, sizeof(pathCode));
 
-    if (TreeParams->isArrary == 1) //是数组类型,拼接字符串
+    if (TreeParams->isTS == 1) //是Ts类型,拼接字符串
+    {
+        if (TreeParams->tsLen < 1)
+        {
+            cout << "Ts长度不能小于1" << endl;
+            return StatusCode::TSLEN_ERROR;
+        }
+        if (TreeParams->isArrary)
+        {
+            if (TreeParams->arrayLen < 1)
+            {
+                cout << "数组长度不能小于１" << endl;
+                return StatusCode::ARRAYLEN_ERROR;
+            }
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", TreeParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "][0..");
+            sprintf(s, "%d", TreeParams->arrayLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(TreeParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+        else
+        {
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", TreeParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(TreeParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+    }
+    else if (TreeParams->isArrary == 1) //是数组类型,拼接字符串
     {
         if (TreeParams->arrayLen < 1)
         {
@@ -3660,93 +3789,41 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 
 // int main()
 // {
-// DB_LoadZipSchema("jinfei/");
-
-// DB_TreeNodeParams params;
-// params.pathToLine = "jinfei";
-// params.newPath = "jinfeithree";
-// char code[10];
-// code[0] = (char)0;
-// code[1] = (char)1;
-// code[2] = (char)0;
-// code[3] = (char)4;
-// code[4] = 'R';
-// code[5] = (char)1;
-// code[6] = 0;
-// code[7] = (char)200;
-// code[8] = (char)0;
-// code[9] = (char)0;
-// params.pathCode = code;
-// params.valueType = 3;
-// params.hasTime = 0;
-// params.isArrary = 0;
-// params.arrayLen = 100;
-// params.valueName = "S4ON";
-
-// DB_TreeNodeParams newTreeParams;
-// newTreeParams.pathToLine = "jinfeiTwo";
-// char newcode[10];
-// newcode[0] = (char)0;
-// newcode[1] = (char)1;
-// newcode[2] = (char)0;
-// newcode[3] = (char)4;
-// newcode[4] = 'R';
-// newcode[5] = (char)1;
-// newcode[6] = 0;
-// newcode[7] = (char)0;
-// newcode[8] = (char)0;
-// newcode[9] = (char)0;
-// newTreeParams.pathCode = newcode;
-// newTreeParams.valueType = 3;
-// newTreeParams.hasTime = 1;
-// newTreeParams.isArrary = 1;
-// newTreeParams.arrayLen = 100;
-// newTreeParams.valueName = "S4ON";
-// DB_UpdateNodeToSchema(&params,&newTreeParams);
-// DB_AddNodeToSchema(&params);
-// DB_DeleteNodeToSchema(&params);
-
-// DB_ZipNodeParams params;
-// params.pathToLine = "jinfei";
-// params.valueType = 3;
-// params.hasTime = 1;
-// params.isArrary = 1;
-// params.arrayLen = 100;
-// params.valueName = "S4ON";
-// params.standardValue = "210";
-// params.maxValue = "230";
-// params.minValue = "190";
-// params.newPath="jinfeiToday";
-// DB_AddNodeToZipSchema(&params);
-// DB_DeleteNodeToZipSchema(&params);
-// DB_ZipNodeParams newparams;
-// newparams.pathToLine = "/jinfeiTwo";
-// newparams.valueType = 3;
-// newparams.hasTime = 0;
-// newparams.isArrary = 0;
-// newparams.arrayLen = 100;
-// newparams.valueName = "S1ON";
-// newparams.standardValue = "1000";
-// newparams.maxValue = "1200";
-// newparams.minValue = "800";
-// DB_UpdateNodeToZipSchema_Override(&params,&newparams);
-// DB_UpdateNodeToZipSchema(&params,&newparams);
-//     return 0;
-// }
-// int main()
-// {
-//     DB_LoadZipSchema("JinfeiSeven");
-//     DataTypeConverter dt;
-//     DB_ZipNodeParams params;
-//     params.valueName = const_cast<char *>(CurrentZipTemplate.schemas[0].first.c_str());
-//     params.valueType = 3;
-//     params.minValue = "90";
-//     params.maxValue = "110";
-//     params.hasTime = CurrentZipTemplate.schemas[0].second.hasTime;
-//     params.isArrary = CurrentZipTemplate.schemas[0].second.isArray;
-//     params.arrayLen = CurrentZipTemplate.schemas[0].second.arrayLen;
-//     params.pathToLine = "JinfeiSeven";
-//     params.standardValue = "100";
-//     DB_UpdateNodeToZipSchema(&params, &params);
+//     DB_TreeNodeParams treeParam;
+//     treeParam.pathToLine = "RbTsImageEle";
+//     treeParam.valueName = "TestOO";
+//     treeParam.valueType = 3;
+//     char code[10];
+//     code[0] = (char)0;
+//     code[1] = (char)1;
+//     code[2] = (char)0;
+//     code[3] = (char)1;
+//     code[4] = 0;
+//     code[5] = (char)0;
+//     code[6] = 0;
+//     code[7] = (char)0;
+//     code[8] = (char)0;
+//     code[9] = (char)0;
+//     treeParam.pathCode = code;
+//     treeParam.isArrary = 0;
+//     treeParam.arrayLen = 6;
+//     treeParam.isTS = 1;
+//     treeParam.tsLen = 5;
+//     treeParam.hasTime = 1;
+//     treeParam.newPath = "RbTsImgTest";
+//     DB_AddNodeToSchema(&treeParam);
+//     // DB_LoadZipSchema("JinfeiSeven");
+//     // DataTypeConverter dt;
+//     // DB_ZipNodeParams params;
+//     // params.valueName = const_cast<char *>(CurrentZipTemplate.schemas[0].first.c_str());
+//     // params.valueType = 3;
+//     // params.minValue = "90";
+//     // params.maxValue = "110";
+//     // params.hasTime = CurrentZipTemplate.schemas[0].second.hasTime;
+//     // params.isArrary = CurrentZipTemplate.schemas[0].second.isArray;
+//     // params.arrayLen = CurrentZipTemplate.schemas[0].second.arrayLen;
+//     // params.pathToLine = "JinfeiSeven";
+//     // params.standardValue = "100";
+//     // DB_UpdateNodeToZipSchema(&params, &params);
 //     return 0;
 // }

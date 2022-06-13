@@ -1,7 +1,7 @@
 #include "../include/utils.hpp"
 using namespace std;
 
-int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos);
+int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos);
 int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_pos);
 int DB_ZipFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine);
 int DB_ReZipFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine);
@@ -17,7 +17,7 @@ mutex openMutex;
  * @param writebuff_pos 压缩后数据的长度
  * @return int
  */
-int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
+int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
 {
     long readbuff_pos = 0;
     DataTypeConverter converter;
@@ -34,16 +34,16 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     //既是时间序列又是数组
                     char zipType[1] = {0};
                     zipType[0] = (char)3;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
                     writebuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
                     readbuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
                 }
@@ -53,17 +53,17 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     //只是时间序列
                     char zipType[1] = {0};
                     zipType[0] = (char)4;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
                     //添加第一个采样的时间戳
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
                     writebuff_pos += 8;
 
                     char standardBool = CurrentZipTemplate.schemas[i].second.standardValue[0];
@@ -75,10 +75,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             uint16_t posNum = j;
                             char zipPosNum[2] = {0};
                             converter.ToUInt16Buff(posNum, zipPosNum);
-                            memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                            memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                             writebuff_pos += 2;
 
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
+                            memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
                             writebuff_pos += 1;
                         }
                         readbuff_pos += 9;
@@ -88,7 +88,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         {
                             char isTsEnd[1] = {0};
                             isTsEnd[0] = (char)-1;
-                            memcpy(writebuff + writebuff_pos, isTsEnd, 1);
+                            memcpy(*writebuff + writebuff_pos, isTsEnd, 1);
                             writebuff_pos += 1;
                         }
                     }
@@ -100,7 +100,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
                 converter.ToUInt16Buff(posNum, zipPosNum);
-                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
                 if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带有时间戳
@@ -108,10 +108,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //既有数据又有时间
                     char zipType[1] = {0};
                     zipType[0] = (char)2;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen + 8);
                     writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                     readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                 }
@@ -120,10 +120,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //只有数据
                     char zipType[1] = {0};
                     zipType[0] = (char)0;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen);
                     writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
                     readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
@@ -142,7 +142,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     if (standardBool != readbuff[readbuff_pos])
@@ -150,10 +150,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //既有数据又有时间
                         char zipType[1] = {0};
                         zipType[0] = (char)2;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 9);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 9);
                         writebuff_pos += 9;
                     }
                     else
@@ -161,10 +161,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //只有时间
                         char zipType[1] = {0};
                         zipType[0] = (char)1;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
                         writebuff_pos += 8;
                     }
                     readbuff_pos += 9;
@@ -177,16 +177,16 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         uint16_t posNum = i;
                         char zipPosNum[2] = {0};
                         converter.ToUInt16Buff(posNum, zipPosNum);
-                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
                         //只有数据
                         char zipType[1] = {0};
                         zipType[0] = (char)0;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
                         writebuff_pos += 1;
                     }
                     readbuff_pos += 1;
@@ -203,16 +203,16 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     //既是时间序列又是数组
                     char zipType[1] = {0};
                     zipType[0] = (char)3;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
                     writebuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
                     readbuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
                 }
@@ -222,17 +222,17 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     //只是时间序列
                     char zipType[1] = {0};
                     zipType[0] = (char)4;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
                     //添加第一个采样的时间戳
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
                     writebuff_pos += 8;
 
                     char standardUSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
@@ -252,10 +252,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             uint16_t posNum = j;
                             char zipPosNum[2] = {0};
                             converter.ToUInt16Buff(posNum, zipPosNum);
-                            memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                            memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                             writebuff_pos += 2;
 
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
+                            memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
                             writebuff_pos += 1;
                         }
                         readbuff_pos += 9;
@@ -265,7 +265,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         {
                             char isTsEnd[1] = {0};
                             isTsEnd[0] = (char)-1;
-                            memcpy(writebuff + writebuff_pos, isTsEnd, 1);
+                            memcpy(*writebuff + writebuff_pos, isTsEnd, 1);
                             writebuff_pos += 1;
                         }
                     }
@@ -277,7 +277,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
                 converter.ToUInt16Buff(posNum, zipPosNum);
-                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
                 if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带有时间戳
@@ -285,10 +285,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //既有数据又有时间
                     char zipType[1] = {0};
                     zipType[0] = (char)2;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen + 8);
                     writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                     readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                 }
@@ -297,10 +297,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //只有数据
                     char zipType[1] = {0};
                     zipType[0] = (char)0;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen);
                     writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
                     readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
@@ -321,7 +321,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
@@ -329,10 +329,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //既有数据又有时间
                         char zipType[1] = {0};
                         zipType[0] = (char)2;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 9);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 9);
                         writebuff_pos += 9;
                     }
                     else
@@ -340,10 +340,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //只有时间
                         char zipType[1] = {0};
                         zipType[0] = (char)1;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
                         writebuff_pos += 8;
                     }
                     readbuff_pos += 9;
@@ -356,16 +356,16 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         uint16_t posNum = i;
                         char zipPosNum[2] = {0};
                         converter.ToUInt16Buff(posNum, zipPosNum);
-                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
                         //只有数据
                         char zipType[1] = {0};
                         zipType[0] = (char)0;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
                         writebuff_pos += 1;
                     }
                     readbuff_pos += 1;
@@ -382,16 +382,16 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     //既是时间序列又是数组
                     char zipType[1] = {0};
                     zipType[0] = (char)3;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 2 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 2 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
                     writebuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 2 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
                     readbuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 2 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
                 }
@@ -401,17 +401,17 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     //只是时间序列
                     char zipType[1] = {0};
                     zipType[0] = (char)4;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
                     //添加第一个采样的时间戳
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 2, 8);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + 2, 8);
                     writebuff_pos += 8;
 
                     ushort standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
@@ -431,10 +431,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             uint16_t posNum = j;
                             char zipPosNum[2] = {0};
                             converter.ToUInt16Buff(posNum, zipPosNum);
-                            memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                            memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                             writebuff_pos += 2;
 
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2);
+                            memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 2);
                             writebuff_pos += 2;
                         }
                         readbuff_pos += 10;
@@ -444,7 +444,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         {
                             char isTsEnd[1] = {0};
                             isTsEnd[0] = (char)-1;
-                            memcpy(writebuff + writebuff_pos, isTsEnd, 1);
+                            memcpy(*writebuff + writebuff_pos, isTsEnd, 1);
                             writebuff_pos += 1;
                         }
                     }
@@ -456,7 +456,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
                 converter.ToUInt16Buff(posNum, zipPosNum);
-                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
                 if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带有时间戳
@@ -464,10 +464,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //既有数据又有时间
                     char zipType[1] = {0};
                     zipType[0] = (char)2;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
                     writebuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                     readbuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                 }
@@ -476,10 +476,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //只有数据
                     char zipType[1] = {0};
                     zipType[0] = (char)0;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen);
                     writebuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen;
                     readbuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
@@ -500,7 +500,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
@@ -508,10 +508,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //既有数据又有时间
                         char zipType[1] = {0};
                         zipType[0] = (char)2;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 10);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 10);
                         writebuff_pos += 10;
                     }
                     else
@@ -519,10 +519,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //只有时间
                         char zipType[1] = {0};
                         zipType[0] = (char)1;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 2, 8);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + 2, 8);
                         writebuff_pos += 8;
                     }
                     readbuff_pos += 10;
@@ -535,16 +535,16 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         uint16_t posNum = i;
                         char zipPosNum[2] = {0};
                         converter.ToUInt16Buff(posNum, zipPosNum);
-                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
                         //只有数据
                         char zipType[1] = {0};
                         zipType[0] = (char)0;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 2);
                         writebuff_pos += 2;
                     }
                     readbuff_pos += 2;
@@ -561,16 +561,16 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     //既是时间序列又是数组
                     char zipType[1] = {0};
                     zipType[0] = (char)3;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
                     writebuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
                     readbuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
                 }
@@ -580,17 +580,17 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     //只是时间序列
                     char zipType[1] = {0};
                     zipType[0] = (char)4;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
                     //添加第一个采样的时间戳
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
                     writebuff_pos += 8;
 
                     uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
@@ -610,10 +610,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             uint16_t posNum = j;
                             char zipPosNum[2] = {0};
                             converter.ToUInt16Buff(posNum, zipPosNum);
-                            memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                            memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                             writebuff_pos += 2;
 
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                            memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                             writebuff_pos += 4;
                         }
                         readbuff_pos += 12;
@@ -623,7 +623,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         {
                             char isTsEnd[1] = {0};
                             isTsEnd[0] = (char)-1;
-                            memcpy(writebuff + writebuff_pos, isTsEnd, 1);
+                            memcpy(*writebuff + writebuff_pos, isTsEnd, 1);
                             writebuff_pos += 1;
                         }
                     }
@@ -635,7 +635,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
                 converter.ToUInt16Buff(posNum, zipPosNum);
-                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
                 if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带有时间戳
@@ -643,10 +643,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //既有数据又有时间
                     char zipType[1] = {0};
                     zipType[0] = (char)2;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
                     writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                     readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                 }
@@ -655,10 +655,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //只有数据
                     char zipType[1] = {0};
                     zipType[0] = (char)0;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen);
                     writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
                     readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
@@ -679,7 +679,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
@@ -687,10 +687,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //既有数据又有时间
                         char zipType[1] = {0};
                         zipType[0] = (char)2;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
                         writebuff_pos += 12;
                     }
                     else
@@ -698,10 +698,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //只有时间
                         char zipType[1] = {0};
                         zipType[0] = (char)1;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
                         writebuff_pos += 8;
                     }
                     readbuff_pos += 12;
@@ -714,16 +714,16 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         uint16_t posNum = i;
                         char zipPosNum[2] = {0};
                         converter.ToUInt16Buff(posNum, zipPosNum);
-                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
                         //只有数据
                         char zipType[1] = {0};
                         zipType[0] = (char)0;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                         writebuff_pos += 4;
                     }
                     readbuff_pos += 4;
@@ -740,16 +740,16 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     //既是时间序列又是数组
                     char zipType[1] = {0};
                     zipType[0] = (char)3;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
                     writebuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
                     readbuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
                 }
@@ -759,17 +759,17 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     //只是时间序列
                     char zipType[1] = {0};
                     zipType[0] = (char)4;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
                     //添加第一个采样的时间戳
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
                     writebuff_pos += 8;
 
                     char standardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
@@ -789,10 +789,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             uint16_t posNum = j;
                             char zipPosNum[2] = {0};
                             converter.ToUInt16Buff(posNum, zipPosNum);
-                            memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                            memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                             writebuff_pos += 2;
 
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
+                            memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
                             writebuff_pos += 1;
                         }
                         readbuff_pos += 9;
@@ -802,7 +802,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         {
                             char isTsEnd[1] = {0};
                             isTsEnd[0] = (char)-1;
-                            memcpy(writebuff + writebuff_pos, isTsEnd, 1);
+                            memcpy(*writebuff + writebuff_pos, isTsEnd, 1);
                             writebuff_pos += 1;
                         }
                     }
@@ -814,7 +814,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
                 converter.ToUInt16Buff(posNum, zipPosNum);
-                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
                 if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带有时间戳
@@ -822,10 +822,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //既有数据又有时间
                     char zipType[1] = {0};
                     zipType[0] = (char)2;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen + 8);
                     writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                     readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                 }
@@ -834,10 +834,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //只有数据
                     char zipType[1] = {0};
                     zipType[0] = (char)0;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.arrayLen);
                     writebuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
                     readbuff_pos += CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
@@ -858,7 +858,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
@@ -866,10 +866,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //既有数据又有时间
                         char zipType[1] = {0};
                         zipType[0] = (char)2;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 9);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 9);
                         writebuff_pos += 9;
                     }
                     else
@@ -877,10 +877,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //只有时间
                         char zipType[1] = {0};
                         zipType[0] = (char)1;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + 1, 8);
                         writebuff_pos += 8;
                     }
                     readbuff_pos += 9;
@@ -893,16 +893,16 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         uint16_t posNum = i;
                         char zipPosNum[2] = {0};
                         converter.ToUInt16Buff(posNum, zipPosNum);
-                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
                         //只有数据
                         char zipType[1] = {0};
                         zipType[0] = (char)0;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
                         writebuff_pos += 1;
                     }
                     readbuff_pos += 1;
@@ -919,16 +919,16 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     //既是时间序列又是数组
                     char zipType[1] = {0};
                     zipType[0] = (char)3;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 2 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 2 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
                     writebuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 2 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
                     readbuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 2 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
                 }
@@ -938,17 +938,17 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     //只是时间序列
                     char zipType[1] = {0};
                     zipType[0] = (char)4;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
                     //添加第一个采样的时间戳
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 2, 8);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + 2, 8);
                     writebuff_pos += 8;
 
                     short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[i].second.standardValue);
@@ -968,10 +968,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             uint16_t posNum = j;
                             char zipPosNum[2] = {0};
                             converter.ToUInt16Buff(posNum, zipPosNum);
-                            memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                            memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                             writebuff_pos += 2;
 
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2);
+                            memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 2);
                             writebuff_pos += 2;
                         }
                         readbuff_pos += 10;
@@ -981,7 +981,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         {
                             char isTsEnd[1] = {0};
                             isTsEnd[0] = (char)-1;
-                            memcpy(writebuff + writebuff_pos, isTsEnd, 1);
+                            memcpy(*writebuff + writebuff_pos, isTsEnd, 1);
                             writebuff_pos += 1;
                         }
                     }
@@ -993,7 +993,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
                 converter.ToUInt16Buff(posNum, zipPosNum);
-                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
                 if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带有时间戳
@@ -1001,10 +1001,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //既有数据又有时间
                     char zipType[1] = {0};
                     zipType[0] = (char)2;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
                     writebuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                     readbuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                 }
@@ -1013,10 +1013,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //只有数据
                     char zipType[1] = {0};
                     zipType[0] = (char)0;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 2 * CurrentZipTemplate.schemas[i].second.arrayLen);
                     writebuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen;
                     readbuff_pos += 2 * CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
@@ -1037,7 +1037,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
@@ -1045,10 +1045,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //既有数据又有时间
                         char zipType[1] = {0};
                         zipType[0] = (char)2;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 10);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 10);
                         writebuff_pos += 10;
                     }
                     else
@@ -1056,10 +1056,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //只有时间
                         char zipType[1] = {0};
                         zipType[0] = (char)1;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 2, 8);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + 2, 8);
                         writebuff_pos += 8;
                     }
                     readbuff_pos += 10;
@@ -1072,16 +1072,16 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         uint16_t posNum = i;
                         char zipPosNum[2] = {0};
                         converter.ToUInt16Buff(posNum, zipPosNum);
-                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
                         //只有数据
                         char zipType[1] = {0};
                         zipType[0] = (char)0;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 2);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 2);
                         writebuff_pos += 2;
                     }
                     readbuff_pos += 2;
@@ -1098,16 +1098,16 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     //既是时间序列又是数组
                     char zipType[1] = {0};
                     zipType[0] = (char)3;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
                     writebuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
                     readbuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
                 }
@@ -1117,17 +1117,17 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     //只是时间序列
                     char zipType[1] = {0};
                     zipType[0] = (char)4;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
                     //添加第一个采样的时间戳
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
                     writebuff_pos += 8;
 
                     int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
@@ -1147,10 +1147,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             uint16_t posNum = j;
                             char zipPosNum[2] = {0};
                             converter.ToUInt16Buff(posNum, zipPosNum);
-                            memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                            memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                             writebuff_pos += 2;
 
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                            memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                             writebuff_pos += 4;
                         }
                         readbuff_pos += 12;
@@ -1160,7 +1160,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         {
                             char isTsEnd[1] = {0};
                             isTsEnd[0] = (char)-1;
-                            memcpy(writebuff + writebuff_pos, isTsEnd, 1);
+                            memcpy(*writebuff + writebuff_pos, isTsEnd, 1);
                             writebuff_pos += 1;
                         }
                     }
@@ -1172,7 +1172,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
                 converter.ToUInt16Buff(posNum, zipPosNum);
-                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
                 if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带有时间戳
@@ -1180,10 +1180,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //既有数据又有时间
                     char zipType[1] = {0};
                     zipType[0] = (char)2;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
                     writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                     readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                 }
@@ -1192,10 +1192,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //只有数据
                     char zipType[1] = {0};
                     zipType[0] = (char)0;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen);
                     writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
                     readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
@@ -1216,7 +1216,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
@@ -1224,10 +1224,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //既有数据又有时间
                         char zipType[1] = {0};
                         zipType[0] = (char)2;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
                         writebuff_pos += 12;
                     }
                     else
@@ -1235,10 +1235,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //只有时间
                         char zipType[1] = {0};
                         zipType[0] = (char)1;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
                         writebuff_pos += 8;
                     }
                     readbuff_pos += 12;
@@ -1251,16 +1251,16 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         uint16_t posNum = i;
                         char zipPosNum[2] = {0};
                         converter.ToUInt16Buff(posNum, zipPosNum);
-                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
                         //只有数据
                         char zipType[1] = {0};
                         zipType[0] = (char)0;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                         writebuff_pos += 4;
                     }
                     readbuff_pos += 4;
@@ -1277,16 +1277,16 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     //既是时间序列又是数组
                     char zipType[1] = {0};
                     zipType[0] = (char)3;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen);
                     writebuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
                     readbuff_pos += (CurrentZipTemplate.schemas[i].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[i].second.tsLen;
                 }
@@ -1296,17 +1296,17 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     //只是时间序列
                     char zipType[1] = {0};
                     zipType[0] = (char)4;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
                     //添加第一个采样的时间戳
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
                     writebuff_pos += 8;
 
                     float standardFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[i].second.standardValue);
@@ -1326,10 +1326,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                             uint16_t posNum = j;
                             char zipPosNum[2] = {0};
                             converter.ToUInt16Buff(posNum, zipPosNum);
-                            memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                            memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                             writebuff_pos += 2;
 
-                            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                            memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                             writebuff_pos += 4;
                         }
                         readbuff_pos += 12;
@@ -1339,7 +1339,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         {
                             char isTsEnd[1] = {0};
                             isTsEnd[0] = (char)-1;
-                            memcpy(writebuff + writebuff_pos, isTsEnd, 1);
+                            memcpy(*writebuff + writebuff_pos, isTsEnd, 1);
                             writebuff_pos += 1;
                         }
                     }
@@ -1351,7 +1351,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 uint16_t posNum = i;
                 char zipPosNum[2] = {0};
                 converter.ToUInt16Buff(posNum, zipPosNum);
-                memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                 writebuff_pos += 2;
 
                 if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带有时间戳
@@ -1359,10 +1359,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //既有数据又有时间
                     char zipType[1] = {0};
                     zipType[0] = (char)2;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8);
                     writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                     readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen + 8;
                 }
@@ -1371,10 +1371,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     //只有数据
                     char zipType[1] = {0};
                     zipType[0] = (char)0;
-                    memcpy(writebuff + writebuff_pos, zipType, 1);
+                    memcpy(*writebuff + writebuff_pos, zipType, 1);
                     writebuff_pos += 1;
 
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen);
+                    memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 4 * CurrentZipTemplate.schemas[i].second.arrayLen);
                     writebuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
                     readbuff_pos += 4 * CurrentZipTemplate.schemas[i].second.arrayLen;
                 }
@@ -1395,7 +1395,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     uint16_t posNum = i;
                     char zipPosNum[2] = {0};
                     converter.ToUInt16Buff(posNum, zipPosNum);
-                    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                    memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                     writebuff_pos += 2;
 
                     if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
@@ -1403,10 +1403,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //既有数据又有时间
                         char zipType[1] = {0};
                         zipType[0] = (char)2;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
                         writebuff_pos += 12;
                     }
                     else
@@ -1414,10 +1414,10 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         //只有时间
                         char zipType[1] = {0};
                         zipType[0] = (char)1;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
                         writebuff_pos += 8;
                     }
                     readbuff_pos += 12;
@@ -1430,16 +1430,16 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                         uint16_t posNum = i;
                         char zipPosNum[2] = {0};
                         converter.ToUInt16Buff(posNum, zipPosNum);
-                        memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+                        memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
                         writebuff_pos += 2;
 
                         //只有数据
                         char zipType[1] = {0};
                         zipType[0] = (char)0;
-                        memcpy(writebuff + writebuff_pos, zipType, 1);
+                        memcpy(*writebuff + writebuff_pos, zipType, 1);
                         writebuff_pos += 1;
 
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                         writebuff_pos += 4;
                     }
                     readbuff_pos += 4;
@@ -1453,7 +1453,7 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
             uint16_t posNum = i;
             char zipPosNum[2] = {0};
             converter.ToUInt16Buff(posNum, zipPosNum);
-            memcpy(writebuff + writebuff_pos, zipPosNum, 2);
+            memcpy(*writebuff + writebuff_pos, zipPosNum, 2);
             writebuff_pos += 2;
 
             //暂定图片前面有2字节长度，2字节宽度和2字节通道
@@ -1467,20 +1467,24 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
             memcpy(channel, readbuff + readbuff_pos + 4, 2);
             uint16_t imageChannel = converter.ToUInt16(channel);
             uint32_t imageSize = imageChannel * imageLength * imageWidth;
+            char *writebuff_new = new char[CurrentZipTemplate.totalBytes + imageSize + 6 + 8];
+            memcpy(writebuff_new, *writebuff, writebuff_pos);
+            delete[] *writebuff;
+            *writebuff = writebuff_new;
 
             if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带有时间戳
             {
                 //既有数据又有时间
                 char zipType[1] = {0};
                 zipType[0] = (char)2;
-                memcpy(writebuff + writebuff_pos, zipType, 1);
+                memcpy(*writebuff + writebuff_pos, zipType, 1);
                 writebuff_pos += 1;
 
-                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 6); //存储图片的长度、宽度、通道
+                memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 6); //存储图片的长度、宽度、通道
                 readbuff_pos += 6;
                 writebuff_pos += 6;
 
-                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, imageSize + 8);
+                memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, imageSize + 8);
                 writebuff_pos += imageSize + 8;
                 readbuff_pos += imageSize + 8;
             }
@@ -1489,14 +1493,14 @@ int ZipBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 //只有数据
                 char zipType[1] = {0};
                 zipType[0] = (char)0;
-                memcpy(writebuff + writebuff_pos, zipType, 1);
+                memcpy(*writebuff + writebuff_pos, zipType, 1);
                 writebuff_pos += 1;
 
-                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 6); //存储图片的长度、宽度、通道
+                memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 6); //存储图片的长度、宽度、通道
                 readbuff_pos += 6;
                 writebuff_pos += 6;
 
-                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, imageSize);
+                memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, imageSize);
                 writebuff_pos += imageSize;
                 readbuff_pos += imageSize;
             }
@@ -3035,6 +3039,10 @@ int ReZipBuf(char *readbuff, const long len, char *writebuff, long &writebuff_po
                 uint16_t imageChannel = converter.ToUInt16(channel);
                 uint32_t imageSize = imageChannel * imageLength * imageWidth;
                 readbuff_pos += 1;
+                char *writebuff_new = new char[CurrentZipTemplate.totalBytes + imageSize + 6 + 8];
+                memcpy(writebuff_new, writebuff, writebuff_pos);
+                delete[] writebuff;
+                writebuff = writebuff_new;
 
                 if (readbuff[readbuff_pos - 1] == (char)2) //既有数据又有数据
                 {
@@ -3129,7 +3137,7 @@ int DB_ZipFile_Single(const char *ZipTemPath, const char *pathToLine)
         }
         long writebuff_pos = 0;
 
-        ZipBuf(readbuff, writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
+        ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
 
         if (writebuff_pos >= len) //表明数据没有被压缩,保持原文件
         {
@@ -3195,7 +3203,7 @@ int DB_ZipFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, 
         }
         long writebuff_pos = 0;
 
-        ZipBuf(readbuff, writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
+        ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
 
         if (writebuff_pos >= len) //表明数据没有被压缩,保持原文件
         {
@@ -3505,12 +3513,12 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     long len = *buffLength;
-    char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
+    char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
 
     DataTypeConverter converter;
     long writebuff_pos = 0;
 
-    ZipBuf(buff, writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
+    ZipBuf(buff, &writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
 
     if (writebuff_pos >= len) //表明数据没有被压缩
     {
@@ -3548,6 +3556,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
     databuff.buffer = buff;
     databuff.savePath = filepath;
     DB_InsertRecord(&databuff, 1);
+    delete[] writebuff;
     return err;
 }
 
@@ -3604,8 +3613,8 @@ int DB_ZipFileByTimeSpan_Single(struct DB_ZipParams *params)
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[fileNum].first.c_str()), &len);
-        char readbuff[len];                                                                    //文件内容
-        char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
+        char *readbuff = new char[len];                                                                    //文件内容
+        char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -3615,7 +3624,7 @@ int DB_ZipFileByTimeSpan_Single(struct DB_ZipParams *params)
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
-        ZipBuf(readbuff, writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
+        ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
 
         if (writebuff_pos >= len) //表明数据没有被压缩,保持原文件
         {
@@ -3637,6 +3646,8 @@ int DB_ZipFileByTimeSpan_Single(struct DB_ZipParams *params)
                 err = DB_Close(fp);
             }
         }
+        delete[] readbuff;
+        delete[] writebuff;
     }
     IOBusy = false;
     return err;
@@ -3673,7 +3684,7 @@ int DB_ZipFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
-        ZipBuf(readbuff, writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
+        ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
 
         if (writebuff_pos >= len) //表明数据没有被压缩,保持原文件
         {
@@ -4069,7 +4080,7 @@ int DB_ZipFileByFileID(struct DB_ZipParams *params)
                 return StatusCode::DATAFILE_NOT_FOUND;
             }
 
-            ZipBuf(readbuff, writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
+            ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
 
             if (writebuff_pos >= len) //表明数据没有被压缩,不做处理
             {
@@ -4301,14 +4312,14 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
 
 //     return 0;
 // }
-// int main()
-// {
-//     DB_ZipParams param;
-//     param.ZipType = FILE_ID;
-//     param.pathToLine = "RbTsImageEle";
-//     param.fileID = "RbTsImageEle2";
-//     DB_ZipFileByFileID(&param);
-//     // DB_ZipFile("RbTsImageEle","RbTsImageEle");
-//     // DB_ReZipFile("RobotTsTest","RobotTsTest");
-//     return 0;
-// }
+int main()
+{
+    DB_ZipParams param;
+    param.ZipType = FILE_ID;
+    param.pathToLine = "RbTsImageEle";
+    param.fileID = "RbTsImageEle2";
+    // DB_ZipFileByFileID(&param);
+     DB_ZipFile("RbTsImageEle", "RbTsImageEle");
+    // DB_ReZipFile("RobotTsTest","RobotTsTest");
+    return 0;
+}

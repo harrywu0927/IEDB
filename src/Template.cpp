@@ -300,8 +300,8 @@ long Template::GetTotalBytes()
         {
             total += schema.second.hasTime ? 8 + schema.second.valueBytes : schema.second.valueBytes;
         }
-        if (schema.second.valueType == ValueType::IMAGE)
-            total += 5 * 1024 * 1024;
+        // if (schema.second.valueType == ValueType::IMAGE)
+        //     total += 5 * 1024 * 1024;
     }
     return total;
 }
@@ -1248,8 +1248,8 @@ long ZipTemplate::GetTotalBytes()
         {
             total += schema.second.hasTime ? 8 + schema.second.valueBytes : schema.second.valueBytes;
         }
-        if (schema.second.valueType == ValueType::IMAGE)
-            total += 5 * 1024 * 1024;
+        // if (schema.second.valueType == ValueType::IMAGE)
+        //     total += 5 * 1024 * 1024;
     }
     return total;
 }
