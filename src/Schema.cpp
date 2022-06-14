@@ -619,18 +619,26 @@ int DB_UpdateNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams, struct 
 {
     int err;
 
+    //如果更新节点的变量名、编码、新路径都为空，则保持原状态
+    if (newTreeParams->valueName == NULL)
+        newTreeParams->valueName = TreeParams->valueName;
+    if (newTreeParams->pathCode == NULL)
+        newTreeParams->pathCode = TreeParams->pathCode;
+    if (newTreeParams->pathToLine == NULL)
+        newTreeParams->pathToLine = TreeParams->pathToLine;
+
     //检查更新后变量名输入是否合法
     string variableName = newTreeParams->valueName;
     err = checkInputVaribaleName(variableName);
     if (err != 0)
-        return err;
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
 
     //检查更新后路径编码输入是否合法
     char inputPathCode[10] = {0};
     memcpy(inputPathCode, newTreeParams->pathCode, 10);
     err = checkInputPathcode(inputPathCode);
     if (err != 0)
-        return err;
+        return StatusCode::PATHCODE_CHECK_ERROR;
 
     vector<string> files;
     readFileList(TreeParams->pathToLine, files);
@@ -693,6 +701,13 @@ int DB_UpdateNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams, struct 
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查是否为时间序列是否合法
+    if (newTreeParams->isTS != 0 && newTreeParams->isTS != 1)
+    {
+        cout << "isTs只能为0或1" << endl;
+        return StatusCode::ISTS_ERROR;
+    }
+
     //检查是否带时间戳是否合法
     if (newTreeParams->hasTime != 0 && newTreeParams->hasTime != 1)
     {
@@ -733,7 +748,43 @@ int DB_UpdateNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams, struct 
     memset(valueType, 0, sizeof(valueType));
     memset(pathCode, 0, sizeof(pathCode));
 
-    if (newTreeParams->isArrary == 1) //是数组类型,拼接字符串
+    if (newTreeParams->isTS == 1) //是Ts类型,拼接字符串
+    {
+        if (newTreeParams->tsLen < 1)
+        {
+            cout << "Ts长度不能小于1" << endl;
+            return StatusCode::TSLEN_ERROR;
+        }
+        if (newTreeParams->isArrary)
+        {
+            if (newTreeParams->arrayLen < 1)
+            {
+                cout << "数组长度不能小于１" << endl;
+                return StatusCode::ARRAYLEN_ERROR;
+            }
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", newTreeParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "][0..");
+            sprintf(s, "%d", newTreeParams->arrayLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(newTreeParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+        else
+        {
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", newTreeParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(newTreeParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+    }
+    else if (newTreeParams->isArrary == 1) //是数组类型,拼接字符串
     {
         if (newTreeParams->arrayLen < 1)
         {
@@ -787,6 +838,14 @@ int DB_UpdateNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams, struct 
 int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams)
 {
     int err;
+
+    //如果更新节点的变量名、编码、新路径都为空，则保持原状态
+    if (newTreeParams->valueName == NULL)
+        newTreeParams->valueName = TreeParams->valueName;
+    if (newTreeParams->pathCode == NULL)
+        newTreeParams->pathCode = TreeParams->pathCode;
+    if (newTreeParams->pathToLine == NULL)
+        newTreeParams->pathToLine = TreeParams->pathToLine;
 
     //检查更新后变量名输入是否合法
     string variableName = newTreeParams->valueName;
@@ -862,6 +921,13 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查是否为时间序列是否合法
+    if (newTreeParams->isTS != 0 && newTreeParams->isTS != 1)
+    {
+        cout << "isTs只能为0或1" << endl;
+        return StatusCode::ISTS_ERROR;
+    }
+
     //检查是否带时间戳是否合法
     if (newTreeParams->hasTime != 0 && newTreeParams->hasTime != 1)
     {
@@ -902,7 +968,43 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
     memset(valueType, 0, sizeof(valueType));
     memset(pathCode, 0, sizeof(pathCode));
 
-    if (newTreeParams->isArrary == 1) //是数组类型,拼接字符串
+    if (newTreeParams->isTS == 1) //是Ts类型,拼接字符串
+    {
+        if (newTreeParams->tsLen < 1)
+        {
+            cout << "Ts长度不能小于1" << endl;
+            return StatusCode::TSLEN_ERROR;
+        }
+        if (newTreeParams->isArrary)
+        {
+            if (newTreeParams->arrayLen < 1)
+            {
+                cout << "数组长度不能小于１" << endl;
+                return StatusCode::ARRAYLEN_ERROR;
+            }
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", newTreeParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "][0..");
+            sprintf(s, "%d", newTreeParams->arrayLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(newTreeParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+        else
+        {
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", newTreeParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(newTreeParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+    }
+    else if (newTreeParams->isArrary == 1) //是数组类型,拼接字符串
     {
         if (newTreeParams->arrayLen < 1)
         {
@@ -985,14 +1087,14 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
     string variableName = newTreeParams->valueName;
     err = checkInputVaribaleName(variableName);
     if (err != 0)
-        return err;
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
 
     //检查更新后路径编码输入是否合法
     char inputPathCode[10] = {0};
     memcpy(inputPathCode, newTreeParams->pathCode, 10);
     err = checkInputPathcode(inputPathCode);
     if (err != 0)
-        return err;
+        return StatusCode::PATHCODE_CHECK_ERROR;
 
     vector<string> files;
     readFileList(TreeParams->pathToLine, files);

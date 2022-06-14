@@ -3039,7 +3039,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                 uint16_t imageChannel = converter.ToUInt16(channel);
                 uint32_t imageSize = imageChannel * imageLength * imageWidth;
                 readbuff_pos += 1;
-                char *writebuff_new = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size() + imageSize + 6];
+                char *writebuff_new = new char[CurrentZipTemplate.totalBytes + imageSize + 6];
                 memcpy(writebuff_new, *writebuff, writebuff_pos);
                 delete[] * writebuff;
                 *writebuff = writebuff_new;
@@ -4304,14 +4304,14 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
 
 //     return 0;
 // }
-// int main()
-// {
-//     DB_ZipParams param;
-//     param.ZipType = FILE_ID;
-//     param.pathToLine = "RbTsImageEle";
-//     param.fileID = "RbTsImageEle2";
-//     // DB_ZipFileByFileID(&param);
-//     // DB_ZipFile("RbTsImageEle", "RbTsImageEle");
-//     // DB_ReZipFile("RbTsImageEle","RbTsImageEle");
-//     return 0;
-// }
+int main()
+{
+    DB_ZipParams param;
+    param.ZipType = FILE_ID;
+    param.pathToLine = "RbTsImageEle";
+    param.fileID = "RbTsImageEle2";
+    // DB_ZipFileByFileID(&param);
+    // DB_ZipFile("RbTsImageEle", "RbTsImageEle");
+     DB_ReZipFile("RbTsImageEle","RbTsImageEle");
+    return 0;
+}
