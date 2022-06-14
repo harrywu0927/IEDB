@@ -1,3 +1,14 @@
+/*******************************************
+ * @file DataType.cpp
+ * @author your name (you@domain.com)
+ * @brief
+ * @version 0.8.4
+ * @date Modified in 2022-06-14
+ *
+ * @copyright Copyright (c) 2022
+ *
+ *******************************************/
+
 #include <utils.hpp>
 
 vector<string> DataType::StringSplit(char srcstr[], const char *str)
@@ -254,14 +265,6 @@ int DataType::CompareValue(DataType &type, char *compared, const char *toCompare
     }
     stringstream ss;
     ss << toCompare;
-    int bytes = DataType::GetValueBytes(type.valueType);
-    if (bytes == 0)
-    {
-        errorCode = StatusCode::UNKNOWN_TYPE;
-        return StatusCode::UNKNOWN_TYPE;
-    }
-    char bufferV1[bytes];
-    memcpy(bufferV1, compared, bytes);
     DataTypeConverter converter;
     switch (type.valueType)
     {
@@ -334,14 +337,6 @@ int DataType::CompareValueInBytes(DataType &type, char *compared, const char *to
     {
         return 0;
     }
-    int bytes = DataType::GetValueBytes(type.valueType);
-    if (bytes == 0)
-    {
-        errorCode = StatusCode::UNKNOWN_TYPE;
-        return StatusCode::UNKNOWN_TYPE;
-    }
-    char bufferV1[bytes];
-    memcpy(bufferV1, compared, bytes);
     DataTypeConverter converter;
     switch (type.valueType)
     {

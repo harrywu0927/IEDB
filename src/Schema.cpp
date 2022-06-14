@@ -1082,7 +1082,7 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
         newTreeParams->pathCode = TreeParams->pathCode;
     if (newTreeParams->pathToLine == NULL)
         newTreeParams->pathToLine = TreeParams->pathToLine;
-    
+
     //检查更新后变量名输入是否合法
     string variableName = newTreeParams->valueName;
     err = checkInputVaribaleName(variableName);
@@ -3944,66 +3944,66 @@ int DB_UnloadZipSchema(const char *pathToUnset)
     return ZipTemplateManager::UnsetZipTemplate(pathToUnset);
 }
 
-int main()
-{
-    DB_TreeNodeParams treeParam;
-    treeParam.pathToLine = "RbTsImgTest";
-    treeParam.valueName = "TestOO";
-    treeParam.valueType = 3;
-    char code[10];
-    code[0] = (char)0;
-    code[1] = (char)1;
-    code[2] = (char)0;
-    code[3] = (char)1;
-    code[4] = 0;
-    code[5] = (char)0;
-    code[6] = 0;
-    code[7] = (char)0;
-    code[8] = (char)0;
-    code[9] = (char)0;
-    treeParam.pathCode = code;
-    treeParam.isArrary = 0;
-    treeParam.arrayLen = 6;
-    treeParam.isTS = 1;
-    treeParam.tsLen = 5;
-    treeParam.hasTime = 1;
-    treeParam.newPath = "RbTsImgTest";
-    DB_TreeNodeParams newParam;
-    newParam.pathToLine = NULL;
-    newParam.valueName = NULL;
-    newParam.valueType = 3;
-    code[0] = (char)0;
-    code[1] = (char)1;
-    code[2] = (char)0;
-    code[3] = (char)1;
-    code[4] = 0;
-    code[5] = (char)0;
-    code[6] = 0;
-    code[7] = (char)0;
-    code[8] = (char)0;
-    code[9] = (char)0;
-    newParam.pathCode = NULL;
-    newParam.isArrary = 1;
-    newParam.arrayLen = 6;
-    newParam.isTS = 1;
-    newParam.tsLen = 5;
-    newParam.hasTime = 1;
-    newParam.newPath = NULL;
-    //DB_AddNodeToSchema(&treeParam);
-    DB_UpdateNodeToSchema(&treeParam,&newParam);
-    //DB_DeleteNodeToSchema(&treeParam);
-    // DB_LoadZipSchema("JinfeiSeven");
-    // DataTypeConverter dt;
-    // DB_ZipNodeParams params;
-    // params.valueName = const_cast<char *>(CurrentZipTemplate.schemas[0].first.c_str());
-    // params.valueType = 3;
-    // params.minValue = "90";
-    // params.maxValue = "110";
-    // params.hasTime = CurrentZipTemplate.schemas[0].second.hasTime;
-    // params.isArrary = CurrentZipTemplate.schemas[0].second.isArray;
-    // params.arrayLen = CurrentZipTemplate.schemas[0].second.arrayLen;
-    // params.pathToLine = "JinfeiSeven";
-    // params.standardValue = "100";
-    // DB_UpdateNodeToZipSchema(&params, &params);
-    return 0;
-}
+// int main()
+// {
+//     DB_TreeNodeParams treeParam;
+//     treeParam.pathToLine = "RbTsImgTest";
+//     treeParam.valueName = "TestOO";
+//     treeParam.valueType = 3;
+//     char code[10];
+//     code[0] = (char)0;
+//     code[1] = (char)1;
+//     code[2] = (char)0;
+//     code[3] = (char)1;
+//     code[4] = 0;
+//     code[5] = (char)0;
+//     code[6] = 0;
+//     code[7] = (char)0;
+//     code[8] = (char)0;
+//     code[9] = (char)0;
+//     treeParam.pathCode = code;
+//     treeParam.isArrary = 0;
+//     treeParam.arrayLen = 6;
+//     treeParam.isTS = 1;
+//     treeParam.tsLen = 5;
+//     treeParam.hasTime = 1;
+//     treeParam.newPath = "RbTsImgTest";
+//     DB_TreeNodeParams newParam;
+//     newParam.pathToLine = NULL;
+//     newParam.valueName = NULL;
+//     newParam.valueType = 3;
+//     code[0] = (char)0;
+//     code[1] = (char)1;
+//     code[2] = (char)0;
+//     code[3] = (char)1;
+//     code[4] = 0;
+//     code[5] = (char)0;
+//     code[6] = 0;
+//     code[7] = (char)0;
+//     code[8] = (char)0;
+//     code[9] = (char)0;
+//     newParam.pathCode = NULL;
+//     newParam.isArrary = 1;
+//     newParam.arrayLen = 6;
+//     newParam.isTS = 1;
+//     newParam.tsLen = 5;
+//     newParam.hasTime = 1;
+//     newParam.newPath = NULL;
+//     //DB_AddNodeToSchema(&treeParam);
+//     DB_UpdateNodeToSchema(&treeParam,&newParam);
+//     //DB_DeleteNodeToSchema(&treeParam);
+//     // DB_LoadZipSchema("JinfeiSeven");
+//     // DataTypeConverter dt;
+//     // DB_ZipNodeParams params;
+//     // params.valueName = const_cast<char *>(CurrentZipTemplate.schemas[0].first.c_str());
+//     // params.valueType = 3;
+//     // params.minValue = "90";
+//     // params.maxValue = "110";
+//     // params.hasTime = CurrentZipTemplate.schemas[0].second.hasTime;
+//     // params.isArrary = CurrentZipTemplate.schemas[0].second.isArray;
+//     // params.arrayLen = CurrentZipTemplate.schemas[0].second.arrayLen;
+//     // params.pathToLine = "JinfeiSeven";
+//     // params.standardValue = "100";
+//     // DB_UpdateNodeToZipSchema(&params, &params);
+//     return 0;
+// }

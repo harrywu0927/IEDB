@@ -412,11 +412,11 @@ long PackFileReader::Next(int &readLength, string &fileID, int &zipType)
 /**
  * @brief 略过包中的若干个文件
  *
- * @param index 略过个数
+ * @param num 略过个数
  */
-void PackFileReader::Skip(int index)
+void PackFileReader::Skip(int num)
 {
-    for (int i = 0; i < index; i++)
+    for (int i = 0; i < num; i++)
     {
         curPos += 28;
         int ztype = (int)packBuffer[curPos++]; //压缩情况

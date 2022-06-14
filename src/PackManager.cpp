@@ -1,3 +1,14 @@
+/*******************************************
+ * @file Delete.cpp
+ * @author your name (you@domain.com)
+ * @brief 对内存中pak的LRU管理和pak获取
+ * @version 0.8.4
+ * @date Modified in 2022-06-14
+ *
+ * @copyright Copyright (c) 2022
+ *
+ *******************************************/
+
 #include <utils.hpp>
 
 /**
@@ -124,9 +135,10 @@ pair<string, pair<char *, long>> PackManager::GetLastPack(string pathToLine, int
  *
  * @param pathToLine
  * @param fileID
- * @return pair<char *, long>
+ * @param getpath 是否获取路径，默认为0
+ * @return pair<char *, long> getpath为0时，返回内存地址-长度；设为1时，为路径-时间戳
  */
-pair<char *, long> PackManager::GetPackByID(string pathToLine, string fileID)
+pair<char *, long> PackManager::GetPackByID(string pathToLine, string fileID, bool getpath)
 {
     while (pathToLine[0] == '/')
         pathToLine.erase(0);
@@ -145,7 +157,7 @@ pair<char *, long> PackManager::GetPackByID(string pathToLine, string fileID)
     {
         if (num >= std::get<0>(fileIDManager.fidIndex[pack.first]) && num <= std::get<1>(fileIDManager.fidIndex[pack.first]))
         {
-            return GetPack(pack.first);
+            return getpath ? make_pair(const_cast<char *>(pack.first.c_str()), std::get<0>(pack.second)) : GetPack(pack.first);
         }
     }
     return {NULL, 0};
@@ -154,11 +166,13 @@ pair<char *, long> PackManager::GetPackByID(string pathToLine, string fileID)
 /**
  * @brief 根据文件ID范围获取包
  *
- * @param pathToLine
- * @param fileID
- * @return pair<char *, long>
+ * @param pathToLine 路径
+ * @param fileID 起始ID
+ * @param num 数量
+ * @param getpath 是否获取路径，默认为0
+ * @return pair<char *, long> getpath为0时，返回内存地址-长度；设为1时，为路径-时间戳
  */
-vector<pair<char *, long>> PackManager::GetPackByIDs(string pathToLine, string fileID, int num)
+vector<pair<char *, long>> PackManager::GetPackByIDs(string pathToLine, string fileID, int num, bool getpath)
 {
     while (pathToLine[0] == '/')
         pathToLine.erase(0);
@@ -179,7 +193,10 @@ vector<pair<char *, long>> PackManager::GetPackByIDs(string pathToLine, string f
     {
         if ((start >= std::get<0>(fileIDManager.fidIndex[pack.first]) && start <= std::get<1>(fileIDManager.fidIndex[pack.first])) || (end >= std::get<0>(fileIDManager.fidIndex[pack.first]) && end <= std::get<1>(fileIDManager.fidIndex[pack.first])) || (start <= std::get<0>(fileIDManager.fidIndex[pack.first]) && end >= std::get<1>(fileIDManager.fidIndex[pack.first])))
         {
-            res.push_back(GetPack(pack.first));
+            if (!getpath)
+                res.push_back(GetPack(pack.first));
+            else
+                res.push_back({const_cast<char *>(pack.first.c_str()), std::get<0>(pack.second)});
         }
     }
     if (res.size() == 0)
@@ -190,12 +207,13 @@ vector<pair<char *, long>> PackManager::GetPackByIDs(string pathToLine, string f
 /**
  * @brief 根据文件ID范围获取包
  *
- * @param pathToLine
- * @param fileIDStart
- * @param fileIDEnd
- * @return pair<char *, long>
+ * @param pathToLine 路径
+ * @param fileIDStart 起始ID
+ * @param fileIDEnd 结束ID
+ * @param getpath 是否获取路径，默认为0
+ * @return pair<char *, long> getpath为0时，返回内存地址-长度；设为1时，为路径-时间戳
  */
-vector<pair<char *, long>> PackManager::GetPackByIDs(string pathToLine, string fileIDStart, string fileIDEnd)
+vector<pair<char *, long>> PackManager::GetPackByIDs(string pathToLine, string fileIDStart, string fileIDEnd, bool getpath)
 {
     while (pathToLine[0] == '/')
         pathToLine.erase(0);
@@ -223,7 +241,10 @@ vector<pair<char *, long>> PackManager::GetPackByIDs(string pathToLine, string f
     {
         if ((start >= std::get<0>(fileIDManager.fidIndex[pack.first]) && start <= std::get<1>(fileIDManager.fidIndex[pack.first])) || (end >= std::get<0>(fileIDManager.fidIndex[pack.first]) && end <= std::get<1>(fileIDManager.fidIndex[pack.first])) || (start <= std::get<0>(fileIDManager.fidIndex[pack.first]) && end >= std::get<1>(fileIDManager.fidIndex[pack.first])))
         {
-            res.push_back(GetPack(pack.first));
+            if (!getpath)
+                res.push_back(GetPack(pack.first));
+            else
+                res.push_back({const_cast<char *>(pack.first.c_str()), std::get<0>(pack.second)});
         }
     }
     if (res.size() == 0)

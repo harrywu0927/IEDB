@@ -71,3 +71,4 @@ CMakeLists.txt
 src/Aggregate
 src/MachineLearning
 src/Inseert
+*.xlsx

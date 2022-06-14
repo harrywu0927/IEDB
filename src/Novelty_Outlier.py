@@ -13,7 +13,7 @@ def Outliers(lst, dimension):
     if len(lst) % dimension == 0:
         rows = len(lst)/dimension
         points = points.reshape(int(rows), dimension)
-        # print(points)
+        print(points)
         clf = LocalOutlierFactor(n_neighbors=int(neighbors))
         res = clf.fit_predict(points)
         return list(res)
