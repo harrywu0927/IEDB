@@ -20,14 +20,14 @@ int DB_AddNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams)
     string variableName = TreeParams->valueName;
     err = checkInputVaribaleName(variableName);
     if (err != 0)
-        return err;
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
 
     //检查路径编码输入是否合法
     char inputPathCode[10] = {0};
     memcpy(inputPathCode, TreeParams->pathCode, 10);
     err = checkInputPathcode(inputPathCode);
     if (err != 0)
-        return err;
+        return StatusCode::PATHCODE_CHECK_ERROR;
 
     vector<string> files;
     readFileList(TreeParams->pathToLine, files);
@@ -204,14 +204,14 @@ int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
     string variableName = TreeParams->valueName;
     err = checkInputVaribaleName(variableName);
     if (err != 0)
-        return err;
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
 
     //检查路径编码输入是否合法
     char inputPathCode[10] = {0};
     memcpy(inputPathCode, TreeParams->pathCode, 10);
     err = checkInputPathcode(inputPathCode);
     if (err != 0)
-        return err;
+        return StatusCode::PATHCODE_CHECK_ERROR;
 
     vector<string> files;
     readTEMFilesList(TreeParams->pathToLine, files);
@@ -276,10 +276,10 @@ int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
         return StatusCode::ISARRAY_ERROR;
     }
 
-    //检查是否为数组是否合法
+    //检查是否为时间序列是否合法
     if (TreeParams->isTS != 0 && TreeParams->isTS != 1)
     {
-        cout << "isTS只能为0或1" << endl;
+        cout << "isTs只能为0或1" << endl;
         return StatusCode::ISTS_ERROR;
     }
 
@@ -404,14 +404,14 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
     string variableName = TreeParams->valueName;
     err = checkInputVaribaleName(variableName);
     if (err != 0)
-        return err;
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
 
     //检查路径编码输入是否合法
     char inputPathCode[10] = {0};
     memcpy(inputPathCode, TreeParams->pathCode, 10);
     err = checkInputPathcode(inputPathCode);
     if (err != 0)
-        return err;
+        return StatusCode::PATHCODE_CHECK_ERROR;
 
     vector<string> files;
     readTEMFilesList(TreeParams->pathToLine, files);
@@ -566,6 +566,8 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 
     long fp;
     char mode[3] = {'w', 'b', '+'};
+    if (TreeParams->newPath == NULL)
+        TreeParams->newPath = TreeParams->pathToLine;
     if (strcmp(TreeParams->pathToLine, TreeParams->newPath) != 0)
     {
         //检查新文件夹名是否包含数字
@@ -971,6 +973,14 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
 {
     int err;
 
+    //如果更新节点的变量名、编码、新路径都为空，则保持原状态
+    if (newTreeParams->valueName == NULL)
+        newTreeParams->valueName = TreeParams->valueName;
+    if (newTreeParams->pathCode == NULL)
+        newTreeParams->pathCode = TreeParams->pathCode;
+    if (newTreeParams->pathToLine == NULL)
+        newTreeParams->pathToLine = TreeParams->pathToLine;
+    
     //检查更新后变量名输入是否合法
     string variableName = newTreeParams->valueName;
     err = checkInputVaribaleName(variableName);
@@ -1045,6 +1055,13 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
         return StatusCode::ISARRAY_ERROR;
     }
 
+    //检查是否为时间序列是否合法
+    if (newTreeParams->isTS != 0 && newTreeParams->isTS != 1)
+    {
+        cout << "isTs只能为0或1" << endl;
+        return StatusCode::ISTS_ERROR;
+    }
+
     //检查是否带时间戳是否合法
     if (newTreeParams->hasTime != 0 && newTreeParams->hasTime != 1)
     {
@@ -1085,7 +1102,43 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
     memset(valueType, 0, sizeof(valueType));
     memset(pathCode, 0, sizeof(pathCode));
 
-    if (newTreeParams->isArrary == 1) //是数组类型,拼接字符串
+    if (newTreeParams->isTS == 1) //是Ts类型,拼接字符串
+    {
+        if (newTreeParams->tsLen < 1)
+        {
+            cout << "Ts长度不能小于1" << endl;
+            return StatusCode::TSLEN_ERROR;
+        }
+        if (newTreeParams->isArrary)
+        {
+            if (newTreeParams->arrayLen < 1)
+            {
+                cout << "数组长度不能小于１" << endl;
+                return StatusCode::ARRAYLEN_ERROR;
+            }
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", newTreeParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "][0..");
+            sprintf(s, "%d", newTreeParams->arrayLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(newTreeParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+        else
+        {
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", newTreeParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(newTreeParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+    }
+    else if (newTreeParams->isArrary == 1) //是数组类型,拼接字符串
     {
         if (newTreeParams->arrayLen < 1)
         {
@@ -1381,6 +1434,8 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 
     //创建新的.tem文件，根据当前已存在的模板文件进行编号
     long fp;
+    if (TreeParams->newPath == NULL)
+        TreeParams->newPath = TreeParams->pathToLine;
     if (strcmp(TreeParams->pathToLine, TreeParams->newPath) != 0)
     {
         //检查新文件夹名是否包含数字
@@ -3787,43 +3842,66 @@ int DB_UnloadZipSchema(const char *pathToUnset)
     return ZipTemplateManager::UnsetZipTemplate(pathToUnset);
 }
 
-// int main()
-// {
-//     DB_TreeNodeParams treeParam;
-//     treeParam.pathToLine = "RbTsImageEle";
-//     treeParam.valueName = "TestOO";
-//     treeParam.valueType = 3;
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)1;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     treeParam.pathCode = code;
-//     treeParam.isArrary = 0;
-//     treeParam.arrayLen = 6;
-//     treeParam.isTS = 1;
-//     treeParam.tsLen = 5;
-//     treeParam.hasTime = 1;
-//     treeParam.newPath = "RbTsImgTest";
-//     DB_AddNodeToSchema(&treeParam);
-//     // DB_LoadZipSchema("JinfeiSeven");
-//     // DataTypeConverter dt;
-//     // DB_ZipNodeParams params;
-//     // params.valueName = const_cast<char *>(CurrentZipTemplate.schemas[0].first.c_str());
-//     // params.valueType = 3;
-//     // params.minValue = "90";
-//     // params.maxValue = "110";
-//     // params.hasTime = CurrentZipTemplate.schemas[0].second.hasTime;
-//     // params.isArrary = CurrentZipTemplate.schemas[0].second.isArray;
-//     // params.arrayLen = CurrentZipTemplate.schemas[0].second.arrayLen;
-//     // params.pathToLine = "JinfeiSeven";
-//     // params.standardValue = "100";
-//     // DB_UpdateNodeToZipSchema(&params, &params);
-//     return 0;
-// }
+int main()
+{
+    DB_TreeNodeParams treeParam;
+    treeParam.pathToLine = "RbTsImgTest";
+    treeParam.valueName = "TestOO";
+    treeParam.valueType = 3;
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)1;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    treeParam.pathCode = code;
+    treeParam.isArrary = 0;
+    treeParam.arrayLen = 6;
+    treeParam.isTS = 1;
+    treeParam.tsLen = 5;
+    treeParam.hasTime = 1;
+    treeParam.newPath = "RbTsImgTest";
+    DB_TreeNodeParams newParam;
+    newParam.pathToLine = NULL;
+    newParam.valueName = NULL;
+    newParam.valueType = 3;
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)1;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    newParam.pathCode = NULL;
+    newParam.isArrary = 1;
+    newParam.arrayLen = 6;
+    newParam.isTS = 1;
+    newParam.tsLen = 5;
+    newParam.hasTime = 1;
+    newParam.newPath = NULL;
+    //DB_AddNodeToSchema(&treeParam);
+    DB_UpdateNodeToSchema(&treeParam,&newParam);
+    //DB_DeleteNodeToSchema(&treeParam);
+    // DB_LoadZipSchema("JinfeiSeven");
+    // DataTypeConverter dt;
+    // DB_ZipNodeParams params;
+    // params.valueName = const_cast<char *>(CurrentZipTemplate.schemas[0].first.c_str());
+    // params.valueType = 3;
+    // params.minValue = "90";
+    // params.maxValue = "110";
+    // params.hasTime = CurrentZipTemplate.schemas[0].second.hasTime;
+    // params.isArrary = CurrentZipTemplate.schemas[0].second.isArray;
+    // params.arrayLen = CurrentZipTemplate.schemas[0].second.arrayLen;
+    // params.pathToLine = "JinfeiSeven";
+    // params.standardValue = "100";
+    // DB_UpdateNodeToZipSchema(&params, &params);
+    return 0;
+}

@@ -3044,6 +3044,8 @@ int ReZipBuff(char *buff, int &buffLength, const char *pathToLine)
 
 int checkInputVaribaleName(string variableName)
 {
+    if(variableName.empty())
+        return 1;
     if ((variableName[0] >= 'a' && variableName[0] <= 'z') || (variableName[0] >= 'A' && variableName[0] <= 'Z') || variableName[0] == '_' || variableName[0] == '@')
         ;
     else
@@ -3067,6 +3069,8 @@ int checkInputVaribaleName(string variableName)
 
 int checkInputPathcode(char pathcode[])
 {
+    if(pathcode==NULL)
+        return 1;
     for (int i = 0; i < 10; i++)
     {
         if ((pathcode[i] >= (char)0 && pathcode[i] <= (char)127) || (pathcode[i] >= 'a' && pathcode[i] <= 'z') || (pathcode[i] >= 'A' && pathcode[i] <= 'Z'))
