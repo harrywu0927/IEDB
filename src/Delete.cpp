@@ -2046,34 +2046,34 @@ int DB_DeleteRecords_New(DB_QueryParams *params)
     }
     return StatusCode::NO_QUERY_TYPE;
 }
-int main()
-{
-    DB_QueryParams params;
-    params.pathToLine = "JinfeiSeven";
-    params.fileID = "1";
-    params.fileIDend = NULL;
-    char code[10];
-    code[0] = (char)0;
-    code[1] = (char)1;
-    code[2] = (char)0;
-    code[3] = (char)0;
-    code[4] = 0;
-    code[5] = (char)0;
-    code[6] = 0;
-    code[7] = (char)0;
-    code[8] = (char)0;
-    code[9] = (char)0;
-    params.pathCode = code;
-    params.valueName = "S1ON";
-    // params.valueName = NULL;
-    params.start = 1649890000000;
-    params.end = 1649898032603;
-    params.order = ASCEND;
-    params.compareType = LT;
-    params.compareValue = "666";
-    params.queryType = FILEID;
-    params.byPath = 0;
-    params.queryNums = 3;
-    DB_DeleteRecords_New(&params);
-    return 0;
-}
+// int main()
+// {
+//     DB_QueryParams params;
+//     params.pathToLine = "JinfeiSeven";
+//     params.fileID = "1";
+//     params.fileIDend = NULL;
+//     char code[10];
+//     code[0] = (char)0;
+//     code[1] = (char)1;
+//     code[2] = (char)0;
+//     code[3] = (char)0;
+//     code[4] = 0;
+//     code[5] = (char)0;
+//     code[6] = 0;
+//     code[7] = (char)0;
+//     code[8] = (char)0;
+//     code[9] = (char)0;
+//     params.pathCode = code;
+//     params.valueName = "S1ON";
+//     // params.valueName = NULL;
+//     params.start = 1649890000000;
+//     params.end = 1649898032603;
+//     params.order = ASCEND;
+//     params.compareType = LT;
+//     params.compareValue = "666";
+//     params.queryType = FILEID;
+//     params.byPath = 0;
+//     params.queryNums = 3;
+//     DB_DeleteRecords_New(&params);
+//     return 0;
+// }
