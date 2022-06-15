@@ -1863,13 +1863,13 @@ int ReZipBuff(char **buff, int &buffLength, const char *pathToLine)
                         }
                         else
                         {
-                            if (*buff[readbuff_pos - 1] == (char)2) //既有时间又有数据
+                            if (*(*buff+readbuff_pos - 1) == (char)2) //既有时间又有数据
                             {
                                 memcpy(writebuff + writebuff_pos, *buff + readbuff_pos, 12);
                                 writebuff_pos += 12;
                                 readbuff_pos += 12;
                             }
-                            else if (*buff[readbuff_pos - 1] == (char)1) //只有时间
+                            else if (*(*buff+readbuff_pos - 1) == (char)1) //只有时间
                             {
                                 uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[i].second.standardValue);
                                 char UDintValue[4] = {0};
@@ -1881,7 +1881,7 @@ int ReZipBuff(char **buff, int &buffLength, const char *pathToLine)
                                 writebuff_pos += 8;
                                 readbuff_pos += 8;
                             }
-                            else if (*buff[readbuff_pos - 1] == (char)0) //只有数据
+                            else if (*(*buff+readbuff_pos - 1) == (char)0) //只有数据
                             {
                                 memcpy(writebuff + writebuff_pos, *buff + readbuff_pos, 4);
                                 writebuff_pos += 4;
@@ -3943,6 +3943,7 @@ int main()
     DB_GetFileLengthByPath("JinfeiSeven/JinfeiSeven1535072_2022-5-12-18-45-11-311.idbzip", &len);
     l=len;
     char *buff = new char[len];
+    DB_OpenAndRead("JinfeiSeven/JinfeiSeven1535072_2022-5-12-18-45-11-311.idbzip", buff);
     ReZipBuff(&buff,l,"JinfeiSeven");
     char *writebuff = new char[24];
     memcpy(writebuff,buff,24);
