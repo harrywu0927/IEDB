@@ -4157,6 +4157,14 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 
 int main()
 {
+    DB_LoadZipSchema("JinfeiTem");
+    DataTypeConverter dt;
+    cout<<CurrentZipTemplate.schemas.size()<<endl;
+    float max = dt.ToFloat_m(CurrentZipTemplate.schemas[0].second.maxValue);
+    cout<<max<<endl;
+    char floattest[4]={0};
+    dt.ToFloatBuff(max,floattest);
+    return 0;
     DB_ZipNodeParams param;
     param.pathToLine = "RbTsImageEle";
     param.valueName = "ZIPTEST";
@@ -4172,4 +4180,5 @@ int main()
     param.maxValue = "120";
     param.minValue = "80";
     DB_AddNodeToZipSchema(&param);
+    return 0;
 }
