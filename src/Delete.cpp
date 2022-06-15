@@ -1,7 +1,7 @@
 /*******************************************
  * @file Delete.cpp
  * @author your name (you@domain.com)
- * @brief 整条数据按条件删除。因不常用，未针对图片作特殊速度优化
+ * @brief 整条数据按条件删除。因不常用，未作特殊速度优化
  * @version 0.8.4
  * @date Modified in 2022-06-14
  *
@@ -211,8 +211,8 @@ int DB_DeleteRecords(DB_QueryParams *params)
                     long fp;
                     DB_Open(const_cast<char *>(newPackName.c_str()), mode, &fp);
                     fwrite(newPack, cur, 1, (FILE *)fp);
-                    // delete[] newPack;
-                    // newPack = NULL;
+                    delete[] newPack;
+                    newPack = NULL;
                     DB_Close(fp);
                     DB_DeleteFile(const_cast<char *>(pack.first.c_str()));
                     continue;
@@ -1085,10 +1085,9 @@ int DB_DeleteRecords_New(DB_QueryParams *params)
                 int fileNum;
                 string templateName;
                 packReader.ReadPackHead(fileNum, templateName);
-                TemplateManager::CheckTemplate(templateName);
                 int deleteNum = 0;
                 //一次分配一整个pak长度的空间，避免频繁分配影响性能
-                char *newPack = new char[packReader.GetPackLength()];
+                char *newPack = (char *)malloc(packReader.GetPackLength());
                 long cur = 4;
                 memcpy(newPack + cur, templateName.c_str(), templateName.length() <= 20 ? templateName.length() : 20);
                 cur += 20;
@@ -1146,7 +1145,7 @@ int DB_DeleteRecords_New(DB_QueryParams *params)
                 long fp;
                 DB_Open(const_cast<char *>(pack.first.c_str()), mode, &fp);
                 fwrite(newPack, cur, 1, (FILE *)fp);
-                delete[] newPack;
+                free(newPack);
                 DB_Close(fp);
             }
             return 0;
@@ -1195,7 +1194,6 @@ int DB_DeleteRecords_New(DB_QueryParams *params)
                 int fileNum;
                 string templateName;
                 packReader.ReadPackHead(fileNum, templateName);
-                TemplateManager::CheckTemplate(templateName);
                 int deleteNum = 0;
                 //一次分配一整个pak长度的空间，避免频繁分配影响性能
                 // shared_ptr<char> newPack = make_shared<char>(packReader.GetPackLength());
@@ -1285,8 +1283,8 @@ int DB_DeleteRecords_New(DB_QueryParams *params)
                     long fp;
                     DB_Open(const_cast<char *>(newPackName.c_str()), mode, &fp);
                     fwrite(newPack, cur, 1, (FILE *)fp);
-                    // delete[] newPack;
-                    // newPack = NULL;
+                    delete[] newPack;
+                    newPack = NULL;
                     DB_Close(fp);
                     DB_DeleteFile(const_cast<char *>(pack.first.c_str()));
                     continue;
@@ -1459,7 +1457,6 @@ int DB_DeleteRecords_New(DB_QueryParams *params)
                 int fileNum;
                 string templateName;
                 packReader.ReadPackHead(fileNum, templateName);
-                TemplateManager::CheckTemplate(templateName);
                 int deleteNum = 0; //此包中已删除文件
                 //一次分配一整个pak长度的空间，避免频繁分配影响性能
                 // shared_ptr<char> newPack = make_shared<char>(packReader.GetPackLength());
@@ -1714,7 +1711,11 @@ int DB_DeleteRecords_New(DB_QueryParams *params)
                         DB_DeleteFile(packs[i].first);
                     }
                 }
-
+                /**
+                 * @brief 由于尾部一定是未被打包的idb文件，因此pak文件的ID较前，首先扫描pak
+                 * 若在pak中扫描到最后的ID，则无需再扫描idb文件
+                 */
+                bool deleteComplete = false;
                 for (auto &pack : packs)
                 {
                     PackFileReader packReader(pack.first);
@@ -1723,7 +1724,7 @@ int DB_DeleteRecords_New(DB_QueryParams *params)
                     int fileNum, deleteNum = 0;
                     string templateName;
                     packReader.ReadPackHead(fileNum, templateName);
-                    char *newPack = new char[packReader.GetPackLength()];
+                    char *newPack = (char *)malloc(packReader.GetPackLength());
                     long cur = 4;
                     memcpy(newPack + cur, templateName.c_str(), templateName.length() <= 20 ? templateName.length() : 20);
                     cur += 20;
@@ -1733,22 +1734,18 @@ int DB_DeleteRecords_New(DB_QueryParams *params)
                         int zipType, readLength;
                         long dataPos = packReader.Next(readLength, currentFileID, zipType);
                         if (fileid == currentFileID)
+                        {
                             firstIndexFound = true;
+                        }
                         /**
                          * @brief 与查询等操作相反，删除时仅保留不满足条件的数据，
                          * 因此在ID范围外的均保留
                          */
-                        if (currentFileID == fileidEnd)
-                        {
-                            if (i == fileNum - 1)
-                                packNameChange = true;
-                        }
+
                         if (!firstIndexFound)
                         {
                             memcpy(newPack + cur, packReader.packBuffer + dataPos, readLength);
-                            cur += readLength;
-                            if (i == 0) //删除了第一个节拍，包名的时间段需要修改
-                                packNameChange = true;
+                            cur += readLength + (zipType == 1 ? 29 : 33);
                         }
                         else
                         {
@@ -1774,15 +1771,103 @@ int DB_DeleteRecords_New(DB_QueryParams *params)
                                 }
                                 if (!CanDelete(params, buff)) //判定不满足删除条件，保留之
                                 {
-                                    memcpy(newPack + cur, packReader.packBuffer + dataPos, readLength);
+                                    memcpy(newPack + cur, packReader.packBuffer + dataPos - (zipType == 1 ? 29 : 33), readLength + (zipType == 1 ? 29 : 33));
                                     cur += readLength;
                                 }
                                 else
+                                {
                                     deleteNum++;
+                                    if (i == 0) //删除了第一个节拍，包名的时间段需要修改
+                                        packNameChange = true;
+                                }
                             }
                             else
+                            {
                                 deleteNum++;
+                                if (i == 0) //删除了第一个节拍，包名的时间段需要修改
+                                    packNameChange = true;
+                            }
                         }
+                        if (currentFileID == fileidEnd)
+                        {
+                            deleteComplete = true;
+                            if (i == fileNum - 1)
+                                packNameChange = true;
+                            else //到此，对这个包的操作已经结束，将包中剩下的数据拼接上去即可
+                            {
+                                dataPos = packReader.Next(readLength, currentFileID, zipType);
+                                memcpy(newPack + cur, packReader.packBuffer + dataPos - (zipType == 1 ? 29 : 33), packReader.GetPackLength() + (zipType == 1 ? 29 : 33) - dataPos);
+                                cur += packReader.GetPackLength() + (zipType == 1 ? 29 : 33) - dataPos;
+                                break;
+                            }
+                        }
+                    }
+                    int newFileNum = fileNum - deleteNum;
+                    memcpy(newPack, &newFileNum, 4);
+                    if (packNameChange)
+                    {
+                        long newpackStart, newpackEnd;
+                        int readLength, zipType;
+                        free(packReader.packBuffer);
+                        packReader.packBuffer = newPack;
+                        packReader.SetCurPos(24);
+                        packReader.Next(readLength, newpackStart, zipType);
+                        if (newFileNum >= 2)
+                        {
+                            packReader.Skip(newFileNum - 2);
+                            packReader.Next(readLength, newpackEnd, zipType);
+                        }
+                        else
+                            newpackEnd = newpackStart;
+                        auto vec = DataType::splitWithStl(pack.first, "/");
+                        string newPackName = vec[0] + "/" + to_string(newpackStart) + "-" + to_string(newpackEnd) + ".pak ";
+                        char mode[2] = {'w', 'b'};
+                        long fp;
+                        DB_Open(const_cast<char *>(newPackName.c_str()), mode, &fp);
+                        fwrite(newPack, cur, 1, (FILE *)fp);
+                        DB_Close(fp);
+                        DB_DeleteFile(pack.first);
+                        continue;
+                    }
+                    char mode[2] = {'w', 'b'};
+                    long fp;
+                    DB_Open(pack.first, mode, &fp);
+                    fwrite(newPack, cur, 1, (FILE *)fp);
+                    free(newPack);
+                    DB_Close(fp);
+                }
+                if (deleteComplete)
+                    return 0;
+                else
+                {
+                    for (auto &file : dataFiles)
+                    {
+                        string tmp = file.first;
+                        vector<string> vec = DataType::splitWithStl(tmp, "/");
+                        if (vec.size() == 0)
+                            continue;
+                        vec = DataType::splitWithStl(vec[vec.size() - 1], "_");
+                        if (vec.size() == 0)
+                            continue;
+                        if (vec[0] == fileid)
+                            firstIndexFound = true;
+                        if (firstIndexFound)
+                        {
+                            currentFileID = file.first; //此处 currentFileID 为文件路径
+                            long len;
+                            DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+                            char *buff = new char[len];
+                            DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+                            if (file.first.find(".idbzip") != string::npos)
+                                ReZipBuff(&buff, (int &)len, params->pathToLine);
+                            if (CanDelete(params, buff))
+                            {
+                                DB_DeleteFile(const_cast<char *>(file.first.c_str()));
+                            }
+                            delete[] buff;
+                        }
+                        if (currentFileID.find(fileidEnd) != string::npos)
+                            return 0;
                     }
                 }
             }
@@ -1791,11 +1876,166 @@ int DB_DeleteRecords_New(DB_QueryParams *params)
         else
         {
             auto packs = packManager.GetPackByIDs(params->pathToLine, fileid, params->queryNums, 1);
-            sort(packs.begin(), packs.end(),
-                 [](pair<char *, long> iter1, pair<char *, long> iter2) -> bool
-                 { return iter1.second < iter2.second; });
+            if (packs.size() > 2 && params->compareType == CMP_NONE) //当包的个数大于2 且无需比较数据时，首尾以外的包可直接删除
+            {
+                for (int i = 1; i < packs.size() - 1; i++)
+                {
+                    DB_DeleteFile(packs[i].first);
+                }
+            }
+            bool deleteComplete = false;
+            long scanNum = 0;
             for (auto &pack : packs)
             {
+                if (scanNum == params->queryNums)
+                    break;
+                PackFileReader packReader(pack.first);
+                if (packReader.packBuffer == NULL)
+                    continue;
+                int fileNum, deleteNum = 0;
+                string templateName;
+                packReader.ReadPackHead(fileNum, templateName);
+                char *newPack = (char *)malloc(packReader.GetPackLength());
+                long cur = 4;
+                memcpy(newPack + cur, templateName.c_str(), templateName.length() <= 20 ? templateName.length() : 20);
+                cur += 20;
+                bool packNameChange = false; //若删除的数据包含首尾文件，则包名的时间段需要修改
+                for (int i = 0; i < fileNum; i++)
+                {
+                    int zipType, readLength;
+                    long dataPos = packReader.Next(readLength, currentFileID, zipType);
+                    if (fileid == currentFileID)
+                    {
+                        firstIndexFound = true;
+                    }
+                    if (!firstIndexFound)
+                    {
+                        memcpy(newPack + cur, packReader.packBuffer + dataPos, readLength);
+                        cur += readLength + (zipType == 1 ? 29 : 33);
+                    }
+                    else
+                    {
+                        if (params->compareType != CMP_NONE)
+                        {
+                            char *buff;
+                            switch (zipType)
+                            {
+                            case 0:
+                                buff = packReader.packBuffer + dataPos;
+                                break;
+                            case 1:
+                                buff = new char[readLength];
+                                ReZipBuff(&buff, readLength, params->pathToLine);
+                                break;
+                            case 2:
+                                buff = new char[readLength];
+                                memcpy(buff, packReader.packBuffer + dataPos, readLength);
+                                ReZipBuff(&buff, readLength, params->pathToLine);
+                                break;
+                            default:
+                                continue;
+                            }
+                            if (!CanDelete(params, buff)) //判定不满足删除条件，保留之
+                            {
+                                memcpy(newPack + cur, packReader.packBuffer + dataPos - (zipType == 1 ? 29 : 33), readLength + (zipType == 1 ? 29 : 33));
+                                cur += readLength;
+                            }
+                            else
+                            {
+                                deleteNum++;
+                                if (i == 0) //删除了第一个节拍，包名的时间段需要修改
+                                    packNameChange = true;
+                            }
+                        }
+                        else
+                        {
+                            deleteNum++;
+                            if (i == 0) //删除了第一个节拍，包名的时间段需要修改
+                                packNameChange = true;
+                        }
+                        scanNum++;
+                        if (scanNum == params->queryNums)
+                        {
+                            deleteComplete = true;
+                            if (i == fileNum - 1)
+                                packNameChange = true;
+                            else //到此，对这个包的操作已经结束，将包中剩下的数据拼接上去即可
+                            {
+                                dataPos = packReader.Next(readLength, currentFileID, zipType);
+                                memcpy(newPack + cur, packReader.packBuffer + dataPos - (zipType == 1 ? 29 : 33), packReader.GetPackLength() + (zipType == 1 ? 29 : 33) - dataPos);
+                                cur += packReader.GetPackLength() + (zipType == 1 ? 29 : 33) - dataPos;
+                                break;
+                            }
+                        }
+                    }
+                }
+                int newFileNum = fileNum - deleteNum;
+                memcpy(newPack, &newFileNum, 4);
+                if (packNameChange)
+                {
+                    long newpackStart, newpackEnd;
+                    int readLength, zipType;
+                    free(packReader.packBuffer);
+                    packReader.packBuffer = newPack;
+                    packReader.SetCurPos(24);
+                    packReader.Next(readLength, newpackStart, zipType);
+                    if (newFileNum >= 2)
+                    {
+                        packReader.Skip(newFileNum - 2);
+                        packReader.Next(readLength, newpackEnd, zipType);
+                    }
+                    else
+                        newpackEnd = newpackStart;
+                    auto vec = DataType::splitWithStl(pack.first, "/");
+                    string newPackName = vec[0] + "/" + to_string(newpackStart) + "-" + to_string(newpackEnd) + ".pak ";
+                    char mode[2] = {'w', 'b'};
+                    long fp;
+                    DB_Open(const_cast<char *>(newPackName.c_str()), mode, &fp);
+                    fwrite(newPack, cur, 1, (FILE *)fp);
+                    DB_Close(fp);
+                    DB_DeleteFile(pack.first);
+                    continue;
+                }
+                char mode[2] = {'w', 'b'};
+                long fp;
+                DB_Open(pack.first, mode, &fp);
+                fwrite(newPack, cur, 1, (FILE *)fp);
+                free(newPack);
+                DB_Close(fp);
+            }
+            if (scanNum == params->queryNums)
+                return 0;
+            else
+            {
+                for (auto &file : dataFiles)
+                {
+                    string tmp = file.first;
+                    vector<string> vec = DataType::splitWithStl(tmp, "/");
+                    if (vec.size() == 0)
+                        continue;
+                    vec = DataType::splitWithStl(vec[vec.size() - 1], "_");
+                    if (vec.size() == 0)
+                        continue;
+                    if (vec[0] == fileid)
+                        firstIndexFound = true;
+                    if (firstIndexFound)
+                    {
+                        scanNum++;
+                        long len;
+                        DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+                        char *buff = new char[len];
+                        DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+                        if (file.first.find(".idbzip") != string::npos)
+                            ReZipBuff(&buff, (int &)len, params->pathToLine);
+                        if (CanDelete(params, buff))
+                        {
+                            DB_DeleteFile(const_cast<char *>(file.first.c_str()));
+                        }
+                        delete[] buff;
+                    }
+                    if (scanNum == params->queryNums)
+                        return 0;
+                }
             }
         }
         return 0;
@@ -1806,33 +2046,34 @@ int DB_DeleteRecords_New(DB_QueryParams *params)
     }
     return StatusCode::NO_QUERY_TYPE;
 }
-// int main()
-// {
-//     DB_QueryParams params;
-//     params.pathToLine = "JinfeiThirteen";
-//     params.fileID = "JinfeiThirteen103845";
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)0;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     params.pathCode = code;
-//     params.valueName = "S2OFF";
-//     // params.valueName = NULL;
-//     params.start = 1649890000000;
-//     params.end = 1649898032603;
-//     params.order = ASCEND;
-//     params.compareType = CMP_NONE;
-//     params.compareValue = "666";
-//     params.queryType = TIMESPAN;
-//     params.byPath = 0;
-//     params.queryNums = 10;
-//     DB_DeleteRecords(&params);
-//     return 0;
-// }
+int main()
+{
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiSeven";
+    params.fileID = "1";
+    params.fileIDend = NULL;
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)0;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueName = "S1ON";
+    // params.valueName = NULL;
+    params.start = 1649890000000;
+    params.end = 1649898032603;
+    params.order = ASCEND;
+    params.compareType = LT;
+    params.compareValue = "666";
+    params.queryType = FILEID;
+    params.byPath = 0;
+    params.queryNums = 3;
+    DB_DeleteRecords_New(&params);
+    return 0;
+}

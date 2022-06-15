@@ -52,6 +52,10 @@ void checkSettings()
 
 int main()
 {
+    // const char *str = "123456";
+    // const char **ptr = &str;
+    // cout << (*ptr)[1] << endl;
+    // return 0;
     Py_Initialize();
     // 指定py文件目录
     PyRun_SimpleString("import sys");
