@@ -173,7 +173,7 @@ int CheckQueryParams(DB_QueryParams *params);
 
 int CheckZipParams(DB_ZipParams *params);
 
-int ReZipBuff(char *buff, int &buffLength, const char *pathToLine);
+int ReZipBuff(char **buff, int &buffLength, const char *pathToLine);
 
 bool IsNormalIDBFile(char *readbuff, const char *pathToLine);
 

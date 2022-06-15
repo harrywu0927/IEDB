@@ -3038,7 +3038,7 @@ int DB_ZipRecvAnalogFile(const char *ZipTempPath, const char *filepath, char *bu
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     long len = *buffLength;
-    char writebuff[CurrentZipTemplate.totalBytes + 2 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
+    char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
 
     DataTypeConverter converter;
     long buff_pos = 0;
@@ -3082,6 +3082,7 @@ int DB_ZipRecvAnalogFile(const char *ZipTempPath, const char *filepath, char *bu
     databuff.buffer = buff;
     databuff.savePath = filepath;
     DB_InsertRecord(&databuff, 1);
+    delete[] writebuff;
     return err;
 }
 
@@ -3605,8 +3606,8 @@ int DB_ZipAnalogFileByFileID(struct DB_ZipParams *params)
 
             long len;
             DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
-            char *readbuff = new char[len];                            //文件内容
-            char *writebuff = new char[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
+            char *readbuff = new char[len];                                                                    //文件内容
+            char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
             long writebuff_pos = 0;
 
             if (DB_OpenAndRead(const_cast<char *>(file.first.c_str()), readbuff)) //将文件内容读取到readbuff

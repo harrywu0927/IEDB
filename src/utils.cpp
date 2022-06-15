@@ -3936,3 +3936,16 @@ int readIDBZIPFilesListBySIDandEID(string path, string SID, string EID, vector<p
 //     packer.Pack("", files);
 //     return 0;
 // }
+int main()
+{
+    long len=0;
+    int l;
+    DB_GetFileLengthByPath("JinfeiSeven/JinfeiSeven1535072_2022-5-12-18-45-11-311.idbzip", &len);
+    l=len;
+    char *buff = new char[len];
+    ReZipBuff(&buff,l,"JinfeiSeven");
+    char *writebuff = new char[24];
+    memcpy(writebuff,buff,24);
+    delete[] buff;
+    return 0;
+}
