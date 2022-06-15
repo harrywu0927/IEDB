@@ -429,6 +429,8 @@ public:
 
     int GetDataTypesByCode(char *pathCode, vector<DataType> &types);
 
+    int GetCodeByName(const char *name, vector<PathCode> &pathCode);
+
     vector<DataType> GetAllTypes(char *pathCode);
 };
 
@@ -702,7 +704,7 @@ public:
 
     long Next(int &readLength, string &fileID, int &zipType);
 
-    void Skip(int index);
+    void Skip(int num);
 
     void ReadPackHead(int &fileNum, string &templateName);
 
@@ -751,11 +753,11 @@ public:
 
     pair<string, pair<char *, long>> GetLastPack(string pathToLine, int index);
 
-    pair<char *, long> GetPackByID(string pathToLine, string fileID);
+    pair<char *, long> GetPackByID(string pathToLine, string fileID, bool getpath = 0);
 
-    vector<pair<char *, long>> GetPackByIDs(string pathToLine, string fileID, int num);
+    vector<pair<char *, long>> GetPackByIDs(string pathToLine, string fileID, int num, bool getpath = 0);
 
-    vector<pair<char *, long>> GetPackByIDs(string pathToLine, string fileIDStart, string fileIDEnd);
+    vector<pair<char *, long>> GetPackByIDs(string pathToLine, string fileIDStart, string fileIDEnd, bool getpath = 0);
 
     void ModifyCacheCapacity(int memcap)
     {

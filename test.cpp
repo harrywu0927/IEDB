@@ -52,9 +52,6 @@ void checkSettings()
 
 int main()
 {
-
-    // TemplateManager::CheckTemplate("RobotTwenty");
-    // return 0;
     Py_Initialize();
     // 指定py文件目录
     PyRun_SimpleString("import sys");

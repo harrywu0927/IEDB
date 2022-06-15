@@ -1124,7 +1124,7 @@ long Template::GetBytesByCode(char *pathCode)
 {
     vector<DataType> types;
     long total = 0;
-    cout << this->GetDataTypesByCode(pathCode, types) << endl;
+    this->GetDataTypesByCode(pathCode, types);
     for (auto const &type : types)
     {
         if (type.isTimeseries)
@@ -1140,7 +1140,7 @@ long Template::GetBytesByCode(char *pathCode)
         }
         else if (type.isArray)
         {
-            cout << type.valueBytes << " " << type.arrayLen << endl;
+            // cout << type.valueBytes << " " << type.arrayLen << endl;
             total += type.hasTime ? (8 + type.valueBytes * type.arrayLen) : (type.valueBytes * type.arrayLen);
         }
         else
@@ -1149,6 +1149,19 @@ long Template::GetBytesByCode(char *pathCode)
         }
     }
     return total;
+}
+
+int Template::GetCodeByName(const char *name, vector<PathCode> &pathCode)
+{
+    for (auto &schema : this->schemas)
+    {
+        if (strcmp(schema.first.name.c_str(), name) == 0)
+        {
+            pathCode.push_back(schema.first);
+            return 0;
+        }
+    }
+    return StatusCode::VARIABLE_NAME_EXIST;
 }
 
 // int TemplateManager::SetTemplate(const char *path)
