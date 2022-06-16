@@ -175,6 +175,8 @@ int CheckZipParams(DB_ZipParams *params);
 
 int ReZipBuff(char **buff, int &buffLength, const char *pathToLine);
 
+long GetZipImgPos(char *buff,long length);
+
 bool IsNormalIDBFile(char *readbuff, const char *pathToLine);
 
 int sysOpen(char path[]);

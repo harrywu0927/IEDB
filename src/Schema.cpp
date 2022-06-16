@@ -620,18 +620,10 @@ int DB_UpdateNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams, struct 
     int err;
 
     //如果更新节点的变量名、编码、新路径都为空，则保持原状态
-    if (newTreeParams->valueName == NULL)
-        newTreeParams->valueName = TreeParams->valueName;
     if (newTreeParams->pathCode == NULL)
         newTreeParams->pathCode = TreeParams->pathCode;
     if (newTreeParams->pathToLine == NULL)
         newTreeParams->pathToLine = TreeParams->pathToLine;
-
-    //检查更新后变量名输入是否合法
-    string variableName = newTreeParams->valueName;
-    err = checkInputVaribaleName(variableName);
-    if (err != 0)
-        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
 
     //检查更新后路径编码输入是否合法
     char inputPathCode[10] = {0};
@@ -714,6 +706,20 @@ int DB_UpdateNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams, struct 
         cout << "hasTime只能为0或1" << endl;
         return StatusCode::HASTIME_ERROR;
     }
+
+    //如果变量名为空，则保持原状态，否则使用新变量名，并检查变量名是否合法
+    string variableName;
+    if (newTreeParams->valueName == NULL)
+    {
+        newTreeParams->valueName = readBuf + pos * 71;
+        // memcpy(newTreeParams->valueName,readBuf+pos*71,30);
+        variableName = newTreeParams->valueName;
+    }
+    else
+        variableName = newTreeParams->valueName;
+    err = checkInputVaribaleName(variableName);
+    if (err != 0)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
 
     readbuf_pos = 0;
     for (long i = 0; i < len / 71; i++) //寻找模板是否有与更新参数相同的变量名或者编码
@@ -839,19 +845,11 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
 {
     int err;
 
-    //如果更新节点的变量名、编码、新路径都为空，则保持原状态
-    if (newTreeParams->valueName == NULL)
-        newTreeParams->valueName = TreeParams->valueName;
+    //如果更新节点的编码、新路径都为空，则保持原状态
     if (newTreeParams->pathCode == NULL)
         newTreeParams->pathCode = TreeParams->pathCode;
     if (newTreeParams->pathToLine == NULL)
         newTreeParams->pathToLine = TreeParams->pathToLine;
-
-    //检查更新后变量名输入是否合法
-    string variableName = newTreeParams->valueName;
-    err = checkInputVaribaleName(variableName);
-    if (err != 0)
-        return err;
 
     //检查更新后路径编码输入是否合法
     char inputPathCode[10] = {0};
@@ -934,6 +932,20 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
         cout << "hasTime只能为0或1" << endl;
         return StatusCode::HASTIME_ERROR;
     }
+
+    //如果变量名为空，则保持原状态，否则使用新变量名，并检查变量名是否合法
+    string variableName;
+    if (newTreeParams->valueName == NULL)
+    {
+        newTreeParams->valueName = readBuf + pos * 71;
+        // memcpy(newTreeParams->valueName,readBuf+pos*71,30);
+        variableName = newTreeParams->valueName;
+    }
+    else
+        variableName = newTreeParams->valueName;
+    err = checkInputVaribaleName(variableName);
+    if (err != 0)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
 
     readbuf_pos = 0;
     for (long i = 0; i < len / 71; i++) //寻找模板是否有与更新参数相同的变量名或者编码
@@ -1075,19 +1087,11 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
 {
     int err;
 
-    //如果更新节点的变量名、编码、新路径都为空，则保持原状态
-    if (newTreeParams->valueName == NULL)
-        newTreeParams->valueName = TreeParams->valueName;
-    if (newTreeParams->pathCode == NULL)
-        newTreeParams->pathCode = TreeParams->pathCode;
+    //如果更新节点的编码、新路径为空，则保持原状态
     if (newTreeParams->pathToLine == NULL)
         newTreeParams->pathToLine = TreeParams->pathToLine;
-
-    //检查更新后变量名输入是否合法
-    string variableName = newTreeParams->valueName;
-    err = checkInputVaribaleName(variableName);
-    if (err != 0)
-        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
+    if (newTreeParams->pathCode == NULL)
+        newTreeParams->pathCode = TreeParams->pathCode;
 
     //检查更新后路径编码输入是否合法
     char inputPathCode[10] = {0};
@@ -1170,6 +1174,20 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
         cout << "hasTime只能为0或1" << endl;
         return StatusCode::HASTIME_ERROR;
     }
+
+    //如果变量名为空，则保持原状态，否则使用新变量名，并检查变量名是否合法
+    string variableName;
+    if (newTreeParams->valueName == NULL)
+    {
+        newTreeParams->valueName = readBuf + pos * 71;
+        // memcpy(newTreeParams->valueName,readBuf+pos*71,30);
+        variableName = newTreeParams->valueName;
+    }
+    else
+        variableName = newTreeParams->valueName;
+    err = checkInputVaribaleName(variableName);
+    if (err != 0)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
 
     readbuf_pos = 0;
     for (long i = 0; i < len / 71; i++) //寻找模板是否有与更新参数相同的变量名或者编码
@@ -3466,6 +3484,12 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
 {
     int err;
 
+    //如果新节点的路径、变量名为空，则保持原状态
+    if (newZipParams->newPath == NULL)
+        newZipParams->newPath = ZipParams->pathToLine;
+    if(newZipParams->valueName==NULL)
+        newZipParams->valueName=ZipParams->valueName;
+
     //检查更新后数据类型是否合法
     if (newZipParams->valueType < 1 || newZipParams->valueType > 10)
     {
@@ -4095,8 +4119,8 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 // {
 //     DB_TreeNodeParams treeParam;
 //     treeParam.pathToLine = "RbTsImgTest";
-//     treeParam.valueName = "TestOO";
-//     treeParam.valueType = 3;
+//     // treeParam.valueName = "TestOO";
+//     // treeParam.valueType = 3;
 //     char code[10];
 //     code[0] = (char)0;
 //     code[1] = (char)1;
@@ -4109,12 +4133,12 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 //     code[8] = (char)0;
 //     code[9] = (char)0;
 //     treeParam.pathCode = code;
-//     treeParam.isArrary = 0;
-//     treeParam.arrayLen = 6;
-//     treeParam.isTS = 1;
-//     treeParam.tsLen = 5;
-//     treeParam.hasTime = 1;
-//     treeParam.newPath = "RbTsImgTest";
+//     // treeParam.isArrary = 0;
+//     // treeParam.arrayLen = 6;
+//     // treeParam.isTS = 1;
+//     // treeParam.tsLen = 5;
+//     // treeParam.hasTime = 1;
+//     // treeParam.newPath = "RbTsImgTest";
 //     DB_TreeNodeParams newParam;
 //     newParam.pathToLine = NULL;
 //     newParam.valueName = NULL;
@@ -4132,53 +4156,41 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 //     newParam.pathCode = NULL;
 //     newParam.isArrary = 1;
 //     newParam.arrayLen = 6;
-//     newParam.isTS = 1;
+//     newParam.isTS = 0;
 //     newParam.tsLen = 5;
 //     newParam.hasTime = 1;
 //     newParam.newPath = NULL;
-//     //DB_AddNodeToSchema(&treeParam);
-//     DB_UpdateNodeToSchema(&treeParam,&newParam);
-//     //DB_DeleteNodeToSchema(&treeParam);
-//     // DB_LoadZipSchema("JinfeiSeven");
-//     // DataTypeConverter dt;
-//     // DB_ZipNodeParams params;
-//     // params.valueName = const_cast<char *>(CurrentZipTemplate.schemas[0].first.c_str());
-//     // params.valueType = 3;
-//     // params.minValue = "90";
-//     // params.maxValue = "110";
-//     // params.hasTime = CurrentZipTemplate.schemas[0].second.hasTime;
-//     // params.isArrary = CurrentZipTemplate.schemas[0].second.isArray;
-//     // params.arrayLen = CurrentZipTemplate.schemas[0].second.arrayLen;
-//     // params.pathToLine = "JinfeiSeven";
-//     // params.standardValue = "100";
-//     // DB_UpdateNodeToZipSchema(&params, &params);
+//     // DB_AddNodeToSchema(&treeParam);
+//     DB_UpdateNodeToSchema(&treeParam, &newParam);
+//     // DB_DeleteNodeToSchema(&treeParam);
 //     return 0;
 // }
 
-int main()
-{
-    DB_LoadZipSchema("JinfeiTem");
-    DataTypeConverter dt;
-    cout<<CurrentZipTemplate.schemas.size()<<endl;
-    float max = dt.ToFloat_m(CurrentZipTemplate.schemas[0].second.maxValue);
-    cout<<max<<endl;
-    char floattest[4]={0};
-    dt.ToFloatBuff(max,floattest);
-    return 0;
-    DB_ZipNodeParams param;
-    param.pathToLine = "RbTsImageEle";
-    param.valueName = "ZIPTEST";
-    param.valueType = 3;
-    param.newPath = "RbTsImgTest";
-    param.hasTime = 1;
-    param.isTS = 1;
-    param.tsLen = 10;
-    param.tsSpan = 1000;
-    param.isArrary = 1;
-    param.arrayLen = 10;
-    param.standardValue = "100";
-    param.maxValue = "120";
-    param.minValue = "80";
-    DB_AddNodeToZipSchema(&param);
-    return 0;
-}
+// int main()
+// {
+//     DB_LoadZipSchema("JinfeiTem");
+//     DataTypeConverter dt;
+//     cout<<CurrentZipTemplate.schemas.size()<<endl;
+//     cout<<CurrentZipTemplate.schemas[0].second.valueType<<endl;
+//     float max = dt.ToFloat_m(CurrentZipTemplate.schemas[0].second.maxValue);
+//     cout<<max<<endl;
+//     char floattest[4]={0};
+//     dt.ToFloatBuff_m(max,floattest);
+//     return 0;
+//     DB_ZipNodeParams param;
+//     param.pathToLine = "RbTsImageEle";
+//     param.valueName = "ZIPTEST";
+//     param.valueType = 3;
+//     param.newPath = "RbTsImgTest";
+//     param.hasTime = 1;
+//     param.isTS = 1;
+//     param.tsLen = 10;
+//     param.tsSpan = 1000;
+//     param.isArrary = 1;
+//     param.arrayLen = 10;
+//     param.standardValue = "100";
+//     param.maxValue = "120";
+//     param.minValue = "80";
+//     DB_AddNodeToZipSchema(&param);
+//     return 0;
+// }

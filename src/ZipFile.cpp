@@ -3044,7 +3044,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                 delete[] * writebuff;
                 *writebuff = writebuff_new;
 
-                if (readbuff[readbuff_pos - 1] == (char)2) //既有数据又有数据
+                if (readbuff[readbuff_pos - 1] == (char)2) //既有数据又有时间戳
                 {
                     //存储图片的长度、宽度、通道
                     memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 6);
@@ -4309,9 +4309,9 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
 //     DB_ZipParams param;
 //     param.ZipType = FILE_ID;
 //     param.pathToLine = "RbTsImageEle";
-//     param.fileID = "RbTsImageEle2";
-//     // DB_ZipFileByFileID(&param);
+//     param.fileID = "RbTsImageEle8";
+//      DB_ZipFileByFileID(&param);
 //     // DB_ZipFile("RbTsImageEle", "RbTsImageEle");
-//      DB_ReZipFile("RbTsImageEle","RbTsImageEle");
+//     // DB_ReZipFile("RbTsImageEle","RbTsImageEle");
 //     return 0;
 // }
