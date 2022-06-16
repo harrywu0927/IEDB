@@ -256,6 +256,8 @@ int checkInputValue(string variableType, string value);
 
 int checkValueRange(string variableType, string standardValue, string maxValue, string minValue);
 
+int getValueStringByValueType(char *value,ValueType::ValueType type,int schemaPos,int MaxOrMin);
+
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);
 

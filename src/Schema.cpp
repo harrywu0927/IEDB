@@ -1180,7 +1180,6 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
     if (newTreeParams->valueName == NULL)
     {
         newTreeParams->valueName = readBuf + pos * 71;
-        // memcpy(newTreeParams->valueName,readBuf+pos*71,30);
         variableName = newTreeParams->valueName;
     }
     else
@@ -1760,7 +1759,7 @@ int DB_AddNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams)
             cout << "数组长度不能小于１" << endl;
             return StatusCode::ARRAYLEN_ERROR;
         }
-        strcpy(valueType, "ARRAY[0..");
+        strcpy(valueType, "ARRAY [0..");
         char s[10];
         sprintf(s, "%d", ZipParams->arrayLen);
         strcat(valueType, s);
@@ -2132,7 +2131,7 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
             cout << "数组长度不能小于１" << endl;
             return StatusCode::ARRAYLEN_ERROR;
         }
-        strcpy(valueType, "ARRAY[0..");
+        strcpy(valueType, "ARRAY [0..");
         char s[10];
         sprintf(s, "%d", ZipParams->arrayLen);
         strcat(valueType, s);
@@ -2524,7 +2523,7 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
             cout << "数组长度不能小于１" << endl;
             return StatusCode::ARRAYLEN_ERROR;
         }
-        strcpy(valueType, "ARRAY[0..");
+        strcpy(valueType, "ARRAY [0..");
         char s[10];
         sprintf(s, "%d", ZipParams->arrayLen);
         strcat(valueType, s);
@@ -2756,7 +2755,6 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
     if (err == 0)
     {
         err = DB_Write(fp, readBuf, len + 95);
-
         if (err == 0)
         {
             err = DB_Close(fp);
@@ -2778,6 +2776,12 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
 {
     int err;
 
+    //如果新节点的路径、变量名为空，则保持原状态
+    if (newZipParams->pathToLine == NULL)
+        newZipParams->pathToLine = ZipParams->pathToLine;
+    if (newZipParams->valueName == NULL)
+        newZipParams->valueName = ZipParams->valueName;
+
     //检查更新后数据类型是否合法
     if (newZipParams->valueType < 1 || newZipParams->valueType > 10)
     {
@@ -2785,11 +2789,69 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
         return StatusCode::UNKNOWN_TYPE;
     }
 
-    //检查更新后数据类型是否合法
-    if (newZipParams->valueType < 1 || newZipParams->valueType > 10)
+    vector<string> files;
+    readFileList(ZipParams->pathToLine, files);
+    string temPath = "";
+    for (string file : files) //找到带有后缀ziptem的文件
     {
-        cout << "数据类型选择错误" << endl;
-        return StatusCode::UNKNOWN_TYPE;
+        string s = file;
+        vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
+        if (vec[vec.size() - 1].find("ziptem") != string::npos)
+        {
+            temPath = file;
+            break;
+        }
+    }
+    if (temPath == "")
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+
+    err = DB_LoadZipSchema(ZipParams->pathToLine);
+    if (err != 0)
+        return err;
+
+    long len;
+    DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
+    char readBuf[len];
+    long readbuf_pos = 0;
+    DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
+
+    DataTypeConverter converter;
+
+    long pos = -1;                      //用于定位是修改模板的第几条
+    for (long i = 0; i < len / 95; i++) //寻找是否有相同变量名
+    {
+        char existValueName[30];
+        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        if (strcmp(ZipParams->valueName, existValueName) == 0)
+        {
+            pos = i; //记录这条记录的位置
+        }
+        readbuf_pos += 95;
+    }
+    if (pos == -1)
+    {
+        cout << "未找到变量名！" << endl;
+        return StatusCode::UNKNOWN_PATHCODE;
+    }
+
+    int s_new = 0, max_new = 0, min_new = 0;
+    if (newZipParams->standardValue == NULL)
+    {
+        s_new = 1;
+        newZipParams->standardValue = new char[10];
+        getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0);
+    }
+    if (newZipParams->maxValue == NULL)
+    {
+        max_new = 1;
+        newZipParams->maxValue = new char[10];
+        getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 1);
+    }
+    if (newZipParams->minValue == NULL)
+    {
+        min_new = 1;
+        newZipParams->minValue = new char[10];
+        getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 2);
     }
 
     //检查更新后变量名输入是否合法
@@ -2830,47 +2892,6 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
     if (err != 0)
         return err;
 
-    vector<string> files;
-    readFileList(ZipParams->pathToLine, files);
-    string temPath = "";
-    for (string file : files) //找到带有后缀ziptem的文件
-    {
-        string s = file;
-        vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
-        if (vec[vec.size() - 1].find("ziptem") != string::npos)
-        {
-            temPath = file;
-            break;
-        }
-    }
-    if (temPath == "")
-        return StatusCode::SCHEMA_FILE_NOT_FOUND;
-
-    long len;
-    DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
-    char readBuf[len];
-    long readbuf_pos = 0;
-    DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
-
-    DataTypeConverter converter;
-
-    long pos = -1;                      //用于定位是修改模板的第几条
-    for (long i = 0; i < len / 95; i++) //寻找是否有相同变量名
-    {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
-        if (strcmp(ZipParams->valueName, existValueName) == 0)
-        {
-            pos = i; //记录这条记录的位置
-        }
-        readbuf_pos += 95;
-    }
-    if (pos == -1)
-    {
-        cout << "未找到变量名！" << endl;
-        return StatusCode::UNKNOWN_PATHCODE;
-    }
-
     readbuf_pos = 0;
     for (long i = 0; i < len / 95; i++) //寻找模板是否有与更新参数相同的变量名
     {
@@ -2906,14 +2927,50 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
     memset(minValue, 0, sizeof(minValue));
     memset(timeseriesSpan, 0, sizeof(timeseriesSpan));
 
-    if (newZipParams->isArrary == 1) //是数组类型,拼接字符串
+    if (newZipParams->isTS == 1) //是Ts类型,拼接字符串
+    {
+        if (newZipParams->tsLen < 1)
+        {
+            cout << "Ts长度不能小于1" << endl;
+            return StatusCode::TSLEN_ERROR;
+        }
+        if (newZipParams->isArrary)
+        {
+            if (newZipParams->arrayLen < 1)
+            {
+                cout << "数组长度不能小于１" << endl;
+                return StatusCode::ARRAYLEN_ERROR;
+            }
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", newZipParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "][0..");
+            sprintf(s, "%d", newZipParams->arrayLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(newZipParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+        else
+        {
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", newZipParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(newZipParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+    }
+    else if (newZipParams->isArrary == 1) //是数组类型,拼接字符串
     {
         if (newZipParams->arrayLen < 1)
         {
             cout << "数组长度不能小于１" << endl;
             return StatusCode::ARRAYLEN_ERROR;
         }
-        strcpy(valueType, "ARRAY[0..");
+        strcpy(valueType, "ARRAY [0..");
         char s[10];
         sprintf(s, "%d", newZipParams->arrayLen);
         strcat(valueType, s);
@@ -2930,6 +2987,9 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
 
     strcpy(valueNmae, newZipParams->valueName);
     hasTime[0] = (char)newZipParams->hasTime;
+
+    //采样频率
+    converter.ToUInt32Buff_m(newZipParams->tsSpan, timeseriesSpan);
 
     if (DataType::JudgeValueTypeByNum(newZipParams->valueType) == "BOOL")
     {
@@ -2987,13 +3047,13 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
 
         //最大值
         char ma[4];
-        ushort maValue = (ushort)atoi(newZipParams->maxValue);
+        uint32_t maValue = (uint32_t)atoi(newZipParams->maxValue);
         converter.ToUInt32Buff_m(maValue, ma);
         memcpy(maxValue, ma, 4);
 
         //最小值
         char mi[4];
-        ushort miValue = (ushort)atoi(newZipParams->minValue);
+        uint32_t miValue = (uint32_t)atoi(newZipParams->minValue);
         converter.ToUInt32Buff_m(miValue, mi);
         memcpy(minValue, mi, 4);
     }
@@ -3122,6 +3182,12 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
             err = DB_Close(fp);
         }
     }
+    if (s_new == 1)
+        delete[] newZipParams->standardValue;
+    if (max_new == 1)
+        delete[] newZipParams->maxValue;
+    if (min_new == 1)
+        delete[] newZipParams->minValue;
     return err;
 }
 
@@ -3130,11 +3196,83 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
 {
     int err;
 
-    //检查更新后变量名输入是否合法
-    string variableName = newZipParams->valueName;
-    err = checkInputVaribaleName(variableName);
+    //如果新节点的路径、变量名为空，则保持原状态
+    if (newZipParams->pathToLine == NULL)
+        newZipParams->pathToLine = ZipParams->pathToLine;
+    if (newZipParams->valueName == NULL)
+        newZipParams->valueName = ZipParams->valueName;
+
+    //检查更新后数据类型是否合法
+    if (newZipParams->valueType < 1 || newZipParams->valueType > 10)
+    {
+        cout << "数据类型选择错误" << endl;
+        return StatusCode::UNKNOWN_TYPE;
+    }
+
+    vector<string> files;
+    readFileList(ZipParams->pathToLine, files);
+    string temPath = "";
+    for (string file : files) //找到带有后缀ziptem的文件
+    {
+        string s = file;
+        vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
+        if (vec[vec.size() - 1].find("ziptem") != string::npos)
+        {
+            temPath = file;
+            break;
+        }
+    }
+    if (temPath == "")
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+
+    err = DB_LoadZipSchema(ZipParams->pathToLine);
     if (err != 0)
         return err;
+
+    long len;
+    DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
+    char readBuf[len];
+    long readbuf_pos = 0;
+    DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
+
+    DataTypeConverter converter;
+
+    long pos = -1;                      //用于定位是修改模板的第几条
+    for (long i = 0; i < len / 95; i++) //寻找是否有相同变量名
+    {
+        char existValueName[30];
+        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        if (strcmp(ZipParams->valueName, existValueName) == 0)
+        {
+            pos = i; //记录这条记录的位置
+        }
+        readbuf_pos += 95;
+    }
+    if (pos == -1)
+    {
+        cout << "未找到变量名！" << endl;
+        return StatusCode::UNKNOWN_PATHCODE;
+    }
+
+    int s_new = 0, max_new = 0, min_new = 0;
+    if (newZipParams->standardValue == NULL)
+    {
+        s_new = 1;
+        newZipParams->standardValue = new char[10];
+        getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0);
+    }
+    if (newZipParams->maxValue == NULL)
+    {
+        max_new = 1;
+        newZipParams->maxValue = new char[10];
+        getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 1);
+    }
+    if (newZipParams->minValue == NULL)
+    {
+        min_new = 1;
+        newZipParams->minValue = new char[10];
+        getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 2);
+    }
 
     //检测更新后标准值输入是否合法
     string sValue = newZipParams->standardValue;
@@ -3167,47 +3305,6 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
     err = checkValueRange(DataType::JudgeValueTypeByNum(newZipParams->valueType), sValue, maValue, miValue);
     if (err != 0)
         return err;
-
-    vector<string> files;
-    readFileList(ZipParams->pathToLine, files);
-    string temPath = "";
-    for (string file : files) //找到带有后缀ziptem的文件
-    {
-        string s = file;
-        vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
-        if (vec[vec.size() - 1].find("ziptem") != string::npos)
-        {
-            temPath = file;
-            break;
-        }
-    }
-    if (temPath == "")
-        return StatusCode::SCHEMA_FILE_NOT_FOUND;
-
-    long len;
-    DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
-    char readBuf[len];
-    long readbuf_pos = 0;
-    DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
-
-    DataTypeConverter converter;
-
-    long pos = -1;                      //用于定位是修改模板的第几条
-    for (long i = 0; i < len / 95; i++) //寻找是否有相同变量名
-    {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
-        if (strcmp(ZipParams->valueName, existValueName) == 0)
-        {
-            pos = i; //记录这条记录的位置
-        }
-        readbuf_pos += 95;
-    }
-    if (pos == -1)
-    {
-        cout << "未找到变量名！" << endl;
-        return StatusCode::UNKNOWN_PATHCODE;
-    }
 
     readbuf_pos = 0;
     for (long i = 0; i < len / 95; i++) //寻找模板是否有与更新参数相同的变量名
@@ -3244,14 +3341,50 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
     memset(minValue, 0, sizeof(minValue));
     memset(timeseriesSpan, 0, sizeof(timeseriesSpan));
 
-    if (newZipParams->isArrary == 1) //是数组类型,拼接字符串
+    if (newZipParams->isTS == 1) //是Ts类型,拼接字符串
+    {
+        if (newZipParams->tsLen < 1)
+        {
+            cout << "Ts长度不能小于1" << endl;
+            return StatusCode::TSLEN_ERROR;
+        }
+        if (newZipParams->isArrary)
+        {
+            if (newZipParams->arrayLen < 1)
+            {
+                cout << "数组长度不能小于１" << endl;
+                return StatusCode::ARRAYLEN_ERROR;
+            }
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", newZipParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "][0..");
+            sprintf(s, "%d", newZipParams->arrayLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(newZipParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+        else
+        {
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", newZipParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(newZipParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+    }
+    else if (newZipParams->isArrary == 1) //是数组类型,拼接字符串
     {
         if (newZipParams->arrayLen < 1)
         {
             cout << "数组长度不能小于１" << endl;
             return StatusCode::ARRAYLEN_ERROR;
         }
-        strcpy(valueType, "ARRAY[0..");
+        strcpy(valueType, "ARRAY [0..");
         char s[10];
         sprintf(s, "%d", newZipParams->arrayLen);
         strcat(valueType, s);
@@ -3268,6 +3401,9 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
 
     strcpy(valueNmae, newZipParams->valueName);
     hasTime[0] = (char)newZipParams->hasTime;
+
+    //采样频率
+    converter.ToUInt32Buff_m(newZipParams->tsSpan, timeseriesSpan);
 
     if (DataType::JudgeValueTypeByNum(newZipParams->valueType) == "BOOL")
     {
@@ -3325,13 +3461,13 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
 
         //最大值
         char ma[4];
-        ushort maValue = (ushort)atoi(newZipParams->maxValue);
+        uint32_t maValue = (uint32_t)atoi(newZipParams->maxValue);
         converter.ToUInt32Buff_m(maValue, ma);
         memcpy(maxValue, ma, 4);
 
         //最小值
         char mi[4];
-        ushort miValue = (ushort)atoi(newZipParams->minValue);
+        uint32_t miValue = (uint32_t)atoi(newZipParams->minValue);
         converter.ToUInt32Buff_m(miValue, mi);
         memcpy(minValue, mi, 4);
     }
@@ -3467,6 +3603,12 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
             err = DB_Close(fp);
         }
     }
+    if (s_new == 1)
+        delete[] newZipParams->standardValue;
+    if (max_new == 1)
+        delete[] newZipParams->maxValue;
+    if (min_new == 1)
+        delete[] newZipParams->minValue;
     return err;
 }
 
@@ -3485,10 +3627,10 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     int err;
 
     //如果新节点的路径、变量名为空，则保持原状态
-    if (newZipParams->newPath == NULL)
-        newZipParams->newPath = ZipParams->pathToLine;
-    if(newZipParams->valueName==NULL)
-        newZipParams->valueName=ZipParams->valueName;
+    if (newZipParams->pathToLine == NULL)
+        newZipParams->pathToLine = ZipParams->pathToLine;
+    if (newZipParams->valueName == NULL)
+        newZipParams->valueName = ZipParams->valueName;
 
     //检查更新后数据类型是否合法
     if (newZipParams->valueType < 1 || newZipParams->valueType > 10)
@@ -3502,6 +3644,71 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     err = checkInputVaribaleName(variableName);
     if (err != 0)
         return err;
+
+    vector<string> files;
+    readFileList(ZipParams->pathToLine, files);
+    string temPath = "";
+    for (string file : files) //找到带有后缀ziptem的文件
+    {
+        string s = file;
+        vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
+        if (vec[vec.size() - 1].find("ziptem") != string::npos)
+        {
+            temPath = file;
+            break;
+        }
+    }
+    if (temPath == "")
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+
+    err = DB_LoadZipSchema(ZipParams->pathToLine);
+    if (err != 0)
+        return err;
+
+    long len;
+    DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
+    char readBuf[len];
+    long readbuf_pos = 0;
+    DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
+
+    DataTypeConverter converter;
+
+    long pos = -1;                      //用于定位是修改模板的第几条
+    for (long i = 0; i < len / 95; i++) //寻找是否有相同变量名
+    {
+        char existValueName[30];
+        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        if (strcmp(ZipParams->valueName, existValueName) == 0)
+        {
+            pos = i; //记录这条记录的位置
+        }
+        readbuf_pos += 95;
+    }
+    if (pos == -1)
+    {
+        cout << "未找到变量名！" << endl;
+        return StatusCode::UNKNOWN_PATHCODE;
+    }
+
+    int s_new = 0, max_new = 0, min_new = 0;
+    if (newZipParams->standardValue == NULL)
+    {
+        s_new = 1;
+        newZipParams->standardValue = new char[10];
+        getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0);
+    }
+    if (newZipParams->maxValue == NULL)
+    {
+        max_new = 1;
+        newZipParams->maxValue = new char[10];
+        getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 1);
+    }
+    if (newZipParams->minValue == NULL)
+    {
+        min_new = 1;
+        newZipParams->minValue = new char[10];
+        getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 2);
+    }
 
     //检测更新后标准值输入是否合法
     string sValue = newZipParams->standardValue;
@@ -3534,47 +3741,6 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     err = checkValueRange(DataType::JudgeValueTypeByNum(newZipParams->valueType), sValue, maValue, miValue);
     if (err != 0)
         return err;
-
-    vector<string> files;
-    readFileList(ZipParams->pathToLine, files);
-    string temPath = "";
-    for (string file : files) //找到带有后缀ziptem的文件
-    {
-        string s = file;
-        vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
-        if (vec[vec.size() - 1].find("ziptem") != string::npos)
-        {
-            temPath = file;
-            break;
-        }
-    }
-    if (temPath == "")
-        return StatusCode::SCHEMA_FILE_NOT_FOUND;
-
-    long len;
-    DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
-    char readBuf[len];
-    long readbuf_pos = 0;
-    DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
-
-    DataTypeConverter converter;
-
-    long pos = -1;                      //用于定位是修改模板的第几条
-    for (long i = 0; i < len / 95; i++) //寻找是否有相同变量名
-    {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
-        if (strcmp(ZipParams->valueName, existValueName) == 0)
-        {
-            pos = i; //记录这条记录的位置
-        }
-        readbuf_pos += 95;
-    }
-    if (pos == -1)
-    {
-        cout << "未找到变量名！" << endl;
-        return StatusCode::UNKNOWN_PATHCODE;
-    }
 
     readbuf_pos = 0;
     for (long i = 0; i < len / 95; i++) //寻找模板是否有与更新参数相同的变量名
@@ -3611,14 +3777,50 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     memset(minValue, 0, sizeof(minValue));
     memset(timeseriesSpan, 0, sizeof(timeseriesSpan));
 
-    if (newZipParams->isArrary == 1) //是数组类型,拼接字符串
+    if (newZipParams->isTS == 1) //是Ts类型,拼接字符串
+    {
+        if (newZipParams->tsLen < 1)
+        {
+            cout << "Ts长度不能小于1" << endl;
+            return StatusCode::TSLEN_ERROR;
+        }
+        if (newZipParams->isArrary)
+        {
+            if (newZipParams->arrayLen < 1)
+            {
+                cout << "数组长度不能小于１" << endl;
+                return StatusCode::ARRAYLEN_ERROR;
+            }
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", newZipParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "][0..");
+            sprintf(s, "%d", newZipParams->arrayLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(newZipParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+        else
+        {
+            strcpy(valueType, "TS [0..");
+            char s[10];
+            sprintf(s, "%d", newZipParams->tsLen);
+            strcat(valueType, s);
+            strcat(valueType, "] OF ");
+            string valueTypeStr = DataType::JudgeValueTypeByNum(newZipParams->valueType);
+            strcat(valueType, const_cast<char *>(valueTypeStr.c_str()));
+        }
+    }
+    else if (newZipParams->isArrary == 1) //是数组类型,拼接字符串
     {
         if (newZipParams->arrayLen < 1)
         {
             cout << "数组长度不能小于１" << endl;
             return StatusCode::ARRAYLEN_ERROR;
         }
-        strcpy(valueType, "ARRAY[0..");
+        strcpy(valueType, "ARRAY [0..");
         char s[10];
         sprintf(s, "%d", newZipParams->arrayLen);
         strcat(valueType, s);
@@ -3635,6 +3837,9 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
 
     strcpy(valueNmae, newZipParams->valueName);
     hasTime[0] = (char)newZipParams->hasTime;
+
+    //采样频率
+    converter.ToUInt32Buff_m(newZipParams->tsSpan, timeseriesSpan);
 
     if (DataType::JudgeValueTypeByNum(newZipParams->valueType) == "BOOL")
     {
@@ -3692,13 +3897,13 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
 
         //最大值
         char ma[4];
-        ushort maValue = (ushort)atoi(newZipParams->maxValue);
+        uint32_t maValue = (uint32_t)atoi(newZipParams->maxValue);
         converter.ToUInt32Buff_m(maValue, ma);
         memcpy(maxValue, ma, 4);
 
         //最小值
         char mi[4];
-        ushort miValue = (ushort)atoi(newZipParams->minValue);
+        uint32_t miValue = (uint32_t)atoi(newZipParams->minValue);
         converter.ToUInt32Buff_m(miValue, mi);
         memcpy(minValue, mi, 4);
     }
@@ -3852,6 +4057,12 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
             err = DB_Close(fp);
         }
     }
+    if (s_new == 1)
+        delete[] newZipParams->standardValue;
+    if (max_new == 1)
+        delete[] newZipParams->maxValue;
+    if (min_new == 1)
+        delete[] newZipParams->minValue;
     return err;
 }
 
@@ -4166,31 +4377,46 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 //     return 0;
 // }
 
-// int main()
-// {
-//     DB_LoadZipSchema("JinfeiTem");
-//     DataTypeConverter dt;
-//     cout<<CurrentZipTemplate.schemas.size()<<endl;
-//     cout<<CurrentZipTemplate.schemas[0].second.valueType<<endl;
-//     float max = dt.ToFloat_m(CurrentZipTemplate.schemas[0].second.maxValue);
-//     cout<<max<<endl;
-//     char floattest[4]={0};
-//     dt.ToFloatBuff_m(max,floattest);
-//     return 0;
-//     DB_ZipNodeParams param;
-//     param.pathToLine = "RbTsImageEle";
-//     param.valueName = "ZIPTEST";
-//     param.valueType = 3;
-//     param.newPath = "RbTsImgTest";
-//     param.hasTime = 1;
-//     param.isTS = 1;
-//     param.tsLen = 10;
-//     param.tsSpan = 1000;
-//     param.isArrary = 1;
-//     param.arrayLen = 10;
-//     param.standardValue = "100";
-//     param.maxValue = "120";
-//     param.minValue = "80";
-//     DB_AddNodeToZipSchema(&param);
-//     return 0;
-// }
+int main()
+{
+    // DB_LoadZipSchema("JinfeiTem");
+    // DataTypeConverter dt;
+    // cout<<CurrentZipTemplate.schemas.size()<<endl;
+    // cout<<CurrentZipTemplate.schemas[0].second.valueType<<endl;
+    // float max = dt.ToFloat_m(CurrentZipTemplate.schemas[0].second.maxValue);
+    // cout<<max<<endl;
+    // char floattest[4]={0};
+    // dt.ToFloatBuff_m(max,floattest);
+    // return 0;
+    DB_ZipNodeParams param;
+    param.pathToLine = "RbTsImgTest";
+    param.valueName = "ad";
+    param.valueType = 3;
+    param.newPath = "RbTsImgTest";
+    param.hasTime = 1;
+    param.isTS = 1;
+    param.tsLen = 10;
+    param.tsSpan = 1000;
+    param.isArrary = 1;
+    param.arrayLen = 10;
+    param.standardValue = "100";
+    param.maxValue = "120";
+    param.minValue = "80";
+    DB_AddNodeToZipSchema(&param);
+    DB_ZipNodeParams newParam;
+    newParam.pathToLine = NULL;
+    newParam.newPath = NULL;
+    newParam.valueName = NULL;
+    newParam.valueType = 3;
+    newParam.isTS = 1;
+    newParam.tsLen = 6;
+    newParam.isArrary = 1;
+    newParam.arrayLen = 10;
+    newParam.maxValue = NULL;
+    newParam.minValue = NULL;
+    newParam.standardValue = "110";
+    newParam.tsSpan = 20000;
+    newParam.hasTime = 0;
+    // DB_UpdateNodeToZipSchema(&param, &newParam);
+    return 0;
+}

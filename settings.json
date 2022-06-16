@@ -1,6 +1,6 @@
 {
     "Filename_Label": "testIEDB",
-    "FileOverFlowMode": "limit",
+    "FileOverFlowMode": "loop",
     "Pack_Mode": "auto",
     "Pack_Num": 100000,
     "Pack_Interval": 3000000000,

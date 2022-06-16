@@ -260,7 +260,7 @@ bool LimitMode(char buf[], long length)
     // printf("Disk usage: %.2f%%\n", usage * 100);
     if (usage >= 0.7) //已使用70%以上空间
     {
-        return false;
+        // return false;
         printf("Disk usage:%.2f%%\n", usage * 100);
         if (dataSize > availableSpace)
         {
