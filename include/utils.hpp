@@ -99,6 +99,7 @@ namespace StatusCode
         INVALID_QRY_PARAMS = 179,         //查询条件不合法
         INVALID_QUERY_BUFFER = 180,       //查询缓存不合法
         IMG_NOT_FOUND = 181,              //未在文件中找到图片
+        MAX_OR_MIN_ERROR = 182,           // maxOrmin只能为0,1,2
     };
 }
 namespace ValueType
