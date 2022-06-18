@@ -301,10 +301,11 @@ int STAT_Process(DB_DataBuffer *buffer, STAT_Type type)
                 cout << val << " ";
                 memcpy(newBuffer + startPos + i * 8, &val, 8);
             }
+            Py_XDECREF(pFunc);
         }
     }
     Py_DECREF(arr);
-    Py_XDECREF(pFunc);
+
     Py_XDECREF(statistics);
     free(buffer->buffer);
     buffer->buffer = NULL;

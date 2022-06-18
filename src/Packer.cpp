@@ -1,3 +1,13 @@
+/********************************************
+ * @file Packer.cpp
+ * @author your name (you@domain.com)
+ * @brief
+ * @version 0.8.5
+ * @date 2022-06-15
+ *
+ * @copyright Copyright (c) 2022
+ *
+ ********************************************/
 #include <utils.hpp>
 
 mutex packMutex;
@@ -285,13 +295,23 @@ PackFileReader::PackFileReader(string pathFilePath)
  * @param buffer
  * @param length
  */
-PackFileReader::PackFileReader(char *buffer, long length)
+PackFileReader::PackFileReader(char *buffer, long length, bool freeit)
 {
+    char tempName[20] = {0};
+    memcpy(tempName, buffer + 4, 20);
+    TemplateManager::CheckTemplate(tempName);
+    if (CurrentTemplate.hasImage)
+        hasImg = true;
+    else
+        hasImg = false;
     packBuffer = buffer;
     // buffer = NULL;
     packLength = length;
     curPos = 24;
-    usingcache = true;
+    if (freeit)
+        usingcache = false;
+    else
+        usingcache = true;
 }
 
 /**
@@ -299,11 +319,14 @@ PackFileReader::PackFileReader(char *buffer, long length)
  * @param readLength      本次应读取的文件长度
  * @param timestamp       本文件的时间戳
  * @param fileID          本文件的ID
+ * @param zipType         压缩类型
+ * @param buffer          可选，读取非图片数据到缓冲区
+ * @param completeZiped   可选，完全压缩的数据还原后的数据
  *
  * @return  数据区的起始位置
  * @note    为避免频繁的动态分配和释放内存，提高性能，此处采用指定偏移量和长度的方式，调用方自行执行内存拷贝，curPos记录当前已读到的位置
  */
-long PackFileReader::Next(int &readLength, long &timestamp, string &fileID, int &zipType)
+long PackFileReader::Next(int &readLength, long &timestamp, string &fileID, int &zipType, char **buffer, char *completeZiped)
 {
     memcpy(&timestamp, packBuffer + curPos, 8);
     curPos += 8;
@@ -337,10 +360,29 @@ long PackFileReader::Next(int &readLength, long &timestamp, string &fileID, int 
     default:
         break;
     }
+    if (buffer != nullptr)
+    {
+        switch (zipType)
+        {
+        case 0:
+            *buffer = packBuffer + dataPos;
+            break;
+        case 1:
+            *buffer = completeZiped;
+            break;
+        case 2:
+            *buffer = new char[CurrentTemplate.totalBytes];
+            memcpy(*buffer, packBuffer + dataPos, readLength);
+            ReZipBuff(buffer, readLength);
+            break;
+        default:
+            break;
+        }
+    }
     return dataPos;
 }
 
-long PackFileReader::Next(int &readLength, long &timestamp, int &zipType)
+long PackFileReader::Next(int &readLength, long &timestamp, int &zipType, char **buffer, char *completeZiped)
 {
     memcpy(&timestamp, packBuffer + curPos, 8);
     curPos += 28;
@@ -370,10 +412,29 @@ long PackFileReader::Next(int &readLength, long &timestamp, int &zipType)
     default:
         break;
     }
+    if (buffer != nullptr)
+    {
+        switch (zipType)
+        {
+        case 0:
+            *buffer = packBuffer + dataPos;
+            break;
+        case 1:
+            *buffer = completeZiped;
+            break;
+        case 2:
+            *buffer = new char[CurrentTemplate.totalBytes];
+            memcpy(*buffer, packBuffer + dataPos, readLength);
+            ReZipBuff(buffer, readLength);
+            break;
+        default:
+            break;
+        }
+    }
     return dataPos;
 }
 
-long PackFileReader::Next(int &readLength, string &fileID, int &zipType)
+long PackFileReader::Next(int &readLength, string &fileID, int &zipType, char **buffer, char *completeZiped)
 {
     curPos += 8;
     char fid[20] = {0};
@@ -405,6 +466,25 @@ long PackFileReader::Next(int &readLength, string &fileID, int &zipType)
     }
     default:
         break;
+    }
+    if (buffer != nullptr)
+    {
+        switch (zipType)
+        {
+        case 0:
+            *buffer = packBuffer + dataPos;
+            break;
+        case 1:
+            *buffer = completeZiped;
+            break;
+        case 2:
+            *buffer = new char[CurrentTemplate.totalBytes];
+            memcpy(*buffer, packBuffer + dataPos, readLength);
+            ReZipBuff(buffer, readLength);
+            break;
+        default:
+            break;
+        }
     }
     return dataPos;
 }

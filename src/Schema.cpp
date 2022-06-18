@@ -4377,46 +4377,46 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 //     return 0;
 // }
 
-int main()
-{
-    // DB_LoadZipSchema("JinfeiTem");
-    // DataTypeConverter dt;
-    // cout<<CurrentZipTemplate.schemas.size()<<endl;
-    // cout<<CurrentZipTemplate.schemas[0].second.valueType<<endl;
-    // float max = dt.ToFloat_m(CurrentZipTemplate.schemas[0].second.maxValue);
-    // cout<<max<<endl;
-    // char floattest[4]={0};
-    // dt.ToFloatBuff_m(max,floattest);
-    // return 0;
-    DB_ZipNodeParams param;
-    param.pathToLine = "RbTsImgTest";
-    param.valueName = "ad";
-    param.valueType = 3;
-    param.newPath = "RbTsImgTest";
-    param.hasTime = 1;
-    param.isTS = 1;
-    param.tsLen = 10;
-    param.tsSpan = 1000;
-    param.isArrary = 1;
-    param.arrayLen = 10;
-    param.standardValue = "100";
-    param.maxValue = "120";
-    param.minValue = "80";
-    DB_AddNodeToZipSchema(&param);
-    DB_ZipNodeParams newParam;
-    newParam.pathToLine = NULL;
-    newParam.newPath = NULL;
-    newParam.valueName = NULL;
-    newParam.valueType = 3;
-    newParam.isTS = 1;
-    newParam.tsLen = 6;
-    newParam.isArrary = 1;
-    newParam.arrayLen = 10;
-    newParam.maxValue = NULL;
-    newParam.minValue = NULL;
-    newParam.standardValue = "110";
-    newParam.tsSpan = 20000;
-    newParam.hasTime = 0;
-    // DB_UpdateNodeToZipSchema(&param, &newParam);
-    return 0;
-}
+// int main()
+// {
+//     // DB_LoadZipSchema("JinfeiTem");
+//     // DataTypeConverter dt;
+//     // cout<<CurrentZipTemplate.schemas.size()<<endl;
+//     // cout<<CurrentZipTemplate.schemas[0].second.valueType<<endl;
+//     // float max = dt.ToFloat_m(CurrentZipTemplate.schemas[0].second.maxValue);
+//     // cout<<max<<endl;
+//     // char floattest[4]={0};
+//     // dt.ToFloatBuff_m(max,floattest);
+//     // return 0;
+//     DB_ZipNodeParams param;
+//     param.pathToLine = "RbTsImgTest";
+//     param.valueName = "ad";
+//     param.valueType = 3;
+//     param.newPath = "RbTsImgTest";
+//     param.hasTime = 1;
+//     param.isTS = 1;
+//     param.tsLen = 10;
+//     param.tsSpan = 1000;
+//     param.isArrary = 1;
+//     param.arrayLen = 10;
+//     param.standardValue = "100";
+//     param.maxValue = "120";
+//     param.minValue = "80";
+//     DB_AddNodeToZipSchema(&param);
+//     DB_ZipNodeParams newParam;
+//     newParam.pathToLine = NULL;
+//     newParam.newPath = NULL;
+//     newParam.valueName = NULL;
+//     newParam.valueType = 3;
+//     newParam.isTS = 1;
+//     newParam.tsLen = 6;
+//     newParam.isArrary = 1;
+//     newParam.arrayLen = 10;
+//     newParam.maxValue = NULL;
+//     newParam.minValue = NULL;
+//     newParam.standardValue = "110";
+//     newParam.tsSpan = 20000;
+//     newParam.hasTime = 0;
+//     // DB_UpdateNodeToZipSchema(&param, &newParam);
+//     return 0;
+// }

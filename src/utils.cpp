@@ -102,6 +102,105 @@ PyObject *PythonCall(const char *moduleName, const char *funcName, const char *p
     return ret;
 }
 
+/**
+ * @brief 根据包路径和节拍位序获取图片，图片数据将放在buff中，使用前需要加载模版
+ *
+ * @param buff 缓存地址的二级指针
+ * @param length 数据长度
+ * @param path 文件路径
+ * @param index 包内节拍位序
+ * @param pathCode 路径编码
+ * @return int
+ */
+int FindImage(char **buff, long &length, string &path, int index, char *pathCode)
+{
+    DB_DataBuffer buffer;
+    buffer.savePath = path.c_str();
+    DB_ReadFile(&buffer);
+    if (buffer.bufferMalloced)
+    {
+        if (path.find(".pak") != string::npos)
+        {
+            PackFileReader reader(buffer.buffer, buffer.length);
+            reader.Skip(index);
+            int zipType, readLength;
+            long timestamp;
+            long dataPos = reader.Next(readLength, timestamp, zipType);
+            vector<long> bytes, poses;
+            vector<DataType> types;
+            int err = CurrentTemplate.FindMultiDatatypePosByCode(pathCode, reader.packBuffer + dataPos, poses, bytes, types);
+            if (err != 0)
+                return err;
+            long len = 0;
+            for (int i = 0; i < types.size(); i++)
+            {
+                if (types[i].valueType == ValueType::IMAGE)
+                    len += bytes[i] + 6;
+            }
+            *buff = new char[len];
+            long cur = 0;
+            for (int i = 0; i < types.size(); i++)
+            {
+                if (types[i].valueType == ValueType::IMAGE)
+                {
+                    memcpy(*buff + cur, reader.packBuffer + dataPos + poses[i] - 6, bytes[i] + 6);
+                    cur += bytes[i] + 6;
+                }
+            }
+            length = cur;
+            if (cur != 0)
+                return 0;
+            else
+                return StatusCode::IMG_NOT_FOUND;
+        }
+    }
+
+    return StatusCode::DATAFILE_NOT_FOUND;
+}
+
+/**
+ * @brief 根据包路径和节拍位序获取图片，图片数据将放在buff中，使用前需要加载模版
+ *
+ * @param buff 缓存地址的二级指针
+ * @param length 数据长度
+ * @param path 文件路径
+ * @param index 包内节拍位序
+ * @param valueName 变量名
+ * @return int
+ */
+int FindImage(char **buff, long &length, string &path, int index, const char *valueName)
+{
+    DB_DataBuffer buffer;
+    buffer.savePath = path.c_str();
+    DB_ReadFile(&buffer);
+    if (buffer.bufferMalloced)
+    {
+        if (path.find(".pak") != string::npos)
+        {
+            PackFileReader reader(buffer.buffer, buffer.length, true);
+            reader.Skip(index);
+            int zipType, readLength;
+            long timestamp;
+            long dataPos = reader.Next(readLength, timestamp, zipType);
+            long pos, bytes;
+            DataType type;
+            int err = CurrentTemplate.FindDatatypePosByName(valueName, reader.packBuffer + dataPos, pos, bytes, type);
+            if (err != 0)
+                return err;
+            if (type.valueType == ValueType::IMAGE)
+            {
+                *buff = new char[bytes + 6];
+                memcpy(*buff, reader.packBuffer + dataPos + pos - 6, bytes + 6); //保留图片前的6字节大小
+                length = bytes + 6;
+                return 0;
+            }
+            return StatusCode::IMG_NOT_FOUND;
+        }
+    }
+
+    return StatusCode::DATAFILE_NOT_FOUND;
+}
+
 //递归获取所有子文件夹
 void readAllDirs(vector<string> &dirs, string basePath)
 {
@@ -1065,6 +1164,14 @@ int CheckZipParams(DB_ZipParams *params)
     return 0;
 }
 
+/**
+ * @brief 根据压缩模版判断数据是否正常
+ *
+ * @param readbuff 数据缓存
+ * @param pathToLine 数据所在路径
+ * @return true
+ * @return false
+ */
 bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
 {
     // int err = 0;
@@ -1544,12 +1651,20 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
     return true;
 }
 
+/**
+ * @brief 获取解压后的数据
+ *
+ * @param buff 已压缩数据缓存的二级指针
+ * @param buffLength 解压后长度
+ * @param pathToLine 路径
+ * @return int
+ */
 int ReZipBuff(char **buff, int &buffLength, const char *pathToLine)
 {
     int err;
     //确认当前模版
-    if (ZipTemplateManager::CheckZipTemplate(pathToLine) != 0)
-        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    // if (ZipTemplateManager::CheckZipTemplate(pathToLine) != 0)
+    //     return StatusCode::SCHEMA_FILE_NOT_FOUND;
     DataTypeConverter converter;
 
     long len = buffLength;
@@ -3057,7 +3172,7 @@ int ReZipBuff(char **buff, int &buffLength, const char *pathToLine)
  * @param length 数据长度
  * @return long 图片所在偏移量
  */
-long GetZipImgPos(char *buff, long length)
+long GetZipImgPos(char *buff)
 {
     DataTypeConverter converter;
     long readbuff_pos = 0;
@@ -3758,8 +3873,7 @@ int getValueStringByValueType(char *value, ValueType::ValueType type, int schema
         else
             return 1;
     }
-    else
-        return StatusCode::UNKNOWN_TYPE;
+    return StatusCode::UNKNOWN_TYPE;
 }
 
 //有缺陷，如果SID是在已存在文件之间的ID，则SID必须存在

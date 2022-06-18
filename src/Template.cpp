@@ -293,8 +293,9 @@ long Template::GetTotalBytes()
         }
         else if (schema.second.isArray)
         {
-            cout << "total=" << total << endl;
-            total += schema.second.hasTime ? (8 + schema.second.valueBytes * schema.second.arrayLen) : (schema.second.valueBytes * schema.second.arrayLen);
+            // cout << "total=" << total << endl;
+            if (schema.second.valueType != ValueType::IMAGE)
+                total += schema.second.hasTime ? (8 + schema.second.valueBytes * schema.second.arrayLen) : (schema.second.valueBytes * schema.second.arrayLen);
         }
         else
         {

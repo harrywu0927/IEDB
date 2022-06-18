@@ -3,7 +3,7 @@
  * @author your name (you@domain.com)
  * @brief 整条数据按条件删除。因不常用，未作特殊速度优化
  * @version 0.8.4
- * @date Modified in 2022-06-14
+ * @date Modified in 2022-06-15
  *
  * @copyright Copyright (c) 2022
  *
@@ -1709,6 +1709,7 @@ int DB_DeleteRecords_New(DB_QueryParams *params)
                     for (int i = 1; i < packs.size() - 1; i++)
                     {
                         DB_DeleteFile(packs[i].first);
+                        packManager.DeletePack(packs[i].first);
                     }
                 }
                 /**
@@ -1881,6 +1882,7 @@ int DB_DeleteRecords_New(DB_QueryParams *params)
                 for (int i = 1; i < packs.size() - 1; i++)
                 {
                     DB_DeleteFile(packs[i].first);
+                    packManager.DeletePack(packs[i].first);
                 }
             }
             bool deleteComplete = false;

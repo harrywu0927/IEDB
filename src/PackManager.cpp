@@ -1,9 +1,9 @@
 /*******************************************
- * @file Delete.cpp
+ * @file PackManager.cpp
  * @author your name (you@domain.com)
  * @brief 对内存中pak的LRU管理和pak获取
- * @version 0.8.4
- * @date Modified in 2022-06-14
+ * @version 0.8.5
+ * @date Modified in 2022-06-15
  *
  * @copyright Copyright (c) 2022
  *
@@ -276,7 +276,6 @@ void PackManager::PutPack(string path, pair<char *, long> pack)
     key2pos[path] = packsInMem.begin();
     memUsed += pack.second;
 }
-float hits = 0;
 /**
  * @brief get
  *
@@ -289,12 +288,9 @@ pair<char *, long> PackManager::GetPack(string path)
     if (search != key2pos.end())
     {
         PutPack(path, key2pos[path]->second);
-        // hits++;
-        // cout << "hit" << endl;
         return key2pos[path]->second;
     }
     //缺页中断
-    // hits--;
     ReadPack(path);
     search = key2pos.find(path);
     PutPack(path, key2pos[path]->second);
@@ -302,7 +298,8 @@ pair<char *, long> PackManager::GetPack(string path)
 }
 
 /**
- * @brief 从磁盘读取包
+ * @brief 从磁盘读取包，当检测到包中含有图片时，仅在内存存储图片以外的数据
+ * 图片索引方式为包的完整路径+包内节拍位序
  *
  * @param path 包的存放路径
  */
@@ -313,7 +310,74 @@ void PackManager::ReadPack(string path)
     DB_ReadFile(&buffer);
     if (buffer.bufferMalloced)
     {
-        PutPack(path, {buffer.buffer, buffer.length});
+        PackFileReader reader(buffer.buffer, buffer.length);
+        string templateName;
+        int fileNum;
+        reader.ReadPackHead(fileNum, templateName);
+        TemplateManager::CheckTemplate(templateName);
+        ZipTemplateManager::CheckZipTemplate(templateName);
+        if (!CurrentTemplate.hasImage)
+            PutPack(path, {buffer.buffer, buffer.length});
+        else
+        {
+            char *newBuffer = (char *)malloc(reader.GetPackLength());
+            memcpy(newBuffer, reader.packBuffer, 24);
+            long posInPack = 24;
+            int imgPos = 0;
+            //假定图片数据均在模版的最后,获取第一张图片的位置
+            for (auto &schema : CurrentTemplate.schemas)
+            {
+                if (schema.second.valueType == ValueType::IMAGE)
+                    break;
+                if (schema.second.isTimeseries)
+                {
+                    if (schema.second.isArray)
+                    {
+                        imgPos += (schema.second.valueBytes * schema.second.arrayLen + 8) * schema.second.tsLen;
+                    }
+                    else
+                    {
+                        imgPos += (schema.second.valueBytes + 8) * schema.second.tsLen;
+                    }
+                }
+                else if (schema.second.isArray)
+                {
+                    imgPos += schema.second.hasTime ? (8 + schema.second.valueBytes * schema.second.arrayLen) : (schema.second.valueBytes * schema.second.arrayLen);
+                }
+                else
+                {
+                    imgPos += schema.second.hasTime ? 8 + schema.second.valueBytes : schema.second.valueBytes;
+                }
+            }
+            long cur = 24;
+            for (int i = 0; i < fileNum; i++)
+            {
+                int readLength;
+                memcpy(newBuffer + cur, reader.packBuffer + posInPack, 29);
+                posInPack += 28;
+                int zipType = (int)reader.packBuffer[posInPack++];
+                memcpy(&readLength, reader.packBuffer + posInPack, 4);
+                cur += 29;
+                if (zipType == 0)
+                {
+                    memcpy(newBuffer + cur, &imgPos, 4);
+                    cur += 4;
+                    memcpy(newBuffer + cur, reader.packBuffer + posInPack + 4, imgPos);
+                    cur += imgPos;
+                }
+                //带有图片的数据不可能完全压缩
+                else
+                {
+                    int offset = GetZipImgPos(reader.packBuffer + posInPack + 4);
+                    memcpy(newBuffer + cur, &offset, 4);
+                    cur += 4;
+                    memcpy(newBuffer + cur, reader.packBuffer + posInPack + 4, offset);
+                    cur += offset;
+                }
+                posInPack += 4 + readLength;
+            }
+            PutPack(path, {newBuffer, cur});
+        }
     }
 }
 
@@ -334,6 +398,30 @@ void PackManager::DeletePack(string path)
         {
             allPacks[pathToLine].erase(it);
             break;
+        }
+    }
+}
+
+/**
+ * @brief 修改包信息
+ *
+ * @param path 磁盘中的路径
+ * @param newPath 新的路径
+ * @param start 包的起始时间
+ * @param end 包的结束时间
+ * @note 无需关注已在内存中的包，它们会自然地被置换
+ */
+void PackManager::UpdatePack(string path, string newPath, long start, long end)
+{
+    string tmp = path;
+    string pathToLine = DataType::splitWithStl(tmp, "/")[0];
+    for (auto it = allPacks[pathToLine].begin(); it != allPacks[pathToLine].end(); it++)
+    {
+        if (it->first == path)
+        {
+            it->first = newPath;
+            it->second = make_tuple(start, end);
+            return;
         }
     }
 }

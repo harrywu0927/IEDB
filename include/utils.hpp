@@ -98,6 +98,7 @@ namespace StatusCode
         VALUE_RANGE_ERROR = 178,          //变量值范围不合法，例如最小值大于最大值
         INVALID_QRY_PARAMS = 179,         //查询条件不合法
         INVALID_QUERY_BUFFER = 180,       //查询缓存不合法
+        IMG_NOT_FOUND = 181,              //未在文件中找到图片
     };
 }
 namespace ValueType
@@ -173,13 +174,17 @@ int CheckQueryParams(DB_QueryParams *params);
 
 int CheckZipParams(DB_ZipParams *params);
 
-int ReZipBuff(char **buff, int &buffLength, const char *pathToLine);
+int ReZipBuff(char **buff, int &buffLength, const char *pathToLine = nullptr);
 
-long GetZipImgPos(char *buff,long length);
+long GetZipImgPos(char *buff);
 
 bool IsNormalIDBFile(char *readbuff, const char *pathToLine);
 
 int sysOpen(char path[]);
+
+int FindImage(char **buff, long &length, string &path, int index, char *pathCode);
+
+int FindImage(char **buff, long &length, string &path, int index, const char *valueName);
 
 int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params);
 
@@ -256,7 +261,7 @@ int checkInputValue(string variableType, string value);
 
 int checkValueRange(string variableType, string standardValue, string maxValue, string minValue);
 
-int getValueStringByValueType(char *value,ValueType::ValueType type,int schemaPos,int MaxOrMin);
+int getValueStringByValueType(char *value, ValueType::ValueType type, int schemaPos, int MaxOrMin);
 
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);
@@ -690,23 +695,24 @@ class PackFileReader
 private:
     long curPos;     //当前读到的位置
     long packLength; // pak长度
-    bool usingcache;
+    bool usingcache; //不使用缓存的阅读模式时，将回收此内存
+    bool hasImg;
 
 public:
     char *packBuffer = NULL; // pak缓存地址
     PackFileReader(string pathFilePath);
-    PackFileReader(char *buffer, long length);
+    PackFileReader(char *buffer, long length, bool freeit = false);
     ~PackFileReader()
     {
         if (packBuffer != NULL && !usingcache)
             free(packBuffer);
         // cout << "buffer freed" << endl;
     }
-    long Next(int &readLength, long &timestamp, string &fileID, int &zipType);
+    long Next(int &readLength, long &timestamp, string &fileID, int &zipType, char **buffer = nullptr, char *completeZiped = nullptr);
 
-    long Next(int &readLength, long &timestamp, int &zipType);
+    long Next(int &readLength, long &timestamp, int &zipType, char **buffer = nullptr, char *completeZiped = nullptr);
 
-    long Next(int &readLength, string &fileID, int &zipType);
+    long Next(int &readLength, string &fileID, int &zipType, char **buffer = nullptr, char *completeZiped = nullptr);
 
     void Skip(int num);
 
@@ -752,6 +758,8 @@ public:
     void ReadPack(string path);
 
     void DeletePack(string path);
+
+    void UpdatePack(string path, string newPath, long start, long end);
 
     vector<pair<string, tuple<long, long>>> GetPacksByTime(string pathToLine, long start, long end);
 
