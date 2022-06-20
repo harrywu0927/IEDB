@@ -79,6 +79,7 @@ PackManager::PackManager(long memcap) //初始化allPacks
     }
 
     memCapacity = memcap;
+    cout << "memcapacity:" << memcap << endl;
 }
 
 /**

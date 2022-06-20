@@ -795,6 +795,8 @@ public:
     static string GetFileID(string path);
     static void GetSettings();
     static neb::CJsonObject GetSetting();
+
+    long GetPacksRhythmNum(vector<pair<string, tuple<long, long>>> &packs);
 };
 extern FileIDManager fileIDManager;
 

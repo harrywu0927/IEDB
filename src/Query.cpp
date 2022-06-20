@@ -61,7 +61,7 @@ struct Extraction_Params
 	bool hasArray;
 	bool hasTS;
 	vector<long> posList;	   // position of each value
-	vector<long> bytesList;	   // bytes of each value
+	vector<long> bytesList;	   // number of bytes of each value
 	vector<DataType> typeList; // type of each value
 	vector<PathCode> pathCodes;
 	long bytes;
@@ -158,7 +158,7 @@ int DataExtraction(vector<tuple<char *, long, long, long>> &mallocedMemory, Extr
 			memcpy(copyValue + lineCur, buff + Ext_Params.posList[i], curBytes);
 			lineCur += curBytes;
 		}
-		if (Ext_Params.hasIMG && (Qry_params->valueName != NULL || strcmp(Qry_params->valueName, "") == 0))
+		if (Ext_Params.hasIMG && (Qry_params->valueName != NULL || strcmp(Qry_params->valueName, "") == 0)) //此处，若编码为精确搜索，而又输入了不同的变量名，FindSortPosFromSelectedData将返回0
 		{
 			Ext_Params.sortPos = CurrentTemplate.FindSortPosFromSelectedData(Ext_Params.bytesList, Qry_params->valueName, Ext_Params.pathCodes, Ext_Params.typeList);
 			Ext_Params.compareBytes = CurrentTemplate.FindDatatypePosByName(Qry_params->valueName, buff, Ext_Params.pos, Ext_Params.bytes, Ext_Params.type) == 0 ? Ext_Params.bytes : 0;
@@ -238,30 +238,97 @@ int DataExtraction(vector<tuple<char *, long, long, long>> &mallocedMemory, Extr
 }
 
 /**
- * @brief 提取包中的数据到缓冲区，若需要获取图片，则再从磁盘读取后放入缓冲区
+ * @brief 从文件中提取合适的数据到堆区的内存中
  *
- * @param buff
- * @param packData
- * @param dataPos
- * @param readLength
- * @param zipType
- * @param imgIndex
+ * @param
+ * @param mallocedMemory 已分配内存
+ * @param Ext_Params 提取参数
+ * @param Qry_params 查询参数
+ * @param cur 当前已选择的总字节数
+ * @param timestamp 时间戳
+ * @param data 原始数据内容
  * @return int
+ * @note 尽可能将函数的参数个数控制在7个以内
  */
-// int ExtractPackData(DB_QueryType &qryType, char **buff, PackFileReader &reader, const int &fileIndex, const vector<int> &imageIndexes = vector<int>())
-// {
-// 	switch (qryType)
-// 	{
-// 	case TIMESPAN:
-// 	{
-// 		break;
-// 	}
-// 	case
-// 	default:
-// 		break;
-// 	}
-// 	return 0;
-// }
+inline int DataExtraction_NonIMG(char *buffer, vector<tuple<char *, long, long, long>> &mallocedMemory, Extraction_Params &Ext_Params, DB_QueryParams *Qry_params, long &cur, char *data, long &timestamp)
+{
+	if (Qry_params->byPath)
+	{
+		int lineCur = 0; //记录此行当前写位置
+		for (int i = 0; i < Ext_Params.bytesList.size(); i++)
+		{
+			int curBytes = Ext_Params.typeList[i].hasTime ? Ext_Params.bytesList[i] + 8 : Ext_Params.bytesList[i];
+			memcpy(buffer + cur + lineCur, data + Ext_Params.posList[i], curBytes);
+			lineCur += curBytes;
+		}
+	}
+	else
+	{
+		memcpy(buffer + cur, data + Ext_Params.pos, Ext_Params.copyBytes);
+	}
+
+	bool canCopy = false; //根据比较结果决定是否允许拷贝
+
+	if (Qry_params->compareType != CMP_NONE && Ext_Params.compareBytes != 0 && !Ext_Params.type.isTimeseries && !Ext_Params.type.isArray) //可比较
+	{
+		//根据比较结果决定是否加入结果集
+		int compareRes = DataType::CompareValue(Ext_Params.type, data + Ext_Params.pos, Qry_params->compareValue);
+		switch (Qry_params->compareType)
+		{
+		case DB_CompareType::GT:
+		{
+			if (compareRes == 1)
+			{
+				canCopy = true;
+			}
+			break;
+		}
+		case DB_CompareType::LT:
+		{
+			if (compareRes == -1)
+			{
+				canCopy = true;
+			}
+			break;
+		}
+		case DB_CompareType::GE:
+		{
+			if (compareRes >= 0)
+			{
+				canCopy = true;
+			}
+			break;
+		}
+		case DB_CompareType::LE:
+		{
+			if (compareRes <= 0)
+			{
+				canCopy = true;
+			}
+			break;
+		}
+		case DB_CompareType::EQ:
+		{
+			if (compareRes == 0)
+			{
+				canCopy = true;
+			}
+			break;
+		}
+		default:
+			break;
+		}
+	}
+	else //不可比较，直接拷贝此数据
+		canCopy = true;
+
+	if (canCopy) //需要此数据
+	{
+		mallocedMemory.push_back(make_tuple(buffer + cur, Ext_Params.copyBytes, Ext_Params.sortPos, timestamp));
+		cur += Ext_Params.copyBytes;
+	}
+	return 0;
+}
 
 /**
  * @brief Write the selected data to a single buffer
@@ -272,8 +339,79 @@ int DataExtraction(vector<tuple<char *, long, long, long>> &mallocedMemory, Extr
  * @param length
  * @return int
  */
-int WriteDataToBuffer(vector<tuple<char *, long, long, long>> &mallocedMemory, Extraction_Params &Ext_Params, DB_QueryParams *params, long &length)
+int WriteDataToBuffer(vector<tuple<char *, long, long, long>> &mallocedMemory, Extraction_Params &Ext_Params, DB_QueryParams *params, DB_DataBuffer *buffer, long &length)
 {
+	if (length == 0)
+	{
+		buffer->buffer = NULL;
+		buffer->bufferMalloced = 0;
+		IOBusy = false;
+		return StatusCode::NO_DATA_QUERIED;
+	}
+	//动态分配内存
+	char typeNum = params->byPath ? Ext_Params.typeList.size() : 1; //数据类型总数
+	char head[(int)typeNum * 19 + 1];
+	int startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, head); //写入缓冲区头，获取数据区起始位置
+
+	char *data = (char *)malloc(startPos + length);
+	memcpy(data, head, startPos);
+
+	if (data == NULL)
+	{
+		buffer->buffer = NULL;
+		buffer->bufferMalloced = 0;
+		GarbageMemRecollection(mallocedMemory);
+		IOBusy = false;
+		return StatusCode::BUFFER_FULL;
+	}
+	//拷贝数据
+	long cur = 0;
+	if (params->queryType != LAST)
+	{
+		if (params->order == TIME_DSC) //时间降序，从内存地址集中反向拷贝
+		{
+			for (int i = mallocedMemory.size() - 1; i >= 0; i--)
+			{
+				memcpy(data + cur + startPos, get<0>(mallocedMemory[i]), get<1>(mallocedMemory[i]));
+				delete[] get<0>(mallocedMemory[i]);
+				cur += get<1>(mallocedMemory[i]);
+			}
+		}
+		else //否则按照默认顺序升序排列即可
+		{
+			for (auto &mem : mallocedMemory)
+			{
+				memcpy(data + cur + startPos, get<0>(mem), get<1>(mem));
+				delete[] get<0>(mem);
+				cur += get<1>(mem);
+			}
+		}
+	}
+	else
+	{
+		if (params->order == TIME_ASC)
+		{
+			for (int i = mallocedMemory.size() - 1; i >= 0; i--)
+			{
+				memcpy(data + cur + startPos, get<0>(mallocedMemory[i]), get<1>(mallocedMemory[i]));
+				delete[] get<0>(mallocedMemory[i]);
+				cur += get<1>(mallocedMemory[i]);
+			}
+		}
+		else //否则按照默认顺序升序排列即可
+		{
+			for (auto &mem : mallocedMemory)
+			{
+				memcpy(data + cur + startPos, get<0>(mem), get<1>(mem));
+				delete[] get<0>(mem);
+				cur += get<1>(mem);
+			}
+		}
+	}
+	buffer->bufferMalloced = 1;
+	buffer->buffer = data;
+	buffer->length = cur + startPos;
+	IOBusy = false;
 	return 0;
 }
 
@@ -404,10 +542,10 @@ int sortResult(vector<tuple<char *, long, long, long>> &mallocedMemory, DB_Query
 		sort(mallocedMemory.begin(), mallocedMemory.end(),
 			 [&type](tuple<char *, long, long, long> iter1, tuple<char *, long, long, long> iter2) -> bool
 			 {
-				 char value1[type.valueBytes], value2[type.valueBytes];
-				 memcpy(value1, get<0>(iter1) + get<2>(iter1), type.valueBytes);
-				 memcpy(value2, get<0>(iter2) + get<2>(iter2), type.valueBytes);
-				 return DataType::CompareValueInBytes(type, value1, value2) < 0;
+				 //  char value1[type.valueBytes], value2[type.valueBytes];
+				 //  memcpy(value1, get<0>(iter1) + get<2>(iter1), type.valueBytes);
+				 //  memcpy(value2, get<0>(iter2) + get<2>(iter2), type.valueBytes);
+				 return DataType::CompareValueInBytes(type, std::get<0>(iter1) + std::get<2>(iter1), get<0>(iter2) + get<2>(iter2)) < 0;
 			 });
 		break;
 	}
@@ -417,10 +555,10 @@ int sortResult(vector<tuple<char *, long, long, long>> &mallocedMemory, DB_Query
 		sort(mallocedMemory.begin(), mallocedMemory.end(),
 			 [&type](tuple<char *, long, long, long> iter1, tuple<char *, long, long, long> iter2) -> bool
 			 {
-				 char value1[type.valueBytes], value2[type.valueBytes];
-				 memcpy(value1, get<0>(iter1) + get<2>(iter1), type.valueBytes);
-				 memcpy(value2, get<0>(iter2) + get<2>(iter2), type.valueBytes);
-				 return DataType::CompareValueInBytes(type, value1, value2) > 0;
+				 //  char value1[type.valueBytes], value2[type.valueBytes];
+				 //  memcpy(value1, get<0>(iter1) + get<2>(iter1), type.valueBytes);
+				 //  memcpy(value2, get<0>(iter2) + get<2>(iter2), type.valueBytes);
+				 return DataType::CompareValueInBytes(type, std::get<0>(iter1) + std::get<2>(iter1), get<0>(iter2) + get<2>(iter2)) > 0;
 			 });
 		break;
 	}
@@ -814,6 +952,150 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 	int err;
 	Extraction_Params Ext_Params;
 	GetExtractionParams(Ext_Params, params);
+	char *rawBuff = nullptr;
+	if (!Ext_Params.hasIMG)
+		rawBuff = (char *)malloc(Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)));
+	char *completeZiped = new char[CurrentTemplate.totalBytes];
+	int rezipedlen = 0;
+	ReZipBuff(&completeZiped, rezipedlen, params->pathToLine);
+	//先对时序在前的包文件检索
+	for (auto &pack : selectedPacks)
+	{
+		auto pk = packManager.GetPack(pack.first);
+		PackFileReader packReader(pk.first, pk.second);
+		if (packReader.packBuffer == NULL)
+			continue;
+		int fileNum;
+		string templateName;
+		packReader.ReadPackHead(fileNum, templateName);
+		if (params->byPath)
+		{
+			CurrentTemplate.GetAllPathsByCode(params->pathCode, Ext_Params.pathCodes);
+		}
+		for (int i = 0; i < fileNum; i++)
+		{
+			char *buff = nullptr, *img = nullptr;
+			long timestamp;
+			int zipType, readLength;
+			long dataPos = packReader.Next(readLength, timestamp, zipType, &buff, completeZiped);
+			if (timestamp < params->start || timestamp > params->end) //在时间区间外
+				continue;
+
+			if (Ext_Params.hasIMG)
+			{
+				char *newBuffer;
+				long len;
+				err = params->byPath ? FindImage(&img, len, pack.first, i, params->pathCode) : FindImage(&img, len, pack.first, i, params->valueName);
+				if (err != 0)
+				{
+					errorCode = err;
+					continue;
+				}
+				newBuffer = new char[readLength + len];
+				memcpy(newBuffer, buff, zipType == 1 ? CurrentTemplate.totalBytes : readLength);
+				memcpy(newBuffer + readLength, img, len);
+				if (zipType == 2)
+					delete[] buff;
+				buff = newBuffer;
+				err = DataExtraction(mallocedMemory, Ext_Params, params, cur, timestamp, buff);
+			}
+			else
+			{
+				err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, timestamp);
+				// err = DataExtraction(mallocedMemory, Ext_Params, params, cur, timestamp, buff);
+			}
+
+			if (zipType == 2 || Ext_Params.hasIMG)
+				delete[] buff;
+			if (err != 0)
+			{
+				GarbageMemRecollection(mallocedMemory);
+				return err;
+			}
+		}
+	}
+
+	//对时序在后的普通文件检索
+	for (auto &file : selectedFiles)
+	{
+		long len;
+		DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+		char *buff = new char[len];
+		DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+		if (file.first.find(".idbzip") != string::npos)
+		{
+			ReZipBuff(&buff, (int &)len, params->pathToLine);
+		}
+		if (Ext_Params.hasIMG)
+			err = DataExtraction(mallocedMemory, Ext_Params, params, cur, file.second, buff);
+		else
+			err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, file.second);
+		delete[] buff;
+		if (err != 0)
+		{
+			GarbageMemRecollection(mallocedMemory);
+			return err;
+		}
+	}
+	delete[] completeZiped;
+	if (params->order != TIME_ASC && params->order != TIME_DSC) //时间排序仅需在拷贝时反向
+		sortResult(mallocedMemory, params, Ext_Params.type);
+	else if (params->order == ODR_NONE || params->order == TIME_ASC)
+	{
+		buffer->buffer = rawBuff;
+		buffer->bufferMalloced = 1;
+		buffer->length = cur;
+		return 0;
+	}
+	return WriteDataToBuffer(mallocedMemory, Ext_Params, params, buffer, cur);
+}
+
+/**
+ * @brief 根据给定的时间段和路径编码或变量名在某一产线文件夹下的数据文件中查询数据，可比较数据大小筛选，可按照时间
+ *          将结果升序或降序排序，数据存放在新开辟的缓冲区buffer中
+ * @param buffer    数据缓冲区
+ * @param params    查询请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note   单线程
+ */
+int DB_QueryByTimespan_Single_New(DB_DataBuffer *buffer, DB_QueryParams *params)
+{
+	IOBusy = true;
+	int check = CheckQueryParams(params);
+	if (check != 0)
+		return check;
+	vector<pair<string, long>> filesWithTime, selectedFiles;
+	auto selectedPacks = packManager.GetPacksByTime(params->pathToLine, params->start, params->end);
+	//获取每个数据文件，并带有时间戳
+	readDataFilesWithTimestamps(params->pathToLine, filesWithTime);
+
+	//筛选落入时间区间内的文件
+	for (auto &file : filesWithTime)
+	{
+		if (file.second >= params->start && file.second <= params->end)
+		{
+			selectedFiles.push_back(make_pair(file.first, file.second));
+		}
+	}
+
+	//确认当前模版
+	if (TemplateManager::CheckTemplate(params->pathToLine) != 0 && ZipTemplateManager::CheckZipTemplate(params->pathToLine) != 0)
+	{
+		IOBusy = false;
+		return StatusCode::SCHEMA_FILE_NOT_FOUND;
+	}
+
+	//根据时间升序排序
+	sortByTime(selectedFiles, TIME_ASC);
+
+	vector<tuple<char *, long, long, long>> mallocedMemory; //内存地址-长度-排序值偏移-时间戳元组集
+	long cur = 0;
+
+	int err;
+	Extraction_Params Ext_Params;
+	GetExtractionParams(Ext_Params, params);
 	char *completeZiped = new char[CurrentTemplate.totalBytes];
 	int rezipedlen = 0;
 	ReZipBuff(&completeZiped, rezipedlen, params->pathToLine);
@@ -858,7 +1140,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 				buff = newBuffer;
 			}
 			err = DataExtraction(mallocedMemory, Ext_Params, params, cur, timestamp, buff);
-			if (zipType != 0 || Ext_Params.hasIMG)
+			if (zipType == 2 || Ext_Params.hasIMG)
 				delete[] buff;
 			if (err != 0)
 			{
@@ -873,7 +1155,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 	{
 		long len;
 		DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
-		char *buff = new char[CurrentTemplate.totalBytes];
+		char *buff = new char[len];
 		DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 		if (file.first.find(".idbzip") != string::npos)
 		{
@@ -891,57 +1173,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 	delete[] completeZiped;
 	if (params->order != TIME_ASC && params->order != TIME_DSC) //时间排序仅需在拷贝时反向
 		sortResult(mallocedMemory, params, Ext_Params.type);
-	if (cur == 0)
-	{
-		buffer->buffer = NULL;
-		buffer->bufferMalloced = 0;
-		IOBusy = false;
-		return StatusCode::NO_DATA_QUERIED;
-	}
-	//动态分配内存
-	char typeNum = params->byPath ? Ext_Params.typeList.size() : 1; //数据类型总数
-	char head[(int)typeNum * 19 + 1];
-	int startPos;																			  //数据区起始位置
-	if (!params->byPath)																	  //根据变量名查询，仅单个变量
-		startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, head); //写入缓冲区头，获取数据区起始位置
-	else																					  //根据路径编码查询，可能有多个变量
-		startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
-	char *data = (char *)malloc(startPos + cur);
-	memcpy(data, head, startPos);
-
-	if (data == NULL)
-	{
-		buffer->buffer = NULL;
-		buffer->bufferMalloced = 0;
-		IOBusy = false;
-		return StatusCode::BUFFER_FULL;
-	}
-	//拷贝数据
-	cur = 0;
-	if (params->order == TIME_DSC) //时间降序，从内存地址集中反向拷贝
-	{
-		for (int i = mallocedMemory.size() - 1; i >= 0; i--)
-		{
-			memcpy(data + cur + startPos, get<0>(mallocedMemory[i]), get<1>(mallocedMemory[i]));
-			delete[] get<0>(mallocedMemory[i]);
-			cur += get<1>(mallocedMemory[i]);
-		}
-	}
-	else //否则按照默认顺序升序排列即可
-	{
-		for (auto &mem : mallocedMemory)
-		{
-			memcpy(data + cur + startPos, get<0>(mem), get<1>(mem));
-			delete[] get<0>(mem);
-			cur += get<1>(mem);
-		}
-	}
-
-	buffer->bufferMalloced = 1;
-	buffer->buffer = data;
-	buffer->length = cur + startPos;
-	IOBusy = false;
-	return 0;
+	return WriteDataToBuffer(mallocedMemory, Ext_Params, params, buffer, cur);
 }
 
 /**
@@ -1617,7 +1849,7 @@ int PackProcess_BrandNew(pair<string, pair<char *, long>> *packInfo, DB_QueryPar
 				memMutex.unlock();
 			}
 		}
-		if (zipType != 0)
+		if (zipType == 2 || Ext_Params->hasIMG)
 			delete[] buff;
 	}
 	return 0;
@@ -1728,7 +1960,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 	{
 		long len;
 		DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
-		char *buff = new char[CurrentTemplate.totalBytes];
+		char *buff = new char[len];
 		DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 		if (file.first.find(".idbzip") != string::npos)
 		{
@@ -1749,50 +1981,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 		IOBusy = false;
 		return StatusCode::NO_DATA_QUERIED;
 	}
-	//动态分配内存
-	char typeNum = params->byPath ? Ext_Params.typeList.size() : 1; //数据类型总数
-	char head[(int)typeNum * 19 + 1];
-	int startPos;																			  //数据区起始位置
-	if (!params->byPath)																	  //根据变量名查询，仅单个变量
-		startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, head); //写入缓冲区头，获取数据区起始位置
-	else																					  //根据路径编码查询，可能有多个变量
-		startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
-	char *data = (char *)malloc(startPos + cur);
-	memcpy(data, head, startPos);
-
-	if (data == NULL)
-	{
-		buffer->buffer = NULL;
-		buffer->bufferMalloced = 0;
-		IOBusy = false;
-		return StatusCode::BUFFER_FULL;
-	}
-	//拷贝数据
-	cur = 0;
-	if (params->order == TIME_DSC) //时间降序，从内存地址集中反向拷贝
-	{
-		for (int i = mallocedMemory.size() - 1; i >= 0; i--)
-		{
-			memcpy(data + cur + startPos, get<0>(mallocedMemory[i]), get<1>(mallocedMemory[i]));
-			delete[] get<0>(mallocedMemory[i]);
-			cur += get<1>(mallocedMemory[i]);
-		}
-	}
-	else //否则按照默认顺序升序排列即可
-	{
-		for (auto &mem : mallocedMemory)
-		{
-			memcpy(data + cur + startPos, get<0>(mem), get<1>(mem));
-			delete[] get<0>(mem);
-			cur += get<1>(mem);
-		}
-	}
-
-	buffer->bufferMalloced = 1;
-	buffer->buffer = data;
-	buffer->length = cur + startPos;
-	IOBusy = false;
-	return 0;
+	return WriteDataToBuffer(mallocedMemory, Ext_Params, params, buffer, cur_nonatomic);
 }
 
 /**
@@ -2740,7 +2929,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 		long len; //文件长度
 		char *buff;
 		DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
-		buff = new char[CurrentTemplate.totalBytes];
+		buff = new char[len];
 		DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 		if (file.first.find(".idbzip") != string::npos)
 		{
@@ -2932,7 +3121,7 @@ int DB_QueryLastRecords_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 		long len; //文件长度
 		char *buff;
 		DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
-		buff = new char[CurrentTemplate.totalBytes];
+		buff = new char[len];
 		DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 		if (file.first.find(".idbzip") != string::npos)
 		{
@@ -3048,49 +3237,7 @@ int DB_QueryLastRecords_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 	}
 	delete[] completeZiped;
 	sortResult(mallocedMemory, params, Ext_Params.type);
-	//已获取指定数量的数据，开始拷贝内存
-	if (cur != 0)
-	{
-		char typeNum = params->byPath ? Ext_Params.typeList.size() : 1; //数据类型总数
-		int startPos;													//数据区起始位置
-
-		char head[(int)typeNum * 19 + 1];														  //数据区起始位置
-		if (!params->byPath)																	  //根据变量名查询，仅单个变量
-			startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, head); //写入缓冲区头，获取数据区起始位置
-		else																					  //根据路径编码查询，可能有多个变量
-			startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
-		char *data = (char *)malloc(startPos + cur);
-		memcpy(data, head, startPos);
-		if (data == NULL)
-		{
-			buffer->buffer = NULL;
-			buffer->bufferMalloced = 0;
-			IOBusy = false;
-			return StatusCode::BUFFER_FULL;
-		}
-		//拷贝数据
-		cur = 0;
-		for (auto &mem : mallocedMemory)
-		{
-			memcpy(data + cur + startPos, get<0>(mem), get<1>(mem));
-			delete[] get<0>(mem);
-			cur += get<1>(mem);
-		}
-
-		buffer->bufferMalloced = 1;
-		buffer->buffer = data;
-		buffer->length = cur + startPos;
-	}
-	else
-	{
-		buffer->buffer = NULL;
-		buffer->bufferMalloced = 0;
-		IOBusy = false;
-		return StatusCode::NO_DATA_QUERIED;
-	}
-	IOBusy = false;
-	/*<-----!!!!!!----->*/
-	return 0;
+	return WriteDataToBuffer(mallocedMemory, Ext_Params, params, buffer, cur);
 }
 
 /**
@@ -4061,44 +4208,7 @@ int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 			}
 
 			sortResult(mallocedMemory, params, Ext_Params.type);
-			if (cur == 0)
-			{
-				buffer->buffer = NULL;
-				buffer->bufferMalloced = 0;
-				IOBusy = false;
-				return StatusCode::NO_DATA_QUERIED;
-			}
-			//动态分配内存
-			char typeNum = params->byPath ? Ext_Params.typeList.size() : 1; //数据类型总数
-			char head[(int)typeNum * 19 + 1];
-			int startPos;																			  //数据区起始位置
-			if (!params->byPath)																	  //根据变量名查询，仅单个变量
-				startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, head); //写入缓冲区头，获取数据区起始位置
-			else																					  //根据路径编码查询，可能有多个变量
-				startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
-			char *data = (char *)malloc(startPos + cur);
-			memcpy(data, head, startPos);
-			if (data == NULL)
-			{
-				buffer->buffer = NULL;
-				buffer->bufferMalloced = 0;
-				IOBusy = false;
-				return StatusCode::BUFFER_FULL;
-			}
-			//拷贝数据
-			cur = 0;
-			for (auto &mem : mallocedMemory)
-			{
-				memcpy(data + cur + startPos, get<0>(mem), get<1>(mem));
-				delete[] get<0>(mem);
-				cur += get<1>(mem);
-			}
-
-			buffer->bufferMalloced = 1;
-			buffer->buffer = data;
-			buffer->length = cur + startPos;
-			IOBusy = false;
-			return 0;
+			return WriteDataToBuffer(mallocedMemory, Ext_Params, params, buffer, cur);
 		}
 	}
 	//根据首ID+数量的多文件查询
@@ -4226,45 +4336,7 @@ int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
 		}
 
 		sortResult(mallocedMemory, params, Ext_Params.type);
-		if (cur == 0)
-		{
-			buffer->buffer = NULL;
-			buffer->bufferMalloced = 0;
-			IOBusy = false;
-			return StatusCode::NO_DATA_QUERIED;
-		}
-		//动态分配内存
-		char typeNum = params->byPath ? Ext_Params.typeList.size() : 1; //数据类型总数
-		// char *data = (char *)malloc(cur + (int)typeNum * 11 + 1);
-		char head[(int)typeNum * 19 + 1];
-		int startPos;																			  //数据区起始位置
-		if (!params->byPath)																	  //根据变量名查询，仅单个变量
-			startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, head); //写入缓冲区头，获取数据区起始位置
-		else																					  //根据路径编码查询，可能有多个变量
-			startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
-		char *data = (char *)malloc(startPos + cur);
-		memcpy(data, head, startPos);
-		if (data == NULL)
-		{
-			buffer->buffer = NULL;
-			buffer->bufferMalloced = 0;
-			IOBusy = false;
-			return StatusCode::BUFFER_FULL;
-		}
-		//拷贝数据
-		cur = 0;
-		for (auto &mem : mallocedMemory)
-		{
-			memcpy(data + cur + startPos, get<0>(mem), get<1>(mem));
-			delete[] get<0>(mem);
-			cur += get<1>(mem);
-		}
-
-		buffer->bufferMalloced = 1;
-		buffer->buffer = data;
-		buffer->length = cur + startPos;
-		IOBusy = false;
-		return 0;
+		return WriteDataToBuffer(mallocedMemory, Ext_Params, params, buffer, cur);
 	}
 
 	IOBusy = false;
@@ -4275,7 +4347,7 @@ int main()
 	// Py_Initialize();
 	DataTypeConverter converter;
 	DB_QueryParams params;
-	params.pathToLine = "RobotDataFive";
+	params.pathToLine = "JinfeiSeven";
 	params.fileID = "2";
 	// params.fileIDend = "25";
 	params.fileIDend = NULL;
@@ -4292,10 +4364,10 @@ int main()
 	code[8] = (char)0;
 	code[9] = (char)0;
 	params.pathCode = code;
-	params.valueName = "S1R1P1";
+	params.valueName = "S1OFF";
 	// params.valueName = NULL;
 	params.start = 1553728593562;
-	params.end = 1763728603642;
+	params.end = 1751908603642;
 	params.order = TIME_ASC;
 	params.compareType = CMP_NONE;
 	params.compareValue = "666";
@@ -4309,9 +4381,9 @@ int main()
 	// readDataFilesWithTimestamps("", files);
 	// Packer::Pack("/",files);
 	auto startTime = std::chrono::system_clock::now();
-	char zeros[10] = {0};
-	memcpy(params.pathCode, zeros, 10);
-	DB_QueryByFileID_New(&buffer, &params);
+	// char zeros[10] = {0};
+	// memcpy(params.pathCode, zeros, 10);
+	// DB_QueryByTimespan_Single_New(&buffer, &params);
 
 	auto endTime = std::chrono::system_clock::now();
 	// free(buffer.buffer);
@@ -4339,30 +4411,30 @@ int main()
 	// // DB_QueryLastRecords_Using_Cache(&buffer, &params);
 	// // DB_QueryByTimespan_Using_Cache(&buffer, &params);
 	// // DB_QueryByTimespan(&buffer, &params);
-	// for (int i = 0; i < 10; i++)
-	// {
-	//     startTime = std::chrono::system_clock::now();
-	//     DB_QueryByTimespan_Single(&buffer, &params);
+	for (int i = 0; i < 10; i++)
+	{
+		startTime = std::chrono::system_clock::now();
+		DB_QueryByTimespan_Single(&buffer, &params);
 
-	//     endTime = std::chrono::system_clock::now();
-	//     std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-	//     cout << buffer.length << endl;
-	//     free(buffer.buffer);
-	//     buffer.length = 0;
-	//     buffer.bufferMalloced = 0;
-	// }
-	// for (int i = 0; i < 10; i++)
-	// {
-	//     startTime = std::chrono::system_clock::now();
-	//     DB_QueryWholeFile(&buffer, &params);
+		endTime = std::chrono::system_clock::now();
+		std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+		// cout << buffer.length << endl;
+		free(buffer.buffer);
+		buffer.length = 0;
+		buffer.bufferMalloced = 0;
+	}
+	for (int i = 0; i < 10; i++)
+	{
+		startTime = std::chrono::system_clock::now();
+		DB_QueryByTimespan_Single_New(&buffer, &params);
 
-	//     endTime = std::chrono::system_clock::now();
-	//     std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-	//     // cout << buffer.length << endl;
-	//     free(buffer.buffer);
-	//     buffer.length = 0;
-	//     buffer.bufferMalloced = 0;
-	// }
+		endTime = std::chrono::system_clock::now();
+		std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+		// cout << buffer.length << endl;
+		free(buffer.buffer);
+		buffer.length = 0;
+		buffer.bufferMalloced = 0;
+	}
 	// for (int i = 0; i < 10; i++)
 	// {
 	//     startTime = std::chrono::system_clock::now();

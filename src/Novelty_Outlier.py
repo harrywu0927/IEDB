@@ -77,3 +77,21 @@ def NoveltyFit(lst):
     maxline = np.max(normal)
     print(maxline, minline)
     return float(maxline), float(minline)
+
+
+def NoveltyFit_JF(lst):
+    points = np.array(lst)
+    rows = len(lst)/2
+    points = points.reshape(int(rows), 2)
+    points = np.array(lst)
+    # print(points)
+    clf = LocalOutlierFactor(n_neighbors=2000)
+    y = clf.fit_predict(points)
+    y = np.array(y)
+    print(y)
+    rang = np.where(y > 0)
+    normal = points[rang[0]]
+    minline = np.min(normal)
+    maxline = np.max(normal)
+    print(maxline, minline)
+    return float(maxline), float(minline)
