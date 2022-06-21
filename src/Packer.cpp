@@ -502,8 +502,8 @@ void PackFileReader::Skip(int num)
         int ztype = (int)packBuffer[curPos++]; //压缩情况
         if (ztype != 1)
         {
-            int len;
-            memcpy(&len, packBuffer + curPos, 4);
+            int len = *(int *)(packBuffer + curPos);
+            // memcpy(&len, packBuffer + curPos, 4);
             curPos += 4 + len;
         }
     }

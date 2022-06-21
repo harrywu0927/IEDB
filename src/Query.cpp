@@ -360,7 +360,8 @@ int WriteDataToBuffer(vector<tuple<char *, long, long, long>> &mallocedMemory, E
 	{
 		buffer->buffer = NULL;
 		buffer->bufferMalloced = 0;
-		GarbageMemRecollection(mallocedMemory);
+		if (Ext_Params.hasIMG)
+			GarbageMemRecollection(mallocedMemory);
 		IOBusy = false;
 		return StatusCode::BUFFER_FULL;
 	}
@@ -373,7 +374,7 @@ int WriteDataToBuffer(vector<tuple<char *, long, long, long>> &mallocedMemory, E
 			for (int i = mallocedMemory.size() - 1; i >= 0; i--)
 			{
 				memcpy(data + cur + startPos, get<0>(mallocedMemory[i]), get<1>(mallocedMemory[i]));
-				delete[] get<0>(mallocedMemory[i]);
+				// delete[] get<0>(mallocedMemory[i]);
 				cur += get<1>(mallocedMemory[i]);
 			}
 		}
@@ -382,7 +383,7 @@ int WriteDataToBuffer(vector<tuple<char *, long, long, long>> &mallocedMemory, E
 			for (auto &mem : mallocedMemory)
 			{
 				memcpy(data + cur + startPos, get<0>(mem), get<1>(mem));
-				delete[] get<0>(mem);
+				// delete[] get<0>(mem);
 				cur += get<1>(mem);
 			}
 		}
@@ -394,7 +395,7 @@ int WriteDataToBuffer(vector<tuple<char *, long, long, long>> &mallocedMemory, E
 			for (int i = mallocedMemory.size() - 1; i >= 0; i--)
 			{
 				memcpy(data + cur + startPos, get<0>(mallocedMemory[i]), get<1>(mallocedMemory[i]));
-				delete[] get<0>(mallocedMemory[i]);
+				// delete[] get<0>(mallocedMemory[i]);
 				cur += get<1>(mallocedMemory[i]);
 			}
 		}
@@ -403,7 +404,7 @@ int WriteDataToBuffer(vector<tuple<char *, long, long, long>> &mallocedMemory, E
 			for (auto &mem : mallocedMemory)
 			{
 				memcpy(data + cur + startPos, get<0>(mem), get<1>(mem));
-				delete[] get<0>(mem);
+				// delete[] get<0>(mem);
 				cur += get<1>(mem);
 			}
 		}
@@ -953,8 +954,18 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 	Extraction_Params Ext_Params;
 	GetExtractionParams(Ext_Params, params);
 	char *rawBuff = nullptr;
-	if (!Ext_Params.hasIMG)
-		rawBuff = (char *)malloc(Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)));
+	if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
+	{
+		char typeNum = params->byPath ? Ext_Params.typeList.size() : 1; //数据类型总数
+		char head[(int)typeNum * 19 + 1];
+		int startPos;																			  //数据区起始位置
+		if (!params->byPath)																	  //根据变量名查询，仅单个变量
+			startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, head); //写入缓冲区头，获取数据区起始位置
+		else																					  //根据路径编码查询，可能有多个变量
+			startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
+		rawBuff = (char *)malloc(Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos);
+		memcpy(rawBuff, head, startPos);
+	}
 	char *completeZiped = new char[CurrentTemplate.totalBytes];
 	int rezipedlen = 0;
 	ReZipBuff(&completeZiped, rezipedlen, params->pathToLine);
@@ -1009,7 +1020,10 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 				delete[] buff;
 			if (err != 0)
 			{
-				GarbageMemRecollection(mallocedMemory);
+				if (Ext_Params.hasIMG)
+					GarbageMemRecollection(mallocedMemory);
+				else
+					free(rawBuff);
 				return err;
 			}
 		}
@@ -1033,12 +1047,15 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 		delete[] buff;
 		if (err != 0)
 		{
-			GarbageMemRecollection(mallocedMemory);
+			if (Ext_Params.hasIMG)
+				GarbageMemRecollection(mallocedMemory);
+			else
+				free(rawBuff);
 			return err;
 		}
 	}
 	delete[] completeZiped;
-	if (params->order != TIME_ASC && params->order != TIME_DSC) //时间排序仅需在拷贝时反向
+	if (params->order != TIME_ASC && params->order != TIME_DSC && params->order != ODR_NONE) //时间排序仅需在拷贝时反向
 		sortResult(mallocedMemory, params, Ext_Params.type);
 	else if (params->order == ODR_NONE || params->order == TIME_ASC)
 	{
@@ -1884,6 +1901,10 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 		CurrentTemplate.GetAllPathsByCode(params->pathCode, vec);
 		if (vec.size() == 1)
 			return DB_QueryByTimespan_Single(buffer, params);
+	}
+	else
+	{
+		return DB_QueryByTimespan_Single(buffer, params);
 	}
 	int check = CheckQueryParams(params);
 	if (check != 0)
@@ -2885,7 +2906,7 @@ int DB_QueryLastRecords_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note
  */
-int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryLastRecords__Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
 	IOBusy = true;
 	int check = CheckQueryParams(params);
@@ -3077,7 +3098,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
  *          others: StatusCode
  * @note
  */
-int DB_QueryLastRecords_New(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
 	IOBusy = true;
 	int check = CheckQueryParams(params);
@@ -3250,7 +3271,7 @@ int DB_QueryLastRecords_New(DB_DataBuffer *buffer, DB_QueryParams *params)
  * @note 获取产线文件夹下的所有数据文件，找到带有指定ID的文件后读取，加载模版，根据模版找到变量在数据中的位置
  *          找到后开辟内存空间，将数据放入，将缓冲区首地址赋值给buffer
  */
-int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByFileID_Old(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
 	IOBusy = true;
 	int check = CheckQueryParams(params);
@@ -3815,7 +3836,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
  * @note 获取产线文件夹下的所有数据文件，找到带有指定ID的文件后读取，加载模版，根据模版找到变量在数据中的位置
  *          找到后开辟内存空间，将数据放入，将缓冲区首地址赋值给buffer
  */
-int DB_QueryByFileID_New(DB_DataBuffer *buffer, DB_QueryParams *params)
+int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
 	IOBusy = true;
 	int check = CheckQueryParams(params);
@@ -4368,10 +4389,10 @@ int main()
 	// params.valueName = NULL;
 	params.start = 1553728593562;
 	params.end = 1751908603642;
-	params.order = TIME_ASC;
+	params.order = ODR_NONE;
 	params.compareType = CMP_NONE;
 	params.compareValue = "666";
-	params.queryType = FILEID;
+	params.queryType = TIMESPAN;
 	params.byPath = 1;
 	params.queryNums = 5;
 	DB_DataBuffer buffer;
@@ -4383,7 +4404,7 @@ int main()
 	auto startTime = std::chrono::system_clock::now();
 	// char zeros[10] = {0};
 	// memcpy(params.pathCode, zeros, 10);
-	// DB_QueryByTimespan_Single_New(&buffer, &params);
+	DB_QueryByTimespan(&buffer, &params);
 
 	auto endTime = std::chrono::system_clock::now();
 	// free(buffer.buffer);
@@ -4411,30 +4432,30 @@ int main()
 	// // DB_QueryLastRecords_Using_Cache(&buffer, &params);
 	// // DB_QueryByTimespan_Using_Cache(&buffer, &params);
 	// // DB_QueryByTimespan(&buffer, &params);
-	for (int i = 0; i < 10; i++)
-	{
-		startTime = std::chrono::system_clock::now();
-		DB_QueryByTimespan_Single(&buffer, &params);
+	// for (int i = 0; i < 10; i++)
+	// {
+	// 	startTime = std::chrono::system_clock::now();
+	// 	DB_QueryByTimespan_Single(&buffer, &params);
 
-		endTime = std::chrono::system_clock::now();
-		std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-		// cout << buffer.length << endl;
-		free(buffer.buffer);
-		buffer.length = 0;
-		buffer.bufferMalloced = 0;
-	}
-	for (int i = 0; i < 10; i++)
-	{
-		startTime = std::chrono::system_clock::now();
-		DB_QueryByTimespan_Single_New(&buffer, &params);
+	// 	endTime = std::chrono::system_clock::now();
+	// 	std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+	// 	// cout << buffer.length << endl;
+	// 	free(buffer.buffer);
+	// 	buffer.length = 0;
+	// 	buffer.bufferMalloced = 0;
+	// }
+	// for (int i = 0; i < 10; i++)
+	// {
+	// 	startTime = std::chrono::system_clock::now();
+	// 	DB_QueryByTimespan_Single_New(&buffer, &params);
 
-		endTime = std::chrono::system_clock::now();
-		std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-		// cout << buffer.length << endl;
-		free(buffer.buffer);
-		buffer.length = 0;
-		buffer.bufferMalloced = 0;
-	}
+	// 	endTime = std::chrono::system_clock::now();
+	// 	std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+	// 	// cout << buffer.length << endl;
+	// 	free(buffer.buffer);
+	// 	buffer.length = 0;
+	// 	buffer.bufferMalloced = 0;
+	// }
 	// for (int i = 0; i < 10; i++)
 	// {
 	//     startTime = std::chrono::system_clock::now();

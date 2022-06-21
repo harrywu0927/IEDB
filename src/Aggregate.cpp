@@ -15,7 +15,7 @@ int maxThreads = thread::hardware_concurrency();
 int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
-    TemplateManager::SetTemplate(params->pathToLine);
+    TemplateManager::CheckTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
@@ -26,35 +26,64 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
     int recordLength = 0; //每行的长度
-    long bufPos = 0;
-    for (int i = 0; i < typeNum; i++)
+    int pos = 1;
+    // Reconstruct the info of each value
+    for (int i = 0; i < typeNum; i++, pos += 10)
     {
         DataType type;
-        int typeVal = buffer->buffer[i * 11 + 1];
+        int typeVal = buffer->buffer[pos++];
         switch ((typeVal - 1) / 10)
         {
         case 0:
         {
             type.isArray = false;
             type.hasTime = false;
+            type.isTimeseries = false;
             break;
         }
         case 1:
         {
             type.isArray = false;
             type.hasTime = true;
+            type.isTimeseries = false;
             break;
         }
         case 2:
         {
             type.isArray = true;
             type.hasTime = false;
+            type.isTimeseries = false;
+            type.arrayLen = *((int *)(buffer->buffer + pos));
+            pos += 4;
             break;
         }
         case 3:
         {
             type.isArray = true;
             type.hasTime = true;
+            type.isTimeseries = false;
+            type.arrayLen = *((int *)(buffer->buffer + pos));
+            pos += 4;
+            break;
+        }
+        case 4:
+        {
+            type.isArray = false;
+            type.hasTime = false;
+            type.isTimeseries = true;
+            type.tsLen = *((int *)(buffer->buffer + pos));
+            pos += 4;
+            break;
+        }
+        case 5:
+        {
+            type.isArray = true;
+            type.hasTime = false;
+            type.isTimeseries = true;
+            type.tsLen = *((int *)(buffer->buffer + pos));
+            pos += 4;
+            type.arrayLen = *((int *)(buffer->buffer + pos));
+            pos += 4;
             break;
         }
         default:
@@ -63,9 +92,9 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
         type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
         type.valueBytes = DataType::GetValueBytes(type.valueType);
         typeList.push_back(type);
-        recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
+        recordLength += DataType::GetTypeBytes(type);
     }
-    long startPos = typeNum * 11 + 1;                       //数据区起始位置
+    long startPos = pos;                                    //数据区起始位置
     long rows = (buffer->length - startPos) / recordLength; //获取行数
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
@@ -242,7 +271,7 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
 int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
-    TemplateManager::SetTemplate(params->pathToLine);
+    TemplateManager::CheckTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
@@ -463,7 +492,7 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
 int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
-    TemplateManager::SetTemplate(params->pathToLine);
+    TemplateManager::CheckTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
@@ -689,7 +718,7 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
 int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
-    TemplateManager::SetTemplate(params->pathToLine);
+    TemplateManager::CheckTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
@@ -886,7 +915,7 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
 int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
-    TemplateManager::SetTemplate(params->pathToLine);
+    TemplateManager::CheckTemplate(params->pathToLine);
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
@@ -3605,12 +3634,12 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
 //     params.order = ODR_NONE;
 //     params.compareType = CMP_NONE;
 //     params.compareValue = "666";
-//     params.queryType = FILEID;
-//     params.byPath = 1;
+//     params.queryType = TIMESPAN;
+//     params.byPath = 0;
 //     params.queryNums = 40;
 //     DB_DataBuffer buffer;
-//     DB_ExecuteQuery(&buffer, &params);
-//     DB_GetAbnormalRhythm(&buffer, &params, 1, 1);
+//     // DB_ExecuteQuery(&buffer, &params);
+//     // DB_GetAbnormalRhythm(&buffer, &params, 1, 1);
 //     // long count, count2;
 //     // DB_GetAbnormalDataCount(&params, &count);
 //     // DB_GetNormalDataCount(&params, &count2);
@@ -3626,6 +3655,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
 //     //     converter.ToUInt32Buff(v, buf);
 //     //     memcpy(newbuf + 12 + i * 4, buf, 4);
 //     // }
+//     DB_AVG(&buffer, &params);
 //     if (buffer.bufferMalloced)
 //     {
 //         char buf[buffer.length];

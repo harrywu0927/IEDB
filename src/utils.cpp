@@ -370,7 +370,7 @@ void readIDBFilesList(string path, vector<string> &files)
 {
     struct dirent *ptr;
     DIR *dir;
-    string finalPath = Label;
+    string finalPath = settings("Filename_Label");
     if (path[0] != '/')
         finalPath += "/" + path;
     else
@@ -402,7 +402,7 @@ void readIDBZIPFilesList(string path, vector<string> &files)
 {
     struct dirent *ptr;
     DIR *dir;
-    string finalPath = Label;
+    string finalPath = settings("Filename_Label");
     if (path[0] != '/')
         finalPath += "/" + path;
     else
@@ -435,7 +435,7 @@ void readTEMFilesList(string path, vector<string> &files)
 {
     struct dirent *ptr;
     DIR *dir;
-    string finalPath = Label;
+    string finalPath = settings("Filename_Label");
     if (path[0] != '/')
         finalPath += "/" + path;
     else
@@ -468,7 +468,7 @@ void readZIPTEMFilesList(string path, vector<string> &files)
 {
     struct dirent *ptr;
     DIR *dir;
-    string finalPath = Label;
+    string finalPath = settings("Filename_Label");
     if (path[0] != '/')
         finalPath += "/" + path;
     else
@@ -564,7 +564,7 @@ void readDataFiles(string path, vector<string> &files)
 {
     struct dirent *ptr;
     DIR *dir;
-    string finalPath = Label;
+    string finalPath = settings("Filename_Label");
     if (path[0] != '/')
         finalPath += "/" + path;
     else
@@ -600,7 +600,7 @@ void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWi
 {
     struct dirent *ptr;
     DIR *dir;
-    string finalPath = Label;
+    string finalPath = settings("Filename_Label");
     if (path[0] != '/')
         finalPath += "/" + path;
     else
@@ -654,7 +654,7 @@ void readIDBZIPFilesWithTimestamps(string path, vector<pair<string, long>> &file
 {
     struct dirent *ptr;
     DIR *dir;
-    string finalPath = Label;
+    string finalPath = settings("Filename_Label");
     if (path[0] != '/')
         finalPath += "/" + path;
     else
@@ -706,7 +706,7 @@ void readPakFilesList(string path, vector<string> &files)
 {
     struct dirent *ptr;
     DIR *dir;
-    string finalPath = Label;
+    string finalPath = settings("Filename_Label");
     if (path[0] != '/')
         finalPath += "/" + path;
     else
