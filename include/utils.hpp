@@ -100,6 +100,8 @@ namespace StatusCode
         INVALID_QUERY_BUFFER = 180,       //查询缓存不合法
         IMG_NOT_FOUND = 181,              //未在文件中找到图片
         MAX_OR_MIN_ERROR = 182,           // maxOrmin只能为0,1,2
+        ZIPNUM_ERROR = 183,               // 压缩数量错误
+        ZIPNUM_AND_EID_ERROR = 184,       // zipNum和EID冲突，不能同时设置
     };
 }
 namespace ValueType

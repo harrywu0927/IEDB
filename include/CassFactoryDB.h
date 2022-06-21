@@ -266,6 +266,30 @@ int DB_LoadZipSchema(const char *pathToSet);
 //卸载指定路径下的压缩模板
 int DB_UnloadZipSchema(const char *pathToUnset);
 
+//查询模板信息参数
+struct DB_QueryNodeParams
+{
+    char *valueName;     //变量名
+    char *pathcode;      //编码
+    int valueType;       //数据类型
+    char *standardValue; //标准值
+    char *maxValue;      //最大值
+    char *minValue;      //最小值
+    int isArrary;
+    int arrayLen;
+    int isTS;
+    int tsLen;
+    unsigned int tsSpan;    //采样频率
+    int hasTime;            //带八字节时间戳
+    const char *pathToLine; //到产线层级的路径
+}
+
+//查询模板节点信息
+int DB_QueryNode(struct DB_QueryNodeParams *QueryParams);
+
+//查询压缩模板节点信息
+int DB_QueryZipNode(struct DB_QueryNodeParams *QueryParams);
+
 //压缩已有文件
 int DB_ZipFile(const char *ZipTemPath, const char *pathToLine);
 

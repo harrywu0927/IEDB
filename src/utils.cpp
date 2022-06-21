@@ -1096,6 +1096,10 @@ int CheckZipParams(DB_ZipParams *params)
         {
             return StatusCode::NO_FILEID;
         }
+        else if (params->zipNums <= 0 && params->EID == NULL)
+            return StatusCode::ZIPNUM_ERROR;
+        else if (params->zipNums > 1 && params->EID != NULL)
+            return StatusCode::ZIPNUM_AND_EID_ERROR;
         break;
     }
     default:
