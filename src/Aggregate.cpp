@@ -3,6 +3,79 @@
 
 int maxThreads = thread::hardware_concurrency();
 
+int ParseBufferHead(vector<DataType> &typeList, int &pos, int &recordLength, char *buffer)
+{
+    // Reconstruct the info of each value
+    int typeNum = buffer[0];
+    for (int i = 0; i < typeNum; i++, pos += 10)
+    {
+        DataType type;
+        int typeVal = buffer[pos++];
+        switch ((typeVal - 1) / 10)
+        {
+        case 0:
+        {
+            type.isArray = false;
+            type.hasTime = false;
+            type.isTimeseries = false;
+            break;
+        }
+        case 1:
+        {
+            type.isArray = false;
+            type.hasTime = true;
+            type.isTimeseries = false;
+            break;
+        }
+        case 2:
+        {
+            type.isArray = true;
+            type.hasTime = false;
+            type.isTimeseries = false;
+            type.arrayLen = *((int *)(buffer + pos));
+            pos += 4;
+            break;
+        }
+        case 3:
+        {
+            type.isArray = true;
+            type.hasTime = true;
+            type.isTimeseries = false;
+            type.arrayLen = *((int *)(buffer + pos));
+            pos += 4;
+            break;
+        }
+        case 4:
+        {
+            type.isArray = false;
+            type.hasTime = false;
+            type.isTimeseries = true;
+            type.tsLen = *((int *)(buffer + pos));
+            pos += 4;
+            break;
+        }
+        case 5:
+        {
+            type.isArray = true;
+            type.hasTime = false;
+            type.isTimeseries = true;
+            type.tsLen = *((int *)(buffer + pos));
+            pos += 4;
+            type.arrayLen = *((int *)(buffer + pos));
+            pos += 4;
+            break;
+        }
+        default:
+            break;
+        }
+        type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
+        type.valueBytes = DataType::GetValueBytes(type.valueType);
+        typeList.push_back(type);
+        recordLength += DataType::GetTypeBytes(type);
+    }
+    return 0;
+}
+
 /**
  * @brief 根据自定义查询请求参数，获取单个或多个非数组变量各自的最大值
  * @param buffer    数据缓冲区
@@ -27,73 +100,7 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
     vector<DataType> typeList;
     int recordLength = 0; //每行的长度
     int pos = 1;
-    // Reconstruct the info of each value
-    for (int i = 0; i < typeNum; i++, pos += 10)
-    {
-        DataType type;
-        int typeVal = buffer->buffer[pos++];
-        switch ((typeVal - 1) / 10)
-        {
-        case 0:
-        {
-            type.isArray = false;
-            type.hasTime = false;
-            type.isTimeseries = false;
-            break;
-        }
-        case 1:
-        {
-            type.isArray = false;
-            type.hasTime = true;
-            type.isTimeseries = false;
-            break;
-        }
-        case 2:
-        {
-            type.isArray = true;
-            type.hasTime = false;
-            type.isTimeseries = false;
-            type.arrayLen = *((int *)(buffer->buffer + pos));
-            pos += 4;
-            break;
-        }
-        case 3:
-        {
-            type.isArray = true;
-            type.hasTime = true;
-            type.isTimeseries = false;
-            type.arrayLen = *((int *)(buffer->buffer + pos));
-            pos += 4;
-            break;
-        }
-        case 4:
-        {
-            type.isArray = false;
-            type.hasTime = false;
-            type.isTimeseries = true;
-            type.tsLen = *((int *)(buffer->buffer + pos));
-            pos += 4;
-            break;
-        }
-        case 5:
-        {
-            type.isArray = true;
-            type.hasTime = false;
-            type.isTimeseries = true;
-            type.tsLen = *((int *)(buffer->buffer + pos));
-            pos += 4;
-            type.arrayLen = *((int *)(buffer->buffer + pos));
-            pos += 4;
-            break;
-        }
-        default:
-            break;
-        }
-        type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
-        type.valueBytes = DataType::GetValueBytes(type.valueType);
-        typeList.push_back(type);
-        recordLength += DataType::GetTypeBytes(type);
-    }
+    ParseBufferHead(typeList, pos, recordLength, buffer->buffer);
     long startPos = pos;                                    //数据区起始位置
     long rows = (buffer->length - startPos) / recordLength; //获取行数
     long cur = startPos;                                    //在buffer中的偏移量
@@ -120,11 +127,8 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
         {
             short max = INT16_MIN;
             char res[2];
-            char val[2];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
-                // short value = converter.ToInt16(val);
                 short value = __builtin_bswap16(*((short *)column + k));
                 if (max < value)
                 {
@@ -139,12 +143,9 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
         case ValueType::UINT:
         {
             uint16_t max = 0;
-            char val[2];
             char res[2];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
-                // unsigned short value = converter.ToUInt16(val);
                 ushort value = __builtin_bswap16(*((ushort *)column + k));
                 if (max < value)
                 {
@@ -159,12 +160,9 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
         case ValueType::DINT:
         {
             int max = INT_MIN;
-            char val[4];
             char res[4];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 4, 4);
-                // int value = converter.ToInt32(val);
                 int value = __builtin_bswap32(*((int *)column + k));
                 if (max < value)
                 {
@@ -179,12 +177,9 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
         case ValueType::UDINT:
         {
             uint max = 0;
-            char val[4];
             char res[4];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 4, 4);
-                // unsigned int value = converter.ToUInt32(val);
                 uint value = __builtin_bswap32(*((uint *)column + k));
                 if (max < value)
                 {
@@ -199,12 +194,9 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
         case ValueType::REAL:
         {
             float max = __FLT_MIN__;
-            char val[4];
             char res[4];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 4, 4);
-                // float value = converter.ToFloat(val);
                 float value = __builtin_bswap32(*((float *)column + k));
                 if (max < value)
                 {
@@ -219,12 +211,9 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
         case ValueType::TIME:
         {
             int max = INT_MIN;
-            char val[4];
             char res[4];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 4, 4);
-                // int value = converter.ToInt32(val);
                 int value = __builtin_bswap32(*((int *)column + k));
                 if (max < value)
                 {
@@ -282,46 +271,9 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
     int recordLength = 0; //每行的长度
-    long bufPos = 0;
-    for (int i = 0; i < typeNum; i++)
-    {
-        DataType type;
-        int typeVal = buffer->buffer[i * 11 + 1];
-        switch ((typeVal - 1) / 10)
-        {
-        case 0:
-        {
-            type.isArray = false;
-            type.hasTime = false;
-            break;
-        }
-        case 1:
-        {
-            type.isArray = false;
-            type.hasTime = true;
-            break;
-        }
-        case 2:
-        {
-            type.isArray = true;
-            type.hasTime = false;
-            break;
-        }
-        case 3:
-        {
-            type.isArray = true;
-            type.hasTime = true;
-            break;
-        }
-        default:
-            break;
-        }
-        type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
-        type.valueBytes = DataType::GetValueBytes(type.valueType);
-        typeList.push_back(type);
-        recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
-    }
-    long startPos = typeNum * 11 + 1;                       //数据区起始位置
+    int pos = 1;
+    ParseBufferHead(typeList, pos, recordLength, buffer->buffer);
+    long startPos = pos;                                    //数据区起始位置
     long rows = (buffer->length - startPos) / recordLength; //获取行数
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
@@ -349,8 +301,6 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
             char res[2];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
-                // short value = converter.ToInt16(val);
                 short value = __builtin_bswap16(*((short *)column + k));
                 if (min < value)
                 {
@@ -368,8 +318,6 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
             char res[2];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
-                // unsigned short value = converter.ToUInt16(val);
                 ushort value = __builtin_bswap16(*((ushort *)column + k));
                 if (min < value)
                 {
@@ -387,8 +335,6 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
             char res[4];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 4, 4);
-                // int value = converter.ToInt32(val);
                 int value = __builtin_bswap32(*((int *)column + k));
                 if (min < value)
                 {
@@ -406,8 +352,6 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
             char res[4];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 4, 4);
-                // unsigned int value = converter.ToUInt32(val);
                 uint value = __builtin_bswap32(*((uint *)column + k));
                 if (min < value)
                 {
@@ -425,8 +369,6 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
             char res[4];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 4, 4);
-                // float value = converter.ToFloat(val);
                 float value = __builtin_bswap32(*((float *)column + k));
                 if (min > value)
                 {
@@ -444,8 +386,6 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
             char res[4];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 4, 4);
-                // int value = converter.ToInt32(val);
                 int value = __builtin_bswap32(*((int *)column + k));
                 if (min > value)
                 {
@@ -503,46 +443,9 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
     int recordLength = 1; //每行的长度
-    long bufPos = 0;
-    for (int i = 0; i < typeNum; i++)
-    {
-        DataType type;
-        int typeVal = buffer->buffer[i * 11 + 1];
-        switch ((typeVal - 1) / 10)
-        {
-        case 0:
-        {
-            type.isArray = false;
-            type.hasTime = false;
-            break;
-        }
-        case 1:
-        {
-            type.isArray = false;
-            type.hasTime = true;
-            break;
-        }
-        case 2:
-        {
-            type.isArray = true;
-            type.hasTime = false;
-            break;
-        }
-        case 3:
-        {
-            type.isArray = true;
-            type.hasTime = true;
-            break;
-        }
-        default:
-            break;
-        }
-        type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
-        type.valueBytes = DataType::GetValueBytes(type.valueType);
-        typeList.push_back(type);
-        recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
-    }
-    long startPos = typeNum * 11 + 1;                       //数据区起始位置
+    int pos = 1;
+    ParseBufferHead(typeList, pos, recordLength, buffer->buffer);
+    long startPos = pos;                                    //数据区起始位置
     long rows = (buffer->length - startPos) / recordLength; //获取行数
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
@@ -568,10 +471,8 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
         case ValueType::INT:
         {
             char res[4] = {0};
-            char val[2];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
                 sum += __builtin_bswap16(*((short *)column + k));
             }
             for (int k = 0; k < 4; k++)
@@ -586,10 +487,8 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
         case ValueType::UINT:
         {
             char res[4] = {0};
-            char val[2];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
                 sum += __builtin_bswap16(*((ushort *)column + k));
             }
             for (int k = 0; k < 4; k++)
@@ -604,10 +503,8 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
         case ValueType::DINT:
         {
             char res[4] = {0};
-            char val[4];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 4, 4);
                 sum += __builtin_bswap32(*((int *)column + k));
             }
             for (int k = 0; k < 4; k++)
@@ -622,10 +519,8 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
         case ValueType::UDINT:
         {
             char res[4] = {0};
-            char val[4];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 4, 4);
                 sum += __builtin_bswap32(*((uint *)column + k));
             }
             for (int k = 0; k < 4; k++)
@@ -641,10 +536,8 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
         {
             float floatSum = 0;
             char res[4] = {0};
-            char val[4];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 4, 4);
                 floatSum += __builtin_bswap32(*((float *)column + k));
             }
             memcpy(newBuffer + newBufCur, &floatSum, 4);
@@ -654,10 +547,8 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
         case ValueType::TIME:
         {
             char res[4] = {0};
-            char val[4];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 4, 4);
                 sum += __builtin_bswap32(*((int *)column + k));
             }
             for (int k = 0; k < 4; k++)
@@ -729,46 +620,9 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
     int recordLength = 0; //每行的长度
-    long bufPos = 0;
-    for (int i = 0; i < typeNum; i++)
-    {
-        DataType type;
-        int typeVal = buffer->buffer[i * 11 + 1];
-        switch ((typeVal - 1) / 10)
-        {
-        case 0:
-        {
-            type.isArray = false;
-            type.hasTime = false;
-            break;
-        }
-        case 1:
-        {
-            type.isArray = false;
-            type.hasTime = true;
-            break;
-        }
-        case 2:
-        {
-            type.isArray = true;
-            type.hasTime = false;
-            break;
-        }
-        case 3:
-        {
-            type.isArray = true;
-            type.hasTime = true;
-            break;
-        }
-        default:
-            break;
-        }
-        type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
-        type.valueBytes = DataType::GetValueBytes(type.valueType);
-        typeList.push_back(type);
-        recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
-    }
-    long startPos = typeNum * 11 + 1;                       //数据区起始位置
+    int pos = 1;
+    ParseBufferHead(typeList, pos, recordLength, buffer->buffer);
+    long startPos = pos;                                    //数据区起始位置
     long rows = (buffer->length - startPos) / recordLength; //获取行数
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
@@ -796,7 +650,6 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[2];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
                 sum += __builtin_bswap16(*((short *)column + k));
             }
             float res = sum / (float)rows;
@@ -809,7 +662,6 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[2];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
                 sum += __builtin_bswap16(*((ushort *)column + k));
             }
             float res = sum / (float)rows;
@@ -822,7 +674,6 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[4];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 4, 4);
                 sum += __builtin_bswap32(*((int *)column + k));
             }
             float res = sum / (float)rows;
@@ -835,7 +686,6 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[4];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 4, 4);
                 sum += __builtin_bswap32(*((uint *)column + k));
             }
             float res = sum / (float)rows;
@@ -849,7 +699,6 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[4];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 4, 4);
                 sum += __builtin_bswap32(*((float *)column + k));
             }
             float res = floatSum / (float)rows;
@@ -863,7 +712,6 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
             char val[4];
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 4, 4);
                 sum += __builtin_bswap32(*((int *)column + k));
             }
             float res = sum / (float)rows;
@@ -926,46 +774,9 @@ int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
     int recordLength = 0; //每行的长度
-    long bufPos = 0;
-    for (int i = 0; i < typeNum; i++)
-    {
-        DataType type;
-        int typeVal = buffer->buffer[i * 11 + 1];
-        switch ((typeVal - 1) / 10)
-        {
-        case 0:
-        {
-            type.isArray = false;
-            type.hasTime = false;
-            break;
-        }
-        case 1:
-        {
-            type.isArray = false;
-            type.hasTime = true;
-            break;
-        }
-        case 2:
-        {
-            type.isArray = true;
-            type.hasTime = false;
-            break;
-        }
-        case 3:
-        {
-            type.isArray = true;
-            type.hasTime = true;
-            break;
-        }
-        default:
-            break;
-        }
-        type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
-        type.valueBytes = DataType::GetValueBytes(type.valueType);
-        typeList.push_back(type);
-        recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
-    }
-    long startPos = typeNum * 11 + 1;                       //数据区起始位置
+    int pos = 1;
+    ParseBufferHead(typeList, pos, recordLength, buffer->buffer);
+    long startPos = pos;                                    //数据区起始位置
     long rows = (buffer->length - startPos) / recordLength; //获取行数
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
@@ -1018,46 +829,9 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
     int recordLength = 0; //每行的长度
-    long bufPos = 0;
-    for (int i = 0; i < typeNum; i++)
-    {
-        DataType type;
-        int typeVal = buffer->buffer[i * 11 + 1];
-        switch ((typeVal - 1) / 10)
-        {
-        case 0:
-        {
-            type.isArray = false;
-            type.hasTime = false;
-            break;
-        }
-        case 1:
-        {
-            type.isArray = false;
-            type.hasTime = true;
-            break;
-        }
-        case 2:
-        {
-            type.isArray = true;
-            type.hasTime = false;
-            break;
-        }
-        case 3:
-        {
-            type.isArray = true;
-            type.hasTime = true;
-            break;
-        }
-        default:
-            break;
-        }
-        type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
-        type.valueBytes = DataType::GetValueBytes(type.valueType);
-        typeList.push_back(type);
-        recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
-    }
-    long startPos = typeNum * 11 + 1;                       //数据区起始位置
+    int pos = 1;
+    ParseBufferHead(typeList, pos, recordLength, buffer->buffer);
+    long startPos = pos;                                    //数据区起始位置
     long rows = (buffer->length - startPos) / recordLength; //获取行数
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
@@ -1085,7 +859,6 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
                 float value = (float)*((short *)column + k);
                 sum += value;
                 vals.push_back(value);
@@ -1108,7 +881,6 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
                 float value = (float)*((ushort *)column + k);
                 sum += value;
                 vals.push_back(value);
@@ -1130,7 +902,6 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
                 float value = (float)*((int *)column + k);
                 sum += value;
                 vals.push_back(value);
@@ -1152,7 +923,6 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
                 float value = (float)*((uint *)column + k);
                 sum += value;
                 vals.push_back(value);
@@ -1175,7 +945,6 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
                 float value = *((float *)column + k);
                 floatSum += value;
                 vals.push_back(value);
@@ -1197,7 +966,6 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
                 float value = (float)*((int *)column + k);
                 sum += value;
                 vals.push_back(value);
@@ -1276,46 +1044,9 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
     int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
     int recordLength = 0; //每行的长度
-    long bufPos = 0;
-    for (int i = 0; i < typeNum; i++)
-    {
-        DataType type;
-        int typeVal = buffer->buffer[i * 11 + 1];
-        switch ((typeVal - 1) / 10)
-        {
-        case 0:
-        {
-            type.isArray = false;
-            type.hasTime = false;
-            break;
-        }
-        case 1:
-        {
-            type.isArray = false;
-            type.hasTime = true;
-            break;
-        }
-        case 2:
-        {
-            type.isArray = true;
-            type.hasTime = false;
-            break;
-        }
-        case 3:
-        {
-            type.isArray = true;
-            type.hasTime = true;
-            break;
-        }
-        default:
-            break;
-        }
-        type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
-        type.valueBytes = DataType::GetValueBytes(type.valueType);
-        typeList.push_back(type);
-        recordLength += type.valueBytes + (type.hasTime ? 8 : 0);
-    }
-    long startPos = typeNum * 11 + 1;                       //数据区起始位置
+    int pos = 1;
+    ParseBufferHead(typeList, pos, recordLength, buffer->buffer);
+    long startPos = pos;                                    //数据区起始位置
     long rows = (buffer->length - startPos) / recordLength; //获取行数
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
@@ -1344,7 +1075,6 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
                 float value = (float)*((short *)column + k);
                 sum += value;
                 vals.push_back(value);
@@ -1366,7 +1096,6 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
                 float value = (float)*((ushort *)column + k);
                 sum += value;
                 vals.push_back(value);
@@ -1388,7 +1117,6 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
                 float value = (float)*((int *)column + k);
                 sum += value;
                 vals.push_back(value);
@@ -1410,7 +1138,6 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
                 float value = (float)*((uint *)column + k);
                 sum += value;
                 vals.push_back(value);
@@ -1433,7 +1160,6 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
                 float value = *((float *)column + k);
                 floatSum += value;
                 vals.push_back(value);
@@ -1455,7 +1181,6 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
-                // memcpy(val, column + k * 2, 2);
                 float value = (float)*((int *)column + k);
                 sum += value;
                 vals.push_back(value);
@@ -3608,68 +3333,68 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
     }
     return 0;
 }
-// int main()
-// {
-//     // DataTypeConverter converter;
-//     DB_QueryParams params;
-//     params.pathToLine = "JinfeiSeven";
-//     params.fileID = "JinfeiSeven15269";
-//     params.fileIDend = NULL;
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)1;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     params.pathCode = code;
-//     params.valueName = "S1OFF";
-//     // params.valueName = NULL;
-//     params.start = 0;
-//     params.end = 1751165600000;
-//     params.order = ODR_NONE;
-//     params.compareType = CMP_NONE;
-//     params.compareValue = "666";
-//     params.queryType = TIMESPAN;
-//     params.byPath = 0;
-//     params.queryNums = 40;
-//     DB_DataBuffer buffer;
-//     // DB_ExecuteQuery(&buffer, &params);
-//     // DB_GetAbnormalRhythm(&buffer, &params, 1, 1);
-//     // long count, count2;
-//     // DB_GetAbnormalDataCount(&params, &count);
-//     // DB_GetNormalDataCount(&params, &count2);
-//     // DB_QueryByFileID(&buffer, &params);
-//     // char *newbuf = (char *)malloc(212);
-//     // memcpy(newbuf, buffer.buffer, 12);
-//     // DataTypeConverter converter;
-//     // for (int i = 0; i < 50; i++)
-//     // {
-//     //     uint v;
-//     //     v = 95 + rand() % 5;
-//     //     char buf[4];
-//     //     converter.ToUInt32Buff(v, buf);
-//     //     memcpy(newbuf + 12 + i * 4, buf, 4);
-//     // }
-//     DB_AVG(&buffer, &params);
-//     if (buffer.bufferMalloced)
-//     {
-//         char buf[buffer.length];
-//         memcpy(buf, buffer.buffer, buffer.length);
-//         cout << buffer.length << endl;
-//         for (int i = 0; i < buffer.length; i++)
-//         {
-//             cout << (int)buf[i] << " ";
-//             if (i % 11 == 0)
-//                 cout << endl;
-//         }
+int main()
+{
+    // DataTypeConverter converter;
+    DB_QueryParams params;
+    params.pathToLine = "JinfeiSeven";
+    params.fileID = "JinfeiSeven15269";
+    params.fileIDend = NULL;
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)1;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    params.pathCode = code;
+    params.valueName = "S1OFF";
+    // params.valueName = NULL;
+    params.start = 0;
+    params.end = 1751165600000;
+    params.order = ODR_NONE;
+    params.compareType = CMP_NONE;
+    params.compareValue = "666";
+    params.queryType = TIMESPAN;
+    params.byPath = 0;
+    params.queryNums = 40;
+    DB_DataBuffer buffer;
+    // DB_ExecuteQuery(&buffer, &params);
+    // DB_GetAbnormalRhythm(&buffer, &params, 1, 1);
+    // long count, count2;
+    // DB_GetAbnormalDataCount(&params, &count);
+    // DB_GetNormalDataCount(&params, &count2);
+    // DB_QueryByFileID(&buffer, &params);
+    // char *newbuf = (char *)malloc(212);
+    // memcpy(newbuf, buffer.buffer, 12);
+    // DataTypeConverter converter;
+    // for (int i = 0; i < 50; i++)
+    // {
+    //     uint v;
+    //     v = 95 + rand() % 5;
+    //     char buf[4];
+    //     converter.ToUInt32Buff(v, buf);
+    //     memcpy(newbuf + 12 + i * 4, buf, 4);
+    // }
+    DB_AVG(&buffer, &params);
+    if (buffer.bufferMalloced)
+    {
+        char buf[buffer.length];
+        memcpy(buf, buffer.buffer, buffer.length);
+        cout << buffer.length << endl;
+        for (int i = 0; i < buffer.length; i++)
+        {
+            cout << (int)buf[i] << " ";
+            if (i % 11 == 0)
+                cout << endl;
+        }
 
-//         free(buffer.buffer);
-//     }
-//     Py_Finalize();
-//     return 0;
-// }
+        free(buffer.buffer);
+    }
+    Py_Finalize();
+    return 0;
+}

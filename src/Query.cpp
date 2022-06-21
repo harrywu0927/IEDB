@@ -956,7 +956,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 	char *rawBuff = nullptr;
 	if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
 	{
-		char typeNum = params->byPath ? Ext_Params.typeList.size() : 1; //数据类型总数
+		char typeNum = params->byPath ? (Ext_Params.typeList.size() == 0 ? 1 : Ext_Params.typeList.size()) : 1; //数据类型总数
 		char head[(int)typeNum * 19 + 1];
 		int startPos;																			  //数据区起始位置
 		if (!params->byPath)																	  //根据变量名查询，仅单个变量
@@ -965,6 +965,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 			startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
 		rawBuff = (char *)malloc(Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos);
 		memcpy(rawBuff, head, startPos);
+		cur = startPos;
 	}
 	char *completeZiped = new char[CurrentTemplate.totalBytes];
 	int rezipedlen = 0;
@@ -4389,11 +4390,11 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 // 	// params.valueName = NULL;
 // 	params.start = 1553728593562;
 // 	params.end = 1751908603642;
-// 	params.order = TIME_ASC;
+// 	params.order = ODR_NONE;
 // 	params.compareType = CMP_NONE;
 // 	params.compareValue = "666";
-// 	params.queryType = FILEID;
-// 	params.byPath = 1;
+// 	params.queryType = TIMESPAN;
+// 	params.byPath = 0;
 // 	params.queryNums = 5;
 // 	DB_DataBuffer buffer;
 // 	buffer.savePath = "/";
@@ -4404,7 +4405,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 // 	auto startTime = std::chrono::system_clock::now();
 // 	// char zeros[10] = {0};
 // 	// memcpy(params.pathCode, zeros, 10);
-// 	// DB_QueryByTimespan_Single_New(&buffer, &params);
+// 	DB_QueryByTimespan(&buffer, &params);
 
 // 	auto endTime = std::chrono::system_clock::now();
 // 	// free(buffer.buffer);
@@ -4432,30 +4433,30 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 // 	// // DB_QueryLastRecords_Using_Cache(&buffer, &params);
 // 	// // DB_QueryByTimespan_Using_Cache(&buffer, &params);
 // 	// // DB_QueryByTimespan(&buffer, &params);
-// 	for (int i = 0; i < 10; i++)
-// 	{
-// 		startTime = std::chrono::system_clock::now();
-// 		DB_QueryByTimespan_Single(&buffer, &params);
+// 	// for (int i = 0; i < 10; i++)
+// 	// {
+// 	// 	startTime = std::chrono::system_clock::now();
+// 	// 	DB_QueryByTimespan_Single(&buffer, &params);
 
-// 		endTime = std::chrono::system_clock::now();
-// 		std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-// 		// cout << buffer.length << endl;
-// 		free(buffer.buffer);
-// 		buffer.length = 0;
-// 		buffer.bufferMalloced = 0;
-// 	}
-// 	for (int i = 0; i < 10; i++)
-// 	{
-// 		startTime = std::chrono::system_clock::now();
-// 		DB_QueryByTimespan_Single_New(&buffer, &params);
+// 	// 	endTime = std::chrono::system_clock::now();
+// 	// 	std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+// 	// 	// cout << buffer.length << endl;
+// 	// 	free(buffer.buffer);
+// 	// 	buffer.length = 0;
+// 	// 	buffer.bufferMalloced = 0;
+// 	// }
+// 	// for (int i = 0; i < 10; i++)
+// 	// {
+// 	// 	startTime = std::chrono::system_clock::now();
+// 	// 	DB_QueryByTimespan_Single_New(&buffer, &params);
 
-// 		endTime = std::chrono::system_clock::now();
-// 		std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-// 		// cout << buffer.length << endl;
-// 		free(buffer.buffer);
-// 		buffer.length = 0;
-// 		buffer.bufferMalloced = 0;
-// 	}
+// 	// 	endTime = std::chrono::system_clock::now();
+// 	// 	std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+// 	// 	// cout << buffer.length << endl;
+// 	// 	free(buffer.buffer);
+// 	// 	buffer.length = 0;
+// 	// 	buffer.bufferMalloced = 0;
+// 	// }
 // 	// for (int i = 0; i < 10; i++)
 // 	// {
 // 	//     startTime = std::chrono::system_clock::now();
@@ -4505,12 +4506,12 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 // 		// char buf[buffer.length];
 // 		// memcpy(buf, buffer.buffer, buffer.length);
 // 		cout << buffer.length << endl;
-// 		// for (int i = 0; i < buffer.length; i++)
-// 		// {
-// 		// 	cout << (int)buf[i] << " ";
-// 		// 	if (i % 11 == 0)
-// 		// 		cout << endl;
-// 		// }
+// 		for (int i = 0; i < 50; i++)
+// 		{
+// 			cout << (int)*(char *)(buffer.buffer + i) << " ";
+// 			if (i % 11 == 0)
+// 				cout << endl;
+// 		}
 
 // 		free(buffer.buffer);
 // 	}

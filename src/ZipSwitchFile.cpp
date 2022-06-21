@@ -1761,16 +1761,16 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
 
 //     return 0;
 // }
-int main()
-{
-    DB_ZipSwitchFile("JinfeiSeven", "JinfeiSeven");
-    DB_ZipParams param;
-    param.ZipType = FILE_ID;
-    param.pathToLine = "RobotTsTest";
-    param.fileID = "RobotTsTest2";
-    // DB_ZipSwitchFileByFileID(&param);
-    // DB_ReZipSwitchFileByFileID(&param);
-    // DB_ZipSwitchFile("RobotTsTest","RobotTsTest");
-    // DB_ReZipSwitchFile("RobotTsTest","RobotTsTest");
-    return 0;
-}
+// int main()
+// {
+//     DB_ZipSwitchFile("JinfeiSeven", "JinfeiSeven");
+//     DB_ZipParams param;
+//     param.ZipType = FILE_ID;
+//     param.pathToLine = "RobotTsTest";
+//     param.fileID = "RobotTsTest2";
+//     // DB_ZipSwitchFileByFileID(&param);
+//     // DB_ReZipSwitchFileByFileID(&param);
+//     // DB_ZipSwitchFile("RobotTsTest","RobotTsTest");
+//     // DB_ReZipSwitchFile("RobotTsTest","RobotTsTest");
+//     return 0;
+// }

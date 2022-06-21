@@ -340,7 +340,8 @@ long PackFileReader::Next(int &readLength, long &timestamp, string &fileID, int 
     {
     case 0: //非压缩
     {
-        memcpy(&readLength, packBuffer + curPos, 4);
+        // memcpy(&readLength, packBuffer + curPos, 4);
+        readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
         curPos += 4 + readLength;
         break;
@@ -352,7 +353,8 @@ long PackFileReader::Next(int &readLength, long &timestamp, string &fileID, int 
     }
     case 2: //不完全压缩
     {
-        memcpy(&readLength, packBuffer + curPos, 4);
+        // memcpy(&readLength, packBuffer + curPos, 4);
+        readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
         curPos += 4 + readLength;
         break;
@@ -392,7 +394,8 @@ long PackFileReader::Next(int &readLength, long &timestamp, int &zipType, char *
     {
     case 0: //非压缩
     {
-        memcpy(&readLength, packBuffer + curPos, 4);
+        // memcpy(&readLength, packBuffer + curPos, 4);
+        readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
         curPos += 4 + readLength;
         break;
@@ -404,7 +407,8 @@ long PackFileReader::Next(int &readLength, long &timestamp, int &zipType, char *
     }
     case 2: //不完全压缩
     {
-        memcpy(&readLength, packBuffer + curPos, 4);
+        // memcpy(&readLength, packBuffer + curPos, 4);
+        readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
         curPos += 4 + readLength;
         break;
@@ -447,7 +451,8 @@ long PackFileReader::Next(int &readLength, string &fileID, int &zipType, char **
     {
     case 0: //非压缩
     {
-        memcpy(&readLength, packBuffer + curPos, 4);
+        // memcpy(&readLength, packBuffer + curPos, 4);
+        readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
         curPos += 4 + readLength;
         break;
@@ -459,7 +464,8 @@ long PackFileReader::Next(int &readLength, string &fileID, int &zipType, char **
     }
     case 2: //不完全压缩
     {
-        memcpy(&readLength, packBuffer + curPos, 4);
+        // memcpy(&readLength, packBuffer + curPos, 4);
+        readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
         curPos += 4 + readLength;
         break;
@@ -503,7 +509,6 @@ void PackFileReader::Skip(int num)
         if (ztype != 1)
         {
             int len = *(int *)(packBuffer + curPos);
-            // memcpy(&len, packBuffer + curPos, 4);
             curPos += 4 + len;
         }
     }
