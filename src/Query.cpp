@@ -1055,7 +1055,9 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 	int err;
 	Extraction_Params Ext_Params;
-	GetExtractionParams(Ext_Params, params);
+	err = GetExtractionParams(Ext_Params, params);
+	if (err != 0)
+		return err;
 	char *rawBuff = nullptr;
 	if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
 	{
@@ -1167,6 +1169,13 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 		buffer->bufferMalloced = 1;
 		buffer->length = cur;
 		return 0;
+	}
+	if (cur == 0)
+	{
+		buffer->buffer = NULL;
+		buffer->length = 0;
+		buffer->bufferMalloced = 0;
+		return StatusCode::NO_DATA_QUERIED;
 	}
 	return WriteDataToBuffer(mallocedMemory, Ext_Params, params, buffer, cur);
 }
@@ -2035,7 +2044,9 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 	// atomic<vector<tuple<char *, long, long, long>>> mallocedMemory;
 	int err;
 	Extraction_Params Ext_Params;
-	GetExtractionParams(Ext_Params, params);
+	err = GetExtractionParams(Ext_Params, params);
+	if (err != 0)
+		return err;
 	//先对时序在前的包文件检索
 	if (selectedPacks.size() > 0)
 	{
@@ -3225,7 +3236,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 	readDataFilesWithTimestamps(params->pathToLine, selectedFiles);
 
 	vector<PathCode> pathCodes;
-	if (params->byPath)
+	if (params->byPath && params->pathCode != NULL)
 		CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
 	//根据时间降序排序
 	sortByTime(selectedFiles, TIME_DSC);
@@ -3281,9 +3292,6 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 			int fileNum;
 			string templateName;
 			packReader.ReadPackHead(fileNum, templateName);
-
-			if (params->byPath)
-				CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
 			stack<pair<long, tuple<int, long, int>>> filestk;
 			for (int i = 0; i < fileNum; i++)
 			{
