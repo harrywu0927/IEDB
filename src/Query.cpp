@@ -97,7 +97,7 @@ int CheckQueryParams(DB_QueryParams *params)
 		if (codes.size() > 1 && params->order != ODR_NONE && params->valueName == NULL)
 			return StatusCode::VARIABLE_NOT_ASSIGNED;
 		vector<PathCode> pathCode;
-		if (params->valueName != NULL && CurrentTemplate.GetCodeByName(params->valueName, pathCode) == 0)
+		if (params->valueName != NULL && CurrentTemplate.GetCodeByName(params->valueName, pathCode) == 0 && (params->order != ODR_NONE || params->compareType != CMP_NONE))
 		{
 			bool codeFound = false;
 			for (auto &code : codes)
@@ -4502,7 +4502,7 @@ int main()
 	DataTypeConverter converter;
 	DB_QueryParams params;
 	params.pathToLine = "JinfeiSeven";
-	params.fileID = "2";
+	params.fileID = "5";
 	// params.fileIDend = "25";
 	params.fileIDend = NULL;
 	char code[10];
@@ -4517,13 +4517,13 @@ int main()
 	code[7] = (char)0;
 	code[8] = (char)0;
 	code[9] = (char)0;
-	params.pathCode = NULL;
-	params.valueName = "S2ONN";
+	params.pathCode = code;
+	params.valueName = "S2ON";
 	// params.valueName = NULL;
 	params.start = 1553728593562;
 	params.end = 1751908603642;
-	params.order = ASCEND;
-	params.compareType = LT;
+	params.order = ODR_NONE;
+	params.compareType = CMP_NONE;
 	params.compareValue = "110";
 	params.queryType = TIMESPAN;
 	params.byPath = 1;
