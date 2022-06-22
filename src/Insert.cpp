@@ -36,7 +36,7 @@ void *checkTime(void *ptr)
             {
                 cout << "Packing " << dir << endl;
                 removeFilenameLabel(dir);
-                // DB_Pack(dir.c_str(), 0, 0);
+                DB_Pack(dir.c_str(), 0, 0);
             }
             cout << "Pack complete" << endl;
         }
