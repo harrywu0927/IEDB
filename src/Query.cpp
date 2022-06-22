@@ -3223,15 +3223,12 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 		IOBusy = false;
 		return StatusCode::SCHEMA_FILE_NOT_FOUND;
 	}
-	cout << "start check query params" << endl;
 	int check = CheckQueryParams(params);
 	if (check != 0)
 	{
-		cout << "check=" << check << endl;
 		IOBusy = false;
 		return check;
 	}
-	cout << "query params checked" << endl;
 	vector<pair<string, long>> selectedFiles, packsWithTime;
 	vector<string> packFiles;
 
@@ -3253,7 +3250,6 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 	int selectedNum = 0;
 	Extraction_Params Ext_Params;
 	err = GetExtractionParams(Ext_Params, params);
-	cout << "err=" << err << endl;
 	if (err != 0)
 		return err;
 	for (auto &file : selectedFiles)
@@ -3970,11 +3966,15 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		return StatusCode::SCHEMA_FILE_NOT_FOUND;
 	}
 	int check = CheckQueryParams(params);
+	cout << "check = " << check << endl;
 	if (check != 0)
 	{
 		IOBusy = false;
 		return check;
 	}
+	cout << "check complete " << endl;
+	if (params->pathCode == NULL)
+		cout << "pathcode null" << endl;
 	string pathToLine = params->pathToLine;
 	string fileid = params->fileID;
 	string fileidEnd = params->fileIDend == NULL ? "" : params->fileIDend;
@@ -4517,7 +4517,7 @@ int main()
 	code[7] = (char)0;
 	code[8] = (char)0;
 	code[9] = (char)0;
-	params.pathCode = code;
+	params.pathCode = NULL;
 	params.valueName = "S2ONN";
 	// params.valueName = NULL;
 	params.start = 1553728593562;
@@ -4537,7 +4537,7 @@ int main()
 	auto startTime = std::chrono::system_clock::now();
 	// char zeros[10] = {0};
 	// memcpy(params.pathCode, zeros, 10);
-	DB_QueryLastRecords(&buffer, &params);
+	DB_QueryByFileID(&buffer, &params);
 
 	auto endTime = std::chrono::system_clock::now();
 	// free(buffer.buffer);

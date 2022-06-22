@@ -84,7 +84,6 @@ int Template::GetAllPathsByCode(char *pathCode, vector<PathCode> &pathCodes)
     {
         level--;
     }
-    cout << this->schemas.size() << endl;
     for (auto const &schema : this->schemas)
     {
         bool codeEquals = true;
@@ -100,7 +99,6 @@ int Template::GetAllPathsByCode(char *pathCode, vector<PathCode> &pathCodes)
             pathCodes.push_back(schema.first);
         }
     }
-    cout << pathCodes.size() << endl;
     return pathCodes.size() > 0 ? 0 : StatusCode::UNKNOWN_PATHCODE;
 }
 
