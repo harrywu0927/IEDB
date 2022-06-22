@@ -95,9 +95,10 @@ void autoPacker()
         while (IOBusy)
         {
         }
-        IOBusy = true;
         if (settings("Pack_Mode") != "auto")
             return;
+        IOBusy = true;
+
         dirs.clear();
         readAllDirs(dirs, settings("Filename_Label"));
         vector<pair<string, long>> files;

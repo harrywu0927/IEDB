@@ -1004,13 +1004,39 @@ int CheckQueryParams(DB_QueryParams *params)
     {
         return StatusCode::NO_PATHCODE_OR_NAME;
     }
-    if (params->compareType != CMP_NONE && params->valueName == NULL)
+    if (params->byPath == 0 && params->valueName == NULL)
     {
-        return StatusCode::VARIABLE_NOT_ASSIGNED;
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
     }
-    if (params->compareType != CMP_NONE && params->compareValue == NULL)
+    if (params->byPath == 1 && params->pathCode == NULL)
     {
-        return StatusCode::NO_COMPARE_VALUE;
+        return StatusCode::PATHCODE_CHECK_ERROR;
+    }
+    if (params->byPath == 1)
+    {
+        vector<PathCode> codes;
+        if (CurrentTemplate.GetAllPathsByCode(params->pathCode, codes) != 0)
+            return StatusCode::UNKNOWN_PATHCODE;
+
+        if (codes.size() > 1 && params->compareType != CMP_NONE && params->valueName == NULL)
+            return StatusCode::VARIABLE_NOT_ASSIGNED;
+        if (codes.size() > 1 && params->order != ODR_NONE && params->valueName == NULL)
+            return StatusCode::VARIABLE_NOT_ASSIGNED;
+        vector<PathCode> pathCode;
+        if (params->valueName != NULL && CurrentTemplate.GetCodeByName(params->valueName, pathCode) != 0)
+        {
+            bool codeFound = false;
+            for (auto &code : codes)
+            {
+                if (code == pathCode[0])
+                {
+                    codeFound = true;
+                    break;
+                }
+            }
+            if (!codeFound)
+                return StatusCode::VARIABLE_NAME_NOT_INT_CODE;
+        }
     }
     switch (params->queryType)
     {
