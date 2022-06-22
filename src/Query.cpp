@@ -61,6 +61,103 @@ void GarbageMemRecollection(vector<tuple<char *, long, long, long>> &mallocedMem
 }
 
 /**
+ * @brief 在进行所有的查询操作前，检查输入的查询参数是否合法，若可能引发严重错误，则不允许进入查询
+ * @param params        查询请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note
+ */
+int CheckQueryParams(DB_QueryParams *params)
+{
+	if (params->pathToLine == NULL)
+	{
+		return StatusCode::EMPTY_PATH_TO_LINE;
+	}
+	if (params->pathCode == NULL && params->valueName == NULL)
+	{
+		return StatusCode::NO_PATHCODE_OR_NAME;
+	}
+	if (params->byPath == 0 && params->valueName == NULL)
+	{
+		return StatusCode::VARIABLE_NAME_CHECK_ERROR;
+	}
+	if (params->byPath == 1 && params->pathCode == NULL)
+	{
+		return StatusCode::PATHCODE_CHECK_ERROR;
+	}
+	if (params->byPath == 1)
+	{
+		vector<PathCode> codes;
+		if (CurrentTemplate.GetAllPathsByCode(params->pathCode, codes) != 0)
+			return StatusCode::UNKNOWN_PATHCODE;
+
+		if (codes.size() > 1 && params->compareType != CMP_NONE && params->valueName == NULL)
+			return StatusCode::VARIABLE_NOT_ASSIGNED;
+		if (codes.size() > 1 && params->order != ODR_NONE && params->valueName == NULL)
+			return StatusCode::VARIABLE_NOT_ASSIGNED;
+		vector<PathCode> pathCode;
+		if (params->valueName != NULL && CurrentTemplate.GetCodeByName(params->valueName, pathCode) == 0)
+		{
+			bool codeFound = false;
+			for (auto &code : codes)
+			{
+				if (code == pathCode[0])
+				{
+					codeFound = true;
+					break;
+				}
+			}
+			if (!codeFound)
+				return StatusCode::VARIABLE_NAME_NOT_INT_CODE;
+		}
+	}
+	else
+	{
+	}
+	switch (params->queryType)
+	{
+	case TIMESPAN:
+	{
+		if ((params->start == 0 && params->end == 0) || params->start > params->end)
+		{
+			return StatusCode::INVALID_TIMESPAN;
+		}
+		else if (params->end == 0)
+		{
+			params->end = getMilliTime();
+		}
+		break;
+	}
+	case LAST:
+	{
+		if (params->queryNums == 0)
+		{
+			return StatusCode::NO_QUERY_NUM;
+		}
+		break;
+	}
+	case FILEID:
+	{
+		if (params->fileID == NULL)
+		{
+			return StatusCode::NO_FILEID;
+		}
+		if (params->fileID != NULL && (params->fileIDend != NULL))
+		{
+			if (params->queryNums != 0 && params->queryNums != 1)
+				return StatusCode::AMBIGUOUS_QUERY_PARAMS;
+		}
+		break;
+	}
+	default:
+		return StatusCode::NO_QUERY_TYPE;
+		break;
+	}
+	return 0;
+}
+
+/**
  * @brief 提取数据时可用到的静态参数，避免DataExtration函数的参数过多，略微影响性能
  *
  * @note 64位Linux系统中函数参数少于7个时， 参数从左到右放入寄存器: rdi, rsi, rdx, rcx, r8, r9。 当参数为7个以上时， 前 6 个与前面一样， 但后面的依次从 “右向左” 放入栈中，即和32位汇编一样。
@@ -554,9 +651,6 @@ int sortResult(vector<tuple<char *, long, long, long>> &mallocedMemory, DB_Query
 		sort(mallocedMemory.begin(), mallocedMemory.end(),
 			 [&type](tuple<char *, long, long, long> iter1, tuple<char *, long, long, long> iter2) -> bool
 			 {
-				 //  char value1[type.valueBytes], value2[type.valueBytes];
-				 //  memcpy(value1, get<0>(iter1) + get<2>(iter1), type.valueBytes);
-				 //  memcpy(value2, get<0>(iter2) + get<2>(iter2), type.valueBytes);
 				 return DataType::CompareValueInBytes(type, std::get<0>(iter1) + std::get<2>(iter1), get<0>(iter2) + get<2>(iter2)) < 0;
 			 });
 		break;
@@ -567,20 +661,19 @@ int sortResult(vector<tuple<char *, long, long, long>> &mallocedMemory, DB_Query
 		sort(mallocedMemory.begin(), mallocedMemory.end(),
 			 [&type](tuple<char *, long, long, long> iter1, tuple<char *, long, long, long> iter2) -> bool
 			 {
-				 //  char value1[type.valueBytes], value2[type.valueBytes];
-				 //  memcpy(value1, get<0>(iter1) + get<2>(iter1), type.valueBytes);
-				 //  memcpy(value2, get<0>(iter2) + get<2>(iter2), type.valueBytes);
 				 return DataType::CompareValueInBytes(type, std::get<0>(iter1) + std::get<2>(iter1), get<0>(iter2) + get<2>(iter2)) > 0;
 			 });
 		break;
 	}
 	case DISTINCT: //去除重复
 	{
+		bool hasIMG = params->byPath ? CurrentTemplate.checkHasImage(params->pathCode) : type.valueType == ValueType::IMAGE;
 		vector<pair<char *, int>> existedValues;
 		for (int i = 0; i < mallocedMemory.size(); i++)
 		{
-			char value[type.valueBytes];
-			memcpy(value, get<0>(mallocedMemory[i]) + get<2>(mallocedMemory[i]), type.valueBytes);
+			// char value[type.valueBytes];
+			char *value = std::get<0>(mallocedMemory[i]) + std::get<2>(mallocedMemory[i]);
+			// memcpy(value, get<0>(mallocedMemory[i]) + get<2>(mallocedMemory[i]), type.valueBytes);
 			bool isRepeat = false;
 			for (auto &&added : existedValues)
 			{
@@ -592,7 +685,8 @@ int sortResult(vector<tuple<char *, long, long, long>> &mallocedMemory, DB_Query
 				}
 				if (equals)
 				{
-					free(get<0>(mallocedMemory[i]));				  //重复值，释放此内存
+					if (hasIMG)
+						free(get<0>(mallocedMemory[i]));			  //重复值，释放此内存
 					mallocedMemory.erase(mallocedMemory.begin() + i); //注：此操作在查询量大时效率可能很低
 					isRepeat = true;
 					i--;
@@ -600,8 +694,7 @@ int sortResult(vector<tuple<char *, long, long, long>> &mallocedMemory, DB_Query
 			}
 			if (!isRepeat) //不是重复值
 			{
-				char *v = value;
-				existedValues.push_back(make_pair(v, type.valueBytes));
+				existedValues.push_back(make_pair(value, type.valueBytes));
 			}
 		}
 
@@ -954,7 +1047,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 		}
 	}
 
-		//根据时间升序排序
+	//根据时间升序排序
 	sortByTime(selectedFiles, TIME_ASC);
 
 	vector<tuple<char *, long, long, long>> mallocedMemory; //内存地址-长度-排序值偏移-时间戳元组集
@@ -4413,7 +4506,7 @@ int main()
 	code[8] = (char)0;
 	code[9] = (char)0;
 	params.pathCode = code;
-	params.valueName = "S1ON";
+	params.valueName = "S2ONN";
 	// params.valueName = NULL;
 	params.start = 1553728593562;
 	params.end = 1751908603642;

@@ -52,6 +52,9 @@ void checkSettings()
 
 int main()
 {
+    const char *str = "12345";
+    cout << str[2] << endl;
+    return 0;
     DB_DataBuffer dbf;
     dbf.savePath = "JinfeiSixteen";
     dbf.length = 5;
