@@ -52,6 +52,14 @@ void checkSettings()
 
 int main()
 {
+    DB_DataBuffer dbf;
+    dbf.savePath = "JinfeiSixteen";
+    dbf.length = 5;
+    char d[5] = {0};
+    dbf.buffer = d;
+    DB_InsertRecord(&dbf, 0);
+    sleep(100);
+    return 0;
     Py_Initialize();
     // 指定py文件目录
     PyRun_SimpleString("import sys");

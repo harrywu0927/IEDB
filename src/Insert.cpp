@@ -15,24 +15,28 @@ void *checkTime(void *ptr)
     long interval = atol(settings("Pack_Interval").c_str());
     while (1)
     {
-        while (IOBusy)
-        {
-        }
+        // cout << "checking settings" << endl;
+        // cout << IOBusy << endl;
+        // while (IOBusy)
+        // {
+        //     // cout << "iobusy" << endl;
+        // }
         if (settings("Pack_Mode") == "auto")
             return NULL;
         if (timerStarted == false)
             pthread_exit(NULL);
         long curTime = getMilliTime();
+        // cout << "checking settings" << endl;
         if (curTime % interval < interval)
         {
             vector<string> dirs;
             readAllDirs(dirs, settings("Filename_Label"));
-            cout << "start packing" << endl;
+            cout << "Start packing..." << endl;
             for (auto &dir : dirs)
             {
-                cout << "packing " << dir << endl;
+                cout << "Packing " << dir << endl;
                 removeFilenameLabel(dir);
-                DB_Pack(dir.c_str(), 0, 0);
+                // DB_Pack(dir.c_str(), 0, 0);
             }
             cout << "Pack complete" << endl;
         }

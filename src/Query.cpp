@@ -1,3 +1,14 @@
+/******************************************
+ * @file Query.cpp
+ * @author your name (you@domain.com)
+ * @brief
+ * @version 0.8.6
+ * @date 2022-06-21
+ *
+ * @copyright Copyright (c) 2022
+ *
+ ******************************************/
+
 #include <utils.hpp>
 #include <unordered_map>
 #include <stack>
