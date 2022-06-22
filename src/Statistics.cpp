@@ -276,7 +276,7 @@ int STAT_Process(DB_DataBuffer *buffer, STAT_Type type)
             pFunc = PyObject_GetAttrString(statistics, "STDEV");
             break;
         case STAT_Type::AVG:
-            pFunc = PyObject_GetAttrString(statistics, "AVG");
+            pFunc = PyObject_GetAttrString(statistics, "MEAN");
             break;
         case STAT_Type::MEDIAN:
             pFunc = PyObject_GetAttrString(statistics, "MEDIAN");

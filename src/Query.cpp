@@ -3223,12 +3223,15 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 		IOBusy = false;
 		return StatusCode::SCHEMA_FILE_NOT_FOUND;
 	}
+	cout << "start check query params" << endl;
 	int check = CheckQueryParams(params);
 	if (check != 0)
 	{
+		cout << "check=" << check << endl;
 		IOBusy = false;
 		return check;
 	}
+	cout << "query params checked" << endl;
 	vector<pair<string, long>> selectedFiles, packsWithTime;
 	vector<string> packFiles;
 
@@ -3250,6 +3253,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 	int selectedNum = 0;
 	Extraction_Params Ext_Params;
 	err = GetExtractionParams(Ext_Params, params);
+	cout << "err=" << err << endl;
 	if (err != 0)
 		return err;
 	for (auto &file : selectedFiles)
