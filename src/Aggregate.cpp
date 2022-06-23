@@ -1078,7 +1078,6 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
         {
         case ValueType::INT:
         {
-            char val[2];
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
@@ -1099,7 +1098,6 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
         }
         case ValueType::UINT:
         {
-            char val[2];
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
@@ -1120,7 +1118,6 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
         }
         case ValueType::DINT:
         {
-            char val[4];
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
@@ -1141,7 +1138,6 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
         }
         case ValueType::UDINT:
         {
-            char val[4];
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
@@ -1163,7 +1159,6 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
         case ValueType::REAL:
         {
             float floatSum = 0;
-            char val[4];
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
@@ -1184,7 +1179,6 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
         }
         case ValueType::TIME:
         {
-            char val[4];
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
