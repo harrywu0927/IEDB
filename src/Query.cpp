@@ -4508,7 +4508,7 @@ int main()
 	// Py_Initialize();
 	DataTypeConverter converter;
 	DB_QueryParams params;
-	params.pathToLine = "RobotDataTwe";
+	params.pathToLine = "JinfeiSeven";
 	params.fileID = "5";
 	// params.fileIDend = "25";
 	params.fileIDend = NULL;
@@ -4516,7 +4516,7 @@ int main()
 	code[0] = (char)0;
 	code[1] = (char)1;
 	code[2] = (char)0;
-	code[3] = (char)1;
+	code[3] = (char)2;
 	code[4] = 0;
 	// code[4] = 'R';
 	code[5] = (char)0;
@@ -4525,15 +4525,15 @@ int main()
 	code[8] = (char)0;
 	code[9] = (char)0;
 	params.pathCode = code;
-	params.valueName = "S1M1A11";
+	params.valueName = "S2ON";
 	// params.valueName = NULL;
 	params.start = 1553728593562;
 	params.end = 1751908603642;
-	params.order = DESCEND;
-	params.compareType = CMP_NONE;
-	params.compareValue = "110";
-	params.queryType = FILEID;
-	params.byPath = 0;
+	params.order = ODR_NONE;
+	params.compareType = LT;
+	params.compareValue = "90";
+	params.queryType = TIMESPAN;
+	params.byPath = 1;
 	params.queryNums = 10;
 	DB_DataBuffer buffer;
 	buffer.savePath = "/";
@@ -4544,7 +4544,7 @@ int main()
 	auto startTime = std::chrono::system_clock::now();
 	// char zeros[10] = {0};
 	// memcpy(params.pathCode, zeros, 10);
-	cout << DB_QueryByFileID(&buffer, &params) << endl;
+	cout << DB_QueryByTimespan(&buffer, &params) << endl;
 
 	auto endTime = std::chrono::system_clock::now();
 	// free(buffer.buffer);
