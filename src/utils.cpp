@@ -3106,7 +3106,7 @@ long GetZipImgPos(char *buff)
 int checkInputVaribaleName(string variableName)
 {
     if (variableName.empty())
-        return 1;
+        return StatusCode::UNKNOWN_VARIABLE_NAME;
     if ((variableName[0] >= 'a' && variableName[0] <= 'z') || (variableName[0] >= 'A' && variableName[0] <= 'Z') || variableName[0] == '_' || variableName[0] == '@')
         ;
     else
@@ -3752,6 +3752,15 @@ int getValueStringByValueType(char *value, ValueType::ValueType type, int schema
     }
     else
         return StatusCode::UNKNOWN_TYPE;
+    return 0;
+}
+
+int checkQueryNodeParam(struct DB_QueryNodeParams *params)
+{
+    if(params->valueName==NULL)
+        return StatusCode::UNKNOWN_VARIABLE_NAME;
+    if(params->pathToLine==NULL)
+        return StatusCode::EMPTY_PATH_TO_LINE;
     return 0;
 }
 

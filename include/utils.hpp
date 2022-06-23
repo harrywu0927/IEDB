@@ -265,6 +265,8 @@ int checkInputValue(string variableType, string value);
 
 int checkValueRange(string variableType, string standardValue, string maxValue, string minValue);
 
+int checkQueryNodeParam(struct DB_QueryNodeParams *params);
+
 int getValueStringByValueType(char *value, ValueType::ValueType type, int schemaPos, int MaxOrMin);
 
 //根据时间升序或降序排序
