@@ -625,7 +625,7 @@ int DB_NoveltyFit(DB_QueryParams *params, double *maxLine, double *minLine)
         if (pFunc && PyCallable_Check(pFunc))
         {
             // 创建参数元组
-            pArgs = PyTuple_New(2);
+            pArgs = PyTuple_New(1);
             PyTuple_SetItem(pArgs, 0, arr);
             // PyTuple_SetItem(pArgs, 1, PyLong_FromLong(dim));
             // 函数执行
@@ -636,7 +636,7 @@ int DB_NoveltyFit(DB_QueryParams *params, double *maxLine, double *minLine)
         Py_XDECREF(pFunc);
     }
     Py_DECREF(arr);
-
+    Py_XDECREF(pArgs);
     Py_XDECREF(mymodule);
     return 0;
 }
@@ -759,9 +759,9 @@ int DB_NoveltyTraining(const char *pathToLine)
 // {
 //     // Py_Initialize();
 //     DB_QueryParams params;
-//     params.pathToLine = "JinfeiTem";
+//     params.pathToLine = "JinfeiSeven";
 //     params.fileID = "JinfeiSeven1135073";
-//     params.fileIDend = NULL;
+//     params.fileIDend = "1135173";
 //     char code[10];
 //     code[0] = (char)0;
 //     code[1] = (char)1;
@@ -783,12 +783,12 @@ int DB_NoveltyTraining(const char *pathToLine)
 //     params.order = ODR_NONE;
 //     params.compareType = CMP_NONE;
 //     params.compareValue = "666";
-//     params.queryType = TIMESPAN;
+//     params.queryType = FILEID;
 //     params.byPath = 0;
-//     params.queryNums = 50;
+//     params.queryNums = 1;
 //     DB_DataBuffer buffer;
 //     double maxline, minline;
-//     DB_NoveltyFit_JF(&params, &maxline, &minline);
+//     DB_NoveltyFit(&params, &maxline, &minline);
 //     // DB_NoveltyFit(&params, &maxline, &minline);
 //     Py_Finalize();
 //     return 0;

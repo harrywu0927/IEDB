@@ -102,7 +102,7 @@ namespace StatusCode
         MAX_OR_MIN_ERROR = 182,           // maxOrmin只能为0,1,2
         ZIPNUM_ERROR = 183,               // 压缩数量错误
         ZIPNUM_AND_EID_ERROR = 184,       // zipNum和EID冲突，不能同时设置
-        VARIABLE_NAME_NOT_INT_CODE,       //编码中不包含指定变量名
+        VARIABLE_NAME_NOT_INT_CODE = 185, //编码中不包含指定变量名
     };
 }
 namespace ValueType
