@@ -928,20 +928,21 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
             {
                 float value = (float)*((uint *)column + k);
                 sum += value;
-                cout << "sum=" << sum << ",value=" << value << endl;
+                // cout << "sum=" << sum << ",value=" << value << endl;
                 vals.push_back(value);
             }
             float avg = sum / (float)rows;
-            cout << "avg=" << avg << endl;
+            // cout << "avg=" << avg << endl;
             float sqrSum = 0;
             for (auto &v : vals)
             {
                 sqrSum += powf(v - avg, 2);
-                cout << "sqrsum=" << sqrSum << endl;
+                // cout << "sqrsum=" << sqrSum << endl;
             }
             float res = sqrtf(sqrSum / (float)rows);
             cout << "res=" << res << endl;
             memcpy(newBuffer + newBufCur, &res, 4);
+            cout << "res=" << res << endl;
             newBufCur += 4;
             break;
         }
