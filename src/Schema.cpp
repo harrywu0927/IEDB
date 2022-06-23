@@ -400,6 +400,9 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 {
     int err;
 
+    if (TreeParams->pathToLine == NULL)
+        return StatusCode::EMPTY_PATH_TO_LINE;
+
     //检查变量名输入是否合法
     string variableName = TreeParams->valueName;
     err = checkInputVaribaleName(variableName);
@@ -1087,6 +1090,9 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
 {
     int err;
 
+    if (TreeParams->pathToLine == NULL)
+        return StatusCode::EMPTY_PATH_TO_LINE;
+
     //如果更新节点的编码、新路径为空，则保持原状态
     if (newTreeParams->pathToLine == NULL)
         newTreeParams->pathToLine = TreeParams->pathToLine;
@@ -1500,6 +1506,10 @@ int DB_DeleteNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
 int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 {
     int err;
+
+    if (TreeParams->pathToLine == NULL)
+        return StatusCode::EMPTY_PATH_TO_LINE;
+
     vector<string> files;
     readFileList(TreeParams->pathToLine, files);
     string temPath = "";
@@ -2367,6 +2377,9 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
 
+    if (ZipParams->pathToLine == NULL)
+        return StatusCode::EMPTY_PATH_TO_LINE;
+
     if (ZipParams->newPath == NULL)
         ZipParams->newPath = ZipParams->pathToLine;
 
@@ -2831,7 +2844,7 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
     if (pos == -1)
     {
         cout << "未找到变量名！" << endl;
-        return StatusCode::UNKNOWN_PATHCODE;
+        return StatusCode::UNKNOWN_VARIABLE_NAME;
     }
 
     int s_new = 0, max_new = 0, min_new = 0;
@@ -3251,7 +3264,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
     if (pos == -1)
     {
         cout << "未找到变量名！" << endl;
-        return StatusCode::UNKNOWN_PATHCODE;
+        return StatusCode::UNKNOWN_VARIABLE_NAME;
     }
 
     int s_new = 0, max_new = 0, min_new = 0;
@@ -3626,6 +3639,9 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
 {
     int err;
 
+    if (ZipParams->pathToLine == NULL)
+        return StatusCode::EMPTY_PATH_TO_LINE;
+
     //如果新节点的路径、变量名为空，则保持原状态
     if (newZipParams->pathToLine == NULL)
         newZipParams->pathToLine = ZipParams->pathToLine;
@@ -3687,7 +3703,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     if (pos == -1)
     {
         cout << "未找到变量名！" << endl;
-        return StatusCode::UNKNOWN_PATHCODE;
+        return StatusCode::UNKNOWN_VARIABLE_NAME;
     }
 
     int s_new = 0, max_new = 0, min_new = 0;
@@ -4112,7 +4128,7 @@ int DB_DeleteNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams)
     if (pos == -1)
     {
         cout << "未找到要删除的记录！" << endl;
-        return StatusCode::UNKNOWN_PATHCODE;
+        return StatusCode::UNKNOWN_VARIABLE_NAME;
     }
 
     char writeBuf[len - 95];
@@ -4176,7 +4192,7 @@ int DB_DeleteNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
     if (pos == -1)
     {
         cout << "未找到要删除的记录！" << endl;
-        return StatusCode::UNKNOWN_PATHCODE;
+        return StatusCode::UNKNOWN_VARIABLE_NAME;
     }
 
     char writeBuf[len - 95];
@@ -4218,6 +4234,10 @@ int DB_DeleteNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
 int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 {
     int err;
+
+    if (ZipParams->pathToLine == NULL)
+        return StatusCode::EMPTY_PATH_TO_LINE;
+
     vector<string> files;
     readFileList(ZipParams->pathToLine, files);
     string temPath = "";
@@ -4254,7 +4274,7 @@ int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
     if (pos == -1)
     {
         cout << "未找到要删除的记录！" << endl;
-        return StatusCode::UNKNOWN_PATHCODE;
+        return StatusCode::UNKNOWN_VARIABLE_NAME;
     }
 
     char writeBuf[len - 95];
@@ -4300,6 +4320,84 @@ int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
         }
     }
     return err;
+}
+
+//查询模板节点信息
+int DB_QueryNode(struct DB_QueryNodeParams *QueryParams)
+{
+    //检查产线路径和变量名是否合法
+    int err = checkQueryNodeParam(QueryParams);
+    if (err != 0)
+        return err;
+
+    //寻找模板文件
+    vector<string> files;
+    readFileList(QueryParams->pathToLine, files);
+    string temPath = "";
+    for (string file : files) //找到带有后缀tem的文件
+    {
+        string s = file;
+        vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
+        if (vec[vec.size() - 1].find("tem") != string::npos && vec[vec.size() - 1].find("ziptem") == string::npos)
+        {
+            temPath = file;
+            break;
+        }
+    }
+    if (temPath == "")
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+
+    //读取模板文件
+    long len;
+    DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
+    char readBuf[len];
+    long readbuf_pos = 0;
+    DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
+
+    err = DB_LoadSchema(QueryParams->pathToLine);
+    if (err != 0)
+        return err;
+
+    long pos = -1;                      //用于定位是修改模板的第几条
+    for (long i = 0; i < len / 71; i++) //寻找是否有相同变量名
+    {
+        char existValueName[30];
+        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        if (strcmp(QueryParams->valueName, existValueName) == 0)
+        {
+            pos = i; //记录这条记录的位置
+            break;
+        }
+        readbuf_pos += 71;
+    }
+    if (pos == -1)
+    {
+        cout << "未找到变量名！" << endl;
+        return StatusCode::UNKNOWN_VARIABLE_NAME;
+    }
+
+    //将节点信息赋值到查询参数中
+    QueryParams->isArrary = CurrentTemplate.schemas[pos].second.isArray;
+    if (CurrentTemplate.schemas[pos].second.isArray)
+        QueryParams->arrayLen = CurrentTemplate.schemas[pos].second.arrayLen;
+    else
+        QueryParams->arrayLen = 0;
+    QueryParams->isTS = CurrentTemplate.schemas[pos].second.isTimeseries;
+    if (CurrentTemplate.schemas[pos].second.isTimeseries)
+        QueryParams->arrayLen = CurrentTemplate.schemas[pos].second.tsLen;
+    else
+        QueryParams->tsLen = 0;
+    QueryParams->hasTime = CurrentTemplate.schemas[pos].second.hasTime;
+    QueryParams->valueType = CurrentTemplate.schemas[pos].second.valueType;
+    char *pathcode = (char *)malloc(sizeof(char) * 10);
+    memcpy(pathcode, readBuf + pos * 71 + 61, 10);
+    QueryParams->pathcode = pathcode;
+    return 0;
+}
+
+//查询压缩模板节点信息
+int DB_QueryZipNode(struct DB_QueryNodeParams *QueryParams)
+{
 }
 
 /**
@@ -4420,3 +4518,24 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 //     // DB_UpdateNodeToZipSchema(&param, &newParam);
 //     return 0;
 // }
+int main()
+{
+    DB_QueryNodeParams params;
+    params.valueName = "S1ON";
+    params.pathToLine = "JinfeiSeven";
+    DB_QueryNode(&params);
+    cout << params.valueName << endl;
+    char pathcode[10];
+    memcpy(pathcode, params.pathcode, 10);
+    for (int i = 0; i < 10; i++)
+        cout << pathcode[i] << " ";
+    cout << endl;
+    cout << params.valueType << endl;
+    cout << params.isArrary << endl;
+    cout << params.arrayLen << endl;
+    cout << params.isTS << endl;
+    cout << params.tsLen << endl;
+    cout << params.hasTime << endl;
+    free(params.pathcode);
+    return 0;
+}
