@@ -316,7 +316,7 @@ public:
     int tsLen;                      //时间序列长度
     int arrayLen;                   //数组长度
     int valueBytes;                 //值所占字节
-    long timeseriesSpan;            //时间序列的采样时间
+    long timeseriesSpan = 0;            //时间序列的采样时间
     ValueType::ValueType valueType; //基本数据类型
 
     char maxValue[10];      //最大值

@@ -247,6 +247,8 @@ int DataType::GetDataTypeFromStr(char dataType[], DataType &type)
     }
     else
     {
+        type.isTimeseries = false;
+        type.tsLen = 0;
         type.isArray = false;
         type.arrayLen = 0;
         type.valueType = JudgeValueType(dataType);

@@ -3758,7 +3758,8 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
     if (selectedFiles.size() < 1000)
     {
         IOBusy = false;
-        return DB_ZipFileByTimeSpan_Single(params);
+        err =  DB_ZipFileByTimeSpan_Single(params);
+        return err;
     }
     sortByTime(selectedFiles, TIME_ASC);
 
@@ -3973,6 +3974,7 @@ int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
     {
         IOBusy = false;
         err = DB_ReZipFileByTimeSpan_Single(params);
+        return err;
     }
     sortByTime(selectedFiles, TIME_ASC);
 
