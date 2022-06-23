@@ -92,8 +92,9 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
-    if (DB_ExecuteQuery(buffer, params) != 0)
-        return StatusCode::NO_DATA_QUERIED;
+    int err = DB_ExecuteQuery(buffer, params);
+    if (err != 0)
+        return err;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
@@ -264,8 +265,9 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
-    if (DB_ExecuteQuery(buffer, params) != 0)
-        return StatusCode::NO_DATA_QUERIED;
+    int err = DB_ExecuteQuery(buffer, params);
+    if (err != 0)
+        return err;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
@@ -302,7 +304,7 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
             for (int k = 0; k < rows; k++)
             {
                 short value = __builtin_bswap16(*((short *)column + k));
-                if (min < value)
+                if (min > value)
                 {
                     min = value;
                     memcpy(res, column + k * 2, 2);
@@ -319,7 +321,7 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
             for (int k = 0; k < rows; k++)
             {
                 ushort value = __builtin_bswap16(*((ushort *)column + k));
-                if (min < value)
+                if (min > value)
                 {
                     min = value;
                     memcpy(res, column + k * 2, 2);
@@ -336,7 +338,7 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
             for (int k = 0; k < rows; k++)
             {
                 int value = __builtin_bswap32(*((int *)column + k));
-                if (min < value)
+                if (min > value)
                 {
                     min = value;
                     memcpy(res, column + k * 4, 4);
@@ -353,7 +355,7 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
             for (int k = 0; k < rows; k++)
             {
                 uint value = __builtin_bswap32(*((uint *)column + k));
-                if (min < value)
+                if (min > value)
                 {
                     min = value;
                     memcpy(res, column + k * 4, 4);
@@ -436,8 +438,9 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
-    if (DB_ExecuteQuery(buffer, params) != 0)
-        return StatusCode::NO_DATA_QUERIED;
+    int err = DB_ExecuteQuery(buffer, params);
+    if (err != 0)
+        return err;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
@@ -613,8 +616,9 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
-    if (DB_ExecuteQuery(buffer, params) != 0)
-        return StatusCode::NO_DATA_QUERIED;
+    int err = DB_ExecuteQuery(buffer, params);
+    if (err != 0)
+        return err;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
@@ -767,8 +771,9 @@ int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
-    if (DB_ExecuteQuery(buffer, params) != 0)
-        return StatusCode::NO_DATA_QUERIED;
+    int err = DB_ExecuteQuery(buffer, params);
+    if (err != 0)
+        return err;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
@@ -822,8 +827,9 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
-    if (DB_ExecuteQuery(buffer, params) != 0)
-        return StatusCode::NO_DATA_QUERIED;
+    int err = DB_ExecuteQuery(buffer, params);
+    if (err != 0)
+        return err;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
@@ -877,7 +883,6 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
         }
         case ValueType::UINT:
         {
-            char val[2];
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
@@ -898,7 +903,6 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
         }
         case ValueType::DINT:
         {
-            char val[4];
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
@@ -919,21 +923,24 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
         }
         case ValueType::UDINT:
         {
-            char val[4];
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
                 float value = (float)*((uint *)column + k);
                 sum += value;
+                cout << "sum=" << sum << ",value=" << value << endl;
                 vals.push_back(value);
             }
             float avg = sum / (float)rows;
+            cout << "avg=" << avg << endl;
             float sqrSum = 0;
             for (auto &v : vals)
             {
                 sqrSum += powf(v - avg, 2);
+                cout << "sqrsum=" << sqrSum << endl;
             }
             float res = sqrtf(sqrSum / (float)rows);
+            cout << "res=" << res << endl;
             memcpy(newBuffer + newBufCur, &res, 4);
             newBufCur += 4;
             break;
@@ -941,7 +948,6 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
         case ValueType::REAL:
         {
             float floatSum = 0;
-            char val[4];
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
@@ -962,7 +968,6 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
         }
         case ValueType::TIME:
         {
-            char val[4];
             vector<float> vals;
             for (int k = 0; k < rows; k++)
             {
@@ -1037,8 +1042,9 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
-    if (DB_ExecuteQuery(buffer, params) != 0)
-        return StatusCode::NO_DATA_QUERIED;
+    int err = DB_ExecuteQuery(buffer, params);
+    if (err != 0)
+        return err;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
     int typeNum = buffer->buffer[0];
@@ -3352,16 +3358,16 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
 //     code[8] = (char)0;
 //     code[9] = (char)0;
 //     params.pathCode = code;
-//     params.valueName = "S1OFF";
+//     params.valueName = "S1ON";
 //     // params.valueName = NULL;
 //     params.start = 0;
 //     params.end = 1751165600000;
 //     params.order = ODR_NONE;
-//     params.compareType = CMP_NONE;
-//     params.compareValue = "666";
+//     params.compareType = LT;
+//     params.compareValue = "100";
 //     params.queryType = TIMESPAN;
-//     params.byPath = 0;
-//     params.queryNums = 40;
+//     params.byPath = 1;
+//     params.queryNums = 5000;
 //     DB_DataBuffer buffer;
 //     // DB_ExecuteQuery(&buffer, &params);
 //     // DB_GetAbnormalRhythm(&buffer, &params, 1, 1);
@@ -3380,7 +3386,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
 //     //     converter.ToUInt32Buff(v, buf);
 //     //     memcpy(newbuf + 12 + i * 4, buf, 4);
 //     // }
-//     DB_AVG(&buffer, &params);
+//     DB_STD(&buffer, &params);
 //     if (buffer.bufferMalloced)
 //     {
 //         char buf[buffer.length];

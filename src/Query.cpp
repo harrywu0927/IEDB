@@ -651,7 +651,7 @@ int sortResult(vector<tuple<char *, long, long, long>> &mallocedMemory, DB_Query
 		sort(mallocedMemory.begin(), mallocedMemory.end(),
 			 [&type](tuple<char *, long, long, long> iter1, tuple<char *, long, long, long> iter2) -> bool
 			 {
-				 return DataType::CompareValueInBytes(type, std::get<0>(iter1) + std::get<2>(iter1), get<0>(iter2) + get<2>(iter2)) < 0;
+				 return DataType::CompareValueInBytes(type, std::get<0>(iter1) + std::get<2>(iter1), std::get<0>(iter2) + std::get<2>(iter2)) < 0;
 			 });
 		break;
 	}
@@ -661,7 +661,7 @@ int sortResult(vector<tuple<char *, long, long, long>> &mallocedMemory, DB_Query
 		sort(mallocedMemory.begin(), mallocedMemory.end(),
 			 [&type](tuple<char *, long, long, long> iter1, tuple<char *, long, long, long> iter2) -> bool
 			 {
-				 return DataType::CompareValueInBytes(type, std::get<0>(iter1) + std::get<2>(iter1), get<0>(iter2) + get<2>(iter2)) > 0;
+				 return DataType::CompareValueInBytes(type, std::get<0>(iter1) + std::get<2>(iter1), std::get<0>(iter2) + std::get<2>(iter2)) > 0;
 			 });
 		break;
 	}
@@ -671,9 +671,7 @@ int sortResult(vector<tuple<char *, long, long, long>> &mallocedMemory, DB_Query
 		vector<pair<char *, int>> existedValues;
 		for (int i = 0; i < mallocedMemory.size(); i++)
 		{
-			// char value[type.valueBytes];
 			char *value = std::get<0>(mallocedMemory[i]) + std::get<2>(mallocedMemory[i]);
-			// memcpy(value, get<0>(mallocedMemory[i]) + get<2>(mallocedMemory[i]), type.valueBytes);
 			bool isRepeat = false;
 			for (auto &&added : existedValues)
 			{
@@ -705,7 +703,7 @@ int sortResult(vector<tuple<char *, long, long, long>> &mallocedMemory, DB_Query
 		sort(mallocedMemory.begin(), mallocedMemory.end(),
 			 [](tuple<char *, long, long, long> iter1, tuple<char *, long, long, long> iter2) -> bool
 			 {
-				 return get<3>(iter1) < get<3>(iter2);
+				 return std::get<3>(iter1) < std::get<3>(iter2);
 			 });
 		break;
 	}
@@ -714,7 +712,7 @@ int sortResult(vector<tuple<char *, long, long, long>> &mallocedMemory, DB_Query
 		sort(mallocedMemory.begin(), mallocedMemory.end(),
 			 [](tuple<char *, long, long, long> iter1, tuple<char *, long, long, long> iter2) -> bool
 			 {
-				 return get<3>(iter1) > get<3>(iter2);
+				 return std::get<3>(iter1) > std::get<3>(iter2);
 			 });
 		break;
 	}
