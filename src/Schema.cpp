@@ -4608,12 +4608,27 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 //     DB_QueryNodeParams params;
 //     params.valueName = "S1ON";
 //     params.pathToLine = "JinfeiSeven";
-//     DB_QueryNode(&params);
+//     DB_QueryZipNode(&params);
 //     cout << params.valueName << endl;
-//     char pathcode[10];
-//     memcpy(pathcode, params.pathcode, 10);
+//     // char pathcode[10];
+//     // memcpy(pathcode, params.pathcode, 10);
+//     // for (int i = 0; i < 10; i++)
+//     //     cout << pathcode[i] << " ";
+//     // cout << endl;
+//     char stand[10];
+//     memcpy(stand, params.standardValue, 10);
 //     for (int i = 0; i < 10; i++)
-//         cout << pathcode[i] << " ";
+//         cout << stand[i] << " ";
+//     cout << endl;
+//     char max[10];
+//     memcpy(max, params.maxValue, 10);
+//     for (int i = 0; i < 10; i++)
+//         cout << max[i] << " ";
+//     cout << endl;
+//     char min[10];
+//     memcpy(min, params.minValue, 10);
+//     for (int i = 0; i < 10; i++)
+//         cout << min[i] << " ";
 //     cout << endl;
 //     cout << params.valueType << endl;
 //     cout << params.isArrary << endl;
@@ -4621,6 +4636,10 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 //     cout << params.isTS << endl;
 //     cout << params.tsLen << endl;
 //     cout << params.hasTime << endl;
-//     free(params.pathcode);
+//     cout << params.tsSpan << endl;
+//     //free(params.pathcode);
+//     free(params.maxValue);
+//     free(params.minValue);
+//     free(params.standardValue);
 //     return 0;
 // }

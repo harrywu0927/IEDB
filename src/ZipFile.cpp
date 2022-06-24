@@ -3136,8 +3136,10 @@ int DB_ZipFile_Single(const char *ZipTemPath, const char *pathToLine)
         }
         long writebuff_pos = 0;
 
-        ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
-
+        err = ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
+        if(err)
+            continue;
+        
         if (writebuff_pos >= len) //表明数据没有被压缩,保持原文件
         {
             cout << filesWithTime[fileNum].first + "文件数据没有被压缩!" << endl;
@@ -3201,8 +3203,10 @@ int DB_ZipFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, 
         }
         long writebuff_pos = 0;
 
-        ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
-
+        err = ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
+        if(err)
+            continue;
+        
         if (writebuff_pos >= len) //表明数据没有被压缩,保持原文件
         {
             cout << filesWithTime[fileNum].first + "文件数据没有被压缩!" << endl;
@@ -3345,8 +3349,10 @@ int DB_ReZipFile_Single(const char *ZipTemPath, const char *pathToLine)
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
-        ReZipBuf(readbuff, len, &writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
-
+        err = ReZipBuf(readbuff, len, &writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
+        if(err)
+            continue;
+        
         DB_DeleteFile(const_cast<char *>(filesWithTime[fileNum].first.c_str())); //删除原文件
         long fp;
         string finalpath = filesWithTime[fileNum].first.substr(0, filesWithTime[fileNum].first.length() - 3); //去掉后缀的zip
@@ -3400,7 +3406,9 @@ int DB_ReZipFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
-        ReZipBuf(readbuff, len, &writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
+        err = ReZipBuf(readbuff, len, &writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
+        if(err)
+            continue;
 
         DB_DeleteFile(const_cast<char *>(filesWithTime[fileNum].first.c_str())); //删除原文件
         long fp;
@@ -3514,8 +3522,9 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
     DataTypeConverter converter;
     long writebuff_pos = 0;
 
-    ZipBuf(buff, &writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
-
+    err = ZipBuf(buff, &writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
+    if(err)
+        return err;
     if (writebuff_pos >= len) //表明数据没有被压缩
     {
         char isZip[1] = {0};
@@ -3620,8 +3629,10 @@ int DB_ZipFileByTimeSpan_Single(struct DB_ZipParams *params)
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
-        ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
-
+        err = ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
+        if(err)
+            continue;
+        
         if (writebuff_pos >= len) //表明数据没有被压缩,保持原文件
         {
             cout << selectedFiles[fileNum].first + "文件数据没有被压缩!" << endl;
@@ -3678,8 +3689,10 @@ int DB_ZipFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
-        ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
-
+        err = ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
+        if(err)
+            continue;
+        
         if (writebuff_pos >= len) //表明数据没有被压缩,保持原文件
         {
             cout << selectedFiles[fileNum].first + "文件数据没有被压缩!" << endl;
@@ -3857,8 +3870,10 @@ int DB_ReZipFileByTimeSpan_Single(struct DB_ZipParams *params)
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
-        ReZipBuf(readbuff, len, &writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
-
+        err =  ReZipBuf(readbuff, len, &writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
+        if(err)
+            continue;
+        
         DB_DeleteFile(const_cast<char *>(selectedFiles[fileNum].first.c_str())); //删除原文件
         long fp;
         string finalpath = selectedFiles[fileNum].first.substr(0, selectedFiles[fileNum].first.length() - 3); //去掉后缀的zip
@@ -3904,8 +3919,10 @@ int DB_ReZipFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
-        ReZipBuf(readbuff, len, &writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
-
+        err = ReZipBuf(readbuff, len, &writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
+        if(err)
+            continue;
+        
         DB_DeleteFile(const_cast<char *>(selectedFiles[fileNum].first.c_str())); //删除原文件
         long fp;
         string finalpath = selectedFiles[fileNum].first.substr(0, selectedFiles[fileNum].first.length() - 3); //去掉后缀的zip
@@ -4074,8 +4091,10 @@ int DB_ZipFileByFileID(struct DB_ZipParams *params)
                 return StatusCode::DATAFILE_NOT_FOUND;
             }
 
-            ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
-
+            err = ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
+            if(err)
+                break;
+            
             if (writebuff_pos >= len) //表明数据没有被压缩,不做处理
             {
                 cout << file.first + "文件数据没有被压缩!" << endl;
@@ -4183,7 +4202,10 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
                 return StatusCode::DATAFILE_NOT_FOUND;
             }
 
-            ReZipBuf(readbuff, len, &writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
+            err = ReZipBuf(readbuff, len, &writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
+            if(err)
+                break;
+            
             char *data = (char *)malloc(writebuff_pos);
             memcpy(data, writebuff, writebuff_pos);
             params->buffer = data; //将还原后的数据记录在params->buffer中
