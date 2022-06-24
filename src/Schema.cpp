@@ -2838,6 +2838,7 @@ int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct
         if (strcmp(ZipParams->valueName, existValueName) == 0)
         {
             pos = i; //记录这条记录的位置
+            break;
         }
         readbuf_pos += 95;
     }
@@ -3258,6 +3259,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
         if (strcmp(ZipParams->valueName, existValueName) == 0)
         {
             pos = i; //记录这条记录的位置
+            break;
         }
         readbuf_pos += 95;
     }
@@ -3697,6 +3699,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
         if (strcmp(ZipParams->valueName, existValueName) == 0)
         {
             pos = i; //记录这条记录的位置
+            break;
         }
         readbuf_pos += 95;
     }
@@ -4122,6 +4125,7 @@ int DB_DeleteNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams)
         if (strcmp(ZipParams->valueName, existValueName) == 0)
         {
             pos = i; //记录这条记录的位置
+            break;
         }
         readbuf_pos += 95;
     }
@@ -4186,6 +4190,7 @@ int DB_DeleteNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
         if (strcmp(ZipParams->valueName, existValueName) == 0)
         {
             pos = i; //记录这条记录的位置
+            break;
         }
         readbuf_pos += 95;
     }
@@ -4268,6 +4273,7 @@ int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
         if (strcmp(ZipParams->valueName, existValueName) == 0)
         {
             pos = i; //记录这条记录的位置
+            break;
         }
         readbuf_pos += 95;
     }
@@ -4398,6 +4404,85 @@ int DB_QueryNode(struct DB_QueryNodeParams *QueryParams)
 //查询压缩模板节点信息
 int DB_QueryZipNode(struct DB_QueryNodeParams *QueryParams)
 {
+    //检查产线路径和变量名是否合法
+    int err = checkQueryNodeParam(QueryParams);
+    if (err != 0)
+        return err;
+
+    //寻找模板文件
+    vector<string> files;
+    readFileList(QueryParams->pathToLine, files);
+    string temPath = "";
+    for (string file : files) //找到带有后缀ziptem的文件
+    {
+        string s = file;
+        vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
+        if (vec[vec.size() - 1].find("ziptem") != string::npos)
+        {
+            temPath = file;
+            break;
+        }
+    }
+    if (temPath == "")
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+
+    err = DB_LoadZipSchema(QueryParams->pathToLine);
+    if (err != 0)
+        return err;
+
+    //读取模板文件
+    long len;
+    DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
+    char readBuf[len];
+    long readbuf_pos = 0;
+    DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
+
+    err = DB_LoadSchema(QueryParams->pathToLine);
+    if (err != 0)
+        return err;
+
+    long pos = -1;                      //用于定位是修改模板的第几条
+    for (long i = 0; i < len / 95; i++) //寻找是否有相同变量名
+    {
+        char existValueName[30];
+        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        if (strcmp(QueryParams->valueName, existValueName) == 0)
+        {
+            pos = i; //记录这条记录的位置
+            break;
+        }
+        readbuf_pos += 95;
+    }
+    if (pos == -1)
+    {
+        cout << "未找到变量名！" << endl;
+        return StatusCode::UNKNOWN_VARIABLE_NAME;
+    }
+
+    //将节点信息赋值到查询参数中
+    QueryParams->isArrary = CurrentZipTemplate.schemas[pos].second.isArray;
+    if (CurrentZipTemplate.schemas[pos].second.isArray)
+        QueryParams->arrayLen = CurrentZipTemplate.schemas[pos].second.arrayLen;
+    else
+        QueryParams->arrayLen = 0;
+    QueryParams->isTS = CurrentZipTemplate.schemas[pos].second.isTimeseries;
+    if (CurrentZipTemplate.schemas[pos].second.isTimeseries)
+        QueryParams->arrayLen = CurrentZipTemplate.schemas[pos].second.tsLen;
+    else
+        QueryParams->tsLen = 0;
+    QueryParams->tsSpan = CurrentZipTemplate.schemas[pos].second.timeseriesSpan;
+    QueryParams->hasTime = CurrentZipTemplate.schemas[pos].second.hasTime;
+    QueryParams->valueType = CurrentZipTemplate.schemas[pos].second.valueType;
+    char *standValue = (char *)malloc(sizeof(char) * 10);
+    memcpy(standValue, readBuf + pos * 95 + 60, 10);
+    QueryParams->standardValue = standValue;
+    char *maxValue = (char *)malloc(sizeof(char) * 10);
+    memcpy(maxValue, readBuf + pos * 95 + 70, 10);
+    QueryParams->maxValue = maxValue;
+    char *minValue = (char *)malloc(sizeof(char) * 10);
+    memcpy(minValue, readBuf + pos * 95 + 80, 10);
+    QueryParams->minValue = minValue;
+    return 0;
 }
 
 /**
