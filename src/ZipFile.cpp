@@ -1628,7 +1628,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -1650,7 +1650,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -1683,6 +1683,11 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                                 memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, 1);
                                 writebuff_pos += 1;
                                 readbuff_pos += 1;
+                            }
+                            else
+                            {
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
+                                return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
                     }
@@ -1810,7 +1815,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -1832,7 +1837,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -1868,7 +1873,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -1997,7 +2002,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2019,7 +2024,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2055,7 +2060,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2184,7 +2189,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2206,7 +2211,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2242,7 +2247,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2371,7 +2376,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2393,7 +2398,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2429,7 +2434,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2558,7 +2563,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2580,7 +2585,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2616,7 +2621,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2745,7 +2750,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2767,7 +2772,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2803,7 +2808,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2932,7 +2937,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2954,7 +2959,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -2990,7 +2995,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                             }
                             else
                             {
-                                cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                                cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                                 return StatusCode::ZIPTYPE_ERROR;
                             }
                         }
@@ -3070,7 +3075,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                 }
                 else
                 {
-                    cout << "压缩类型出错！请检查压缩功能是否有误" << endl;
+                    cout << "还原类型出错！请检查压缩功能是否有误" << endl;
                     return StatusCode::ZIPTYPE_ERROR;
                 }
             }
@@ -3125,8 +3130,8 @@ int DB_ZipFile_Single(const char *ZipTemPath, const char *pathToLine)
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[fileNum].first.c_str()), &len);
-        char *readbuff = new char[len];
-        char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()];
+        char *readbuff = new char[len];//文件内容
+        char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()];//写入被还原的数据
 
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
@@ -3192,8 +3197,8 @@ int DB_ZipFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, 
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[fileNum].first.c_str()), &len);
-        char *readbuff = new char[len];
-        char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()];
+        char *readbuff = new char[len];//文件内容
+        char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()];//写入被还原的数据
 
         if (DB_OpenAndRead(const_cast<char *>(filesWithTime[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
         {
@@ -3272,6 +3277,7 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
         IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
+    //如果文件数小于1000则采用单线程压缩
     if (filesWithTime.size() < 1000)
     {
         IOBusy = false;
@@ -3333,12 +3339,12 @@ int DB_ReZipFile_Single(const char *ZipTemPath, const char *pathToLine)
     }
     sortByTime(filesWithTime, TIME_ASC); //将文件按时间升序
 
-    for (size_t fileNum = 0; fileNum < filesWithTime.size(); fileNum++)
+    for (size_t fileNum = 0; fileNum < filesWithTime.size(); fileNum++)//循环以给每个.idbzip文件进行还原处理
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[fileNum].first.c_str()), &len);
-        char *readbuff = new char[len];
-        char *writebuff = new char[CurrentZipTemplate.totalBytes];
+        char *readbuff = new char[len];//文件内容
+        char *writebuff = new char[CurrentZipTemplate.totalBytes];//写入被还原的数据
 
         long writebuff_pos = 0;
 
@@ -3389,13 +3395,13 @@ int DB_ReZipFile_Single(const char *ZipTemPath, const char *pathToLine)
 int DB_ReZipFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine)
 {
     int err = 0;
-
+    //循环以给每个.idbzip文件进行还原处理
     for (auto fileNum = begin; fileNum < num; fileNum++)
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[fileNum].first.c_str()), &len);
-        char *readbuff = new char[len];
-        char *writebuff = new char[CurrentZipTemplate.totalBytes];
+        char *readbuff = new char[len];//文件内容
+        char *writebuff = new char[CurrentZipTemplate.totalBytes];//写入被还原的数据
 
         long writebuff_pos = 0;
 
@@ -3467,6 +3473,7 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
         IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
+    //如果文件数小于1000则采用单线程还原
     if (filesWithTime.size() < 1000)
     {
         IOBusy = false;
@@ -3517,7 +3524,7 @@ int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, lon
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     }
     long len = *buffLength;
-    char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
+    char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()]; //写入被压缩的数据
 
     DataTypeConverter converter;
     long writebuff_pos = 0;
@@ -3614,12 +3621,12 @@ int DB_ZipFileByTimeSpan_Single(struct DB_ZipParams *params)
     }
     DataTypeConverter converter;
 
-    for (size_t fileNum = 0; fileNum < selectedFiles.size(); fileNum++)
+    for (size_t fileNum = 0; fileNum < selectedFiles.size(); fileNum++)//循环以给每个.idb文件进行压缩处理
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[fileNum].first.c_str()), &len);
         char *readbuff = new char[len];                                                                    //文件内容
-        char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
+        char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()]; //写入被压缩的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -3674,12 +3681,12 @@ int DB_ZipFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16
 {
     int err = 0;
 
-    for (auto fileNum = begin; fileNum < num; fileNum++)
+    for (auto fileNum = begin; fileNum < num; fileNum++)//循环以给每个.idb文件进行压缩处理
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[fileNum].first.c_str()), &len);
-        char *readbuff = new char[len];
-        char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()];
+        char *readbuff = new char[len];//文件内容
+        char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()];//写入被压缩的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -3768,6 +3775,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
         IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
+    //如果文件数小于1000则采用单线程压缩
     if (selectedFiles.size() < 1000)
     {
         IOBusy = false;
@@ -3788,7 +3796,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
     future_status status[maxThreads];
     future<int> f[maxThreads];
     uint16_t begin = 0;
-    for (int j = 0; j < maxThreads - 1; j++)
+    for (int j = 0; j < maxThreads - 1; j++)//循环开启线程
     {
         f[j] = async(std::launch::async, DB_ZipFileByTimeSpan_thread, selectedFiles, begin, singleThreadFileNum * (j + 1), params->pathToLine);
         begin += singleThreadFileNum;
@@ -3796,7 +3804,7 @@ int DB_ZipFileByTimeSpan(struct DB_ZipParams *params)
     }
     f[maxThreads - 1] = async(std::launch::async, DB_ZipFileByTimeSpan_thread, selectedFiles, begin, selectedFiles.size(), params->pathToLine);
     status[maxThreads - 1] = f[maxThreads - 1].wait_for(chrono::milliseconds(1));
-    for (int j = 0; j < maxThreads - 1; j++)
+    for (int j = 0; j < maxThreads - 1; j++)//等待线程结束
     {
         if (status[j] != future_status::ready)
             f[j].wait();
@@ -3855,12 +3863,12 @@ int DB_ReZipFileByTimeSpan_Single(struct DB_ZipParams *params)
     }
     DataTypeConverter converter;
 
-    for (size_t fileNum = 0; fileNum < selectedFiles.size(); fileNum++)
+    for (size_t fileNum = 0; fileNum < selectedFiles.size(); fileNum++)//循环以给每个.idbzip文件进行还原处理
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[fileNum].first.c_str()), &len);
         char *readbuff = new char[len];                            //文件内容
-        char *writebuff = new char[CurrentZipTemplate.totalBytes]; //写入没有被压缩的数据
+        char *writebuff = new char[CurrentZipTemplate.totalBytes]; //写入被还原的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -3904,12 +3912,12 @@ int DB_ReZipFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint
 {
     int err = 0;
 
-    for (auto fileNum = begin; fileNum < num; fileNum++)
+    for (auto fileNum = begin; fileNum < num; fileNum++)//循环以给每个.idbzip文件进行还原处理
     {
         long len;
         DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[fileNum].first.c_str()), &len);
-        char *readbuff = new char[len];
-        char *writebuff = new char[CurrentZipTemplate.totalBytes];
+        char *readbuff = new char[len];//文件内容
+        char *writebuff = new char[CurrentZipTemplate.totalBytes];//写入被还原的数据
         long writebuff_pos = 0;
 
         if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -3987,6 +3995,7 @@ int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
         IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
+    //如果文件数小于1000则采用单线程还原
     if (selectedFiles.size() < 1000)
     {
         IOBusy = false;
@@ -4007,7 +4016,7 @@ int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
     future_status status[maxThreads];
     future<int> f[maxThreads];
     uint16_t begin = 0;
-    for (int j = 0; j < maxThreads - 1; j++)
+    for (int j = 0; j < maxThreads - 1; j++)//循环开启线程
     {
         f[j] = async(std::launch::async, DB_ReZipFileByTimeSpan_thread, selectedFiles, begin, singleThreadFileNum * (j + 1), params->pathToLine);
         begin += singleThreadFileNum;
@@ -4015,7 +4024,7 @@ int DB_ReZipFileByTimeSpan(struct DB_ZipParams *params)
     }
     f[maxThreads - 1] = async(std::launch::async, DB_ReZipFileByTimeSpan_thread, selectedFiles, begin, selectedFiles.size(), params->pathToLine);
     status[maxThreads - 1] = f[maxThreads - 1].wait_for(chrono::milliseconds(1));
-    for (int j = 0; j < maxThreads - 1; j++)
+    for (int j = 0; j < maxThreads - 1; j++)//等待线程结束
     {
         if (status[j] != future_status::ready)
             f[j].wait();
@@ -4069,7 +4078,7 @@ int DB_ZipFileByFileID(struct DB_ZipParams *params)
 
     for (auto &file : Files) //遍历寻找ID
     {
-        if (file.first.find(fileid) != string::npos)
+        if (file.first.find(fileid) != string::npos)//找到了
         {
             err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
             if (err)
@@ -4082,7 +4091,7 @@ int DB_ZipFileByFileID(struct DB_ZipParams *params)
             long len;
             DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
             char *readbuff = new char[len];                                                                    //文件内容
-            char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()]; //写入没有被压缩的数据
+            char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()]; //写入被压缩的数据
             long writebuff_pos = 0;
 
             if (DB_OpenAndRead(const_cast<char *>(file.first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -4091,7 +4100,7 @@ int DB_ZipFileByFileID(struct DB_ZipParams *params)
                 return StatusCode::DATAFILE_NOT_FOUND;
             }
 
-            err = ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
+            err = ZipBuf(readbuff, &writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后的数据存在writebuff中
             if(err)
                 break;
             
@@ -4180,7 +4189,7 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
 
     for (auto &file : Files) //遍历寻找ID
     {
-        if (file.first.find(fileid) != string::npos)
+        if (file.first.find(fileid) != string::npos)//找到了
         {
             err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
             if (err)
