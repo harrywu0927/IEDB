@@ -17,6 +17,24 @@ long FileIDManager::GetPacksRhythmNum(vector<pair<string, tuple<long, long>>> &p
     return res;
 }
 
+/**
+ * @brief
+ *
+ * @param packs
+ * @return long
+ */
+long FileIDManager::GetPacksRhythmNum(vector<pair<char *, long>> &packs)
+{
+    long res = 0;
+    for (auto &pack : packs)
+    {
+        string path = pack.first;
+        auto range = fidIndex[path];
+        res += std::get<1>(range) - std::get<0>(range);
+    }
+    return res;
+}
+
 void FileIDManager::GetSettings()
 {
     ifstream t("./settings.json");

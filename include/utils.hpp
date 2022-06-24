@@ -802,6 +802,8 @@ public:
     static neb::CJsonObject GetSetting();
 
     long GetPacksRhythmNum(vector<pair<string, tuple<long, long>>> &packs);
+
+    long GetPacksRhythmNum(vector<pair<char *, long>> &packs);
 };
 extern FileIDManager fileIDManager;
 

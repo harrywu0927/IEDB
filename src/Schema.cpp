@@ -4518,24 +4518,24 @@ int DB_UnloadZipSchema(const char *pathToUnset)
 //     // DB_UpdateNodeToZipSchema(&param, &newParam);
 //     return 0;
 // }
-int main()
-{
-    DB_QueryNodeParams params;
-    params.valueName = "S1ON";
-    params.pathToLine = "JinfeiSeven";
-    DB_QueryNode(&params);
-    cout << params.valueName << endl;
-    char pathcode[10];
-    memcpy(pathcode, params.pathcode, 10);
-    for (int i = 0; i < 10; i++)
-        cout << pathcode[i] << " ";
-    cout << endl;
-    cout << params.valueType << endl;
-    cout << params.isArrary << endl;
-    cout << params.arrayLen << endl;
-    cout << params.isTS << endl;
-    cout << params.tsLen << endl;
-    cout << params.hasTime << endl;
-    free(params.pathcode);
-    return 0;
-}
+// int main()
+// {
+//     DB_QueryNodeParams params;
+//     params.valueName = "S1ON";
+//     params.pathToLine = "JinfeiSeven";
+//     DB_QueryNode(&params);
+//     cout << params.valueName << endl;
+//     char pathcode[10];
+//     memcpy(pathcode, params.pathcode, 10);
+//     for (int i = 0; i < 10; i++)
+//         cout << pathcode[i] << " ";
+//     cout << endl;
+//     cout << params.valueType << endl;
+//     cout << params.isArrary << endl;
+//     cout << params.arrayLen << endl;
+//     cout << params.isTS << endl;
+//     cout << params.tsLen << endl;
+//     cout << params.hasTime << endl;
+//     free(params.pathcode);
+//     return 0;
+// }
