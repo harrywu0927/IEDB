@@ -1028,7 +1028,7 @@ int CheckZipParams(DB_ZipParams *params)
         {
             return StatusCode::NO_FILEID;
         }
-        else if (params->zipNums <= 0 && params->EID == NULL)
+        else if (params->zipNums < 0 && params->EID == NULL)
             return StatusCode::ZIPNUM_ERROR;
         else if (params->zipNums > 1 && params->EID != NULL)
             return StatusCode::ZIPNUM_AND_EID_ERROR;
@@ -3046,7 +3046,6 @@ int ReZipBuff(char **buff, int &buffLength, const char *pathToLine)
  * @brief 获得压缩后文件图片所在的偏移量（默认图片在模板最后）
  *
  * @param buff 数据缓冲
- * @param length 数据长度
  * @return long 图片所在偏移量
  */
 long GetZipImgPos(char *buff)
@@ -3103,6 +3102,12 @@ long GetZipImgPos(char *buff)
     return readbuff_pos;
 }
 
+/**
+ * @brief 检查变量名是否合法
+ * 
+ * @param variableName 变量名
+ * @return int 
+ */
 int checkInputVaribaleName(string variableName)
 {
     if (variableName.empty())
@@ -3128,6 +3133,12 @@ int checkInputVaribaleName(string variableName)
     return 0;
 }
 
+/**
+ * @brief 检查路径编码是否合法
+ * 
+ * @param pathcode 路径编码
+ * @return int 
+ */
 int checkInputPathcode(char pathcode[])
 {
     if (pathcode == NULL)
@@ -3145,6 +3156,13 @@ int checkInputPathcode(char pathcode[])
     return 0;
 }
 
+/**
+ * @brief 检查数据值是否合法
+ * 
+ * @param variableType 数据类型 
+ * @param value 数据值
+ * @return int 
+ */
 int checkInputValue(string variableType, string value)
 {
     if (variableType == "BOOL")
@@ -3422,6 +3440,15 @@ int checkInputValue(string variableType, string value)
     return 0;
 }
 
+/**
+ * @brief 检查数据范围是否合法
+ * 
+ * @param variableType 数据类型
+ * @param standardValue 标准值
+ * @param maxValue 最大值
+ * @param minValue 最小值
+ * @return int 
+ */
 int checkValueRange(string variableType, string standardValue, string maxValue, string minValue)
 {
     if (variableType == "BOOL")
@@ -3512,6 +3539,15 @@ int checkValueRange(string variableType, string standardValue, string maxValue, 
     return 0;
 }
 
+/**
+ * @brief 根据数据类型获得数值字符串
+ * 
+ * @param value 字符串
+ * @param type 数据类型
+ * @param schemaPos 模板所在位置
+ * @param MaxOrMin 最大值or最小值or标准值
+ * @return int 
+ */
 int getValueStringByValueType(char *value, ValueType::ValueType type, int schemaPos, int MaxOrMin)
 {
     DataTypeConverter converter;
@@ -3755,6 +3791,12 @@ int getValueStringByValueType(char *value, ValueType::ValueType type, int schema
     return 0;
 }
 
+/**
+ * @brief 检查查询模板条件
+ * 
+ * @param params 
+ * @return int 
+ */
 int checkQueryNodeParam(struct DB_QueryNodeParams *params)
 {
     if(params->valueName==NULL)
@@ -4204,7 +4246,15 @@ int readIDBZIPFilesListBySIDandNum(string path, string SID, uint32_t num, vector
     return err;
 }
 
-//有缺陷，如果SID和EID是在已存在文件之间的ID，则SID和EID必须存在
+/**
+ * @brief 根据SID和EID筛选出符合条件的.idbzip文件
+ * 
+ * @param path 存储路径
+ * @param SID 起始ID
+ * @param EID 结束ID
+ * @param selectedFiles 帅选后结果
+ * @return int 
+ */
 int readIDBZIPFilesListBySIDandEID(string path, string SID, string EID, vector<pair<string, long>> &selectedFiles)
 {
     int err = 0;

@@ -1425,6 +1425,7 @@ int DB_ZipSwitchFileByFileID(struct DB_ZipParams *params)
             cout << "没有文件！" << endl;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
+
         for (auto fileNum = 0; fileNum < selectedFiles.size(); fileNum++)//循环以给每个.idb文件进行压缩处理
         {
             long len;
@@ -1477,6 +1478,7 @@ int DB_ZipSwitchFileByFileID(struct DB_ZipParams *params)
             cout << "没有文件！" << endl;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
+
         for (auto fileNum = 0; fileNum < selectedFiles.size(); fileNum++)//循环以给每个.idb文件进行压缩处理
         {
             long len;
@@ -1530,10 +1532,14 @@ int DB_ZipSwitchFileByFileID(struct DB_ZipParams *params)
             cout << "没有文件！" << endl;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
+        sortByTime(Files, TIME_ASC);
+        int flag = 0;//用于标志是否找到文件
+
         for (auto &file : Files) //遍历寻找ID
         {
             if (file.first.find(fileid) != string::npos)//找到了
             {
+                flag = 1;
                 long len;
                 DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
                 char *readbuff = new char[len];                                                                    //文件内容
@@ -1584,6 +1590,8 @@ int DB_ZipSwitchFileByFileID(struct DB_ZipParams *params)
                 break;
             }
         }
+        if(flag ==0)
+            return StatusCode::DATAFILE_NOT_FOUND;
     }
     return err;
 }
@@ -1638,6 +1646,7 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
             cout << "没有文件！" << endl;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
+
         for (auto fileNum = 0; fileNum < selectedFiles.size(); fileNum++)//循环以给每个.idbzip文件进行压缩处理
         {
             long len;
@@ -1673,7 +1682,7 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
             delete[] writebuff;
         }
     }
-    else if (params->EID != NULL) //根据SID以及EID压缩
+    else if (params->EID != NULL) //根据SID以及EID还原
     {
         vector<pair<string, long>> selectedFiles;
         readIDBZIPFilesListBySIDandEID(params->pathToLine, params->fileID, params->EID, selectedFiles);
@@ -1682,6 +1691,7 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
             cout << "没有文件！" << endl;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
+        
         for (auto fileNum = 0; fileNum < selectedFiles.size(); fileNum++)//循环以给每个.idbzip文件进行压缩处理
         {
             long len;
@@ -1727,11 +1737,13 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
             return StatusCode::DATAFILE_NOT_FOUND;
         }
         sortByTime(Files, TIME_ASC);
+        int flag;//用于标志文件是否找到
 
         for (auto &file : Files) //遍历寻找ID
         {
             if (file.first.find(fileid) != string::npos)//找到了
             {
+                flag = 1;
                 long len;
                 DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
                 char *readbuff = new char[len];                            //文件内容
@@ -1769,6 +1781,8 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
                 break;
             }
         }
+        if(flag == 0)
+            return StatusCode::DATAFILE_NOT_FOUND;
     }
     return err;
 }
@@ -1874,18 +1888,18 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
 
 //     return 0;
 // }
-int main()
-{
-    // DB_ZipSwitchFile("JinfeiSeven", "JinfeiSeven");
-    DB_ZipParams param;
-    param.ZipType = FILE_ID;
-    param.pathToLine = "RobotTsTest";
-    param.fileID = "RobotTsTest1";
-    param.zipNums = 5;
-    param.EID = NULL;
-    // cout << DB_ZipSwitchFileByFileID(&param) << endl;
-    cout << DB_ReZipSwitchFileByFileID(&param) << endl;
-    //   DB_ZipSwitchFile("RobotTsTest","RobotTsTest");
-    // DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest");
-    return 0;
-}
+// int main()
+// {
+//     // DB_ZipSwitchFile("JinfeiSeven", "JinfeiSeven");
+//     DB_ZipParams param;
+//     param.ZipType = FILE_ID;
+//     param.pathToLine = "RobotTsTest";
+//     param.fileID = "RobotTsTest2";
+//     param.zipNums = 0;
+//     param.EID = NULL;
+//      cout << DB_ZipSwitchFileByFileID(&param) << endl;
+//     // cout << DB_ReZipSwitchFileByFileID(&param) << endl;
+//     //   DB_ZipSwitchFile("RobotTsTest","RobotTsTest");
+//     // DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest");
+//     return 0;
+// }

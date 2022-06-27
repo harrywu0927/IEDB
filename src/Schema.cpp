@@ -4328,7 +4328,12 @@ int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
     return err;
 }
 
-//查询模板节点信息
+/**
+ * @brief 查询模板参数
+ * 
+ * @param QueryParams 查询参数
+ * @return int 
+ */
 int DB_QueryNode(struct DB_QueryNodeParams *QueryParams)
 {
     //检查产线路径和变量名是否合法
@@ -4401,7 +4406,12 @@ int DB_QueryNode(struct DB_QueryNodeParams *QueryParams)
     return 0;
 }
 
-//查询压缩模板节点信息
+/**
+ * @brief 查询压缩模板信息
+ * 
+ * @param QueryParams 查询参数
+ * @return int 
+ */
 int DB_QueryZipNode(struct DB_QueryNodeParams *QueryParams)
 {
     //检查产线路径和变量名是否合法
