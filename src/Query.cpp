@@ -1064,6 +1064,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 		else																					  //根据路径编码查询，可能有多个变量
 			startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
 		//此处可能会分配多余的空间，但最多在两个包的可接受大小内
+		int size = Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos;
 		rawBuff = (char *)malloc(Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos);
 		memcpy(rawBuff, head, startPos);
 		cur = startPos;
@@ -1105,8 +1106,11 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 				err = params->byPath ? FindImage(&img, len, pack.first, i, params->pathCode) : FindImage(&img, len, pack.first, i, params->valueName);
 				if (err != 0)
 				{
-					errorCode = err;
-					continue;
+					if (Ext_Params.hasIMG)
+						GarbageMemRecollection(mallocedMemory);
+					else
+						free(rawBuff);
+					return err;
 				}
 				newBuffer = new char[readLength + len];
 				memcpy(newBuffer, buff, zipType == 1 ? CurrentTemplate.totalBytes : readLength);
@@ -2206,15 +2210,11 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 		IOBusy = false;
 		return check;
 	}
-	vector<pair<string, long>> selectedFiles, packsWithTime;
-	vector<string> packFiles;
+	vector<pair<string, long>> selectedFiles;
 
 	//获取每个数据文件，并带有时间戳
 	readDataFilesWithTimestamps(params->pathToLine, selectedFiles);
 
-	vector<PathCode> pathCodes;
-	if (params->byPath && params->pathCode != NULL)
-		CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
 	//根据时间降序排序
 	sortByTime(selectedFiles, TIME_DSC);
 
@@ -2227,6 +2227,8 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 	int selectedNum = 0;
 	Extraction_Params Ext_Params;
 	err = GetExtractionParams(Ext_Params, params);
+	if (params->byPath && params->pathCode != NULL)
+		CurrentTemplate.GetAllPathsByCode(params->pathCode, Ext_Params.pathCodes);
 	if (err != 0)
 		return err;
 	char *rawBuff = nullptr;
@@ -2240,13 +2242,12 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 			startPos = CurrentTemplate.writeBufferHead(params->valueName, Ext_Params.type, head); //写入缓冲区头，获取数据区起始位置
 		else																					  //根据路径编码查询，可能有多个变量
 			startPos = CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head);
-		rawBuff = (char *)malloc(Ext_Params.copyBytes * params->queryNums);
+		rawBuff = (char *)malloc(Ext_Params.copyBytes * params->queryNums + startPos);
 		memcpy(rawBuff, head, startPos);
 		cur = startPos;
 	}
 	for (auto &file : selectedFiles)
 	{
-		// typeList.clear();
 		long len; //文件长度
 		char *buff;
 		DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
@@ -2392,7 +2393,8 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 		IOBusy = false;
 		return StatusCode::NO_DATA_QUERIED;
 	}
-	sortResult(mallocedMemory, params, Ext_Params.type);
+	if (params->order != TIME_ASC && params->order != TIME_DSC && params->order != ODR_NONE) //时间排序仅需在拷贝时反向
+		sortResult(mallocedMemory, params, Ext_Params.type);
 	return WriteDataToBuffer(mallocedMemory, Ext_Params, params, buffer, cur);
 }
 
@@ -3092,6 +3094,7 @@ int main()
 	// memcpy(params.pathCode, zeros, 10);
 	DB_QueryLastRecords(&buffer, &params);
 	free(buffer.buffer);
+	buffer.buffer = nullptr;
 	DB_QueryLastRecords(&buffer, &params);
 	free(buffer.buffer);
 	DB_QueryLastRecords(&buffer, &params);
