@@ -18,8 +18,6 @@ void AppendValueToPyList(PyObject *item, char *buffer, int &cur, DataType &type)
     {
     case ValueType::INT:
     {
-        // char val[2];
-        // memcpy(val, buffer + cur, 2);
         value = __builtin_bswap16(*((short *)(buffer + cur)));
         cur += type.hasTime ? 10 : 2;
         // value = converter.ToInt16(val);
@@ -29,55 +27,40 @@ void AppendValueToPyList(PyObject *item, char *buffer, int &cur, DataType &type)
     }
     case ValueType::UINT:
     {
-        // char val[2];
-        // memcpy(val, buffer + cur, 2);
         value = __builtin_bswap16(*((ushort *)(buffer + cur)));
         cur += type.hasTime ? 10 : 2;
-        // value = converter.ToUInt16(val);
         obj = PyLong_FromLong(value);
         PyList_Append(item, obj);
         break;
     }
     case ValueType::DINT:
     {
-        // char val[4];
-        // memcpy(val, buffer + cur, 4);
         value = __builtin_bswap32(*((int *)(buffer + cur)));
         cur += type.hasTime ? 12 : 4;
-        // value = converter.ToInt32(val);
         obj = PyLong_FromLong(value);
         PyList_Append(item, obj);
         break;
     }
     case ValueType::UDINT:
     {
-        // char val[4];
-        // memcpy(val, buffer + cur, 4);
         value = __builtin_bswap32(*((uint *)(buffer + cur)));
         cur += type.hasTime ? 12 : 4;
-        // value = converter.ToUInt32(val);
         obj = PyLong_FromLong(value);
         PyList_Append(item, obj);
         break;
     }
     case ValueType::REAL:
     {
-        // char val[4];
-        // memcpy(val, buffer + cur, 4);
         floatvalue = __builtin_bswap32(*((float *)(buffer + cur)));
         cur += type.hasTime ? 12 : 4;
-        // floatvalue = converter.ToFloat(val);
         obj = PyFloat_FromDouble(value);
         PyList_Append(item, obj);
         break;
     }
     case ValueType::TIME:
     {
-        // char val[4];
-        // memcpy(val, buffer + cur, 4);
         value = __builtin_bswap32(*((int *)(buffer + cur)));
         cur += type.hasTime ? 12 : 4;
-        // value = converter.ToInt32(val);
         obj = PyLong_FromLong(value);
         PyList_Append(item, obj);
         break;
@@ -125,8 +108,6 @@ void SetValueToPyList(PyObject *item, char *buffer, int &cur, DataType &type, in
     {
     case ValueType::INT:
     {
-        // char val[2];
-        // memcpy(val, buffer + cur, 2);
         value = __builtin_bswap16(*((short *)(buffer + cur)));
         cur += type.hasTime ? 10 : 2;
         // value = converter.ToInt16(val);
@@ -136,41 +117,30 @@ void SetValueToPyList(PyObject *item, char *buffer, int &cur, DataType &type, in
     }
     case ValueType::UINT:
     {
-        // char val[2];
-        // memcpy(val, buffer + cur, 2);
         value = __builtin_bswap16(*((ushort *)(buffer + cur)));
         cur += type.hasTime ? 10 : 2;
-        // value = converter.ToInt16(val);
         obj = PyLong_FromLong(value);
         PyList_SetItem(item, index, obj);
         break;
     }
     case ValueType::DINT:
     {
-        // char val[4];
-        // memcpy(val, buffer + cur, 4);
         value = __builtin_bswap32(*((int *)(buffer + cur)));
         cur += type.hasTime ? 12 : 4;
-        // value = converter.ToInt32(val);
         obj = PyLong_FromLong(value);
         PyList_SetItem(item, index, obj);
         break;
     }
     case ValueType::UDINT:
     {
-        // char val[4];
-        // memcpy(val, buffer + cur, 4);
         value = __builtin_bswap32(*((uint *)(buffer + cur)));
         cur += type.hasTime ? 12 : 4;
-        // value = converter.ToInt32(val);
         obj = PyLong_FromLong(value);
         PyList_SetItem(item, index, obj);
         break;
     }
     case ValueType::REAL:
     {
-        // char val[4];
-        // memcpy(val, buffer + cur, 4);
         floatvalue = __builtin_bswap32(*((float *)(buffer + cur)));
         cur += type.hasTime ? 12 : 4;
         // value = converter.ToInt32(val);
@@ -180,11 +150,8 @@ void SetValueToPyList(PyObject *item, char *buffer, int &cur, DataType &type, in
     }
     case ValueType::TIME:
     {
-        // char val[4];
-        // memcpy(val, buffer + cur, 4);
         value = __builtin_bswap32(*((int *)(buffer + cur)));
         cur += type.hasTime ? 12 : 4;
-        // value = converter.ToInt32(val);
         obj = PyLong_FromLong(value);
         PyList_SetItem(item, index, obj);
         break;

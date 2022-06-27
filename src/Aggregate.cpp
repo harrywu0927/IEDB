@@ -239,6 +239,19 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
             memcpy(newBuffer + newBufCur++, &value, 1);
             break;
         }
+        case ValueType::USINT:
+        {
+            char max = 0;
+            unsigned char value;
+            for (int k = 0; k < rows; k++)
+            {
+                value = column[k];
+                if (max < value)
+                    max = value;
+            }
+            memcpy(newBuffer + newBufCur++, &value, 1);
+            break;
+        }
         default:
             break;
         }
@@ -407,6 +420,19 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
             {
                 value = column[k];
                 if (min > value)
+                    min = value;
+            }
+            memcpy(newBuffer + newBufCur++, &value, 1);
+            break;
+        }
+        case ValueType::USINT:
+        {
+            char min = INT8_MAX;
+            unsigned char value;
+            for (int k = 0; k < rows; k++)
+            {
+                value = column[k];
+                if (min < value)
                     min = value;
             }
             memcpy(newBuffer + newBufCur++, &value, 1);
@@ -581,6 +607,24 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
             newBufCur += 4;
             break;
         }
+        case ValueType::USINT:
+        {
+            char res[4] = {0};
+            unsigned char value;
+            for (int k = 0; k < rows; k++)
+            {
+                value = column[k];
+                sum += value;
+            }
+            for (int k = 0; k < 4; k++)
+            {
+                res[3 - k] |= sum;
+                sum >>= 8;
+            }
+            memcpy(newBuffer + newBufCur, res, 4);
+            newBufCur += 4;
+            break;
+        }
         default:
             break;
         }
@@ -726,6 +770,19 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
         case ValueType::SINT:
         {
             char value;
+            for (int k = 0; k < rows; k++)
+            {
+                value = column[k];
+                sum += value;
+            }
+            float res = sum / (float)rows;
+            memcpy(newBuffer + newBufCur, &res, 4);
+            newBufCur += 4;
+            break;
+        }
+        case ValueType::USINT:
+        {
+            unsigned char value;
             for (int k = 0; k < rows; k++)
             {
                 value = column[k];

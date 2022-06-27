@@ -116,7 +116,7 @@ vector<pair<string, tuple<long, long>>> PackManager::GetPacksByTime(string pathT
  *
  * @param pathToLine 到产线的路径
  * @param index 最后第index个
- * @return pair<string, tuple<long, long, char*>>
+ * @return pair<string, pair<char*,long>>
  */
 pair<string, pair<char *, long>> PackManager::GetLastPack(string pathToLine, int index)
 {

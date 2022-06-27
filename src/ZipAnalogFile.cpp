@@ -3870,7 +3870,7 @@ int DB_ReZipAnalogFileByFileID(struct DB_ZipParams *params)
             delete[] writebuff;
         }
     }
-    else if (params->EID != NULL)//根据SID和EID还原
+    else if (params->EID != NULL) //根据SID和EID还原
     {
         vector<pair<string, long>> selectedFiles;
         readIDBZIPFilesListBySIDandEID(params->pathToLine, params->fileID, params->EID, selectedFiles);
@@ -4067,15 +4067,15 @@ int DB_ReZipAnalogFileByFileID(struct DB_ZipParams *params)
 //     DB_ReZipAnalogFile("RobotTsTest","RobotTsTest");
 //     return 0;
 // }
-int main()
-{
-    DB_ZipParams param;
-    param.ZipType = FILE_ID;
-    param.pathToLine = "RobotTsTest";
-    param.fileID = "RobotTsTest2";
-    param.zipNums = 1;
-    param.EID = "RobotTsTest7";
-     cout << DB_ZipAnalogFileByFileID(&param) << endl;
-    // cout << DB_ReZipAnalogFileByFileID(&param) << endl;
-    return 0;
-}
+// int main()
+// {
+//     DB_ZipParams param;
+//     param.ZipType = FILE_ID;
+//     param.pathToLine = "RobotTsTest";
+//     param.fileID = "RobotTsTest2";
+//     param.zipNums = 1;
+//     param.EID = "RobotTsTest7";
+//      cout << DB_ZipAnalogFileByFileID(&param) << endl;
+//     // cout << DB_ReZipAnalogFileByFileID(&param) << endl;
+//     return 0;
+// }

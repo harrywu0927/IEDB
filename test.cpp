@@ -52,83 +52,86 @@ void checkSettings()
 
 int main()
 {
-    const char *str = "12345";
-    cout << str[2] << endl;
-    return 0;
-    DB_DataBuffer dbf;
-    dbf.savePath = "JinfeiSixteen";
-    dbf.length = 5;
-    char d[5] = {0};
-    dbf.buffer = d;
-    DB_InsertRecord(&dbf, 0);
-    sleep(100);
-    return 0;
-    Py_Initialize();
-    // 指定py文件目录
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
-    PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
-    PyObject *mymodule2 = PyImport_ImportModule("Statistics");
-    for (int a = 0; a < 5; a++)
-    {
-        PyObject *arr = PyList_New(100);
-        PyObject *lstitem;
-        for (int i = 0; i < 100; i++)
-        {
-            lstitem = PyLong_FromLong(i % 20 == 0 ? rand() % 100 : rand() % 10);
-            PyList_SetItem(arr, i, lstitem);
-            // PyList_Append(test, lstitem);
-        }
 
-        PyObject *obj;
+    // DB_DataBuffer dbf;
+    // dbf.savePath = "JinfeiSeven/JinfeiSeven1527050_2022-5-12-18-10-35-620.idb";
+    // DB_ReadFile(&dbf);
+    // dbf.savePath = "TEST";
+    // auto start = std::chrono::system_clock::now();
+    // for (int i = 0; i < 100; i++)
+    // {
 
-        // PyObject *pname = Py_BuildValue("s", "testpy");
+    // }
+    // auto end = std::chrono::system_clock::now();
+    // std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+    // // sleep(100);
+    // return 0;
+    // Py_Initialize();
+    // // 指定py文件目录
+    // PyRun_SimpleString("import sys");
+    // PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
+    // PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
+    // PyObject *mymodule2 = PyImport_ImportModule("Statistics");
+    // for (int a = 0; a < 5; a++)
+    // {
+    //     PyObject *arr = PyList_New(100);
+    //     PyObject *lstitem;
+    //     for (int i = 0; i < 100; i++)
+    //     {
+    //         lstitem = PyLong_FromLong(i % 20 == 0 ? rand() % 100 : rand() % 10);
+    //         PyList_SetItem(arr, i, lstitem);
+    //         // PyList_Append(test, lstitem);
+    //     }
 
-        // PyObject *numpy = PyImport_ImportModule("numpy");
-        // PyObject *std = PyObject_GetAttrString(numpy, "fft");
-        PyObject *pValue, *pArgs, *pFunc;
-        long res = 0;
-        if (mymodule != NULL)
-        {
-            // 从模块中获取函数
-            pFunc = PyObject_GetAttrString(mymodule, "Outliers");
+    //     PyObject *obj;
 
-            if (pFunc && PyCallable_Check(pFunc))
-            {
-                // 创建参数元组
-                pArgs = PyTuple_New(2);
-                PyTuple_SetItem(pArgs, 0, arr);
-                PyTuple_SetItem(pArgs, 1, PyLong_FromLong(1));
-                // 函数执行
-                PyObject *ret = PyObject_CallObject(pFunc, pArgs);
-                PyObject *item;
-                long val;
-                int len = PyObject_Size(ret);
-                for (int i = 0; i < len; i++)
-                {
-                    item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
-                    val = PyLong_AsLong(item);     //转换为c类型的数据
-                    cout << val << " ";
-                }
-                // res = PyLong_AsLong(PyList_GetItem(pValue, 1));
-                // cout << pValue->ob_type->tp_name << endl;
-            }
-        }
-    }
-    Py_Finalize();
-    return 0;
-    long timestart = 1763728603642;
-    DataTypeConverter dt;
-    char time[8] = {0};
-    dt.ToLong64Buff(timestart, time);
-    float f = 31.5;
-    char ff[4] = {0};
-    dt.ToFloatBuff(f, ff);
-    float fff = dt.ToFloat(ff);
-    char ffff[4] = {0};
-    dt.ToFloatBuff_m(f, ffff);
-    float fffff = dt.ToFloat_m(ffff);
-    return 0;
+    //     // PyObject *pname = Py_BuildValue("s", "testpy");
+
+    //     // PyObject *numpy = PyImport_ImportModule("numpy");
+    //     // PyObject *std = PyObject_GetAttrString(numpy, "fft");
+    //     PyObject *pValue, *pArgs, *pFunc;
+    //     long res = 0;
+    //     if (mymodule != NULL)
+    //     {
+    //         // 从模块中获取函数
+    //         pFunc = PyObject_GetAttrString(mymodule, "Outliers");
+
+    //         if (pFunc && PyCallable_Check(pFunc))
+    //         {
+    //             // 创建参数元组
+    //             pArgs = PyTuple_New(2);
+    //             PyTuple_SetItem(pArgs, 0, arr);
+    //             PyTuple_SetItem(pArgs, 1, PyLong_FromLong(1));
+    //             // 函数执行
+    //             PyObject *ret = PyObject_CallObject(pFunc, pArgs);
+    //             PyObject *item;
+    //             long val;
+    //             int len = PyObject_Size(ret);
+    //             for (int i = 0; i < len; i++)
+    //             {
+    //                 item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
+    //                 val = PyLong_AsLong(item);     //转换为c类型的数据
+    //                 cout << val << " ";
+    //             }
+    //             // res = PyLong_AsLong(PyList_GetItem(pValue, 1));
+    //             // cout << pValue->ob_type->tp_name << endl;
+    //         }
+    //     }
+    // }
+    // Py_Finalize();
+    // return 0;
+    // long timestart = 1763728603642;
+    // DataTypeConverter dt;
+    // char time[8] = {0};
+    // dt.ToLong64Buff(timestart, time);
+    // float f = 31.5;
+    // char ff[4] = {0};
+    // dt.ToFloatBuff(f, ff);
+    // float fff = dt.ToFloat(ff);
+    // char ffff[4] = {0};
+    // dt.ToFloatBuff_m(f, ffff);
+    // float fffff = dt.ToFloat_m(ffff);
+    // return 0;
 
     DB_QueryParams params;
     params.pathToLine = "JinfeiSeven";
@@ -151,13 +154,13 @@ int main()
     // params.start = 0;
     // params.end = 1652099030250;
     params.start = 1553728593562;
-    params.end = 1763728603642;
+    params.end = 1651897393777;
     params.order = ODR_NONE;
     params.compareType = CMP_NONE;
     params.compareValue = "666";
-    params.queryType = QRY_NONE;
-    params.byPath = 1;
-    params.queryNums = 5;
+    params.queryType = TIMESPAN;
+    params.byPath = 0;
+    params.queryNums = 10000;
     DB_DataBuffer buffer;
     buffer.savePath = "JinfeiTTE";
     long count;
@@ -169,21 +172,27 @@ int main()
     // return 0;
     auto startTime = std::chrono::system_clock::now();
     // DB_MAX(&buffer, &params);
-    DB_GetAbnormalDataCount(&params, &count);
-    if (buffer.bufferMalloced)
+    for (int i = 0; i < 1000; i++)
     {
-        char buf[buffer.length];
-        memcpy(buf, buffer.buffer, buffer.length);
-        cout << buffer.length << endl;
-        for (int i = 0; i < buffer.length; i++)
-        {
-            cout << (int)buf[i] << " ";
-            if (i % 11 == 0)
-                cout << endl;
-        }
-
+        DB_QueryByTimespan(&buffer, &params);
+        // cout << buffer.length << endl;
         free(buffer.buffer);
     }
+
+    // if (buffer.bufferMalloced)
+    // {
+    //     char buf[buffer.length];
+    //     memcpy(buf, buffer.buffer, buffer.length);
+    //     cout << buffer.length << endl;
+    //     for (int i = 0; i < buffer.length; i++)
+    //     {
+    //         cout << (int)buf[i] << " ";
+    //         if (i % 11 == 0)
+    //             cout << endl;
+    //     }
+
+    //     free(buffer.buffer);
+    // }
     // DB_MAX(&buffer);
     auto endTime = std::chrono::system_clock::now();
     std::cout << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
