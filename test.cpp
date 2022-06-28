@@ -52,6 +52,20 @@ void checkSettings()
 
 int main()
 {
+    // int (*M)[10] = new int[10][10];
+    char (*maxValue)[10];
+    maxValue = new char[10][10];
+    // char** maxValue;
+    // maxValue = new char*[1];
+    // for(int i=0;i<1;i++)
+    //     maxValue[i] = new char[10];
+    char max[10] = {'0','1','2','3','4','5','6','7','8','9'};
+    memcpy(maxValue[0],max,10);
+    for(int i=0;i<10;i++)
+        cout<<maxValue[0][i]<<endl;
+    delete[] maxValue;
+    return 0;
+
 
     // DB_DataBuffer dbf;
     // dbf.savePath = "JinfeiSeven/JinfeiSeven1527050_2022-5-12-18-10-35-620.idb";
