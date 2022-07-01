@@ -3,10 +3,8 @@ using namespace std;
 
 int ZipSwitchBuf(char *readbuff, char *writebuff, long &writebuff_pos);
 int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writebuff_pos);
-int DB_ZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine);
-int DB_ReZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine);
-int DB_ZipSwitchFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine);
-int DB_ReZipSwitchFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine);
+int DB_ZipSwitchFile_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine);
+int DB_ReZipSwitchFile_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine);
 
 mutex openSwitchMutex;
 
@@ -428,6 +426,125 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
 }
 
 /**
+ * @brief 按文件夹压缩.idb文件，线程函数
+ *
+ * @param filesWithTime 带时间戳的.idb文件
+ * @param begin 文件的开始下标
+ * @param num 文件的数量
+ * @param pathToLine 文件夹路径
+ * @return 0:success,
+ *          others:StatusCode
+ */
+int DB_ZipSwitchFile_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine)
+{
+    int err;
+
+    //循环以给每个.idb文件进行压缩处理
+    for (auto i = begin; i < num; i++)
+    {
+        long len;
+        DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[i].first.c_str()), &len);
+        char *readbuff = new char[len];                                                                    //文件内容
+        char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()]; //写入被压缩的数据
+
+        long writebuff_pos = 0;
+
+        if (DB_OpenAndRead(const_cast<char *>(selectedFiles[i].first.c_str()), readbuff)) //将文件内容读取到readbuff
+        {
+            cout << "未找到文件" << endl;
+            IOBusy = false;
+            return StatusCode::DATAFILE_NOT_FOUND;
+        }
+
+        err = ZipSwitchBuf(readbuff, writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
+        if (err)
+            continue;
+
+        if (writebuff_pos >= len) //表明数据没有被压缩,不做处理
+        {
+            cout << selectedFiles[i].first + "文件数据没有被压缩!" << endl;
+        }
+        else
+        {
+            DB_DeleteFile(const_cast<char *>(selectedFiles[i].first.c_str())); //删除原文件
+            long fp;
+            string finalpath = selectedFiles[i].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
+            //创建新文件并写入
+            char mode[2] = {'w', 'b'};
+
+            openSwitchMutex.lock();
+            err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
+            if (err == 0)
+            {
+                if (writebuff_pos != 0)
+                    err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
+                err = DB_Close(fp);
+            }
+            openSwitchMutex.unlock();
+        }
+        delete[] readbuff;
+        delete[] writebuff;
+    }
+    return err;
+}
+
+
+/**
+ * @brief 按文件夹还原.idbzip文件，线程函数
+ *
+ * @param filesWithTime 带时间戳的.idbzip文件
+ * @param begin 文件的开始下标
+ * @param num 文件的数量
+ * @param pathToLine 文件夹路径
+ * @return 0:success,
+ *          others:StatusCode
+ */
+int DB_ReZipSwitchFile_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine)
+{
+    int err = 0;
+
+    //循环以给每个.idbzip文件进行还原处理
+    for (auto i = begin; i < num; i++)
+    {
+        long len;
+        DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[i].first.c_str()), &len);
+        char *readbuff = new char[len];                            //文件内容
+        char *writebuff = new char[CurrentZipTemplate.totalBytes]; //写入被还原的数据
+
+        long writebuff_pos = 0;
+
+        if (DB_OpenAndRead(const_cast<char *>(selectedFiles[i].first.c_str()), readbuff)) //将文件内容读取到readbuff
+        {
+            cout << "未找到文件" << endl;
+            IOBusy = false;
+            return StatusCode::DATAFILE_NOT_FOUND;
+        }
+
+        err = ReZipSwitchBuf(readbuff, len, writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
+        if (err)
+            continue;
+        ;
+
+        DB_DeleteFile(const_cast<char *>(selectedFiles[i].first.c_str())); //删除原文件
+        long fp;
+        string finalpath = selectedFiles[i].first.substr(0, selectedFiles[i].first.length() - 3); //去掉后缀的zip
+        //创建新文件并写入
+        char mode[2] = {'w', 'b'};
+        openSwitchMutex.lock();
+        err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
+        if (err == 0)
+        {
+            err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
+            err = DB_Close(fp);
+        }
+        openSwitchMutex.unlock();
+        delete[] readbuff;
+        delete[] writebuff;
+    }
+    return err;
+}
+
+/**
  * @brief 压缩只有开关量类型的已有.idb文件，单线程压缩
  *
  * @param ZipTemPath 压缩模板路径
@@ -507,69 +624,6 @@ int DB_ZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
         }
     }
     IOBusy = false;
-    return err;
-}
-
-/**
- * @brief 按文件夹压缩.idb文件，线程函数
- *
- * @param filesWithTime 带时间戳的.idb文件
- * @param begin 文件的开始下标
- * @param num 文件的数量
- * @param pathToLine 文件夹路径
- * @return 0:success,
- *          others:StatusCode
- */
-int DB_ZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine)
-{
-    int err;
-
-    //循环以给每个.idb文件进行压缩处理
-    for (auto i = begin; i < num; i++)
-    {
-        long len;
-        DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[i].first.c_str()), &len);
-        char *readbuff = new char[len];                                                                    //文件内容
-        char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()]; //写入被压缩的数据
-
-        long writebuff_pos = 0;
-
-        if (DB_OpenAndRead(const_cast<char *>(filesWithTime[i].first.c_str()), readbuff)) //将文件内容读取到readbuff
-        {
-            cout << "未找到文件" << endl;
-            IOBusy = false;
-            return StatusCode::DATAFILE_NOT_FOUND;
-        }
-
-        err = ZipSwitchBuf(readbuff, writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
-        if (err)
-            continue;
-
-        if (writebuff_pos >= len) //表明数据没有被压缩,不做处理
-        {
-            cout << filesWithTime[i].first + "文件数据没有被压缩!" << endl;
-        }
-        else
-        {
-            DB_DeleteFile(const_cast<char *>(filesWithTime[i].first.c_str())); //删除原文件
-            long fp;
-            string finalpath = filesWithTime[i].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
-            //创建新文件并写入
-            char mode[2] = {'w', 'b'};
-
-            openSwitchMutex.lock();
-            err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
-            if (err == 0)
-            {
-                if (writebuff_pos != 0)
-                    err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
-                err = DB_Close(fp);
-            }
-            openSwitchMutex.unlock();
-        }
-        delete[] readbuff;
-        delete[] writebuff;
-    }
     return err;
 }
 
@@ -710,61 +764,6 @@ int DB_ReZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
         // err = close(fd);
     }
     IOBusy = false;
-    return err;
-}
-
-/**
- * @brief 按文件夹还原.idbzip文件，线程函数
- *
- * @param filesWithTime 带时间戳的.idbzip文件
- * @param begin 文件的开始下标
- * @param num 文件的数量
- * @param pathToLine 文件夹路径
- * @return 0:success,
- *          others:StatusCode
- */
-int DB_ReZipSwitchFile_thread(vector<pair<string, long>> filesWithTime, uint16_t begin, uint16_t num, const char *pathToLine)
-{
-    int err = 0;
-
-    //循环以给每个.idbzip文件进行还原处理
-    for (auto i = begin; i < num; i++)
-    {
-        long len;
-        DB_GetFileLengthByPath(const_cast<char *>(filesWithTime[i].first.c_str()), &len);
-        char *readbuff = new char[len];                            //文件内容
-        char *writebuff = new char[CurrentZipTemplate.totalBytes]; //写入被还原的数据
-
-        long writebuff_pos = 0;
-
-        if (DB_OpenAndRead(const_cast<char *>(filesWithTime[i].first.c_str()), readbuff)) //将文件内容读取到readbuff
-        {
-            cout << "未找到文件" << endl;
-            IOBusy = false;
-            return StatusCode::DATAFILE_NOT_FOUND;
-        }
-
-        err = ReZipSwitchBuf(readbuff, len, writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
-        if (err)
-            continue;
-        ;
-
-        DB_DeleteFile(const_cast<char *>(filesWithTime[i].first.c_str())); //删除原文件
-        long fp;
-        string finalpath = filesWithTime[i].first.substr(0, filesWithTime[i].first.length() - 3); //去掉后缀的zip
-        //创建新文件并写入
-        char mode[2] = {'w', 'b'};
-        openSwitchMutex.lock();
-        err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
-        if (err == 0)
-        {
-            err = fwrite(writebuff, writebuff_pos, 1, (FILE *)fp);
-            err = DB_Close(fp);
-        }
-        openSwitchMutex.unlock();
-        delete[] readbuff;
-        delete[] writebuff;
-    }
     return err;
 }
 
@@ -1001,69 +1000,6 @@ int DB_ZipSwitchFileByTimeSpan_Single(struct DB_ZipParams *params)
 }
 
 /**
- * @brief 按时间段压缩.idb文件，线程函数
- *
- * @param selectedFiles 筛选后在时间范围内的.idb文件
- * @param begin 文件的开始下标
- * @param num 文件的数量
- * @param pathToLine .idb文件的路径
- * @return 0:success,
- *          others: StatusCode
- */
-int DB_ZipSwitchFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine)
-{
-    int err = 0;
-    //循环以给每个.idb文件进行压缩处理
-    for (auto fileNum = begin; fileNum < num; fileNum++)
-    {
-        long len;
-        DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[fileNum].first.c_str()), &len);
-        char *readbuff = new char[len];                                                                    //文件内容
-        char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()]; //写入被压缩的数据
-
-        long writebuff_pos = 0;
-
-        if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
-        {
-            cout << "未找到文件" << endl;
-            IOBusy = false;
-            return StatusCode::DATAFILE_NOT_FOUND;
-        }
-
-        err = ZipSwitchBuf(readbuff, writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后数据在writebuff里
-        if (err)
-            continue;
-
-        if (writebuff_pos >= len) //表明数据没有被压缩,不做处理
-        {
-            cout << selectedFiles[fileNum].first + "文件数据没有被压缩!" << endl;
-            // return 1;//1表示数据没有被压缩
-        }
-        else
-        {
-            DB_DeleteFile(const_cast<char *>(selectedFiles[fileNum].first.c_str())); //删除原文件
-            long fp;
-            string finalpath = selectedFiles[fileNum].first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
-            //创建新文件并写入
-            char mode[2] = {'w', 'b'};
-
-            openSwitchMutex.lock();
-            err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
-            if (err == 0)
-            {
-                if (writebuff_pos != 0)
-                    err = DB_Write(fp, writebuff, writebuff_pos);
-                err = DB_Close(fp);
-            }
-            openSwitchMutex.unlock();
-        }
-        delete[] readbuff;
-        delete[] writebuff;
-    }
-    return err;
-}
-
-/**
  * @brief 多线程按时间段压缩.idb文件函数，内核数>２时才有效
  *
  * @param params 压缩请求参数
@@ -1132,11 +1068,11 @@ int DB_ZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
     uint16_t begin = 0;
     for (int j = 0; j < maxThreads - 1; j++) //循环开启线程
     {
-        f[j] = async(std::launch::async, DB_ZipSwitchFileByTimeSpan_thread, selectedFiles, begin, singleThreadFileNum * (j + 1), params->pathToLine);
+        f[j] = async(std::launch::async, DB_ZipSwitchFile_thread, selectedFiles, begin, singleThreadFileNum * (j + 1), params->pathToLine);
         begin += singleThreadFileNum;
         status[j] = f[j].wait_for(chrono::milliseconds(1));
     }
-    f[maxThreads - 1] = async(std::launch::async, DB_ZipSwitchFileByTimeSpan_thread, selectedFiles, begin, selectedFiles.size(), params->pathToLine);
+    f[maxThreads - 1] = async(std::launch::async, DB_ZipSwitchFile_thread, selectedFiles, begin, selectedFiles.size(), params->pathToLine);
     status[maxThreads - 1] = f[maxThreads - 1].wait_for(chrono::milliseconds(1));
     for (int j = 0; j < maxThreads - 1; j++) //等待线程结束
     {
@@ -1236,61 +1172,6 @@ int DB_ReZipSwitchFileByTimeSpan_Single(struct DB_ZipParams *params)
 }
 
 /**
- * @brief 按时间段还原.idbzip文件，线程函数
- *
- * @param selectedFiles 筛选后在时间范围内的.idbzip文件
- * @param begin 文件的开始下标
- * @param num 文件的数量
- * @param pathToLine .idbzip文件的路径
- * @return 0:success,
- *          others: StatusCode
- */
-int DB_ReZipSwitchFileByTimeSpan_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine)
-{
-    int err = 0;
-    //循环以给每个.idbzip文件进行压缩处理
-    for (auto fileNum = begin; fileNum < num; fileNum++)
-    {
-        long len;
-        DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[fileNum].first.c_str()), &len);
-        char *readbuff = new char[len];                            //文件内容
-        char *writebuff = new char[CurrentZipTemplate.totalBytes]; //写入被还原的数据
-
-        long writebuff_pos = 0;
-
-        if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
-        {
-            cout << "未找到文件" << endl;
-            IOBusy = false;
-            return StatusCode::DATAFILE_NOT_FOUND;
-        }
-
-        err = ReZipSwitchBuf(readbuff, len, writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
-        if (err)
-            continue;
-
-        DB_DeleteFile(const_cast<char *>(selectedFiles[fileNum].first.c_str())); //删除原文件
-        long fp;
-        string finalpath = selectedFiles[fileNum].first.substr(0, selectedFiles[fileNum].first.length() - 3); //去掉后缀的zip
-        //创建新文件并写入
-        char mode[2] = {'w', 'b'};
-
-        openSwitchMutex.lock();
-        err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
-        if (err == 0)
-        {
-            err = DB_Write(fp, writebuff, writebuff_pos);
-            DB_Close(fp);
-        }
-        openSwitchMutex.unlock();
-        delete[] readbuff;
-        delete[] writebuff;
-    }
-    IOBusy = false;
-    return err;
-}
-
-/**
  * @brief 多线程按时间段还原.idbzip文件函数，内核数>２时才有效
  *
  * @param params 压缩请求参数
@@ -1359,11 +1240,11 @@ int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
     uint16_t begin = 0;
     for (int j = 0; j < maxThreads - 1; j++) //循环开启线程
     {
-        f[j] = async(std::launch::async, DB_ReZipSwitchFileByTimeSpan_thread, selectedFiles, begin, singleThreadFileNum * (j + 1), params->pathToLine);
+        f[j] = async(std::launch::async, DB_ReZipSwitchFile_thread, selectedFiles, begin, singleThreadFileNum * (j + 1), params->pathToLine);
         begin += singleThreadFileNum;
         status[j] = f[j].wait_for(chrono::milliseconds(1));
     }
-    f[maxThreads - 1] = async(std::launch::async, DB_ReZipSwitchFileByTimeSpan_thread, selectedFiles, begin, selectedFiles.size(), params->pathToLine);
+    f[maxThreads - 1] = async(std::launch::async, DB_ReZipSwitchFile_thread, selectedFiles, begin, selectedFiles.size(), params->pathToLine);
     status[maxThreads - 1] = f[maxThreads - 1].wait_for(chrono::milliseconds(1));
     for (int j = 0; j < maxThreads - 1; j++) //等待线程结束
     {
@@ -1385,7 +1266,7 @@ int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
 int DB_ZipSwitchFileByFileID(struct DB_ZipParams *params)
 {
     params->ZipType = FILE_ID;
-    int err = CheckZipParams(params);//检查压缩参数是否合法
+    int err = CheckZipParams(params); //检查压缩参数是否合法
     if (err != 0)
         return err;
 
@@ -1426,7 +1307,7 @@ int DB_ZipSwitchFileByFileID(struct DB_ZipParams *params)
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
-        for (auto fileNum = 0; fileNum < selectedFiles.size(); fileNum++)//循环以给每个.idb文件进行压缩处理
+        for (auto fileNum = 0; fileNum < selectedFiles.size(); fileNum++) //循环以给每个.idb文件进行压缩处理
         {
             long len;
             DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[fileNum].first.c_str()), &len);
@@ -1479,12 +1360,12 @@ int DB_ZipSwitchFileByFileID(struct DB_ZipParams *params)
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
-        for (auto fileNum = 0; fileNum < selectedFiles.size(); fileNum++)//循环以给每个.idb文件进行压缩处理
+        for (auto fileNum = 0; fileNum < selectedFiles.size(); fileNum++) //循环以给每个.idb文件进行压缩处理
         {
             long len;
             DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[fileNum].first.c_str()), &len);
-            char *readbuff = new char[len];//文件内容
-            char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()];//写入被压缩的数据
+            char *readbuff = new char[len];                                                                    //文件内容
+            char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()]; //写入被压缩的数据
             long writebuff_pos = 0;
 
             if (DB_OpenAndRead(const_cast<char *>(selectedFiles[fileNum].first.c_str()), readbuff)) //将文件内容读取到readbuff
@@ -1533,11 +1414,11 @@ int DB_ZipSwitchFileByFileID(struct DB_ZipParams *params)
             return StatusCode::DATAFILE_NOT_FOUND;
         }
         sortByTime(Files, TIME_ASC);
-        int flag = 0;//用于标志是否找到文件
+        int flag = 0; //用于标志是否找到文件
 
         for (auto &file : Files) //遍历寻找ID
         {
-            if (file.first.find(fileid) != string::npos)//找到了
+            if (file.first.find(fileid) != string::npos) //找到了
             {
                 flag = 1;
                 long len;
@@ -1590,10 +1471,206 @@ int DB_ZipSwitchFileByFileID(struct DB_ZipParams *params)
                 break;
             }
         }
-        if(flag ==0)
+        if (flag == 0)
             return StatusCode::DATAFILE_NOT_FOUND;
     }
     return err;
+}
+
+int DB_ZipSwitchFileByFileID_MultiThread(struct DB_ZipParams *params)
+{
+    params->ZipType = FILE_ID;
+    int err = CheckZipParams(params); //检查压缩参数是否合法
+    if (err != 0)
+        return err;
+
+    maxThreads = thread::hardware_concurrency();
+    if (maxThreads <= 2) //如果内核数小于等于2则不如使用单线程
+    {
+        err = DB_ZipSwitchFileByFileID(params);
+        return err;
+    }
+
+    string pathToLine = params->pathToLine;
+    string fileid = params->fileID; //用于记录fileID，前面会带产线名称
+    while (pathToLine[pathToLine.length() - 1] == '/')
+    {
+        pathToLine.pop_back();
+    }
+
+    vector<string> paths = DataType::splitWithStl(pathToLine, "/");
+    if (paths.size() > 0)
+    {
+        if (fileid.find(paths[paths.size() - 1]) == string::npos)
+            fileid = paths[paths.size() - 1] + fileid;
+    }
+    else
+    {
+        if (fileid.find(paths[0]) == string::npos)
+            fileid = paths[0] + fileid;
+    }
+
+    //加载压缩模板
+    err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
+    if (err)
+    {
+        cout << "未加载模板" << endl;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
+
+    IOBusy = true;
+
+    if (params->zipNums > 1) //根据SID以及zipNums压缩
+    {
+        vector<pair<string, long>> selectedFiles;
+        readIDBFilesListBySIDandNum(params->pathToLine, params->fileID, params->zipNums, selectedFiles);
+        if (selectedFiles.size() == 0)
+        {
+            IOBusy = false;
+            cout << "没有文件！" << endl;
+            return StatusCode::DATAFILE_NOT_FOUND;
+        }
+
+        //当文件数小于1000时，采用单线程压缩
+        if (selectedFiles.size() < 1000)
+        {
+            IOBusy = false;
+            err = DB_ZipSwitchFileByFileID(params);
+            return err;
+        }
+
+        uint16_t singleThreadFileNum = selectedFiles.size() / maxThreads;
+        future_status status[maxThreads];
+        future<int> f[maxThreads];
+        uint16_t begin = 0;
+        for (int j = 0; j < maxThreads - 1; j++) //循环开启线程
+        {
+            f[j] = async(std::launch::async, DB_ZipSwitchFile_thread, selectedFiles, begin, singleThreadFileNum * (j + 1), params->pathToLine);
+            begin += singleThreadFileNum;
+            status[j] = f[j].wait_for(chrono::milliseconds(1));
+        }
+        f[maxThreads - 1] = async(std::launch::async, DB_ZipSwitchFile_thread, selectedFiles, begin, selectedFiles.size(), params->pathToLine);
+        status[maxThreads - 1] = f[maxThreads - 1].wait_for(chrono::milliseconds(1));
+        for (int j = 0; j < maxThreads - 1; j++) //等待线程结束
+        {
+            if (status[j] != future_status::ready)
+                f[j].wait();
+        }
+
+        IOBusy = false;
+        return err;
+    }
+    else if (params->EID != NULL) //根据SID以及EID压缩
+    {
+        vector<pair<string, long>> selectedFiles;
+        readIDBFilesListBySIDandEID(params->pathToLine, params->fileID, params->EID, selectedFiles);
+        if (selectedFiles.size() == 0)
+        {
+            IOBusy = false;
+            cout << "没有文件！" << endl;
+            return StatusCode::DATAFILE_NOT_FOUND;
+        }
+
+        //当文件数小于1000时采用单线程压缩
+        if (selectedFiles.size() < 1000)
+        {
+            IOBusy = false;
+            err = DB_ZipSwitchFileByFileID(params);
+            return err;
+        }
+
+        uint16_t singleThreadFileNum = selectedFiles.size() / maxThreads;
+        future_status status[maxThreads];
+        future<int> f[maxThreads];
+        uint16_t begin = 0;
+        for (int j = 0; j < maxThreads - 1; j++) //循环开启线程
+        {
+            f[j] = async(std::launch::async, DB_ZipSwitchFile_thread, selectedFiles, begin, singleThreadFileNum * (j + 1), params->pathToLine);
+            begin += singleThreadFileNum;
+            status[j] = f[j].wait_for(chrono::milliseconds(1));
+        }
+        f[maxThreads - 1] = async(std::launch::async, DB_ZipSwitchFile_thread, selectedFiles, begin, selectedFiles.size(), params->pathToLine);
+        status[maxThreads - 1] = f[maxThreads - 1].wait_for(chrono::milliseconds(1));
+        for (int j = 0; j < maxThreads - 1; j++) //等待线程结束
+        {
+            if (status[j] != future_status::ready)
+                f[j].wait();
+        }
+
+        IOBusy = false;
+        return err;
+    }
+    else //只压缩SID一个文件
+    {
+        IOBusy = false;
+        vector<pair<string, long>> Files;
+        readIDBFilesWithTimestamps(params->pathToLine, Files);
+        if (Files.size() == 0)
+        {
+            cout << "没有文件！" << endl;
+            return StatusCode::DATAFILE_NOT_FOUND;
+        }
+        sortByTime(Files, TIME_ASC);
+        int flag = 0; //用于标志是否找到文件
+
+        for (auto &file : Files) //遍历寻找ID
+        {
+            if (file.first.find(fileid) != string::npos) //找到了
+            {
+                flag = 1;
+                long len;
+                DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+                char *readbuff = new char[len];                                                                    //文件内容
+                char *writebuff = new char[CurrentZipTemplate.totalBytes + 3 * CurrentZipTemplate.schemas.size()]; //写入被压缩的数据
+                long writebuff_pos = 0;
+
+                if (DB_OpenAndRead(const_cast<char *>(file.first.c_str()), readbuff)) //将文件内容读取到readbuff
+                {
+                    cout << "未找到文件" << endl;
+                    return StatusCode::DATAFILE_NOT_FOUND;
+                }
+
+                err = ZipSwitchBuf(readbuff, writebuff, writebuff_pos); //调用函数对readbuff进行压缩，压缩后的数据存在writebuff中
+                if (err)
+                    break;
+
+                if (writebuff_pos >= len) //表明数据没有被压缩,不做处理
+                {
+                    cout << file.first + "文件数据没有被压缩!" << endl;
+                    // return 1;//1表示数据没有被压缩
+                    char *data = (char *)malloc(len);
+                    memcpy(data, readbuff, len);
+                    params->buffer = data; //将数据记录在params->buffer中
+                    params->bufferLen = len;
+                }
+                else
+                {
+                    char *data = (char *)malloc(writebuff_pos);
+                    memcpy(data, writebuff, writebuff_pos);
+                    params->buffer = data; //将压缩后数据记录在params->buffer中
+                    params->bufferLen = writebuff_pos;
+
+                    DB_DeleteFile(const_cast<char *>(file.first.c_str())); //删除原文件
+                    long fp;
+                    string finalpath = file.first.append("zip"); //给压缩文件后缀添加zip，暂定，根据后续要求更改
+                    //创建新文件并写入
+                    char mode[2] = {'w', 'b'};
+                    err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
+                    if (err == 0)
+                    {
+                        if (writebuff_pos != 0)
+                            err = DB_Write(fp, writebuff, writebuff_pos);
+                        DB_Close(fp);
+                    }
+                }
+                delete[] readbuff;
+                delete[] writebuff;
+                break;
+            }
+        }
+        if (flag == 0)
+            return StatusCode::DATAFILE_NOT_FOUND;
+    }
 }
 
 /**
@@ -1606,7 +1683,7 @@ int DB_ZipSwitchFileByFileID(struct DB_ZipParams *params)
 int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
 {
     params->ZipType = FILE_ID;
-    int err = CheckZipParams(params);//检查还原参数是否合法
+    int err = CheckZipParams(params); //检查还原参数是否合法
     if (err != 0)
         return err;
 
@@ -1647,7 +1724,7 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
             return StatusCode::DATAFILE_NOT_FOUND;
         }
 
-        for (auto fileNum = 0; fileNum < selectedFiles.size(); fileNum++)//循环以给每个.idbzip文件进行压缩处理
+        for (auto fileNum = 0; fileNum < selectedFiles.size(); fileNum++) //循环以给每个.idbzip文件进行压缩处理
         {
             long len;
             DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[fileNum].first.c_str()), &len);
@@ -1691,8 +1768,8 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
             cout << "没有文件！" << endl;
             return StatusCode::DATAFILE_NOT_FOUND;
         }
-        
-        for (auto fileNum = 0; fileNum < selectedFiles.size(); fileNum++)//循环以给每个.idbzip文件进行压缩处理
+
+        for (auto fileNum = 0; fileNum < selectedFiles.size(); fileNum++) //循环以给每个.idbzip文件进行压缩处理
         {
             long len;
             DB_GetFileLengthByPath(const_cast<char *>(selectedFiles[fileNum].first.c_str()), &len);
@@ -1737,11 +1814,11 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
             return StatusCode::DATAFILE_NOT_FOUND;
         }
         sortByTime(Files, TIME_ASC);
-        int flag;//用于标志文件是否找到
+        int flag; //用于标志文件是否找到
 
         for (auto &file : Files) //遍历寻找ID
         {
-            if (file.first.find(fileid) != string::npos)//找到了
+            if (file.first.find(fileid) != string::npos) //找到了
             {
                 flag = 1;
                 long len;
@@ -1781,7 +1858,191 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
                 break;
             }
         }
-        if(flag == 0)
+        if (flag == 0)
+            return StatusCode::DATAFILE_NOT_FOUND;
+    }
+    return err;
+}
+
+int DB_ReZipSwitchFileByFileID_MultiThread(struct DB_ZipParams *params)
+{
+    params->ZipType = FILE_ID;
+    int err = CheckZipParams(params); //检查还原参数是否合法
+    if (err != 0)
+        return err;
+
+    maxThreads = thread::hardware_concurrency();
+    if (maxThreads <= 2) //如果内核数小于等于2则不如使用单线程
+    {
+        err = DB_ReZipSwitchFileByFileID(params);
+        return err;
+    }
+
+    string pathToLine = params->pathToLine;
+    string fileid = params->fileID; //用于记录fileID，前面会带产线名称
+    while (pathToLine[pathToLine.length() - 1] == '/')
+    {
+        pathToLine.pop_back();
+    }
+
+    vector<string> paths = DataType::splitWithStl(pathToLine, "/");
+    if (paths.size() > 0)
+    {
+        if (fileid.find(paths[paths.size() - 1]) == string::npos)
+            fileid = paths[paths.size() - 1] + fileid;
+    }
+    else
+    {
+        if (fileid.find(paths[0]) == string::npos)
+            fileid = paths[0] + fileid;
+    }
+
+    //加载压缩模板
+    err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
+    if (err)
+    {
+        cout << "未加载模板" << endl;
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    }
+
+    IOBusy = true;
+
+    if (params->zipNums > 1) //根据SID以及zipNums还原
+    {
+        vector<pair<string, long>> selectedFiles;
+        readIDBZIPFilesListBySIDandNum(params->pathToLine, params->fileID, params->zipNums, selectedFiles);
+        if (selectedFiles.size() == 0)
+        {
+            IOBusy = false;
+            cout << "没有文件！" << endl;
+            return StatusCode::DATAFILE_NOT_FOUND;
+        }
+
+        //如果文件数量小于1000,采用单线程还原
+        if (selectedFiles.size() < 1000)
+        {
+            IOBusy = false;
+            err = DB_ReZipSwitchFileByFileID(params);
+            return err;
+        }
+
+        uint16_t singleThreadFileNum = selectedFiles.size() / maxThreads;
+        future_status status[maxThreads];
+        future<int> f[maxThreads];
+        uint16_t begin = 0;
+        for (int j = 0; j < maxThreads - 1; j++) //循环开启线程
+        {
+            f[j] = async(std::launch::async, DB_ReZipSwitchFile_thread, selectedFiles, begin, singleThreadFileNum * (j + 1), params->pathToLine);
+            begin += singleThreadFileNum;
+            status[j] = f[j].wait_for(chrono::milliseconds(1));
+        }
+        f[maxThreads - 1] = async(std::launch::async, DB_ReZipSwitchFile_thread, selectedFiles, begin, selectedFiles.size(), params->pathToLine);
+        status[maxThreads - 1] = f[maxThreads - 1].wait_for(chrono::milliseconds(1));
+        for (int j = 0; j < maxThreads - 1; j++) //等待线程结束
+        {
+            if (status[j] != future_status::ready)
+                f[j].wait();
+        }
+
+        IOBusy = false;
+        return err;
+    }
+    else if (params->EID != NULL) //根据SID以及EID还原
+    {
+        vector<pair<string, long>> selectedFiles;
+        readIDBZIPFilesListBySIDandEID(params->pathToLine, params->fileID, params->EID, selectedFiles);
+        if (selectedFiles.size() == 0)
+        {
+            IOBusy = false;
+            cout << "没有文件！" << endl;
+            return StatusCode::DATAFILE_NOT_FOUND;
+        }
+
+        //如果文件数量小于1000,采用单线程还原
+        if (selectedFiles.size() < 1000)
+        {
+            IOBusy = false;
+            err = DB_ReZipSwitchFileByFileID(params);
+            return err;
+        }
+
+        uint16_t singleThreadFileNum = selectedFiles.size() / maxThreads;
+        future_status status[maxThreads];
+        future<int> f[maxThreads];
+        uint16_t begin = 0;
+        for (int j = 0; j < maxThreads - 1; j++) //循环开启线程
+        {
+            f[j] = async(std::launch::async, DB_ReZipSwitchFile_thread, selectedFiles, begin, singleThreadFileNum * (j + 1), params->pathToLine);
+            begin += singleThreadFileNum;
+            status[j] = f[j].wait_for(chrono::milliseconds(1));
+        }
+        f[maxThreads - 1] = async(std::launch::async, DB_ReZipSwitchFile_thread, selectedFiles, begin, selectedFiles.size(), params->pathToLine);
+        status[maxThreads - 1] = f[maxThreads - 1].wait_for(chrono::milliseconds(1));
+        for (int j = 0; j < maxThreads - 1; j++) //等待线程结束
+        {
+            if (status[j] != future_status::ready)
+                f[j].wait();
+        }
+
+        IOBusy = false;
+        return err;
+    }
+    else //还原单个文件
+    {
+        IOBusy = false;
+        vector<pair<string, long>> Files;
+        readIDBZIPFilesWithTimestamps(params->pathToLine, Files);
+        if (Files.size() == 0)
+        {
+            cout << "没有文件！" << endl;
+            return StatusCode::DATAFILE_NOT_FOUND;
+        }
+        sortByTime(Files, TIME_ASC);
+        int flag; //用于标志文件是否找到
+
+        for (auto &file : Files) //遍历寻找ID
+        {
+            if (file.first.find(fileid) != string::npos) //找到了
+            {
+                flag = 1;
+                long len;
+                DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+                char *readbuff = new char[len];                            //文件内容
+                char *writebuff = new char[CurrentZipTemplate.totalBytes]; //写入被还原的数据
+                long writebuff_pos = 0;
+
+                if (DB_OpenAndRead(const_cast<char *>(file.first.c_str()), readbuff)) //将文件内容读取到readbuff
+                {
+                    cout << "未找到文件" << endl;
+                    return StatusCode::DATAFILE_NOT_FOUND;
+                }
+
+                err = ReZipSwitchBuf(readbuff, len, writebuff, writebuff_pos); //调用函数对readbuff进行还原，还原后的数据存在writebuff中
+                if (err)
+                    break;
+
+                char *data = (char *)malloc(writebuff_pos);
+                memcpy(data, writebuff, writebuff_pos);
+                params->buffer = data; //将还原后的数据记录在params->buffer中
+                params->bufferLen = writebuff_pos;
+
+                DB_DeleteFile(const_cast<char *>(file.first.c_str())); //删除原文件
+                long fp;
+                string finalpath = file.first.substr(0, file.first.length() - 3); //去掉后缀的zip
+                //创建新文件并写入
+                char mode[2] = {'w', 'b'};
+                err = DB_Open(const_cast<char *>(finalpath.c_str()), mode, &fp);
+                if (err == 0)
+                {
+                    err = DB_Write(fp, writebuff, writebuff_pos);
+                    DB_Close(fp);
+                }
+                delete[] readbuff;
+                delete[] writebuff;
+                break;
+            }
+        }
+        if (flag == 0)
             return StatusCode::DATAFILE_NOT_FOUND;
     }
     return err;
@@ -1888,18 +2149,18 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
 
 //     return 0;
 // }
-// int main()
-// {
-//     // DB_ZipSwitchFile("JinfeiSeven", "JinfeiSeven");
-//     DB_ZipParams param;
-//     param.ZipType = FILE_ID;
-//     param.pathToLine = "RobotTsTest";
-//     param.fileID = "RobotTsTest2";
-//     param.zipNums = 0;
-//     param.EID = NULL;
-//      cout << DB_ZipSwitchFileByFileID(&param) << endl;
-//     // cout << DB_ReZipSwitchFileByFileID(&param) << endl;
-//     //   DB_ZipSwitchFile("RobotTsTest","RobotTsTest");
-//     // DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest");
-//     return 0;
-// }
+int main()
+{
+    // DB_ReZipSwitchFile("JinfeiSeven", "JinfeiSeven");
+    DB_ZipParams param;
+    param.ZipType = FILE_ID;
+    param.pathToLine = "JinfeiSeven";
+    param.fileID = "JinfeiSeven1810003";
+    param.zipNums = 800;
+    param.EID = NULL;
+     cout << DB_ZipSwitchFileByFileID_MultiThread(&param) << endl;
+     cout << DB_ReZipSwitchFileByFileID_MultiThread(&param) << endl;
+    //   DB_ZipSwitchFile("RobotTsTest","RobotTsTest");
+    // DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest");
+    return 0;
+}

@@ -3104,9 +3104,9 @@ long GetZipImgPos(char *buff)
 
 /**
  * @brief 检查变量名是否合法
- * 
+ *
  * @param variableName 变量名
- * @return int 
+ * @return int
  */
 int checkInputVaribaleName(string variableName)
 {
@@ -3135,9 +3135,9 @@ int checkInputVaribaleName(string variableName)
 
 /**
  * @brief 检查路径编码是否合法
- * 
+ *
  * @param pathcode 路径编码
- * @return int 
+ * @return int
  */
 int checkInputPathcode(char pathcode[])
 {
@@ -3158,10 +3158,10 @@ int checkInputPathcode(char pathcode[])
 
 /**
  * @brief 检查数据值是否合法
- * 
- * @param variableType 数据类型 
+ *
+ * @param variableType 数据类型
  * @param value 数据值
- * @return int 
+ * @return int
  */
 int checkInputValue(string variableType, string value)
 {
@@ -3442,12 +3442,12 @@ int checkInputValue(string variableType, string value)
 
 /**
  * @brief 检查数据范围是否合法
- * 
+ *
  * @param variableType 数据类型
  * @param standardValue 标准值
  * @param maxValue 最大值
  * @param minValue 最小值
- * @return int 
+ * @return int
  */
 int checkValueRange(string variableType, string standardValue, string maxValue, string minValue)
 {
@@ -3541,12 +3541,12 @@ int checkValueRange(string variableType, string standardValue, string maxValue, 
 
 /**
  * @brief 根据数据类型获得数值字符串
- * 
+ *
  * @param value 字符串
  * @param type 数据类型
  * @param schemaPos 模板所在位置
  * @param MaxOrMin 最大值or最小值or标准值
- * @return int 
+ * @return int
  */
 int getValueStringByValueType(char *value, ValueType::ValueType type, int schemaPos, int MaxOrMin)
 {
@@ -3793,15 +3793,15 @@ int getValueStringByValueType(char *value, ValueType::ValueType type, int schema
 
 /**
  * @brief 检查查询模板条件
- * 
- * @param params 
- * @return int 
+ *
+ * @param params
+ * @return int
  */
 int checkQueryNodeParam(struct DB_QueryNodeParams *params)
 {
-    if(params->valueName==NULL)
+    if (params->valueName == NULL)
         return StatusCode::UNKNOWN_VARIABLE_NAME;
-    if(params->pathToLine==NULL)
+    if (params->pathToLine == NULL)
         return StatusCode::EMPTY_PATH_TO_LINE;
     return 0;
 }
@@ -3843,6 +3843,7 @@ int readIDBFilesListBySIDandNum(string path, string SID, uint32_t num, vector<pa
         }
     }
     int firstID = atoi(firstFileID);
+
     //提取出SID与第一个文件的ID做对比
     char SIDnum[10];
     memset(SIDnum, 0, sizeof(SIDnum));
@@ -3856,6 +3857,7 @@ int readIDBFilesListBySIDandNum(string path, string SID, uint32_t num, vector<pa
         }
     }
     int S_ID = atoi(SIDnum);
+
     //提取出最后一个文件的ID与SID对比
     vector<string> lastFile = DataType::splitWithStl(files[files.size() - 1].first, "_");
     char lastFileID[10];
@@ -3875,10 +3877,12 @@ int readIDBFilesListBySIDandNum(string path, string SID, uint32_t num, vector<pa
     if (S_ID > lastID)
         return StatusCode::DATAFILE_NOT_FOUND;
 
+    lastID = S_ID + (int)num;
+
     //如果SID比第一个文件的ID小
     if (S_ID < firstID)
     {
-        if (S_ID + num - firstID <= 0)
+        if (S_ID + (int)num - firstID <= 0)
             return StatusCode::DATAFILE_NOT_FOUND;
         else
         {
@@ -3916,6 +3920,7 @@ int readIDBFilesListBySIDandNum(string path, string SID, uint32_t num, vector<pa
                     }
                 }
                 int nowID = atoi(nowFileID);
+
                 //当当前文件的ID大于SID时,说明SID文件不存在,从当前文件开始
                 if (nowID >= S_ID)
                 {
@@ -3923,10 +3928,31 @@ int readIDBFilesListBySIDandNum(string path, string SID, uint32_t num, vector<pa
                     selectedFiles.push_back(files[i]);
                     count += nowID - S_ID + 1;
                 }
+                //如果当前ID大于文件SID+num,则结束
+                if (nowID > lastID)
+                    break;
             }
         }
         else //已找到SID
         {
+            //提取出当前文件ID与lastID对比
+            vector<string> nowFile = DataType::splitWithStl(files[i].first, "_");
+            char nowFileID[10];
+            memset(nowFileID, 0, sizeof(nowFileID));
+            pos = 0;
+            for (int i = 0; i < nowFile[0].length(); i++)
+            {
+                if (isdigit(nowFile[0][i]))
+                {
+                    nowFileID[pos] = nowFile[0][i];
+                    pos++;
+                }
+            }
+            int nowID = atoi(nowFileID);
+
+            //如果当前ID大于文件SID+num,则结束
+            if (nowID > lastID)
+                break;
             if (count < num)
             {
                 selectedFiles.push_back(files[i]);
@@ -3976,6 +4002,7 @@ int readIDBFilesListBySIDandEID(string path, string SID, string EID, vector<pair
         }
     }
     int firstID = atoi(firstFileID);
+
     //提取出最后一个文件的ID与SID对比
     vector<string> lastFile = DataType::splitWithStl(files[files.size() - 1].first, "_");
     char lastFileID[10];
@@ -3990,6 +4017,7 @@ int readIDBFilesListBySIDandEID(string path, string SID, string EID, vector<pair
         }
     }
     int lastID = atoi(lastFileID);
+
     //提取出SID与最后一个文件的ID做对比
     char SIDnum[10];
     memset(SIDnum, 0, sizeof(SIDnum));
@@ -4003,6 +4031,7 @@ int readIDBFilesListBySIDandEID(string path, string SID, string EID, vector<pair
         }
     }
     int S_ID = atoi(SIDnum);
+
     //提取出EID与第一个文件的ID做对比
     char EIDnum[10];
     memset(EIDnum, 0, sizeof(EIDnum));
@@ -4149,6 +4178,7 @@ int readIDBZIPFilesListBySIDandNum(string path, string SID, uint32_t num, vector
         }
     }
     int firstID = atoi(firstFileID);
+
     //提取出SID与第一个文件的ID做对比
     char SIDnum[10];
     memset(SIDnum, 0, sizeof(SIDnum));
@@ -4162,6 +4192,7 @@ int readIDBZIPFilesListBySIDandNum(string path, string SID, uint32_t num, vector
         }
     }
     int S_ID = atoi(SIDnum);
+
     //提取出最后一个文件的ID与SID对比
     vector<string> lastFile = DataType::splitWithStl(files[files.size() - 1].first, "_");
     char lastFileID[10];
@@ -4181,10 +4212,12 @@ int readIDBZIPFilesListBySIDandNum(string path, string SID, uint32_t num, vector
     if (S_ID > lastID)
         return StatusCode::DATAFILE_NOT_FOUND;
 
+    lastID = firstID + (int)num;
+
     //如果SID比第一个文件的ID小
     if (S_ID < firstID)
     {
-        if (S_ID + num - firstID <= 0)
+        if ((S_ID + (int)num - firstID) <= 0)
             return StatusCode::DATAFILE_NOT_FOUND;
         else
         {
@@ -4222,16 +4255,38 @@ int readIDBZIPFilesListBySIDandNum(string path, string SID, uint32_t num, vector
                     }
                 }
                 int nowID = atoi(nowFileID);
+
                 //当当前文件的ID大于SID时,说明SID文件不存在,从当前文件开始
                 if (nowID >= S_ID)
                 {
                     SIDFind = true;
                     selectedFiles.push_back(files[i]);
                 }
+                //如果当前ID大于文件SID+num,则结束
+                if (nowID > lastID)
+                    break;
             }
         }
         else //已找到SID
         {
+            //提取出当前文件ID与lastID对比
+            vector<string> nowFile = DataType::splitWithStl(files[i].first, "_");
+            char nowFileID[10];
+            memset(nowFileID, 0, sizeof(nowFileID));
+            pos = 0;
+            for (int i = 0; i < nowFile[0].length(); i++)
+            {
+                if (isdigit(nowFile[0][i]))
+                {
+                    nowFileID[pos] = nowFile[0][i];
+                    pos++;
+                }
+            }
+            int nowID = atoi(nowFileID);
+
+            //如果当前ID大于文件SID+num,则结束
+            if (nowID > lastID)
+                break;
             if (count < num)
             {
                 selectedFiles.push_back(files[i]);
@@ -4248,12 +4303,12 @@ int readIDBZIPFilesListBySIDandNum(string path, string SID, uint32_t num, vector
 
 /**
  * @brief 根据SID和EID筛选出符合条件的.idbzip文件
- * 
+ *
  * @param path 存储路径
  * @param SID 起始ID
  * @param EID 结束ID
  * @param selectedFiles 帅选后结果
- * @return int 
+ * @return int
  */
 int readIDBZIPFilesListBySIDandEID(string path, string SID, string EID, vector<pair<string, long>> &selectedFiles)
 {
@@ -4281,6 +4336,7 @@ int readIDBZIPFilesListBySIDandEID(string path, string SID, string EID, vector<p
         }
     }
     int firstID = atoi(firstFileID);
+
     //提取出最后一个文件的ID与SID对比
     vector<string> lastFile = DataType::splitWithStl(files[files.size() - 1].first, "_");
     char lastFileID[10];
@@ -4295,6 +4351,7 @@ int readIDBZIPFilesListBySIDandEID(string path, string SID, string EID, vector<p
         }
     }
     int lastID = atoi(lastFileID);
+
     //提取出SID与最后一个文件的ID做对比
     char SIDnum[10];
     memset(SIDnum, 0, sizeof(SIDnum));
@@ -4308,6 +4365,7 @@ int readIDBZIPFilesListBySIDandEID(string path, string SID, string EID, vector<p
         }
     }
     int S_ID = atoi(SIDnum);
+
     //提取出EID与第一个文件的ID做对比
     char EIDnum[10];
     memset(EIDnum, 0, sizeof(EIDnum));
@@ -4475,16 +4533,7 @@ int readIDBZIPFilesListBySIDandEID(string path, string SID, string EID, vector<p
 // {
 //     vector<pair<string, long>> selected;
 //     // readIDBFilesListBySIDandNum("RbTsImageEle", "RbTsImageEle11", 10, selected);
-//     readIDBFilesListBySIDandEID("RbTsImageEle", "RbTsImageEle11", "RbTsImageEle20", selected);
+//     readIDBFilesListBySIDandNum("JinfeiSeven", "JinfeiSeven1810003", 800, selected);
 //     cout << selected.size() << endl;
-//     return 0;
-//     long len;
-//     DB_GetFileLengthByPath("RbTsImageEle/RbTsImageEle8_2022-6-11-10-42-45-666.idbzip", &len);
-//     DB_LoadZipSchema("RbTsImageEle");
-//     char *readbuff = new char[len];
-//     DB_OpenAndRead("RbTsImageEle/RbTsImageEle8_2022-6-11-10-42-45-666.idbzip", readbuff);
-//     long length = GetZipImgPos(readbuff, len);
-//     cout << length << endl;
-//     delete[] readbuff;
 //     return 0;
 // }
