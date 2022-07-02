@@ -205,6 +205,10 @@ int DB_ZipSwitchFileByTimeSpan_Single(struct DB_ZipParams *params);
 
 int DB_ReZipSwitchFileByTimeSpan_Single(struct DB_ZipParams *params);
 
+int DB_ZipSwitchFileByFileID_Single(struct DB_ZipParams *params);
+
+int DB_ReZipSwitchFileByFileID_Single(struct DB_ZipParams *params);
+
 int DB_ZipAnalogFile_Single(const char *ZipTemPath, const char *pathToLine);
 
 int DB_ReZipAnalogFile_Single(const char *ZipTemPath, const char *pathToLine);
@@ -213,6 +217,10 @@ int DB_ZipAnalogFileByTimeSpan_Single(struct DB_ZipParams *params);
 
 int DB_ReZipAnalogFileByTimeSpan_Single(struct DB_ZipParams *params);
 
+int DB_ZipAnalogFileByFileID_Single(struct DB_ZipParams *params);
+
+int DB_ReZipAnalogFileByFileID_Single(struct DB_ZipParams *params);
+
 int DB_ZipFile_Single(const char *ZipTemPath, const char *pathToLine);
 
 int DB_ReZipFile_Single(const char *ZipTemPath, const char *pathToLine);
@@ -220,6 +228,10 @@ int DB_ReZipFile_Single(const char *ZipTemPath, const char *pathToLine);
 int DB_ZipFileByTimeSpan_Single(struct DB_ZipParams *params);
 
 int DB_ReZipFileByTimeSpan_Single(struct DB_ZipParams *params);
+
+int DB_ZipFileByFileID_Single(struct DB_ZipParams *params);
+
+int DB_ReZipFileByFileID_Single(struct DB_ZipParams *params);
 
 //模板相关函数
 int DB_AddNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams);

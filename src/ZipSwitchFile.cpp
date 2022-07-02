@@ -1257,13 +1257,13 @@ int DB_ReZipSwitchFileByTimeSpan(struct DB_ZipParams *params)
 }
 
 /**
- * @brief 根据文件ID压缩开关量类型.idb文件
+ * @brief 根据文件ID压缩开关量类型.idb文件,单线程
  *
  * @param params 压缩请求参数
  * @return 0:success,
  *          others: StatusCode
  */
-int DB_ZipSwitchFileByFileID(struct DB_ZipParams *params)
+int DB_ZipSwitchFileByFileID_Single(struct DB_ZipParams *params)
 {
     params->ZipType = FILE_ID;
     int err = CheckZipParams(params); //检查压缩参数是否合法
@@ -1477,7 +1477,13 @@ int DB_ZipSwitchFileByFileID(struct DB_ZipParams *params)
     return err;
 }
 
-int DB_ZipSwitchFileByFileID_MultiThread(struct DB_ZipParams *params)
+/**
+ * @brief 多线程按时间段压缩.idb文件函数，内核数>２时才有效
+ * 
+ * @param params 压缩请求参数
+ * @return int 
+ */
+int DB_ZipSwitchFileByFileID(struct DB_ZipParams *params)
 {
     params->ZipType = FILE_ID;
     int err = CheckZipParams(params); //检查压缩参数是否合法
@@ -1487,7 +1493,7 @@ int DB_ZipSwitchFileByFileID_MultiThread(struct DB_ZipParams *params)
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如使用单线程
     {
-        err = DB_ZipSwitchFileByFileID(params);
+        err = DB_ZipSwitchFileByFileID_Single(params);
         return err;
     }
 
@@ -1535,7 +1541,7 @@ int DB_ZipSwitchFileByFileID_MultiThread(struct DB_ZipParams *params)
         if (selectedFiles.size() < 1000)
         {
             IOBusy = false;
-            err = DB_ZipSwitchFileByFileID(params);
+            err = DB_ZipSwitchFileByFileID_Single(params);
             return err;
         }
 
@@ -1575,7 +1581,7 @@ int DB_ZipSwitchFileByFileID_MultiThread(struct DB_ZipParams *params)
         if (selectedFiles.size() < 1000)
         {
             IOBusy = false;
-            err = DB_ZipSwitchFileByFileID(params);
+            err = DB_ZipSwitchFileByFileID_Single(params);
             return err;
         }
 
@@ -1674,13 +1680,13 @@ int DB_ZipSwitchFileByFileID_MultiThread(struct DB_ZipParams *params)
 }
 
 /**
- * @brief 根据文件ID还原开关量类型.idbzip文件
+ * @brief 根据文件ID还原开关量类型.idbzip文件，单线程
  *
  * @param params 还原请求参数
  * @return 0:success,
  *          others: StatusCode
  */
-int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
+int DB_ReZipSwitchFileByFileID_Single(struct DB_ZipParams *params)
 {
     params->ZipType = FILE_ID;
     int err = CheckZipParams(params); //检查还原参数是否合法
@@ -1864,7 +1870,13 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
     return err;
 }
 
-int DB_ReZipSwitchFileByFileID_MultiThread(struct DB_ZipParams *params)
+/**
+ * @brief 多线程按时间段还原.idbzip文件函数，内核数>２时才有效
+ * 
+ * @param params 还原请求参数
+ * @return int 
+ */
+int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
 {
     params->ZipType = FILE_ID;
     int err = CheckZipParams(params); //检查还原参数是否合法
@@ -1874,7 +1886,7 @@ int DB_ReZipSwitchFileByFileID_MultiThread(struct DB_ZipParams *params)
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如使用单线程
     {
-        err = DB_ReZipSwitchFileByFileID(params);
+        err = DB_ReZipSwitchFileByFileID_Single(params);
         return err;
     }
 
@@ -1922,7 +1934,7 @@ int DB_ReZipSwitchFileByFileID_MultiThread(struct DB_ZipParams *params)
         if (selectedFiles.size() < 1000)
         {
             IOBusy = false;
-            err = DB_ReZipSwitchFileByFileID(params);
+            err = DB_ReZipSwitchFileByFileID_Single(params);
             return err;
         }
 
@@ -1962,7 +1974,7 @@ int DB_ReZipSwitchFileByFileID_MultiThread(struct DB_ZipParams *params)
         if (selectedFiles.size() < 1000)
         {
             IOBusy = false;
-            err = DB_ReZipSwitchFileByFileID(params);
+            err = DB_ReZipSwitchFileByFileID_Single(params);
             return err;
         }
 
@@ -2149,18 +2161,18 @@ int DB_ReZipSwitchFileByFileID_MultiThread(struct DB_ZipParams *params)
 
 //     return 0;
 // }
-int main()
-{
-    // DB_ReZipSwitchFile("JinfeiSeven", "JinfeiSeven");
-    DB_ZipParams param;
-    param.ZipType = FILE_ID;
-    param.pathToLine = "JinfeiSeven";
-    param.fileID = "JinfeiSeven1810003";
-    param.zipNums = 800;
-    param.EID = NULL;
-     cout << DB_ZipSwitchFileByFileID_MultiThread(&param) << endl;
-     cout << DB_ReZipSwitchFileByFileID_MultiThread(&param) << endl;
-    //   DB_ZipSwitchFile("RobotTsTest","RobotTsTest");
-    // DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest");
-    return 0;
-}
+// int main()
+// {
+//     // DB_ReZipSwitchFile("JinfeiSeven", "JinfeiSeven");
+//     DB_ZipParams param;
+//     param.ZipType = FILE_ID;
+//     param.pathToLine = "JinfeiSeven";
+//     param.fileID = "JinfeiSeven1810003";
+//     param.zipNums = 800;
+//     param.EID = NULL;
+//      cout << DB_ZipSwitchFileByFileID_MultiThread(&param) << endl;
+//      cout << DB_ReZipSwitchFileByFileID_MultiThread(&param) << endl;
+//     //   DB_ZipSwitchFile("RobotTsTest","RobotTsTest");
+//     // DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest");
+//     return 0;
+// }
