@@ -1116,6 +1116,27 @@ int Template::GetDataTypesByCode(char *pathCode, vector<DataType> &types)
 }
 
 /**
+ * @brief Get the datatype object by variable name.
+ *
+ * @param name
+ * @param type
+ * @return int
+ */
+int Template::GetDataTypeByName(const char *name, DataType &type)
+{
+    string str = name;
+    for (auto const &schema : this->schemas)
+    {
+        if (schema.first.name == str)
+        {
+            type = schema.second;
+            return 0;
+        }
+    }
+    return StatusCode::UNKNOWN_VARIABLE_NAME;
+}
+
+/**
  * @brief 根据编码计算所选数据的总字节数
  *
  * @param pathCode
@@ -1162,7 +1183,20 @@ int Template::GetCodeByName(const char *name, vector<PathCode> &pathCode)
             return 0;
         }
     }
-    return StatusCode::VARIABLE_NAME_EXIST;
+    return StatusCode::UNKNOWN_VARIABLE_NAME;
+}
+
+int Template::GetCodeByName(const char *name, PathCode &pathCode)
+{
+    for (auto &schema : this->schemas)
+    {
+        if (strcmp(schema.first.name.c_str(), name) == 0)
+        {
+            pathCode = schema.first;
+            return 0;
+        }
+    }
+    return StatusCode::UNKNOWN_VARIABLE_NAME;
 }
 
 // int TemplateManager::SetTemplate(const char *path)
