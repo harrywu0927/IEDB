@@ -7,11 +7,16 @@ int DB_ZipSwitchFile_thread(vector<pair<string, long>> selectedFiles, uint16_t b
 int DB_ReZipSwitchFile_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine);
 
 mutex openSwitchMutex;
-
+/**
+ * @brief 添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+ *
+ * @param schemaPos 变量在模板的编号
+ * @param writebuff 写数据缓冲
+ * @param writebuff_pos 写数据偏移量
+ */
 void addSwitchZipPos(int schemaPos, char *writebuff, long &writebuff_pos)
 {
     DataTypeConverter converter;
-    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
     uint16_t posNum = schemaPos;
     char zipPosNum[2] = {0};
     converter.ToUInt16Buff(posNum, zipPosNum);
@@ -19,6 +24,13 @@ void addSwitchZipPos(int schemaPos, char *writebuff, long &writebuff_pos)
     writebuff_pos += 2;
 }
 
+/**
+ * @brief 添加上压缩标志
+ *
+ * @param ziptype 压缩标志
+ * @param writebuff 写数据缓冲
+ * @param writebuff_pos 写数据偏移量
+ */
 void addSwitchZipType(int ziptype, char *writebuff, long &writebuff_pos)
 {
     char zipType[1] = {0};
@@ -64,6 +76,17 @@ void addSwitchZipType(int ziptype, char *writebuff, long &writebuff_pos)
     }
 }
 
+/**
+ * @brief Ts类型压缩
+ *
+ * @param schemaPos 变量在模板的编号
+ * @param writebuff 写数据缓冲
+ * @param writebuff_pos 写数据偏移量
+ * @param readbuff 读数据缓冲
+ * @param readbuff_pos 读数据偏移量
+ * @param DataType 数据类型
+ * @return int
+ */
 int IsSwitchTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType)
 {
     DataTypeConverter converter;
@@ -71,10 +94,8 @@ int IsSwitchTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *rea
     {
         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
         addSwitchZipPos(schemaPos, writebuff, writebuff_pos);
-
         //既是时间序列又是数组
         addSwitchZipType(3, writebuff, writebuff_pos);
-
         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8) * CurrentZipTemplate.schemas[schemaPos].second.tsLen);
         writebuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
         readbuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
@@ -83,23 +104,19 @@ int IsSwitchTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *rea
     {
         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
         addSwitchZipPos(schemaPos, writebuff, writebuff_pos);
-
         //只是时间序列
         addSwitchZipType(4, writebuff, writebuff_pos);
-
         //添加第一个采样的时间戳
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
+        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[schemaPos].second.valueBytes, 8);
         writebuff_pos += 8;
 
         switch (DataType)
         {
-        case 3:
+        case 3: // UDINT
         {
-
             uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
             uint32 maxUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
             uint32 minUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.minValue);
-
             for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.tsLen; j++)
             {
                 // 4个字节,暂定，根据后续情况可能进行更改
@@ -111,7 +128,6 @@ int IsSwitchTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *rea
                 {
                     //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
                     addSwitchZipPos(j, writebuff, writebuff_pos);
-
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                     writebuff_pos += 4;
                 }
@@ -138,6 +154,15 @@ int IsSwitchTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *rea
     return 0;
 }
 
+/**
+ * @brief 数组类型压缩
+ *
+ * @param schemaPos 变量在模板的编号
+ * @param writebuff 写数据缓冲
+ * @param writebuff_pos 写数据偏移量
+ * @param readbuff 读数据缓冲
+ * @param readbuff_pos 读数据偏移量
+ */
 void IsSwitchArrayZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos)
 {
     DataTypeConverter converter;
@@ -148,7 +173,6 @@ void IsSwitchArrayZip(int schemaPos, char *writebuff, long &writebuff_pos, char 
     {
         //既有数据又有时间
         addSwitchZipType(2, writebuff, writebuff_pos);
-
         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + 8);
         writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + 8;
         readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + 8;
@@ -157,7 +181,6 @@ void IsSwitchArrayZip(int schemaPos, char *writebuff, long &writebuff_pos, char 
     {
         //只有数据
         addSwitchZipType(0, writebuff, writebuff_pos);
-
         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen);
         writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
         readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
@@ -213,7 +236,6 @@ int ZipSwitchBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     {
                         //既有数据又有时间
                         addSwitchZipType(2, writebuff, writebuff_pos);
-
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 12);
                         writebuff_pos += 12;
                     }
@@ -221,7 +243,6 @@ int ZipSwitchBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     {
                         //只有时间
                         addSwitchZipType(1, writebuff, writebuff_pos);
-
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + 4, 8);
                         writebuff_pos += 8;
                     }
@@ -233,10 +254,8 @@ int ZipSwitchBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
                         addSwitchZipPos(i, writebuff, writebuff_pos);
-
                         //只有数据
                         addSwitchZipType(0, writebuff, writebuff_pos);
-
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
                         writebuff_pos += 4;
                     }
@@ -253,6 +272,14 @@ int ZipSwitchBuf(char *readbuff, char *writebuff, long &writebuff_pos)
     return 0;
 }
 
+/**
+ * @brief 根据数据类型添加标准值
+ *
+ * @param schemaPos 变量在模板的编号
+ * @param writebuff 写数据缓冲
+ * @param writebuff_pos 写数据偏移量
+ * @param DataType 数据类型
+ */
 void addSwitchStandardValue(int schemaPos, char *writebuff, long &writebuff_pos, int DataType)
 {
     DataTypeConverter converter;
@@ -273,6 +300,15 @@ void addSwitchStandardValue(int schemaPos, char *writebuff, long &writebuff_pos,
     }
 }
 
+/**
+ * @brief 还原Ts类型的时间戳
+ *
+ * @param schemaPos 变量在模板的编号
+ * @param startTime 开始时间
+ * @param writebuff 写数据缓冲
+ * @param writebuff_pos 写数据偏移量
+ * @param tsPos Ts目前所在编号
+ */
 void addSwitchTsTime(int schemaPos, uint64_t startTime, char *writebuff, long &writebuff_pos, int tsPos)
 {
     DataTypeConverter converter;
@@ -284,6 +320,16 @@ void addSwitchTsTime(int schemaPos, uint64_t startTime, char *writebuff, long &w
     writebuff_pos += 8;
 }
 
+/**
+ * @brief Ts类型还原
+ *
+ * @param schemaPos 变量在模板的编号
+ * @param writebuff 写数据缓冲
+ * @param writebuff_pos 写数据偏移量
+ * @param readbuff 读数据缓冲
+ * @param readbuff_pos 读数据偏移量
+ * @return int
+ */
 int IsSwitchTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos)
 {
     DataTypeConverter converter;
@@ -307,7 +353,7 @@ int IsSwitchTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *r
             if (readbuff[readbuff_pos] == (char)-1) //说明没有未压缩的时间序列了
             {
                 //将标准值数据拷贝到writebuff
-                addSwitchStandardValue(schemaPos, writebuff, writebuff_pos,3);
+                addSwitchStandardValue(schemaPos, writebuff, writebuff_pos, 3);
 
                 //添加上时间戳
                 addSwitchTsTime(schemaPos, startTime, writebuff, writebuff_pos, j);
@@ -333,7 +379,7 @@ int IsSwitchTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *r
                 else //不是未压缩时间序列的编号
                 {
                     //将标准值数据拷贝到writebuff
-                    addSwitchStandardValue(schemaPos, writebuff, writebuff_pos,3);
+                    addSwitchStandardValue(schemaPos, writebuff, writebuff_pos, 3);
 
                     //添加上时间戳
                     addSwitchTsTime(schemaPos, startTime, writebuff, writebuff_pos, j);
@@ -351,6 +397,16 @@ int IsSwitchTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *r
     return 0;
 }
 
+/**
+ * @brief 数组类型还原
+ *
+ * @param schemaPos 变量在模板的编号
+ * @param writebuff 写数据缓冲
+ * @param writebuff_pos 写数据偏移量
+ * @param readbuff 读数据缓冲
+ * @param readbuff_pos 读数据偏移量
+ * @return int
+ */
 int IsSwitchArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos)
 {
     if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
@@ -375,6 +431,16 @@ int IsSwitchArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, char
     return 0;
 }
 
+/**
+ * @brief 既不是Ts又不是数组还原
+ *
+ * @param schemaPos 变量在模板的编号
+ * @param writebuff 写数据缓冲
+ * @param writebuff_pos 写数据偏移量
+ * @param readbuff 读数据缓冲
+ * @param readbuff_pos 读数据偏移量
+ * @return int
+ */
 int IsNotSwitchArrayAndTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos)
 {
     if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
@@ -387,7 +453,7 @@ int IsNotSwitchArrayAndTSReZip(int schemaPos, char *writebuff, long &writebuff_p
     else if (readbuff[readbuff_pos - 1] == (char)1) //只有时间
     {
         //先添加上标准值到writebuff
-        addSwitchStandardValue(schemaPos, writebuff, writebuff_pos,3);
+        addSwitchStandardValue(schemaPos, writebuff, writebuff_pos, 3);
 
         //再拷贝时间
         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 8);
@@ -431,7 +497,7 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
             if (len == 0) //表示文件完全压缩
             {
                 //添加上标准值到writebuff
-                addSwitchStandardValue(i, writebuff, writebuff_pos,3);
+                addSwitchStandardValue(i, writebuff, writebuff_pos, 3);
             }
             else //文件未完全压缩
             {
@@ -464,13 +530,13 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     else //不是未压缩的编号
                     {
                         //添加上标准值到writebuff
-                        addSwitchStandardValue(i, writebuff, writebuff_pos,3);
+                        addSwitchStandardValue(i, writebuff, writebuff_pos, 3);
                     }
                 }
                 else //没有未压缩的数据了
                 {
                     //添加上标准值到writebuff
-                    addSwitchStandardValue(i, writebuff, writebuff_pos,3);
+                    addSwitchStandardValue(i, writebuff, writebuff_pos, 3);
                 }
             }
         }
@@ -2219,17 +2285,17 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
 
 //     return 0;
 // }
-int main()
-{
-    DB_ZipParams param;
-    param.ZipType = FILE_ID;
-    param.pathToLine = "JinfeiSeven";
-    param.fileID = "JinfeiSeven1810030";
-    param.zipNums = 40;
-    param.EID = NULL;
-    cout << DB_ZipSwitchFileByFileID(&param) << endl;
-    cout << DB_ReZipSwitchFileByFileID(&param) << endl;
-    // DB_ZipSwitchFile("RobotTS","RobotTS");
-    // DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest");
-    return 0;
-}
+// int main()
+// {
+//     DB_ZipParams param;
+//     param.ZipType = FILE_ID;
+//     param.pathToLine = "JinfeiSeven";
+//     param.fileID = "JinfeiSeven1810030";
+//     param.zipNums = 40;
+//     param.EID = NULL;
+//     cout << DB_ZipSwitchFileByFileID(&param) << endl;
+//     cout << DB_ReZipSwitchFileByFileID(&param) << endl;
+//     // DB_ZipSwitchFile("RobotTS","RobotTS");
+//     // DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest");
+//     return 0;
+// }
