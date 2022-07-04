@@ -3921,6 +3921,9 @@ int readIDBFilesListBySIDandNum(string path, string SID, uint32_t num, vector<pa
                 }
                 int nowID = atoi(nowFileID);
 
+                //如果当前ID大于文件SID+num,则结束
+                if (nowID > lastID)
+                    break;
                 //当当前文件的ID大于SID时,说明SID文件不存在,从当前文件开始
                 if (nowID >= S_ID)
                 {
@@ -3928,9 +3931,6 @@ int readIDBFilesListBySIDandNum(string path, string SID, uint32_t num, vector<pa
                     selectedFiles.push_back(files[i]);
                     count += nowID - S_ID + 1;
                 }
-                //如果当前ID大于文件SID+num,则结束
-                if (nowID > lastID)
-                    break;
             }
         }
         else //已找到SID
@@ -4256,15 +4256,15 @@ int readIDBZIPFilesListBySIDandNum(string path, string SID, uint32_t num, vector
                 }
                 int nowID = atoi(nowFileID);
 
+                //如果当前ID大于文件SID+num,则结束
+                if (nowID > lastID)
+                    break;
                 //当当前文件的ID大于SID时,说明SID文件不存在,从当前文件开始
                 if (nowID >= S_ID)
                 {
                     SIDFind = true;
                     selectedFiles.push_back(files[i]);
                 }
-                //如果当前ID大于文件SID+num,则结束
-                if (nowID > lastID)
-                    break;
             }
         }
         else //已找到SID
