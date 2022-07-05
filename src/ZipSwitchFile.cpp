@@ -37,40 +37,45 @@ void addSwitchZipType(int ziptype, char *writebuff, long &writebuff_pos)
     switch (ziptype)
     {
     case 0:
-        //只有数据
+    { //只有数据
         zipType[1] = {0};
         zipType[0] = (char)0;
         memcpy(writebuff + writebuff_pos, zipType, 1);
         writebuff_pos += 1;
         break;
+    }
     case 1:
-        //只有时间
+    { //只有时间
         zipType[1] = {0};
         zipType[0] = (char)1;
         memcpy(writebuff + writebuff_pos, zipType, 1);
         writebuff_pos += 1;
         break;
+    }
     case 2:
-        //既有数据又有时间
+    { //既有数据又有时间
         zipType[1] = {0};
         zipType[0] = (char)2;
         memcpy(writebuff + writebuff_pos, zipType, 1);
         writebuff_pos += 1;
         break;
+    }
     case 3:
-        //既是时间序列又是数组
+    { //既是时间序列又是数组
         zipType[1] = {0};
         zipType[0] = (char)3;
         memcpy(writebuff + writebuff_pos, zipType, 1);
         writebuff_pos += 1;
         break;
+    }
     case 4:
-        //只是时间序列
+    { //只是时间序列
         zipType[1] = {0};
         zipType[0] = (char)4;
         memcpy(writebuff + writebuff_pos, zipType, 1);
         writebuff_pos += 1;
         break;
+    }
     default:
         break;
     }
@@ -330,15 +335,15 @@ void addSwitchTsTime(int schemaPos, uint64_t startTime, char *writebuff, long &w
  * @param readbuff_pos 读数据偏移量
  * @return int
  */
-int IsSwitchTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos)
+int IsSwitchTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType)
 {
     DataTypeConverter converter;
     if (readbuff[readbuff_pos - 1] == (char)3) //既是时间序列又是数组
     {
         //直接拷贝
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[schemaPos].second.tsLen);
-        writebuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
-        readbuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * 4 + 8) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
+        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8) * CurrentZipTemplate.schemas[schemaPos].second.tsLen);
+        writebuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
+        readbuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
     }
     else if (readbuff[readbuff_pos - 1] == (char)4) //只是时间序列
     {
@@ -353,8 +358,7 @@ int IsSwitchTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *r
             if (readbuff[readbuff_pos] == (char)-1) //说明没有未压缩的时间序列了
             {
                 //将标准值数据拷贝到writebuff
-                addSwitchStandardValue(schemaPos, writebuff, writebuff_pos, 3);
-
+                addSwitchStandardValue(schemaPos, writebuff, writebuff_pos, DataType);
                 //添加上时间戳
                 addSwitchTsTime(schemaPos, startTime, writebuff, writebuff_pos, j);
             }
@@ -369,18 +373,16 @@ int IsSwitchTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *r
                 {
                     //将未压缩的数据拷贝到writebuff
                     readbuff_pos += 2;
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 4);
-                    readbuff_pos += 4;
-                    writebuff_pos += 4;
-
+                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
+                    readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+                    writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
                     //添加上时间戳
                     addSwitchTsTime(schemaPos, startTime, writebuff, writebuff_pos, j);
                 }
                 else //不是未压缩时间序列的编号
                 {
                     //将标准值数据拷贝到writebuff
-                    addSwitchStandardValue(schemaPos, writebuff, writebuff_pos, 3);
-
+                    addSwitchStandardValue(schemaPos, writebuff, writebuff_pos, DataType);
                     //添加上时间戳
                     addSwitchTsTime(schemaPos, startTime, writebuff, writebuff_pos, j);
                 }
@@ -441,7 +443,7 @@ int IsSwitchArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, char
  * @param readbuff_pos 读数据偏移量
  * @return int
  */
-int IsNotSwitchArrayAndTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos)
+int IsNotSwitchArrayAndTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType)
 {
     if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
     {
@@ -453,8 +455,7 @@ int IsNotSwitchArrayAndTSReZip(int schemaPos, char *writebuff, long &writebuff_p
     else if (readbuff[readbuff_pos - 1] == (char)1) //只有时间
     {
         //先添加上标准值到writebuff
-        addSwitchStandardValue(schemaPos, writebuff, writebuff_pos, 3);
-
+        addSwitchStandardValue(schemaPos, writebuff, writebuff_pos, DataType);
         //再拷贝时间
         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 8);
         writebuff_pos += 8;
@@ -513,7 +514,7 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
                         readbuff_pos += 3;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
-                            if (IsSwitchTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (IsSwitchTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 3))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else if (CurrentZipTemplate.schemas[i].second.isArray == true)
@@ -523,7 +524,7 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
                         }
                         else
                         {
-                            if (IsNotSwitchArrayAndTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (IsNotSwitchArrayAndTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 3))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                     }
