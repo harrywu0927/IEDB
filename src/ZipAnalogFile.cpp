@@ -371,6 +371,15 @@ void IsAnalogArrayZip(int schemaPos, char *writebuff, long &writebuff_pos, char 
     }
 }
 
+/**
+ * @brief 对readbuff里的数据进行压缩，压缩后数据保存在writebuff里，长度为writebuff_pos
+ *
+ * @param readbuff 需要进行压缩的数据
+ * @param writebuff 压缩后的数据
+ * @param writebuff_pos 压缩后数据的长度
+ * @return 0:success,
+ *          others: StatusCode
+ */
 int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
 {
     long readbuff_pos = 0;
