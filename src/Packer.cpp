@@ -129,7 +129,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
     fwrite(packBuffer, cur, 1, (FILE *)fp);
     free(packBuffer);
     DB_Close(fp);
-    packManager.allPacks[pathToLine].push_back({packageName, make_tuple(start, end)});
+    packManager.allPacks[pathToLine].push_back({pakPath, make_tuple(start, end)});
     packMutex.unlock();
     IOBusy = false;
     return 0;
@@ -218,7 +218,8 @@ int Packer::RePack(string pathToLine, int packThres)
                     memcpy(&fileNum, packToRepack.first, 4);
                     newFileNum += fileNum;
                     lastTemName = templateName;
-                    DB_DeleteFile(const_cast<char *>(pk->first.c_str()));
+                    packManager.DeletePack(pk->first);
+                    // DB_DeleteFile(const_cast<char *>(pk->first.c_str()));
                     for (auto i = packManager.allPacks[pathToLine].begin(); i != packManager.allPacks[pathToLine].end(); i++)
                     {
                         if (i->first == pk->first)
@@ -251,6 +252,7 @@ int Packer::RePack(string pathToLine, int packThres)
             DB_Open(const_cast<char *>(newPackPath.c_str()), mode, &fp);
             fwrite(buffer, pos, 1, (FILE *)fp);
             DB_Close(fp);
+            packManager.AddPack(pathToLine, newPackPath, newStart, newEnd);
             delete[] buffer;
             lastTemName = "";
             // cursize = 0;

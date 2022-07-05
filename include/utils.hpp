@@ -304,6 +304,7 @@ public:
         }
         return res;
     }
+    PathCode(){};
     PathCode(char pathEncode[], int levels, string name)
     {
         this->paths = DecodePath(pathEncode, levels);
@@ -345,8 +346,8 @@ public:
     //判断值类型
     static ValueType::ValueType JudgeValueType(string vType);
     //判断值类型
-    static string JudgeValueTypeByNum(int vType);
-    static int JudgeByValueType(ValueType::ValueType vType);
+    static string JudgeValueTypeByNum(int &vType);
+    static int JudgeByValueType(ValueType::ValueType &vType);
     //获取值类型所占字节数
     static int GetValueBytes(ValueType::ValueType &type);
     //获取此数据类型所占的总字节数
@@ -792,6 +793,8 @@ public:
     vector<pair<char *, long>> GetPackByIDs(string pathToLine, string fileID, int num, bool getpath = 0);
 
     vector<pair<char *, long>> GetPackByIDs(string pathToLine, string fileIDStart, string fileIDEnd, bool getpath = 0);
+
+    void AddPack(string &pathToLine, string &path, long &start, long &end);
 
     void ModifyCacheCapacity(int memcap)
     {

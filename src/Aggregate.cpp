@@ -833,7 +833,6 @@ int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
         return err;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
-    int typeNum = buffer->buffer[0];
     vector<DataType> typeList;
     int recordLength = 0; //每行的长度
     int pos = 1;
@@ -852,7 +851,6 @@ int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
         rows >>= 8;
     }
     memcpy(newBuffer + newBufCur, res, 4);
-    DataTypeConverter converter;
     free(buffer->buffer);
     buffer->buffer = NULL;
     for (int i = 0; i < typeList.size(); i++)
@@ -913,7 +911,6 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
             colPos += bytes;
             cur += recordLength;
         }
-        DataTypeConverter converter;
         float sum = 0;
         switch (typeList[i].valueType)
         {
@@ -985,21 +982,16 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
             {
                 float value = (float)*((uint *)column + k);
                 sum += value;
-                // cout << "sum=" << sum << ",value=" << value << endl;
                 vals.push_back(value);
             }
             float avg = sum / (float)rows;
-            // cout << "avg=" << avg << endl;
             float sqrSum = 0;
             for (auto &v : vals)
             {
                 sqrSum += powf(v - avg, 2);
-                // cout << "sqrsum=" << sqrSum << endl;
             }
             float res = sqrtf(sqrSum / (float)rows);
-            cout << "res=" << res << endl;
             memcpy(newBuffer + newBufCur, &res, 4);
-            cout << "res=" << res << endl;
             newBufCur += 4;
             break;
         }
@@ -1129,7 +1121,6 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
             colPos += bytes;
             cur += recordLength;
         }
-        DataTypeConverter converter;
         float sum = 0;
         switch (typeList[i].valueType)
         {

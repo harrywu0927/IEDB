@@ -79,7 +79,7 @@ PackManager::PackManager(long memcap) //初始化allPacks
     }
 
     memCapacity = memcap;
-    cout << "memcapacity:" << memcap << endl;
+    // cout << "memcapacity:" << memcap << endl;
 }
 
 /**
@@ -425,6 +425,13 @@ void PackManager::UpdatePack(string path, string newPath, long start, long end)
             return;
         }
     }
+}
+
+void PackManager::AddPack(string &pathToLine, string &path, long &start, long &end)
+{
+    allPacks[pathToLine].push_back({path, make_tuple(start, end)});
+    sort(allPacks[pathToLine].begin(), allPacks[pathToLine].end(), [](pair<string, tuple<long, long>> iter1, pair<string, tuple<long, long>> iter2) -> bool
+         { return get<0>(iter1.second) < get<0>(iter2.second); });
 }
 
 // int main()

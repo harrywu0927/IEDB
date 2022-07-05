@@ -1,41 +1,15 @@
-#include <CassFactoryDB.h>
-#include <vector>
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <dirent.h>
-#ifdef WIN32
-#include <windows.h>
-#else
-#include <unistd.h>
 #include <fcntl.h>
-#include <sys/types.h>
-#include <sys/statvfs.h>
-#endif
-#include <sys/stat.h>
-#include <time.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <queue>
-#include <stdio.h>
-#include <string.h>
-#include <unordered_map>
-#include <algorithm>
-#include <sstream>
 #include <utils.hpp>
-#include <CJsonObject.hpp>
+#include <filesystem>
 using namespace std;
 #ifdef WIN32
 typedef long long int long;
 #endif
 long availableSpace = 1024 * 1024 * 10;
 size_t totalSpace = 0;
-char labelPath[100] = "./";
-
-void SetBasePath(char path[])
-{
-    strcpy(labelPath, path);
-}
 int get_file_size_time(const char *filename, pair<long, long> *s_t)
 {
     struct stat statbuf;
@@ -72,7 +46,7 @@ void getDiskSpaces()
 #endif
 }
 
-int readFileList_FS(char *basePath, vector<string> *files)
+int readFileList_FS(const char *basePath, vector<string> *files)
 {
     DIR *dir;
     struct dirent *ptr;
@@ -93,15 +67,15 @@ int readFileList_FS(char *basePath, vector<string> *files)
             base += ptr->d_name;
             files->push_back(base);
         }
-        else if (ptr->d_type == 10) /// link file
-            printf("link file:%s/%s\n", basePath, ptr->d_name);
+        // else if (ptr->d_type == 10) /// link file
+        //     printf("link file:%s/%s\n", basePath, ptr->d_name);
         else if (ptr->d_type == 4) /// dir
         {
             string base = basePath;
             base += "/";
             base += ptr->d_name;
             files->push_back(base);
-            readFileList_FS(const_cast<char *>(base.c_str()), files);
+            readFileList_FS(base.c_str(), files);
         }
     }
     closedir(dir);
@@ -111,7 +85,7 @@ int readFileList_FS(char *basePath, vector<string> *files)
 queue<string> InitFileQueue()
 {
     vector<string> files;
-    readFileList_FS(labelPath, &files);
+    readFileList_FS(settings("Filename_Label").c_str(), &files);
     vector<pair<string, pair<long, long>>> vec; //将键值对保存在数组中以便排序
     for (string &file : files)
     {
@@ -180,7 +154,6 @@ bool LoopMode(char buf[], long length)
     DIR *dir;
     struct dirent *ptr;
     vector<string> files;
-    // char *path = "./";
     long needSpace = length + 1;
     if (needSpace > availableSpace) //空间不足
     {
@@ -201,53 +174,6 @@ bool LoopMode(char buf[], long length)
     else
     {
         return true;
-    }
-    return false;
-
-    if (readFileList_FS(labelPath, &files) == 1)
-    {
-        long needSpace = length + 1;
-        if (needSpace > availableSpace) //空间不足
-        {
-            cout << "Need space:" << needSpace / 1024 << "KB Available:" << availableSpace / 1024 << "KB" << endl;
-            vector<pair<string, pair<long, long>>> vec; //将键值对保存在数组中以便排序
-            for (string file : files)
-            {
-                pair<long, long> s_t;
-                if (get_file_size_time(file.c_str(), &s_t) == 0)
-                {
-                    vec.push_back(make_pair(file, make_pair(s_t.first, s_t.second)));
-                }
-            }
-
-            //按照时间升序排序
-            sort(vec.begin(), vec.end(),
-                 [](pair<string, pair<long, long>> iter1, pair<string, pair<long, long>> iter2) -> bool
-                 {
-                     return iter1.second.second < iter2.second.second;
-                 });
-            for (int i = 0; i < vec.size(); i++) //删除文件直至可用容量大于需求容量
-            {
-                string file = vec[i].first;
-                char filepath[file.length() + 1];
-                int j;
-                for (j = 0; j < file.length(); j++)
-                {
-                    filepath[j] = file[j];
-                }
-                filepath[j] = '\0';
-                if (remove(filepath) == 0)
-                {
-                    getDiskSpaces();
-                }
-                if (availableSpace >= needSpace)
-                    return true;
-            }
-        }
-        else
-        {
-            return true;
-        }
     }
     return false;
 }
@@ -436,84 +362,66 @@ int DB_ReadFile(DB_DataBuffer *buffer)
     return 0;
 }
 
+/**
+ * @brief 创建文件夹
+ *
+ * @param path
+ * @return int
+ */
 int DB_CreateDirectory(char path[])
 {
-    char str[100];
-    strcpy(str, path);
-    const char *d = "/";
-    char *p;
-    p = strtok(str, d);
-    vector<string> res;
-    while (p)
+    std::filesystem::path dirpath = path;
+    if (dirpath.filename().has_extension())
     {
-        // printf("%s\n", p);
-        res.push_back(p);
-        p = strtok(NULL, d); // strtok内部记录了上次的位置
+        dirpath = dirpath.remove_filename();
     }
-    string dirs = "./";
-    for (int i = 0; i < res.size(); i++)
+    try
     {
-        if (res[i].find("idb") != string::npos)
-            break;
-        if (res[i] == ".." || res[i] == ".")
-        {
-            dirs += res[i] + "/";
-        }
-        else
-        {
-            dirs += res[i] + "/";
-            if (mkdir(dirs.c_str(), 0777) != 0)
-            {
-                if (errno != 17)
-                {
-                    perror("Error while Creating directory");
-                    return errno;
-                }
-            }
-        }
+        std::filesystem::create_directories(dirpath);
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << '\n';
+        return errno;
     }
     return 0;
-    // cout << path << endl;
-
-    // char *p = strtok(str, "/");
-    char dir[] = "./";
-    while (p != NULL)
-    {
-        string s = p;
-        if (s.find("idb") != string::npos)
-            break;
-        if (s == "..")
-        {
-            p = strtok(NULL, "/");
-            strcat(dir, "../");
-            continue;
-        }
-        strcat(dir, p);
-        char dirpath[strlen(dir)];
-        strcpy(dirpath, dir);
-        strcat(dir, "/");
-        cout << dirpath << endl;
-
-        if (mkdir(dirpath, 0777) != 0)
-        {
-            perror("Error while Creating directory");
-            return errno;
-        }
-
-        p = strtok(NULL, "/");
-    }
-
-    return 0;
+    // char str[100];
+    // strcpy(str, path);
+    // const char *d = "/";
+    // char *p;
+    // p = strtok(str, d);
+    // vector<string> res;
+    // while (p)
+    // {
+    //     res.push_back(p);
+    //     p = strtok(NULL, d); // strtok内部记录了上次的位置
+    // }
+    // string dirs = "./";
+    // for (int i = 0; i < res.size(); i++)
+    // {
+    //     if (res[i].find("idb") != string::npos)
+    //         break;
+    //     if (res[i] == ".." || res[i] == ".")
+    //     {
+    //         dirs += res[i] + "/";
+    //     }
+    //     else
+    //     {
+    //         dirs += res[i] + "/";
+    //         if (mkdir(dirs.c_str(), 0777) != 0)
+    //         {
+    //             if (errno != 17)
+    //             {
+    //                 perror("Error while Creating directory");
+    //                 return errno;
+    //             }
+    //         }
+    //     }
+    // }
+    // return 0;
 }
 int DB_DeleteDirectory(char path[])
 {
-    /*
-        ReadConfig();
-        char finalPath[100];
-        strcpy(finalPath, labelPath);
-        strcat(finalPath, "/");
-        strcat(finalPath, path);
-        */
     struct stat statbuf;
     if (stat(path, &statbuf) == -1)
     {
