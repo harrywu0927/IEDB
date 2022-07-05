@@ -30,12 +30,13 @@
 using namespace std;
 #ifdef __linux__
 #include <experimental/filesystem>
-namespace std::experimental::filesystem = std::filesystem;
+namespace std::filesystem = std::experimental::filesystem;
 #else
 #include <filesystem>
 #endif
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 mutex imute, countmute;
+// namespace fs = std::filesystem;
 void checkSettings()
 {
     FILE *fp = fopen("settings.json", "r+");

@@ -7,7 +7,7 @@
 using namespace std;
 #ifdef __linux__
 #include <experimental/filesystem>
-namespace std::experimental::filesystem = std::filesystem;
+namespace std::filesystem = std::experimental::filesystem;
 #else
 #include <filesystem>
 #endif
