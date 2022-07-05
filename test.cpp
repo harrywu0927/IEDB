@@ -30,9 +30,10 @@
 using namespace std;
 #ifdef __linux__
 #include <experimental/filesystem>
-namespace std::filesystem = std::experimental::filesystem;
+namespace fs = std::experimental::filesystem;
 #else
 #include <filesystem>
+namespace fs = std::filesystem;
 #endif
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 mutex imute, countmute;

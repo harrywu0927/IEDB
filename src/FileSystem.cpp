@@ -7,9 +7,10 @@
 using namespace std;
 #ifdef __linux__
 #include <experimental/filesystem>
-namespace std::filesystem = std::experimental::filesystem;
+namespace fs = std::experimental::filesystem;
 #else
 #include <filesystem>
+namespace fs = std::filesystem;
 #endif
 
 #ifdef WIN32
