@@ -8,7 +8,7 @@ LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib)
 # INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIRS}) 
 
 IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
- FIND_PACKAGE(PythonLibs 3.8 REQUIRED) 
+ #FIND_PACKAGE(PythonLibs 3.8 REQUIRED) 
  INCLUDE_DIRECTORIES(/usr/include/python3.8) 
  INCLUDE_DIRECTORIES(/usr/include/numpy)
  link_libraries(/usr/lib/x86_64-linux-gnu/libpython3.8.so)
