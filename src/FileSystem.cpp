@@ -3,8 +3,15 @@
 #include <stdlib.h>
 #include <queue>
 #include <utils.hpp>
-#include <experimental/filesystem>
+
 using namespace std;
+#ifdef __linux__
+#include <experimental/filesystem>
+namespace std::experimental::filesystem = std::filesystem;
+#else
+#include <filesystem>
+#endif
+
 #ifdef WIN32
 typedef long long int long;
 #endif

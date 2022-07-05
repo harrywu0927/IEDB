@@ -28,6 +28,12 @@
 #include <sys/types.h>
 #include <experimental/filesystem>
 using namespace std;
+#ifdef __linux__
+#include <experimental/filesystem>
+namespace std::experimental::filesystem = std::filesystem;
+#else
+#include <filesystem>
+#endif
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 mutex imute, countmute;
 void checkSettings()
