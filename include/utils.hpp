@@ -37,6 +37,7 @@
 #include <future>
 #include <chrono>
 #include <stdarg.h>
+#include <queue>
 using namespace std;
 #pragma once
 
@@ -132,6 +133,8 @@ extern bool IOBusy; // IO繁忙
 extern int RepackThreshold; //再打包的最大大小
 
 extern neb::CJsonObject settings;
+
+extern queue<string> fileQueue;
 //获取某一目录下的所有文件
 //不递归子文件夹
 void readFileList(string path, vector<string> &files);
@@ -189,6 +192,8 @@ int sysOpen(char path[]);
 int FindImage(char **buff, long &length, string &path, int index, char *pathCode);
 
 int FindImage(char **buff, long &length, string &path, int index, const char *valueName);
+
+queue<string> InitFileQueue();
 
 int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params);
 

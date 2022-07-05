@@ -33,12 +33,11 @@ void addSwitchZipPos(int schemaPos, char *writebuff, long &writebuff_pos)
  */
 void addSwitchZipType(int ziptype, char *writebuff, long &writebuff_pos)
 {
-    char zipType[1] = {0};
     switch (ziptype)
     {
     case 0:
     { //只有数据
-        zipType[1] = {0};
+        char zipType[1] = {0};
         zipType[0] = (char)0;
         memcpy(writebuff + writebuff_pos, zipType, 1);
         writebuff_pos += 1;
@@ -46,7 +45,7 @@ void addSwitchZipType(int ziptype, char *writebuff, long &writebuff_pos)
     }
     case 1:
     { //只有时间
-        zipType[1] = {0};
+        char zipType[1] = {0};
         zipType[0] = (char)1;
         memcpy(writebuff + writebuff_pos, zipType, 1);
         writebuff_pos += 1;
@@ -54,7 +53,7 @@ void addSwitchZipType(int ziptype, char *writebuff, long &writebuff_pos)
     }
     case 2:
     { //既有数据又有时间
-        zipType[1] = {0};
+        char zipType[1] = {0};
         zipType[0] = (char)2;
         memcpy(writebuff + writebuff_pos, zipType, 1);
         writebuff_pos += 1;
@@ -62,7 +61,7 @@ void addSwitchZipType(int ziptype, char *writebuff, long &writebuff_pos)
     }
     case 3:
     { //既是时间序列又是数组
-        zipType[1] = {0};
+        char zipType[1] = {0};
         zipType[0] = (char)3;
         memcpy(writebuff + writebuff_pos, zipType, 1);
         writebuff_pos += 1;
@@ -70,7 +69,7 @@ void addSwitchZipType(int ziptype, char *writebuff, long &writebuff_pos)
     }
     case 4:
     { //只是时间序列
-        zipType[1] = {0};
+        char zipType[1] = {0};
         zipType[0] = (char)4;
         memcpy(writebuff + writebuff_pos, zipType, 1);
         writebuff_pos += 1;

@@ -9,6 +9,7 @@ int errorCode;
 // int maxThreads = thread::hardware_concurrency();
 FileIDManager fileIDManager;
 neb::CJsonObject settings = FileIDManager::GetSetting();
+queue<string> fileQueue = InitFileQueue();
 unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
 PackManager packManager(atoi(settings("Pack_Cache_Size").c_str()) * 1024);
 

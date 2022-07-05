@@ -1,3 +1,14 @@
+/***************************************
+ * @file FileSystem.cpp
+ * @author your name (you@domain.com)
+ * @brief
+ * @version 0.8.6
+ * @date 于 2022-07-05 使用C++17 filesystem库重写部分函数
+ *
+ * @copyright Copyright (c) 2022
+ *
+ ***************************************/
+
 #include <fcntl.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -20,74 +31,95 @@ long availableSpace = 1024 * 1024 * 10;
 size_t totalSpace = 0;
 int get_file_size_time(const char *filename, pair<long, long> *s_t)
 {
-    struct stat statbuf;
-    if (stat(filename, &statbuf) == -1)
+    fs::path file = filename;
+    if (!fs::exists(file))
     {
-        perror("Error while getting file size and time");
-        return (-1);
+        cout << "Error: file " << file << " does not exist\n";
     }
-    if (S_ISDIR(statbuf.st_mode)) //是文件夹
-        return (1);
-    if (S_ISREG(statbuf.st_mode)) //是常规文件
+    if (fs::is_regular_file(file))
     {
-        *s_t = make_pair(statbuf.st_size, statbuf.st_mtime);
+        auto ftime = fs::last_write_time(file);
+        *s_t = make_pair(fs::file_size(file), decltype(ftime)::clock::to_time_t(ftime));
     }
+    // struct stat statbuf;
+    // if (stat(filename, &statbuf) == -1)
+    // {
+    //     perror("Error while getting file size and time");
+    //     return (-1);
+    // }
+    // if (S_ISDIR(statbuf.st_mode)) //是文件夹
+    //     return (1);
+    // if (S_ISREG(statbuf.st_mode)) //是常规文件
+    // {
+    //     *s_t = make_pair(statbuf.st_size, statbuf.st_mtime);
+    // }
 
-    return (0);
+    return 0;
 }
 
 void getDiskSpaces()
 {
-#ifdef WIN32
-    DWORD64 qwFreeBytesToCaller;
-    bool bResult = GetDiskFreeSpaceEx(TEXT("C:"),
-                                      (PULARGE_INTEGER)&qwFreeBytesToCaller,
-                                      (PULARGE_INTEGER)&totalSpace,
-                                      (PULARGE_INTEGER)&availableSpace);
-#else
-    struct statvfs diskInfo;
-    statvfs("./", &diskInfo);
-    availableSpace = diskInfo.f_bavail * diskInfo.f_frsize - 1024 * 1024 * 5; //可用空间
-    if (availableSpace < 0)
-        availableSpace = 0;
-    totalSpace = diskInfo.f_frsize * diskInfo.f_blocks; //总空间
-#endif
+    // struct statvfs diskInfo;
+    // statvfs("./", &diskInfo);
+    // availableSpace = diskInfo.f_bavail * diskInfo.f_frsize - 1024 * 1024 * 5; //可用空间
+    // if (availableSpace < 0)
+    //     availableSpace = 0;
+    // totalSpace = diskInfo.f_frsize * diskInfo.f_blocks; //总空间
+
+    auto spaceInfo = fs::space("./");
+    availableSpace = spaceInfo.available - 1024 * 1024 * 5;
+    totalSpace = spaceInfo.capacity;
+    // #endif
 }
 
 int readFileList_FS(const char *basePath, vector<string> *files)
 {
-    DIR *dir;
-    struct dirent *ptr;
-    if ((dir = opendir(basePath)) == NULL)
+    try
     {
-        perror("Error while opening directory");
-        return 0;
+        for (auto const &dir_entry : fs::recursive_directory_iterator{basePath})
+        {
+            if (fs::is_regular_file(dir_entry))
+                files->push_back(dir_entry.path().string());
+        }
     }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << '\n';
+        return errno;
+    }
+    return 0;
+    // DIR *dir;
+    // struct dirent *ptr;
+    // if ((dir = opendir(basePath)) == NULL)
+    // {
+    //     perror("Error while opening directory");
+    //     return 0;
+    // }
 
-    while ((ptr = readdir(dir)) != NULL)
-    {
-        if (strcmp(ptr->d_name, ".") == 0 || strcmp(ptr->d_name, "..") == 0) /// current dir OR parrent dir
-            continue;
-        else if (ptr->d_type == 8) /// file
-        {
-            string base = basePath;
-            base += "/";
-            base += ptr->d_name;
-            files->push_back(base);
-        }
-        // else if (ptr->d_type == 10) /// link file
-        //     printf("link file:%s/%s\n", basePath, ptr->d_name);
-        else if (ptr->d_type == 4) /// dir
-        {
-            string base = basePath;
-            base += "/";
-            base += ptr->d_name;
-            files->push_back(base);
-            readFileList_FS(base.c_str(), files);
-        }
-    }
-    closedir(dir);
-    return 1;
+    // while ((ptr = readdir(dir)) != NULL)
+    // {
+    //     if (strcmp(ptr->d_name, ".") == 0 || strcmp(ptr->d_name, "..") == 0) /// current dir OR parrent dir
+    //         continue;
+    //     else if (ptr->d_type == 8) /// file
+    //     {
+    //         string base = basePath;
+    //         base += "/";
+    //         base += ptr->d_name;
+    //         files->push_back(base);
+    //     }
+    //     // else if (ptr->d_type == 10) /// link file
+    //     //     printf("link file:%s/%s\n", basePath, ptr->d_name);
+    //     else if (ptr->d_type == 4) /// dir
+    //     {
+    //         string base = basePath;
+    //         base += "/";
+    //         base += ptr->d_name;
+    //         files->push_back(base);
+    //         readFileList_FS(base.c_str(), files);
+    //     }
+    // }
+    // closedir(dir);
+    // return 1;
 }
 
 queue<string> InitFileQueue()
@@ -118,31 +150,30 @@ queue<string> InitFileQueue()
     return que;
 }
 
-queue<string> fileQueue = InitFileQueue();
-
 int DB_GetFileLengthByPath(char path[], long *length)
 {
-    char finalPath[100];
-    strcpy(finalPath, settings("Filename_Label").c_str());
-    strcat(finalPath, "/");
-    strcat(finalPath, path);
-    FILE *fp = fopen(finalPath, "r");
-    if (fp == 0)
-    {
-        cout << finalPath << endl;
-        perror("Error while getting file length");
-        return errno;
-    }
-    if (fseek(fp, 0, SEEK_END) != 0)
-    {
-        perror("Error while getting file length");
-        return errno;
-    }
-
-    long len = ftell(fp);
+    string filepath = settings("Filename_Label");
+    if (filepath.back() != '/')
+        filepath += "/";
+    filepath.append(path);
+    // FILE *fp = fopen(filepath.c_str(), "r");
+    // if (fp == 0)
+    // {
+    //     cout << filepath << endl;
+    //     perror("Error while getting file length");
+    //     return errno;
+    // }
+    // if (fseek(fp, 0, SEEK_END) != 0)
+    // {
+    //     perror("Error while getting file length");
+    //     return errno;
+    // }
+    long len = fs::file_size(filepath);
+    // long len = ftell(fp);
 
     *length = len;
-    return fclose(fp) == 0 ? 0 : errno;
+    // return fclose(fp) == 0 ? 0 : errno;
+    return 0;
 }
 int DB_GetFileLengthByFilePtr(long fileptr, long *length)
 {
@@ -159,9 +190,6 @@ int DB_GetFileLengthByFilePtr(long fileptr, long *length)
 }
 bool LoopMode(char buf[], long length)
 {
-    DIR *dir;
-    struct dirent *ptr;
-    vector<string> files;
     long needSpace = length + 1;
     if (needSpace > availableSpace) //空间不足
     {
@@ -240,20 +268,19 @@ int DB_Write(long fp, char *buf, long length)
 
 int DB_Open(char path[], char mode[], long *fptr)
 {
-    // ReadConfig();
-    char finalPath[100];
-    strcpy(finalPath, settings("Filename_Label").c_str());
-    strcat(finalPath, "/");
-    strcat(finalPath, path);
+    string filepath = settings("Filename_Label");
+    if (filepath.back() != '/')
+        filepath += "/";
+    filepath.append(path);
     // fileQueue.push(finalPath);
-    FILE *fp = fopen(finalPath, mode);
+    FILE *fp = fopen(filepath.c_str(), mode);
     if (fp == NULL)
     {
         if (errno == 2 && (mode[0] == 'w' || mode[0] == 'a'))
         {
-            if (DB_CreateDirectory(finalPath) == 0)
+            if (DB_CreateDirectory(const_cast<char *>(filepath.c_str())) == 0)
             {
-                fp = fopen(finalPath, mode);
+                fp = fopen(filepath.c_str(), mode);
                 if (fp == NULL)
                 {
                     return errno;
@@ -266,7 +293,7 @@ int DB_Open(char path[], char mode[], long *fptr)
         }
         else
         {
-            cout << finalPath << endl;
+            cout << filepath << endl;
             perror("Error while opening file");
             return errno;
         }
@@ -290,14 +317,13 @@ int DB_Close(long fp)
 
 int DB_DeleteFile(char path[])
 {
-    // ReadConfig();
-    char finalPath[100];
-    strcpy(finalPath, settings("Filename_Label").c_str());
-    strcat(finalPath, "/");
-    strcat(finalPath, path);
+    string filepath = settings("Filename_Label");
+    if (filepath.back() != '/')
+        filepath += "/";
+    filepath.append(path);
     // availableSpace += GetFileLengthByPath(path);
     // cout<<"Delete file "<<path<<"size:"<<GetFileLengthByPath(path)<<endl;
-    return remove(finalPath) == 0 ? 0 : errno;
+    return remove(filepath.c_str()) == 0 ? 0 : errno;
 }
 int DB_Read(long fptr, char buf[])
 {
@@ -313,13 +339,21 @@ int DB_Read(long fptr, char buf[])
     }
     return 0;
 }
+
+/**
+ * @brief 打开文件并读取
+ *
+ * @param path
+ * @param buf
+ * @return int
+ */
 int DB_OpenAndRead(char path[], char buf[])
 {
-    char finalPath[100];
-    strcpy(finalPath, settings("Filename_Label").c_str());
-    strcat(finalPath, "/");
-    strcat(finalPath, path);
-    FILE *fp = fopen(finalPath, "rb");
+    string filepath = settings("Filename_Label");
+    if (filepath.back() != '/')
+        filepath += "/";
+    filepath.append(path);
+    FILE *fp = fopen(filepath.c_str(), "rb");
     fseek(fp, 0, SEEK_END);
     long len = ftell(fp);
     fseek(fp, 0, SEEK_SET);
@@ -334,6 +368,12 @@ int DB_OpenAndRead(char path[], char buf[])
     return 0;
 }
 
+/**
+ * @brief 读取文件内容到DB_DataBuffer中
+ *
+ * @param buffer
+ * @return int
+ */
 int DB_ReadFile(DB_DataBuffer *buffer)
 {
     string finalPath = settings("Filename_Label");
@@ -342,7 +382,7 @@ int DB_ReadFile(DB_DataBuffer *buffer)
     if (savepath[0] != '/')
         finalPath += "/";
     finalPath += savepath;
-    cout << finalPath << endl;
+    cout << finalPath << '\n';
     FILE *fp = fopen(finalPath.c_str(), "rb");
     if (fp == NULL)
         return errno;
@@ -453,12 +493,12 @@ int DB_DeleteDirectory(char path[])
 
 int sysOpen(char path[])
 {
-    char finalPath[100];
-    strcpy(finalPath, settings("Filename_Label").c_str());
-    strcat(finalPath, "/");
-    strcat(finalPath, path);
+    string filepath = settings("Filename_Label");
+    if (filepath.back() != '/')
+        filepath += "/";
+    filepath.append(path);
 
-    int fd = open(finalPath, O_CREAT | O_RDWR, S_IRWXG | S_IRWXO | S_IRWXU);
+    int fd = open(filepath.c_str(), O_CREAT | O_RDWR, S_IRWXG | S_IRWXO | S_IRWXU);
     if (fd == -1)
         return errno;
     return fd;

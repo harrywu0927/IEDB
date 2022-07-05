@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sstream>
+#include <fcntl.h>
 #include <future>
 #ifndef __linux__
 #include <mach/mach.h>
@@ -61,8 +62,20 @@ void checkSettings()
 
 int main()
 {
-    fs::path mypath = "./testIEDB/testdir/test2/test3";
-    fs::create_directories(mypath);
+    fs::path mypath = "./testIEDB/";
+    // fs::create_directories(mypath);
+    auto freespace = fs::space(mypath);
+
+    fs::path file = "settings.json";
+    auto time = fs::last_write_time(file);
+    cout << decltype(time)::clock::to_time_t(time) << endl;
+    auto size = fs::file_size(file);
+    cout << size << endl;
+    // for (auto const &dir_entry : fs::recursive_directory_iterator{"src"})
+    // {
+    //     cout << dir_entry.path() << endl;
+    // }
+
     // cout << mypath.filename() / "sdf.fe" << endl;
     return 0;
     // int (*M)[10] = new int[10][10];
