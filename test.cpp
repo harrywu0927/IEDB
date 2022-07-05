@@ -61,8 +61,8 @@ void checkSettings()
 
 int main()
 {
-    std::filesystem::path mypath = "./testIEDB/testdir/test2/test3";
-    std::filesystem::create_directories(mypath);
+    fs::path mypath = "./testIEDB/testdir/test2/test3";
+    fs::create_directories(mypath);
     // cout << mypath.filename() / "sdf.fe" << endl;
     return 0;
     // int (*M)[10] = new int[10][10];

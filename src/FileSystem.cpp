@@ -378,14 +378,14 @@ int DB_ReadFile(DB_DataBuffer *buffer)
  */
 int DB_CreateDirectory(char path[])
 {
-    std::filesystem::path dirpath = path;
+    fs::path dirpath = path;
     if (dirpath.filename().has_extension())
     {
         dirpath = dirpath.remove_filename();
     }
     try
     {
-        std::filesystem::create_directories(dirpath);
+        fs::create_directories(dirpath);
     }
     catch (const std::exception &e)
     {
