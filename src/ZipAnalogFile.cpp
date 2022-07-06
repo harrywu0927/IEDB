@@ -919,6 +919,7 @@ void addAnalogTsTime(int schemaPos, uint64_t startTime, char *writebuff, long &w
  * @param writebuff_pos 写数据偏移量
  * @param readbuff 读数据缓冲
  * @param readbuff_pos 读数据偏移量
+ * @param DataType 数据类型
  * @return int
  */
 int IsAnalogTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType)
@@ -1027,6 +1028,7 @@ int IsAnalogArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, char
  * @param writebuff_pos 写数据偏移量
  * @param readbuff 读数据缓冲
  * @param readbuff_pos 读数据偏移量
+ * @param DataType 数据类型
  * @return int
  */
 int IsNotAnalogArrayAndTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType)
