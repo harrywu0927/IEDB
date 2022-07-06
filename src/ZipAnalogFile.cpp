@@ -272,7 +272,7 @@ int IsAnalogTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *rea
                 }
             }
         }
-        case 7:
+        case 7://DINT
         {
             int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
             int maxDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
@@ -300,7 +300,7 @@ int IsAnalogTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *rea
                 }
             }
         }
-        case 8:
+        case 8://REAL
         {
             float standardFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
             float maxFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
@@ -3153,9 +3153,9 @@ int DB_ReZipAnalogFileByFileID(struct DB_ZipParams *params)
 //     // DB_ReZipSwitchFile("JinfeiSeven", "JinfeiSeven");
 //     DB_ZipParams param;
 //     param.ZipType = FILE_ID;
-//     param.pathToLine = "RobotTsTest";
-//     param.fileID = "RobotTsTest4";
-//     param.zipNums = 1;
+//     param.pathToLine = "JinfeiSeven";
+//     param.fileID = "JinfeiSeven1527000";
+//     param.zipNums = 100;
 //     param.EID = NULL;
 //     //cout << DB_ZipAnalogFileByFileID(&param) << endl;
 //      cout << DB_ReZipAnalogFileByFileID(&param) << endl;
