@@ -3003,6 +3003,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 				if (scanNum == params->queryNums)
 					break;
 				string tmp = file.first;
+				cout << tmp << endl;
 				vector<string> vec = DataType::splitWithStl(tmp, "/");
 				if (vec.size() == 0)
 					continue;
@@ -3026,6 +3027,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 					else
 						err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, file.second);
 					delete[] buff;
+					scanNum++;
 					if (err != 0)
 					{
 						if (Ext_Params.hasIMG)
@@ -3057,8 +3059,8 @@ int main()
 	// Py_Initialize();
 	DataTypeConverter converter;
 	DB_QueryParams params;
-	params.pathToLine = "JinfeiSeven";
-	params.fileID = "534243556";
+	params.pathToLine = "JinfeiTem";
+	params.fileID = "62";
 	// params.fileIDend = "2500";
 	params.fileIDend = NULL;
 	char code[10];
@@ -3074,16 +3076,16 @@ int main()
 	code[8] = (char)0;
 	code[9] = (char)0;
 	params.pathCode = code;
-	params.valueName = "S1ON";
+	params.valueName = "A1RTem";
 	// params.valueName = NULL;
 	params.start = 1553728593562;
 	params.end = 1751908603642;
 	params.order = ODR_NONE;
-	params.compareType = LT;
+	params.compareType = CMP_NONE;
 	params.compareValue = "110";
 	params.queryType = FILEID;
 	params.byPath = 0;
-	params.queryNums = 100;
+	params.queryNums = 2;
 	DB_DataBuffer buffer;
 	buffer.savePath = "/";
 	// cout << settings("Pack_Mode") << endl;
@@ -3093,15 +3095,8 @@ int main()
 	auto startTime = std::chrono::system_clock::now();
 	// char zeros[10] = {0};
 	// memcpy(params.pathCode, zeros, 10);
-	// DB_QueryLastRecords(&buffer, &params);
-	// free(buffer.buffer);
-	// buffer.buffer = nullptr;
-	// DB_QueryLastRecords(&buffer, &params);
-	// free(buffer.buffer);
-	// DB_QueryLastRecords(&buffer, &params);
-	// free(buffer.buffer);
-	// DB_QueryLastRecords(&buffer, &params);
 	DB_QueryByFileID(&buffer, &params);
+
 	auto endTime = std::chrono::system_clock::now();
 	// free(buffer.buffer);
 	std::cout << "第一次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
