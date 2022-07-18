@@ -187,6 +187,7 @@ int IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff,
                     addEndFlag(writebuff, writebuff_pos);
                 }
             }
+            break;
         }
         case 1: // UINT
         {
@@ -215,6 +216,7 @@ int IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff,
                     addEndFlag(writebuff, writebuff_pos);
                 }
             }
+            break;
         }
         case 6: // SINT
         {
@@ -243,6 +245,7 @@ int IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff,
                     addEndFlag(writebuff, writebuff_pos);
                 }
             }
+            break;
         }
         case 4: // INT
         {
@@ -271,6 +274,7 @@ int IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff,
                     addEndFlag(writebuff, writebuff_pos);
                 }
             }
+            break;
         }
         case 7: // DINT
         {
@@ -299,6 +303,7 @@ int IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff,
                     addEndFlag(writebuff, writebuff_pos);
                 }
             }
+            break;
         }
         case 8: // REAL
         {
@@ -327,6 +332,7 @@ int IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff,
                     addEndFlag(writebuff, writebuff_pos);
                 }
             }
+            break;
         }
         case 5: // BOOL
         {
@@ -348,6 +354,7 @@ int IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff,
                     addEndFlag(writebuff, writebuff_pos);
                 }
             }
+            break;
         }
         default:
         {
@@ -3418,3 +3425,18 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
 //     // DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest");
 //     return 0;
 // }
+int main()
+{
+    // DB_ReZipSwitchFile("JinfeiSeven", "JinfeiSeven");
+    DB_ZipParams param;
+    param.ZipType = FILE_ID;
+    param.pathToLine = "JinfeiTem";
+    param.fileID = "55";
+    param.zipNums = 1;
+    param.EID = NULL;
+    cout << DB_ZipFileByFileID(&param) << endl;
+    // cout << DB_ReZipFileByFileID(&param) << endl;
+    //   DB_ZipSwitchFile("RobotTsTest","RobotTsTest");
+    // DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest");
+    return 0;
+}

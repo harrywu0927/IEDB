@@ -94,20 +94,20 @@ uint32_t DataTypeConverter::ToUInt32(const char *str)
 float DataTypeConverter::ToFloat(const char *str)
 {
     float floatVariable;
-    if (isBigEndian)
-    {
-        floatVariable = *((float *)str);
-    }
-    else
-    {
-        floatVariable = __builtin_bswap32(*(float *)str);
-    }
-    return floatVariable;
+    // if (isBigEndian)
+    // {
+    //     floatVariable = *((float *)str);
+    // }
+    // else
+    // {
+    //     floatVariable = __builtin_bswap32(*(float *)str);
+    // }
+    // return floatVariable;
     void *pf;
     pf = &floatVariable;
     for (char i = 0; i < 4; i++)
     {
-        *((unsigned char *)pf + i) = str[i];
+        *((unsigned char *)pf + i) = str[3 - i];
     }
     return floatVariable;
 }
