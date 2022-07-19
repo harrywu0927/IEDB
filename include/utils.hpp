@@ -39,6 +39,13 @@
 #include <stdarg.h>
 #include <queue>
 using namespace std;
+#ifdef __linux__
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
 #pragma once
 
 #define PACK_MAX_SIZE 1024 * 1024 * 5
@@ -104,6 +111,7 @@ namespace StatusCode
         ZIPNUM_ERROR = 183,               // 压缩数量错误
         ZIPNUM_AND_EID_ERROR = 184,       // zipNum和EID冲突，不能同时设置
         VARIABLE_NAME_NOT_INT_CODE = 185, //编码中不包含指定变量名
+        MEMORY_INSUFFICIENT = 186,        //内存不足
     };
 }
 namespace ValueType
@@ -192,6 +200,8 @@ int sysOpen(char path[]);
 int FindImage(char **buff, long &length, string &path, int index, char *pathCode);
 
 int FindImage(char **buff, long &length, string &path, int index, const char *valueName);
+
+int FindImage(char **buff, long &length, string &path, int index, vector<string> &names);
 
 queue<string> InitFileQueue();
 
@@ -417,10 +427,13 @@ public:
     int GetAllPathsByCode(char *pachCode, vector<PathCode> &pathCodes);
 
     bool checkHasArray(char *pathCode);
+    bool checkHasArray(vector<string> &names);
 
     bool checkHasImage(char *pathCode);
+    bool checkHasImage(vector<string> &names);
 
     bool checkHasTimeseries(char *pathCode);
+    bool checkHasTimeseries(vector<string> &names);
 
     bool checkIsArray(const char *name);
 
@@ -428,23 +441,29 @@ public:
 
     bool checkIsTimeseries(const char *name);
 
-    int FindDatatypePosByCode(char pathCode[], char buff[], long &position, long &bytes);
+    int FindDatatypePosByCode(char pathCode[], char *buff, long &position, long &bytes);
 
-    int FindDatatypePosByCode(char pathCode[], char buff[], long &position, long &bytes, DataType &type);
+    int FindDatatypePosByCode(char pathCode[], char *buff, long &position, long &bytes, DataType &type);
 
     int FindMultiDatatypePosByCode(char pathCode[], vector<long> &positions, vector<long> &bytes, vector<DataType> &types);
 
-    int FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<long> &positions, vector<long> &bytes, vector<DataType> &types);
+    int FindMultiDatatypePosByCode(char pathCode[], char *buff, vector<long> &positions, vector<long> &bytes, vector<DataType> &types);
 
-    int FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<long> &positions, vector<long> &bytes);
+    int FindMultiDatatypePosByCode(char pathCode[], char *buff, vector<long> &positions, vector<long> &bytes);
 
-    int FindDatatypePosByName(const char *name, char buff[], long &position, long &bytes);
+    int FindDatatypePosByName(const char *name, char *buff, long &position, long &bytes);
 
-    int FindDatatypePosByName(const char *name, char buff[], long &position, long &bytes, DataType &type);
+    int FindDatatypePosByName(const char *name, char *buff, long &position, long &bytes, DataType &type);
 
     int FindDatatypePosByName(const char *name, long &position, long &bytes, DataType &type);
 
-    int writeBufferHead(vector<PathCode> &pathCodes, vector<DataType> &typeList, char *buffer);
+    int FindMultiDatatypePosByNames(vector<string> &names, vector<long> &positions, vector<long> &bytes, vector<DataType> &types);
+
+    int FindMultiDatatypePosByNames(vector<string> &names, char *buff, vector<long> &positions, vector<long> &bytes, vector<DataType> &types);
+
+    int FindMultiDatatypePosByNames(vector<string> &names, char *buff, vector<long> &positions, vector<long> &bytes);
+
+    int writeBufferHead(vector<string> &names, vector<DataType> &typeList, char *buffer);
 
     int writeBufferHead(char *pathCode, vector<DataType> &typeList, char *buffer);
 

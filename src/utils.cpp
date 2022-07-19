@@ -202,6 +202,62 @@ int FindImage(char **buff, long &length, string &path, int index, const char *va
     return StatusCode::DATAFILE_NOT_FOUND;
 }
 
+/**
+ * @brief 根据包路径和节拍位序获取图片，图片数据将放在buff中，使用前需要加载模版
+ *
+ * @param buff 缓存地址的二级指针
+ * @param length 数据长度
+ * @param path 文件路径
+ * @param index 包内节拍位序
+ * @param valueName 变量名
+ * @return int
+ */
+int FindImage(char **buff, long &length, string &path, int index, vector<string> &names)
+{
+    DB_DataBuffer buffer;
+    buffer.savePath = path.c_str();
+    DB_ReadFile(&buffer);
+    if (buffer.bufferMalloced)
+    {
+        if (path.find(".pak") != string::npos)
+        {
+            PackFileReader reader(buffer.buffer, buffer.length, true);
+            reader.Skip(index);
+            int zipType, readLength;
+            long timestamp;
+            long dataPos = reader.Next(readLength, timestamp, zipType);
+            vector<long> bytes, poses;
+            vector<DataType> types;
+            int err = CurrentTemplate.FindMultiDatatypePosByNames(names, reader.packBuffer + dataPos, poses, bytes, types);
+            if (err != 0)
+                return err;
+            long len = 0;
+            for (int i = 0; i < types.size(); i++)
+            {
+                if (types[i].valueType == ValueType::IMAGE)
+                    len += bytes[i] + 6;
+            }
+            *buff = new char[len];
+            long cur = 0;
+            for (int i = 0; i < types.size(); i++)
+            {
+                if (types[i].valueType == ValueType::IMAGE)
+                {
+                    memcpy(*buff + cur, reader.packBuffer + dataPos + poses[i] - 6, bytes[i] + 6);
+                    cur += bytes[i] + 6;
+                }
+            }
+            length = cur;
+            if (cur != 0)
+                return 0;
+            else
+                return StatusCode::IMG_NOT_FOUND;
+        }
+    }
+
+    return StatusCode::DATAFILE_NOT_FOUND;
+}
+
 //递归获取所有子文件夹
 void readAllDirs(vector<string> &dirs, string basePath)
 {
@@ -446,22 +502,37 @@ void readTEMFilesList(string path, vector<string> &files)
         errorCode = errno;
         return;
     }
-    dir = opendir(finalPath.c_str());
-    while ((ptr = readdir(dir)) != NULL)
+    try
     {
-        if (ptr->d_name[0] == '.')
-            continue;
-
-        if (ptr->d_type == 8)
+        for (auto const &dir_entry : fs::directory_iterator(finalPath))
         {
-            string p;
-            string datafile = ptr->d_name;
-
-            if (datafile.find(".tem") != string::npos)
-                files.push_back(p.append(path).append("/").append(ptr->d_name));
+            if (fs::is_regular_file(dir_entry) && dir_entry.path().extension() == ".tem")
+            {
+                files.push_back(path + "/" + dir_entry.path().filename().string());
+            }
         }
     }
-    closedir(dir);
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    return;
+    // dir = opendir(finalPath.c_str());
+    // while ((ptr = readdir(dir)) != NULL)
+    // {
+    //     if (ptr->d_name[0] == '.')
+    //         continue;
+
+    //     if (ptr->d_type == 8)
+    //     {
+    //         string p;
+    //         string datafile = ptr->d_name;
+
+    //         if (datafile.find(".tem") != string::npos)
+    //             files.push_back(p.append(path).append("/").append(ptr->d_name));
+    //     }
+    // }
+    // closedir(dir);
 }
 
 //获取.ziptem文件路径

@@ -62,11 +62,14 @@ void checkSettings()
 
 int main()
 {
+    fs::path testpath = "testIEDB/test2/fsdfeg.feg";
+    cout << testpath.stem();
     fs::path mypath = "./testIEDB/";
     // fs::create_directories(mypath);
     auto freespace = fs::space(mypath);
 
     fs::path file = "settings.json";
+    cout << (file.filename().extension() == ".json") << endl;
     auto time = fs::last_write_time(file);
     cout << decltype(time)::clock::to_time_t(time) << endl;
     auto size = fs::file_size(file);

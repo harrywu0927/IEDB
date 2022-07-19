@@ -16,19 +16,15 @@
 #include <utils.hpp>
 
 using namespace std;
-#ifdef __linux__
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
 
 #ifdef WIN32
 typedef long long int long;
 #endif
-long availableSpace = 1024 * 1024 * 10;
+long availableSpace = 1024 * 1024 * 100;
 size_t totalSpace = 0;
+
+bool fileOpenLocked = false;
+
 int get_file_size_time(const char *filename, pair<long, long> *s_t)
 {
     fs::path file = filename;
@@ -193,7 +189,7 @@ bool LoopMode(char buf[], long length)
     long needSpace = length + 1;
     if (needSpace > availableSpace) //空间不足
     {
-        cout << "Need space:" << needSpace / 1024 << "KB Available:" << availableSpace / 1024 << "KB" << endl;
+        cout << "Need space:" << needSpace / 1024 << "KB Available:" << availableSpace / 1024 << "KB\n";
 
         while (availableSpace < needSpace && !fileQueue.empty()) //删除文件直至可用容量大于需求容量
         {
@@ -224,10 +220,8 @@ bool LimitMode(char buf[], long length)
     {
         // return false;
         printf("Disk usage:%.2f%%\n", usage * 100);
-        if (dataSize > availableSpace)
-        {
-            return false;
-        }
+        fileOpenLocked = true;
+        return false;
     }
     return true;
 }
@@ -268,6 +262,19 @@ int DB_Write(long fp, char *buf, long length)
 
 int DB_Open(char path[], char mode[], long *fptr)
 {
+    if (settings("FileOverFlowMode") == "limit" && fileOpenLocked)
+    {
+        getDiskSpaces();
+        size_t avail = availableSpace >> 20;
+        size_t total = totalSpace >> 20;
+        double usage = 1 - (double)avail / (double)total;
+        // printf("Disk usage: %.2f%%\n", usage * 100);
+        if (usage >= 0.7) //已使用70%以上空间
+        {
+            return -1;
+        }
+        fileOpenLocked = false; //空间足够，解锁
+    }
     string filepath = settings("Filename_Label");
     if (filepath.back() != '/')
         filepath += "/";

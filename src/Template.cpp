@@ -70,6 +70,47 @@ int Template::writeBufferHead(string name, DataType &type, char *buffer)
 }
 
 /**
+ * @brief 在缓冲区中写入变量名的缓冲区头
+ * @param name          变量名
+ * @param type          数据类型
+ * @param buffer        缓冲区地址
+ *
+ * @return  缓冲区头的长度
+ * @note
+ */
+int Template::writeBufferHead(vector<string> &names, vector<DataType> &typeList, char *buffer)
+{
+    int cur = 1;
+    buffer[0] = (unsigned char)names.size();
+    for (int i = 0; i < names.size(); i++)
+    {
+        for (int j = 0; j < this->schemas.size(); j++)
+        {
+            if (names[i] == this->schemas[j].first.name)
+            {
+                buffer[cur++] = (char)getBufferValueType(typeList[i]);
+                // cout << (int)getBufferValueType(typeList[i]) << endl;
+                if (typeList[i].isTimeseries)
+                {
+                    memcpy(buffer + cur, &typeList[i].tsLen, 4);
+                    cur += 4;
+                }
+                if (typeList[i].isArray)
+                {
+                    memcpy(buffer + cur, &typeList[i].arrayLen, 4);
+                    cur += 4;
+                }
+                memcpy(buffer + cur, this->schemas[j].first.code, 10);
+                cur += 10;
+                break;
+            }
+        }
+    }
+
+    return cur;
+}
+
+/**
  * @brief 根据编码获取所有PathCode类型数据
  *
  * @param pathCode 编码
@@ -225,6 +266,30 @@ bool Template::checkIsArray(const char *name)
     }
     return false;
 }
+/**
+ * @brief 检查指定编码下是否包含数组类型数据
+ *
+ * @param names
+ * @return bool
+ */
+bool Template::checkHasArray(vector<string> &names)
+{
+    for (auto const &name : names)
+    {
+        for (auto const &schema : this->schemas)
+        {
+            string str = name;
+            if (schema.first.name == str)
+            {
+                if (schema.second.isArray)
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
 
 /**
  * @brief 检查指定编码下是否包含图片类型数据
@@ -247,6 +312,30 @@ bool Template::checkIsImage(const char *name)
     }
     return false;
 }
+/**
+ * @brief 检查指定编码下是否包含数组类型数据
+ *
+ * @param names
+ * @return bool
+ */
+bool Template::checkHasImage(vector<string> &names)
+{
+    for (auto const &name : names)
+    {
+        for (auto const &schema : this->schemas)
+        {
+            string str = name;
+            if (schema.first.name == str)
+            {
+                if (schema.second.valueType == ValueType::IMAGE)
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
 
 /**
  * @brief 检查指定编码下是否包含时间序列
@@ -264,6 +353,30 @@ bool Template::checkIsTimeseries(const char *name)
             if (schema.second.isTimeseries)
             {
                 return true;
+            }
+        }
+    }
+    return false;
+}
+/**
+ * @brief 检查指定编码下是否包含时间序列
+ *
+ * @param names
+ * @return bool
+ */
+bool Template::checkHasTimeseries(vector<string> &names)
+{
+    for (auto const &name : names)
+    {
+        for (auto const &schema : this->schemas)
+        {
+            string str = name;
+            if (schema.first.name == str)
+            {
+                if (schema.second.isTimeseries)
+                {
+                    return true;
+                }
             }
         }
     }
@@ -385,7 +498,7 @@ long Template::FindSortPosFromSelectedData(vector<long> &bytesList, string name,
  *          others: StatusCode
  * @note ! Deprecated
  */
-int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position, long &bytes)
+int Template::FindDatatypePosByCode(char pathCode[], char *buff, long &position, long &bytes)
 {
     DataTypeConverter converter;
     long pos = 0;
@@ -458,7 +571,7 @@ int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position
  *          others: StatusCode
  * @note
  */
-int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position, long &bytes, DataType &type)
+int Template::FindDatatypePosByCode(char pathCode[], char *buff, long &position, long &bytes, DataType &type)
 {
     DataTypeConverter converter;
     long pos = 0;
@@ -555,7 +668,7 @@ int Template::FindDatatypePosByCode(char pathCode[], char buff[], long &position
  *          others: StatusCode
  * @note    图片数据目前暂时协定前2个字节为图片总长，不包括图片自身
  */
-int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<long> &positions, vector<long> &bytes, vector<DataType> &types)
+int Template::FindMultiDatatypePosByCode(char pathCode[], char *buff, vector<long> &positions, vector<long> &bytes, vector<DataType> &types)
 {
     DataTypeConverter converter;
     long pos = 0;
@@ -577,18 +690,18 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
         if (codeEquals)
         {
             int num = 1;
-            if (schema.second.isTimeseries)
-            {
-                if (schema.second.isArray) //暂不支持图片的时间序列
-                {
-                    num = schema.second.arrayLen * schema.second.tsLen;
-                }
-                else
-                {
-                    num = schema.second.tsLen;
-                }
-            }
-            else if (schema.second.isArray)
+            // if (schema.second.isTimeseries)
+            // {
+            //     if (schema.second.isArray) //暂不支持图片的时间序列
+            //     {
+            //         num = schema.second.arrayLen * schema.second.tsLen;
+            //     }
+            //     else
+            //     {
+            //         num = schema.second.tsLen;
+            //     }
+            // }
+            if (schema.second.isArray)
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
@@ -613,20 +726,20 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
         else
         {
             int num = 1;
-            if (schema.second.isTimeseries)
+            if (schema.second.isArray)
             {
-                if (schema.second.isArray)
+                if (schema.second.valueType == ValueType::IMAGE)
                 {
-                    num = schema.second.arrayLen * schema.second.tsLen;
+                    char length[2], width[2], channels[2];
+                    memcpy(length, buff + pos, 2);
+                    pos += 2;
+                    memcpy(width, buff + pos, 2);
+                    pos += 2;
+                    memcpy(channels, buff + pos, 2);
+                    num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels) + 2;
                 }
                 else
-                {
-                    num = schema.second.tsLen;
-                }
-            }
-            else if (schema.second.isArray)
-            {
-                num = schema.second.arrayLen;
+                    num = schema.second.arrayLen;
             }
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
             pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
@@ -649,7 +762,6 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<lo
  */
 int Template::FindMultiDatatypePosByCode(char pathCode[], vector<long> &positions, vector<long> &bytes, vector<DataType> &types)
 {
-    DataTypeConverter converter;
     long pos = 0;
     int level = 5; //路径级数
     for (int i = 10 - 1; i >= 0 && pathCode[i] == 0; i -= 2)
@@ -726,7 +838,7 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], vector<long> &position
  *          others: StatusCode
  * @note    图片数据目前暂时协定前2个字节为图片总长，不包括图片自身
  */
-int Template::FindMultiDatatypePosByCode(char pathCode[], char buff[], vector<long> &positions, vector<long> &bytes)
+int Template::FindMultiDatatypePosByCode(char pathCode[], char *buff, vector<long> &positions, vector<long> &bytes)
 {
     DataTypeConverter converter;
     long pos = 0;
@@ -875,7 +987,7 @@ int Template::FindDatatypePosByName(const char *name, long &position, long &byte
  *          others: StatusCode
  * @note ! Deprecated
  */
-int Template::FindDatatypePosByName(const char *name, char buff[], long &position, long &bytes)
+int Template::FindDatatypePosByName(const char *name, char *buff, long &position, long &bytes)
 {
     DataTypeConverter converter;
     long pos = 0;
@@ -946,7 +1058,7 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
  *          others: StatusCode
  * @note
  */
-int Template::FindDatatypePosByName(const char *name, char buff[], long &position, long &bytes, DataType &type)
+int Template::FindDatatypePosByName(const char *name, char *buff, long &position, long &bytes, DataType &type)
 {
     DataTypeConverter converter;
     long pos = 0;
@@ -1027,6 +1139,229 @@ int Template::FindDatatypePosByName(const char *name, char buff[], long &positio
         }
     }
     return StatusCode::UNKNOWN_VARIABLE_NAME;
+}
+
+/**
+ * @brief 根据当前模版寻找多个变量名的数据在数据文件中的位置，适用于不带图片的数据,若包含未知的变量名将无视
+ * @param names        路径编码
+ * @param positions    数据起始位置
+ * @param buff        文件数据
+ * @param bytes       数据长度
+ * @param types        数据类型
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note    图片数据目前暂时协定前2个字节为图片总长，不包括图片自身,仅针对无图片数据
+ */
+int Template::FindMultiDatatypePosByNames(vector<string> &names, vector<long> &positions, vector<long> &bytes, vector<DataType> &types)
+{
+    for (auto const &name : names)
+    {
+        long pos = 0;
+        for (auto const &schema : this->schemas)
+        {
+            if (schema.first.name == name)
+            {
+                int num = 1;
+                if (schema.second.isTimeseries)
+                {
+                    if (schema.second.isArray)
+                    {
+                        num = schema.second.arrayLen * schema.second.tsLen;
+                    }
+                    else
+                    {
+                        num = schema.second.tsLen;
+                    }
+                }
+                else if (schema.second.isArray)
+                {
+                    num = schema.second.arrayLen;
+                }
+                positions.push_back(pos);
+                bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); //时间序列整个获取
+                types.push_back(schema.second);
+                pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
+                pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
+            }
+            else
+            {
+                int num = 1;
+                if (schema.second.isTimeseries)
+                {
+                    if (schema.second.isArray)
+                    {
+                        num = schema.second.arrayLen * schema.second.tsLen;
+                    }
+                    else
+                    {
+                        num = schema.second.tsLen;
+                    }
+                }
+                else if (schema.second.isArray)
+                {
+                    num = schema.second.arrayLen;
+                }
+                pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
+                pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
+            }
+        }
+    }
+
+    return positions.size() == 0 ? StatusCode::UNKNOWN_VARIABLE_NAME : 0;
+}
+
+/**
+ * @brief 根据当前模版寻找多个变量名的数据在数据文件中的位置，若包含未知的变量名将无视
+ * @param pathCode        路径编码
+ * @param positions    数据起始位置
+ * @param buff        文件数据
+ * @param bytes       数据长度
+ * @param types        数据类型
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note    图片数据目前暂时协定前2个字节为图片总长，不包括图片自身
+ */
+int Template::FindMultiDatatypePosByNames(vector<string> &names, char *buff, vector<long> &positions, vector<long> &bytes, vector<DataType> &types)
+{
+    DataTypeConverter converter;
+    for (auto const &name : names)
+    {
+        long pos = 0;
+        for (auto const &schema : this->schemas)
+        {
+            if (schema.first.name == name)
+            {
+                int num = 1;
+                if (schema.second.isTimeseries)
+                {
+                    if (schema.second.isArray) //暂不支持图片的时间序列
+                    {
+                        num = schema.second.arrayLen * schema.second.tsLen;
+                    }
+                    else
+                    {
+                        num = schema.second.tsLen;
+                    }
+                }
+                else if (schema.second.isArray)
+                {
+                    if (schema.second.valueType == ValueType::IMAGE)
+                    {
+                        char length[2], width[2], channels[2];
+                        memcpy(length, buff + pos, 2);
+                        pos += 2;
+                        memcpy(width, buff + pos, 2);
+                        pos += 2;
+                        memcpy(channels, buff + pos, 2);
+                        num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels);
+                        pos += 2;
+                    }
+                    else
+                        num = schema.second.arrayLen;
+                }
+                positions.push_back(pos);
+                bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); //时间序列整个获取
+                types.push_back(schema.second);
+                pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
+                pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
+            }
+            else
+            {
+                int num = 1;
+                if (schema.second.isTimeseries)
+                {
+                    if (schema.second.isArray)
+                    {
+                        num = schema.second.arrayLen * schema.second.tsLen;
+                    }
+                    else
+                    {
+                        num = schema.second.tsLen;
+                    }
+                }
+                else if (schema.second.isArray)
+                {
+                    num = schema.second.arrayLen;
+                }
+                pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
+                pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
+            }
+        }
+    }
+
+    return positions.size() == 0 ? StatusCode::UNKNOWN_VARIABLE_NAME : 0;
+}
+
+/**
+ * @brief 根据当前模版模糊寻找指定路径编码的数据在数据文件中的位置，即获取模版中某一路径下所有孩子结点，包含自身
+ * @param pathCode        路径编码
+ * @param positions    数据起始位置
+ * @param buff        文件数据
+ * @param bytes       数据长度
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note    图片数据目前暂时协定前2个字节为图片总长，不包括图片自身
+ */
+int Template::FindMultiDatatypePosByNames(vector<string> &names, char *buff, vector<long> &positions, vector<long> &bytes)
+{
+    DataTypeConverter converter;
+
+    for (auto const &name : names)
+    {
+        long pos = 0;
+        for (auto const &schema : this->schemas)
+        {
+            if (schema.first.name == name)
+            {
+                int num = 1;
+                if (schema.second.isArray)
+                {
+                    if (schema.second.valueType == ValueType::IMAGE)
+                    {
+                        char length[2], width[2], channels[2];
+                        memcpy(length, buff + pos, 2);
+                        pos += 2;
+                        memcpy(width, buff + pos, 2);
+                        pos += 2;
+                        memcpy(channels, buff + pos, 2);
+                        num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels);
+                        pos += 2;
+                    }
+                    else
+                        num = schema.second.arrayLen;
+                }
+                positions.push_back(pos);
+                bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); //时间序列整个获取
+                pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
+                pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
+            }
+            else
+            {
+                int num = 1;
+                if (schema.second.isArray)
+                {
+                    if (schema.second.valueType == ValueType::IMAGE)
+                    {
+                        char length[2], width[2], channels[2];
+                        memcpy(length, buff + pos, 2);
+                        pos += 2;
+                        memcpy(width, buff + pos, 2);
+                        pos += 2;
+                        memcpy(channels, buff + pos, 2);
+                        num = (int)converter.ToUInt16(length) * (int)converter.ToUInt16(width) * (int)converter.ToUInt16(channels) + 2;
+                    }
+                    else
+                        num = schema.second.arrayLen;
+                }
+                pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
+                pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
+            }
+        }
+    }
+    return positions.size() == 0 ? StatusCode::UNKNOWN_PATHCODE : 0;
 }
 
 vector<DataType> Template::GetAllTypes(char *pathCode)

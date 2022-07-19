@@ -72,6 +72,8 @@ struct DB_QueryParams
     enum DB_CompareType compareType; //比较方式
     enum DB_QueryType queryType;     //查询条件
     enum DB_Order order;             //排列方式
+    const char *sortVariable;        //排序的变量
+    const char *compareVariable;     //比较的变量
     int queryID;                     //请求ID
     const char *fileIDend;           //结束文件ID
 };
