@@ -17,9 +17,6 @@
 
 using namespace std;
 
-#ifdef WIN32
-typedef long long int long;
-#endif
 long availableSpace = 1024 * 1024 * 100;
 size_t totalSpace = 0;
 
@@ -37,18 +34,6 @@ int get_file_size_time(const char *filename, pair<long, long> *s_t)
         auto ftime = fs::last_write_time(file);
         *s_t = make_pair(fs::file_size(file), decltype(ftime)::clock::to_time_t(ftime));
     }
-    // struct stat statbuf;
-    // if (stat(filename, &statbuf) == -1)
-    // {
-    //     perror("Error while getting file size and time");
-    //     return (-1);
-    // }
-    // if (S_ISDIR(statbuf.st_mode)) //是文件夹
-    //     return (1);
-    // if (S_ISREG(statbuf.st_mode)) //是常规文件
-    // {
-    //     *s_t = make_pair(statbuf.st_size, statbuf.st_mtime);
-    // }
 
     return 0;
 }
@@ -84,38 +69,6 @@ int readFileList_FS(const char *basePath, vector<string> *files)
         return errno;
     }
     return 0;
-    // DIR *dir;
-    // struct dirent *ptr;
-    // if ((dir = opendir(basePath)) == NULL)
-    // {
-    //     perror("Error while opening directory");
-    //     return 0;
-    // }
-
-    // while ((ptr = readdir(dir)) != NULL)
-    // {
-    //     if (strcmp(ptr->d_name, ".") == 0 || strcmp(ptr->d_name, "..") == 0) /// current dir OR parrent dir
-    //         continue;
-    //     else if (ptr->d_type == 8) /// file
-    //     {
-    //         string base = basePath;
-    //         base += "/";
-    //         base += ptr->d_name;
-    //         files->push_back(base);
-    //     }
-    //     // else if (ptr->d_type == 10) /// link file
-    //     //     printf("link file:%s/%s\n", basePath, ptr->d_name);
-    //     else if (ptr->d_type == 4) /// dir
-    //     {
-    //         string base = basePath;
-    //         base += "/";
-    //         base += ptr->d_name;
-    //         files->push_back(base);
-    //         readFileList_FS(base.c_str(), files);
-    //     }
-    // }
-    // closedir(dir);
-    // return 1;
 }
 
 queue<string> InitFileQueue()
@@ -152,23 +105,9 @@ int DB_GetFileLengthByPath(char path[], long *length)
     if (filepath.back() != '/')
         filepath += "/";
     filepath.append(path);
-    // FILE *fp = fopen(filepath.c_str(), "r");
-    // if (fp == 0)
-    // {
-    //     cout << filepath << endl;
-    //     perror("Error while getting file length");
-    //     return errno;
-    // }
-    // if (fseek(fp, 0, SEEK_END) != 0)
-    // {
-    //     perror("Error while getting file length");
-    //     return errno;
-    // }
     long len = fs::file_size(filepath);
-    // long len = ftell(fp);
 
     *length = len;
-    // return fclose(fp) == 0 ? 0 : errno;
     return 0;
 }
 int DB_GetFileLengthByFilePtr(long fileptr, long *length)
@@ -440,40 +379,6 @@ int DB_CreateDirectory(char path[])
         return errno;
     }
     return 0;
-    // char str[100];
-    // strcpy(str, path);
-    // const char *d = "/";
-    // char *p;
-    // p = strtok(str, d);
-    // vector<string> res;
-    // while (p)
-    // {
-    //     res.push_back(p);
-    //     p = strtok(NULL, d); // strtok内部记录了上次的位置
-    // }
-    // string dirs = "./";
-    // for (int i = 0; i < res.size(); i++)
-    // {
-    //     if (res[i].find("idb") != string::npos)
-    //         break;
-    //     if (res[i] == ".." || res[i] == ".")
-    //     {
-    //         dirs += res[i] + "/";
-    //     }
-    //     else
-    //     {
-    //         dirs += res[i] + "/";
-    //         if (mkdir(dirs.c_str(), 0777) != 0)
-    //         {
-    //             if (errno != 17)
-    //             {
-    //                 perror("Error while Creating directory");
-    //                 return errno;
-    //             }
-    //         }
-    //     }
-    // }
-    // return 0;
 }
 int DB_DeleteDirectory(char path[])
 {

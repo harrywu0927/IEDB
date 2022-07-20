@@ -86,42 +86,18 @@ int CheckQueryParams(DB_QueryParams *params)
 	{
 		return StatusCode::PATHCODE_CHECK_ERROR;
 	}
-	if (params->byPath == 1)
-	{
-		vector<PathCode> codes;
-		if (CurrentTemplate.GetAllPathsByCode(params->pathCode, codes) != 0)
-			return StatusCode::UNKNOWN_PATHCODE;
 
-		if (codes.size() > 1 && params->compareType != CMP_NONE && params->valueName == NULL)
-			return StatusCode::VARIABLE_NOT_ASSIGNED;
-		if (codes.size() > 1 && params->order != ODR_NONE && params->valueName == NULL)
-			return StatusCode::VARIABLE_NOT_ASSIGNED;
-		vector<PathCode> pathCode;
-		if (params->valueName != NULL && CurrentTemplate.GetCodeByName(params->valueName, pathCode) == 0 && (params->order != ODR_NONE || params->compareType != CMP_NONE))
-		{
-			bool codeFound = false;
-			for (auto &code : codes)
-			{
-				if (code == pathCode[0])
-				{
-					codeFound = true;
-					break;
-				}
-			}
-			if (!codeFound)
-				return StatusCode::VARIABLE_NAME_NOT_INT_CODE;
-		}
-	}
-	else
-	{
-	}
 	switch (params->queryType)
 	{
 	case TIMESPAN:
 	{
-		if ((params->start == 0 && params->end == 0) || params->start > params->end)
+		if (params->start > params->end && params->end != 0)
 		{
 			return StatusCode::INVALID_TIMESPAN;
+		}
+		else if (params->start == 0 && params->end == 0)
+		{
+			params->end = getMilliTime();
 		}
 		else if (params->end == 0)
 		{
@@ -158,7 +134,7 @@ int CheckQueryParams(DB_QueryParams *params)
 }
 
 /**
- * @brief 提取数据时可用到的静态参数，避免DataExtration函数的参数过多，略微影响性能
+ * @brief 提取数据时可用到的静态参数，避免DataExtration函数的参数过多从而略微影响性能
  *
  * @note 64位Linux系统中函数参数少于7个时， 参数从左到右放入寄存器: rdi, rsi, rdx, rcx, r8, r9。 当参数为7个以上时， 前 6 个与前面一样， 但后面的依次从 “右向左” 放入栈中，即和32位汇编一样。
  *
@@ -193,21 +169,28 @@ struct Extraction_Params
 int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Params)
 {
 	int err;
+	if (Qry_Params->valueName != NULL)
+	{
+		auto namesSplitedBySpace = DataType::splitWithStl(Qry_Params->valueName, " ");
+		auto namesSplitedByComma = DataType::splitWithStl(Qry_Params->valueName, ",");
+		auto names = namesSplitedByComma.size() > 1 ? namesSplitedByComma : namesSplitedBySpace;
+		Ext_Params.names = names;
+	}
 	if (Qry_Params->byPath)
 	{
 		err = CurrentTemplate.FindMultiDatatypePosByCode(Qry_Params->pathCode, Ext_Params.posList, Ext_Params.bytesList, Ext_Params.typeList);
 		Ext_Params.copyBytes = CurrentTemplate.GetBytesByCode(Qry_Params->pathCode);
-		vector<PathCode> pathCodes;
-		CurrentTemplate.GetAllPathsByCode(Qry_Params->pathCode, pathCodes);
+		if (CurrentTemplate.GetAllPathsByCode(Qry_Params->pathCode, Ext_Params.pathCodes) != 0)
+			return StatusCode::UNKNOWN_PATHCODE;
 		// Find the index of variable to be sorted or compared in paths.
 		if (Qry_Params->order != ODR_NONE)
 		{
 			string sortVariable = Qry_Params->sortVariable;
 			bool found = false;
 			int sortpos = 0;
-			for (int i = 0; i < pathCodes.size(); i++)
+			for (int i = 0; i < Ext_Params.pathCodes.size(); i++)
 			{
-				if (pathCodes[i].name == sortVariable)
+				if (Ext_Params.pathCodes[i].name == sortVariable)
 				{
 					found = true;
 					Ext_Params.sortIndex = i;
@@ -226,9 +209,9 @@ int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Param
 		{
 			string cmpVariable = Qry_Params->compareVariable;
 			bool found = false;
-			for (int i = 0; i < pathCodes.size(); i++)
+			for (int i = 0; i < Ext_Params.pathCodes.size(); i++)
 			{
-				if (pathCodes[i].name == cmpVariable)
+				if (Ext_Params.pathCodes[i].name == cmpVariable)
 				{
 					found = true;
 					Ext_Params.cmpIndex = i;
@@ -243,11 +226,7 @@ int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Param
 	}
 	else
 	{
-		auto namesSplitedBySpace = DataType::splitWithStl(Qry_Params->valueName, " ");
-		auto namesSplitedByComma = DataType::splitWithStl(Qry_Params->valueName, ",");
-		auto names = namesSplitedByComma.size() > 1 ? namesSplitedByComma : namesSplitedBySpace;
-		Ext_Params.names = names;
-		err = CurrentTemplate.FindMultiDatatypePosByNames(names, Ext_Params.posList, Ext_Params.bytesList, Ext_Params.typeList);
+		err = CurrentTemplate.FindMultiDatatypePosByNames(Ext_Params.names, Ext_Params.posList, Ext_Params.bytesList, Ext_Params.typeList);
 		Ext_Params.copyBytes = 0;
 		for (auto &byte : Ext_Params.bytesList)
 		{
@@ -258,9 +237,9 @@ int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Param
 			string sortVariable = Qry_Params->sortVariable;
 			bool found = false;
 			int sortpos = 0;
-			for (int i = 0; i < names.size(); i++)
+			for (int i = 0; i < Ext_Params.names.size(); i++)
 			{
-				if (names[i] == sortVariable)
+				if (Ext_Params.names[i] == sortVariable)
 				{
 					found = true;
 					Ext_Params.sortIndex = i;
@@ -279,9 +258,9 @@ int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Param
 		{
 			string cmpVariable = Qry_Params->compareVariable;
 			bool found = false;
-			for (int i = 0; i < names.size(); i++)
+			for (int i = 0; i < Ext_Params.names.size(); i++)
 			{
-				if (names[i] == cmpVariable)
+				if (Ext_Params.names[i] == cmpVariable)
 				{
 					found = true;
 					Ext_Params.cmpIndex = i;
@@ -294,6 +273,13 @@ int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Param
 				return StatusCode::UNKNOWN_VARIABLE_NAME;
 		}
 	}
+	// if (Qry_Params->byPath == 1)
+	// {
+	// 	if (Ext_Params.pathCodes.size() > 1 && Qry_Params->compareType != CMP_NONE && Qry_Params->compareVariable == NULL)
+	// 		return StatusCode::VARIABLE_NOT_ASSIGNED;
+	// 	if (Ext_Params.pathCodes.size() > 1 && Qry_Params->order != ODR_NONE && Qry_Params->sortVariable == NULL)
+	// 		return StatusCode::VARIABLE_NOT_ASSIGNED;
+	// }
 	Ext_Params.hasArray = Qry_Params->byPath ? CurrentTemplate.checkHasArray(Qry_Params->pathCode) : CurrentTemplate.checkHasArray(Ext_Params.names);
 	Ext_Params.hasTS = Qry_Params->byPath ? CurrentTemplate.checkHasTimeseries(Qry_Params->pathCode) : CurrentTemplate.checkHasTimeseries(Ext_Params.names);
 	Ext_Params.hasIMG = Qry_Params->byPath ? CurrentTemplate.checkHasImage(Qry_Params->pathCode) : CurrentTemplate.checkHasImage(Ext_Params.names);
@@ -1212,6 +1198,12 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 	int check = CheckQueryParams(params);
 	if (check != 0)
 		return check;
+
+	int err;
+	Extraction_Params Ext_Params;
+	err = GetExtractionParams(Ext_Params, params);
+	if (err != 0)
+		return err;
 	vector<pair<string, long>> filesWithTime, selectedFiles;
 	auto selectedPacks = packManager.GetPacksByTime(params->pathToLine, params->start, params->end);
 	//获取每个数据文件，并带有时间戳
@@ -1232,11 +1224,6 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 	vector<tuple<char *, long, long, long>> mallocedMemory; //内存地址-长度-排序值偏移-时间戳元组集
 	long cur = 0;
 
-	int err;
-	Extraction_Params Ext_Params;
-	err = GetExtractionParams(Ext_Params, params);
-	if (err != 0)
-		return err;
 	char *rawBuff = nullptr;
 	int startPos;
 	if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
@@ -1441,7 +1428,7 @@ int PackProcess(pair<string, pair<char *, long>> *packInfo, DB_QueryParams *para
 			char *newBuffer;
 			long len;
 			string path = packInfo->first;
-			int err = params->byPath ? FindImage(&img, len, path, i, params->pathCode) : FindImage(&img, len, path, i, params->valueName);
+			int err = params->byPath ? FindImage(&img, len, path, i, params->pathCode) : FindImage(&img, len, path, i, Ext_Params->names);
 			if (err != 0)
 			{
 				errorCode = err;
@@ -1748,6 +1735,11 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 		IOBusy = false;
 		return check;
 	}
+	int err;
+	Extraction_Params Ext_Params;
+	err = GetExtractionParams(Ext_Params, params);
+	if (err != 0)
+		return err;
 	vector<pair<string, long>> filesWithTime, selectedFiles;
 	auto selectedPacks = packManager.GetPacksByTime(params->pathToLine, params->start, params->end);
 	//获取每个数据文件，并带有时间戳
@@ -1764,11 +1756,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 	vector<tuple<char *, long, long, long>> mallocedMemory; //当前已分配的内存地址-长度-排序值偏移-时间戳元组
 	atomic<long> cur(0);									//已选择的数据总长
-	int err;
-	Extraction_Params Ext_Params;
-	err = GetExtractionParams(Ext_Params, params);
-	if (err != 0)
-		return err;
+
 	char *rawBuff = nullptr;
 	if (!Ext_Params.hasIMG)
 	{
@@ -2369,6 +2357,13 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 		IOBusy = false;
 		return check;
 	}
+	int err;
+	Extraction_Params Ext_Params;
+	err = GetExtractionParams(Ext_Params, params);
+	if (params->byPath && params->pathCode != NULL)
+		CurrentTemplate.GetAllPathsByCode(params->pathCode, Ext_Params.pathCodes);
+	if (err != 0)
+		return err;
 	vector<pair<string, long>> selectedFiles;
 
 	//获取每个数据文件，并带有时间戳
@@ -2380,16 +2375,11 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 	//取排序后的文件中前queryNums个符合条件的文件的数据
 	vector<tuple<char *, long, long, long>> mallocedMemory;
 	long cur = 0; //记录已选中的数据总长度
-	int err;
+
 	/*<-----!!!警惕内存泄露!!!----->*/
 	//先对时序在后的普通文件检索
 	int selectedNum = 0;
-	Extraction_Params Ext_Params;
-	err = GetExtractionParams(Ext_Params, params);
-	if (params->byPath && params->pathCode != NULL)
-		CurrentTemplate.GetAllPathsByCode(params->pathCode, Ext_Params.pathCodes);
-	if (err != 0)
-		return err;
+
 	char *rawBuff = nullptr;
 	int startPos = 0;
 	if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
@@ -2504,7 +2494,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 				{
 					char *newBuffer;
 					long len;
-					err = params->byPath ? FindImage(&img, len, pack.first, i, params->pathCode) : FindImage(&img, len, pack.first, i, params->valueName);
+					err = params->byPath ? FindImage(&img, len, pack.first, i, params->pathCode) : FindImage(&img, len, pack.first, i, Ext_Params.names);
 					if (err != 0)
 					{
 						if (Ext_Params.hasIMG)
@@ -2593,6 +2583,10 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		IOBusy = false;
 		return check;
 	}
+	Extraction_Params Ext_Params;
+	int err = GetExtractionParams(Ext_Params, params);
+	if (err != 0)
+		return err;
 	cout << "check complete\n";
 	string pathToLine = params->pathToLine;
 	string fileid = params->fileID;
@@ -2618,10 +2612,6 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			fileidEnd = paths[0] + fileidEnd;
 	}
 
-	Extraction_Params Ext_Params;
-	int err = GetExtractionParams(Ext_Params, params);
-	if (err != 0)
-		return err;
 	if (params->queryNums == 1 || params->queryNums == 0)
 	{
 		if (params->fileIDend == NULL) //单个文件查询
@@ -2929,7 +2919,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 								char *newBuffer;
 								long len;
 								string path = packInfo.first;
-								err = params->byPath ? FindImage(&img, len, path, i, params->pathCode) : FindImage(&img, len, path, i, params->valueName);
+								err = params->byPath ? FindImage(&img, len, path, i, params->pathCode) : FindImage(&img, len, path, i, Ext_Params.names);
 								if (err != 0)
 								{
 									GarbageMemRecollection(mallocedMemory);
@@ -3116,7 +3106,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 							char *newBuffer;
 							long len;
 							string path = packInfo.first;
-							err = params->byPath ? FindImage(&img, len, path, i, params->pathCode) : FindImage(&img, len, path, i, params->valueName);
+							err = params->byPath ? FindImage(&img, len, path, i, params->pathCode) : FindImage(&img, len, path, i, Ext_Params.names);
 							if (err != 0)
 							{
 								GarbageMemRecollection(mallocedMemory);
@@ -3262,8 +3252,9 @@ int main()
 	auto startTime = std::chrono::system_clock::now();
 	// char zeros[10] = {0};
 	// memcpy(params.pathCode, zeros, 10);
+	// DB_QueryByTimespan_Single(&buffer, &params);
+	// free(buffer.buffer);
 	DB_QueryByTimespan(&buffer, &params);
-
 	auto endTime = std::chrono::system_clock::now();
 	// free(buffer.buffer);
 	std::cout << "第一次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;

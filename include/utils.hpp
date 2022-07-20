@@ -4,16 +4,10 @@
 #include <iostream>
 #include <fstream>
 #include <dirent.h>
-#ifdef WIN32
-#include <windows.h>
-#include <timeb.h>
-#include <winsock2.h>
-#else
 #include <unistd.h>
 #include <sys/statvfs.h>
 #include <sys/time.h>
 #include <pthread.h>
-#endif
 #ifndef __linux__
 #include <mach/mach.h>
 #endif
@@ -49,12 +43,6 @@ namespace fs = std::filesystem;
 #pragma once
 
 #define PACK_MAX_SIZE 1024 * 1024 * 5
-
-#ifdef WIN32
-typedef long long int long;
-typedef unsigned int uint;
-typedef unsigned short ushort;
-#endif
 
 namespace StatusCode
 {
@@ -329,7 +317,7 @@ public:
             this->code[i] = pathEncode[i];
         }
     }
-    bool operator==(const PathCode &pathCode)
+    inline bool operator==(const PathCode &pathCode)
     {
         return memcmp(code, pathCode.code, 10) == 0 ? true : false;
     }

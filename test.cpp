@@ -64,6 +64,18 @@ int main()
 {
     fs::path testpath = "testIEDB/test2/fsdfeg.feg";
     cout << testpath.stem();
+    try
+    {
+        for (auto const &direntry : fs::recursive_directory_iterator(testpath))
+        {
+            cout << direntry.path() << endl;
+        }
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    return 0;
     fs::path mypath = "./testIEDB/";
     // fs::create_directories(mypath);
     auto freespace = fs::space(mypath);

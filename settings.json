@@ -6,5 +6,6 @@
     "Pack_Interval": 30000000,
     "Pack_Cache_Size": 50240,
     "Check_Novelty": false,
-    "Pack_Max_Size": 2048
+    "Pack_Max_Size": 2048,
+    "Backup_Path": "testIEDB_Backup"
 }
