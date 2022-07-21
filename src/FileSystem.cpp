@@ -105,7 +105,16 @@ int DB_GetFileLengthByPath(char path[], long *length)
     if (filepath.back() != '/')
         filepath += "/";
     filepath.append(path);
-    long len = fs::file_size(filepath);
+    long len = 0;
+    try
+    {
+        len = fs::file_size(filepath);
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << '\n';
+        cout << filepath << endl;
+    }
 
     *length = len;
     return 0;

@@ -412,7 +412,7 @@ void readFileList(string path, vector<string> &files)
             finalPath += "/" + path;
         else
             finalPath += path;
-        for (auto const &dir_entry : fs::recursive_directory_iterator{finalPath})
+        for (auto const &dir_entry : fs::directory_iterator{finalPath})
         {
             if (fs::is_regular_file(dir_entry))
                 files.push_back(fs::path(path) / dir_entry.path().filename().string());
@@ -462,7 +462,7 @@ void readIDBFilesList(string path, vector<string> &files)
             finalPath += "/" + path;
         else
             finalPath += path;
-        for (auto const &dir_entry : fs::recursive_directory_iterator{finalPath})
+        for (auto const &dir_entry : fs::directory_iterator{finalPath})
         {
             if (fs::is_regular_file(dir_entry))
             {
@@ -517,7 +517,7 @@ void readIDBZIPFilesList(string path, vector<string> &files)
             finalPath += "/" + path;
         else
             finalPath += path;
-        for (auto const &dir_entry : fs::recursive_directory_iterator{finalPath})
+        for (auto const &dir_entry : fs::directory_iterator{finalPath})
         {
             if (fs::is_regular_file(dir_entry))
             {
@@ -621,7 +621,7 @@ void readZIPTEMFilesList(string path, vector<string> &files)
             finalPath += "/" + path;
         else
             finalPath += path;
-        for (auto const &dir_entry : fs::recursive_directory_iterator{finalPath})
+        for (auto const &dir_entry : fs::directory_iterator{finalPath})
         {
             if (fs::is_regular_file(dir_entry))
             {
@@ -684,7 +684,7 @@ void readDataFilesWithTimestamps(string path, vector<pair<string, long>> &filesW
             finalPath += "/" + path;
         else
             finalPath += path;
-        for (auto const &dir_entry : fs::recursive_directory_iterator{finalPath})
+        for (auto const &dir_entry : fs::directory_iterator{finalPath})
         {
             if (fs::is_regular_file(dir_entry))
             {
@@ -780,7 +780,7 @@ void readDataFiles(string path, vector<string> &files)
             finalPath += "/" + path;
         else
             finalPath += path;
-        for (auto const &dir_entry : fs::recursive_directory_iterator{finalPath})
+        for (auto const &dir_entry : fs::directory_iterator{finalPath})
         {
             if (fs::is_regular_file(dir_entry))
             {
@@ -837,7 +837,7 @@ void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWi
             finalPath += "/" + path;
         else
             finalPath += path;
-        for (auto const &dir_entry : fs::recursive_directory_iterator{finalPath})
+        for (auto const &dir_entry : fs::directory_iterator{finalPath})
         {
             if (fs::is_regular_file(dir_entry))
             {
@@ -931,7 +931,7 @@ void readIDBZIPFilesWithTimestamps(string path, vector<pair<string, long>> &file
             finalPath += "/" + path;
         else
             finalPath += path;
-        for (auto const &dir_entry : fs::recursive_directory_iterator{finalPath})
+        for (auto const &dir_entry : fs::directory_iterator{finalPath})
         {
             if (fs::is_regular_file(dir_entry))
             {
@@ -1023,7 +1023,7 @@ void readPakFilesList(string path, vector<string> &files)
             finalPath += "/" + path;
         else
             finalPath += path;
-        for (auto const &dir_entry : fs::recursive_directory_iterator{finalPath})
+        for (auto const &dir_entry : fs::directory_iterator{finalPath})
         {
             if (fs::is_regular_file(dir_entry))
             {
@@ -3290,6 +3290,7 @@ int ReZipBuff(char **buff, int &buffLength, const char *pathToLine)
         }
         else if (CurrentZipTemplate.schemas[i].second.valueType == ValueType::IMAGE) // IMAGE类型
         {
+            continue;
             //对比编号是否等于当前模板所在条数
             char zipPosNum[2] = {0};
             memcpy(zipPosNum, *buff + readbuff_pos, 2);
@@ -3355,10 +3356,11 @@ int ReZipBuff(char **buff, int &buffLength, const char *pathToLine)
             return StatusCode::UNKNOWN_TYPE;
         }
     }
-    delete[] * buff;
-    char *buff_new = new char[writebuff_pos];
-    *buff = buff_new;
+    // delete[] * buff;
+    // char *buff_new = new char[writebuff_pos];
+    // *buff = buff_new;
     memcpy(*buff, writebuff, writebuff_pos);
+    delete[] writebuff;
     buffLength = (int)writebuff_pos;
     return 0;
 }

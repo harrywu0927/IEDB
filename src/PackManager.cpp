@@ -308,6 +308,7 @@ void PackManager::ReadPack(string path)
 {
     DB_DataBuffer buffer;
     buffer.savePath = path.c_str();
+    cout << "read pack:" << buffer.savePath << endl;
     DB_ReadFile(&buffer);
     if (buffer.bufferMalloced)
     {

@@ -452,8 +452,6 @@ int DataExtraction(vector<tuple<char *, long, long, long>> &mallocedMemory, Extr
  */
 inline int DataExtraction_NonIMG(char *buffer, vector<tuple<char *, long, long, long>> &mallocedMemory, Extraction_Params &Ext_Params, DB_QueryParams *Qry_params, long &cur, char *data, long &timestamp)
 {
-	// if (Qry_params->byPath)
-	// {
 	int lineCur = 0; //记录此行当前写位置
 	for (int i = 0; i < Ext_Params.bytesList.size(); i++)
 	{
@@ -461,11 +459,6 @@ inline int DataExtraction_NonIMG(char *buffer, vector<tuple<char *, long, long, 
 		memcpy(buffer + cur + lineCur, data + Ext_Params.posList[i], curBytes);
 		lineCur += curBytes;
 	}
-	// }
-	// else
-	// {
-	// 	memcpy(buffer + cur, data + Ext_Params.pos, Ext_Params.copyBytes);
-	// }
 
 	bool canCopy = false; //根据比较结果决定是否允许拷贝
 
@@ -640,8 +633,6 @@ int WriteDataToBuffer_New(vector<tuple<char *, long, long, long>> &mallocedMemor
 	int startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
 
 	char *data = (char *)malloc(startPos + length);
-	memcpy(data, head, startPos);
-
 	if (data == NULL)
 	{
 		buffer->buffer = NULL;
@@ -651,6 +642,7 @@ int WriteDataToBuffer_New(vector<tuple<char *, long, long, long>> &mallocedMemor
 		IOBusy = false;
 		return StatusCode::BUFFER_FULL;
 	}
+	memcpy(data, head, startPos);
 	//拷贝数据
 	long cur = 0;
 	if (params->queryType != LAST)
@@ -1245,6 +1237,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 	 * 此处仅还原了非图片部分的数据，遇到图片后将图片与之拼接即可
 	 */
 	char *completeZiped = new char[CurrentTemplate.totalBytes];
+	char *tempBuff = new char[CurrentTemplate.totalBytes];
 	int rezipedlen = 0;
 	ReZipBuff(&completeZiped, rezipedlen, params->pathToLine);
 	//先对时序在前的包文件检索
@@ -1266,10 +1259,32 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 			char *buff = nullptr, *img = nullptr;
 			long timestamp;
 			int zipType, readLength;
-			long dataPos = packReader.Next(readLength, timestamp, zipType, &buff, completeZiped);
+			// long dataPos = packReader.Next(readLength, timestamp, zipType, &buff, completeZiped);
+			long dataPos = packReader.Next(readLength, timestamp, zipType);
 			if (timestamp < params->start || timestamp > params->end) //在时间区间外
 				continue;
-
+			switch (zipType)
+			{
+			case 0:
+			{
+				buff = packReader.packBuffer + dataPos; //直接指向目标数据区，无需再拷贝数据
+				break;
+			}
+			case 1:
+			{
+				buff = completeZiped;
+				break;
+			}
+			case 2:
+			{
+				buff = tempBuff;
+				memcpy(buff, packReader.packBuffer + dataPos, readLength);
+				ReZipBuff(&buff, readLength);
+				break;
+			}
+			default:
+				continue;
+			}
 			if (Ext_Params.hasIMG)
 			{
 				char *newBuffer;
@@ -1286,8 +1301,8 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 				newBuffer = new char[readLength + len];
 				memcpy(newBuffer, buff, zipType == 1 ? CurrentTemplate.totalBytes : readLength);
 				memcpy(newBuffer + readLength, img, len);
-				if (zipType == 2)
-					delete[] buff;
+				// if (zipType == 2)
+				// 	delete[] buff;
 				buff = newBuffer;
 				err = DataExtraction(mallocedMemory, Ext_Params, params, cur, timestamp, buff);
 			}
@@ -1296,8 +1311,8 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 				err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, timestamp);
 			}
 
-			if (zipType == 2 || Ext_Params.hasIMG)
-				delete[] buff;
+			// if (zipType == 2 || Ext_Params.hasIMG)
+			// 	delete[] buff;
 			if (err > 0)
 			{
 				if (Ext_Params.hasIMG)
@@ -1314,6 +1329,11 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 	{
 		long len;
 		DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+		if (len == 0)
+		{
+			cout << "file null\n";
+			continue;
+		}
 		char *buff = new char[len];
 		DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 		if (fs::path(file.first).extension() == ".idbzip")
@@ -1335,6 +1355,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
 		}
 	}
 	delete[] completeZiped;
+	delete[] tempBuff;
 	if (params->order != TIME_ASC && params->order != TIME_DSC && params->order != ODR_NONE) //时间排序仅需在拷贝时反向
 		sortResult(mallocedMemory, params, Ext_Params.typeList[Ext_Params.sortIndex]);
 	else if (params->order == ODR_NONE || params->order == TIME_ASC)
@@ -1374,7 +1395,7 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params)
  */
 int PackProcess(pair<string, pair<char *, long>> *packInfo, DB_QueryParams *params, atomic<long> *cur, vector<tuple<char *, long, long, long>> *mallocedMemory, Extraction_Params *Ext_Params)
 {
-	auto pack = packManager.GetPack(packInfo->first);
+	auto pack = packInfo->second;
 	PackFileReader packReader(pack.first, pack.second);
 	if (packReader.packBuffer == NULL)
 		return StatusCode::DATAFILE_NOT_FOUND;
@@ -1383,11 +1404,11 @@ int PackProcess(pair<string, pair<char *, long>> *packInfo, DB_QueryParams *para
 	packReader.ReadPackHead(fileNum, templateName);
 	// if (TemplateManager::CheckTemplate(templateName) != 0)
 	// 	return StatusCode::SCHEMA_FILE_NOT_FOUND;
-	vector<PathCode> pathCodes;
-	if (params->byPath)
-	{
-		CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
-	}
+	// vector<PathCode> pathCodes;
+	// if (params->byPath)
+	// {
+	// 	CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
+	// }
 	char *completeZiped = new char[CurrentTemplate.totalBytes];
 	char *tempBuff = new char[CurrentTemplate.totalBytes];
 	int rezipedlen = 0;
@@ -1559,7 +1580,9 @@ int PackProcess(pair<string, pair<char *, long>> *packInfo, DB_QueryParams *para
  */
 int PackProcess_NonIMG(pair<string, pair<char *, long>> *packInfo, DB_QueryParams *params, atomic<long> *cur, vector<tuple<char *, long, long, long>> *mallocedMemory, Extraction_Params *Ext_Params, char *rawBuff)
 {
-	auto pack = packManager.GetPack(packInfo->first);
+	auto pack = packInfo->second;
+	if (pack.first == NULL)
+		cout << "pack null\n";
 	PackFileReader packReader(pack.first, pack.second);
 	if (packReader.packBuffer == NULL)
 		return StatusCode::DATAFILE_NOT_FOUND;
@@ -1568,11 +1591,11 @@ int PackProcess_NonIMG(pair<string, pair<char *, long>> *packInfo, DB_QueryParam
 	packReader.ReadPackHead(fileNum, templateName);
 	// if (TemplateManager::CheckTemplate(templateName) != 0)
 	// 	return StatusCode::SCHEMA_FILE_NOT_FOUND;
-	vector<PathCode> pathCodes;
-	if (params->byPath)
-	{
-		CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
-	}
+	// vector<PathCode> pathCodes;
+	// if (params->byPath)
+	// {
+	// 	CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
+	// }
 	char *completeZiped = new char[CurrentTemplate.totalBytes];
 	char *tempBuff = new char[CurrentTemplate.totalBytes];
 	char *copyValue = new char[Ext_Params->copyBytes]; //将要拷贝的数值
@@ -1817,6 +1840,11 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 	{
 		long len;
 		DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+		if (len == 0)
+		{
+			cout << "file null\n";
+			continue;
+		}
 		char *buff = new char[len];
 		DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
 		if (fs::path(file.first).extension() == "idbzip")
@@ -2466,7 +2494,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 				{
 				case 0:
 				{
-					buff = packReader.packBuffer + dataPos; //直接指向目标数据区，无需再拷贝数据
+					buff = packReader.packBuffer + dataPos;
 					break;
 				}
 				case 1:
@@ -2478,7 +2506,10 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 				{
 					buff = tempBuff;
 					memcpy(buff, packReader.packBuffer + dataPos, readLength);
+					// if (buff == nullptr || buff == NULL)
+					// 	cerr << "buff null!" << endl;
 					ReZipBuff(&buff, readLength);
+					// tempBuff = buff;
 					break;
 				}
 				default:
@@ -3230,7 +3261,7 @@ int main()
 	code[8] = (char)0;
 	code[9] = (char)0;
 	params.pathCode = code;
-	params.valueName = "S1ON,S2ON";
+	params.valueName = "S1ON,S1OFF";
 	// params.valueName = NULL;
 	params.start = 1553728593562;
 	params.end = 1751908603642;
@@ -3241,8 +3272,8 @@ int main()
 	params.compareValue = "100";
 	params.compareVariable = "S1ON";
 	params.queryType = TIMESPAN;
-	params.byPath = 0;
-	params.queryNums = 10;
+	params.byPath = 1;
+	params.queryNums = 1000000;
 	DB_DataBuffer buffer;
 	buffer.savePath = "/";
 	// cout << settings("Pack_Mode") << endl;
@@ -3252,9 +3283,9 @@ int main()
 	auto startTime = std::chrono::system_clock::now();
 	// char zeros[10] = {0};
 	// memcpy(params.pathCode, zeros, 10);
+	DB_QueryByTimespan_Single(&buffer, &params);
+	// DB_QueryLastRecords(&buffer, &params);
 	// DB_QueryByTimespan_Single(&buffer, &params);
-	// free(buffer.buffer);
-	DB_QueryByTimespan(&buffer, &params);
 	auto endTime = std::chrono::system_clock::now();
 	// free(buffer.buffer);
 	std::cout << "第一次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
