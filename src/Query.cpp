@@ -31,6 +31,8 @@ mutex memMutex; //防止多线程访问冲突
  */
 int DB_LoadSchema(const char *path)
 {
+	if (path == NULL)
+		return StatusCode::SCHEMA_FILE_NOT_FOUND;
 	return TemplateManager::SetTemplate(path);
 }
 
@@ -44,6 +46,8 @@ int DB_LoadSchema(const char *path)
  */
 int DB_UnloadSchema(const char *pathToUnset)
 {
+	if (pathToUnset == NULL)
+		return StatusCode::SCHEMA_FILE_NOT_FOUND;
 	return TemplateManager::UnsetTemplate(pathToUnset);
 }
 
