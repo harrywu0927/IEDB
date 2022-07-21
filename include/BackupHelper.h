@@ -11,4 +11,7 @@ public:
     BackupHelper() {}
     ~BackupHelper() {}
     int ChangeBackupPath(string path);
+    int BackupUpdate();
+    int DataRecovery();
+    int BakRestoration();
 };

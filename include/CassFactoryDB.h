@@ -208,6 +208,11 @@ int DB_DeleteFile(char *path);
 //获取文件长度
 int DB_GetFileLengthByPath(char *path, long *length);      //需要在Close过后使用
 int DB_GetFileLengthByFilePtr(long fileptr, long *length); //使用此方式获取长度后，使用者有责任关闭文件
+
+int DB_Backup(const char *path);
+
+int DB_Recovery(const char *path);
+
 //标准模板数据信息
 struct DB_TreeNodeParams
 {
