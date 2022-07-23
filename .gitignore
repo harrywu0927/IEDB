@@ -48,6 +48,7 @@ CMakeCache.txt
 src/main
 src/utils
 src/Query
+src/Backup
 src/ZipSwitchFile
 src/ZipAnalogFile
 /.vscode/*
@@ -72,3 +73,4 @@ src/Aggregate
 src/MachineLearning
 src/Inseert
 *.xlsx
+*.bak

@@ -1,8 +1,6 @@
-// #ifdef __cplusplus
-// extern "C"
-// {
-// #endif
-
+#ifndef _CASS_FACTORYDB_H
+#define _CASS_FACTORYDB_H
+#endif
 /**
  *  数据交换缓冲区
  *  查询时，buffer中的数据存放方式：第1个字节为查询到的变量总数(0<N<256)，
@@ -209,8 +207,10 @@ int DB_DeleteFile(char *path);
 int DB_GetFileLengthByPath(char *path, long *length);      //需要在Close过后使用
 int DB_GetFileLengthByFilePtr(long fileptr, long *length); //使用此方式获取长度后，使用者有责任关闭文件
 
+//备份
 int DB_Backup(const char *path);
 
+//数据恢复
 int DB_Recovery(const char *path);
 
 int DB_TemporaryFuncCall(void *param1, void *param2, void *param3, int funcID);

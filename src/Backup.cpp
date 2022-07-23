@@ -52,7 +52,7 @@ int BackupHelper::CheckDataToUpdate(vector<string> &files)
  *
  * @return int
  * @note bak文件体格式为：
- *  1字节pak文件路径长度 L
+ *  2字节pak文件路径长度 L
  *  L字节pak文件路径
  *  8字节文件大小
  *  pak文件内容
@@ -63,28 +63,34 @@ int BackupHelper::CreateBackup()
     FILE *file;
     int err;
     if (!(file = fopen((backupPath + "/" + to_string(timestamp) + ".bak").c_str(), "wb")))
+    {
+        perror("err");
         return errno;
+    }
+
     if ((err = WriteBakHead(file, timestamp, 0, backupPath)) != 0)
         return err;
     vector<string> pakFiles;
     // for test
-    readFiles(pakFiles, "JinfeiSixteen", ".pak", true);
+    readFiles(pakFiles, "testIEDB/JinfeiSixteen", ".pak", true);
     char *writeBuffer = new char[1024 * 1024 * 4]; // 20MB
     char *readBuffer = new char[1024 * 1024 * 4];
     setvbuf(file, writeBuffer, _IOFBF, 1024 * 1024 * 4); //设置写缓冲
     for (auto &pak : pakFiles)
     {
         FILE *pakfile;
-        if ((err = DB_Open(const_cast<char *>(pak.c_str()), const_cast<char *>("rb"), (long *)pakfile)) != 0)
+        if (!(pakfile = fopen(pak.c_str(), "rb")))
         {
-            delete[] writeBuffer;
             fclose(file);
+            delete[] writeBuffer;
+            delete[] readBuffer;
             return err;
         }
         long paklen;
         DB_GetFileLengthByFilePtr((long)pakfile, &paklen);
-
-        fwrite(pak.c_str(), pak.length(), 1, file);
+        unsigned short pakPathLen = pak.length();
+        fwrite(&pakPathLen, 2, 1, file);
+        fwrite(pak.c_str(), pakPathLen, 1, file);
         fwrite(&paklen, 8, 1, file);
         int readlen = 0;
         while ((readlen = fread(readBuffer, 1, 1024 * 1024 * 4, pakfile)) > 0)
@@ -95,6 +101,7 @@ int BackupHelper::CreateBackup()
     fwrite("checkpoint", 10, 1, file); //检查点
     fclose(file);
     delete[] writeBuffer;
+    delete[] readBuffer;
     return 0;
 }
 
@@ -113,6 +120,7 @@ int BackupHelper::BackupUpdate()
     /* 若不存在bak文件，新建一个 */
     if (bakFiles.size() == 0)
     {
+        cout << "Backup file not found. Creating new backup...\n";
         return CreateBackup();
     }
     /* 选择最新的bak文件更新 */
@@ -138,9 +146,9 @@ int BackupHelper::BackupUpdate()
         return StatusCode::UNKNWON_DATAFILE;
 }
 
-int main()
-{
-    BackupHelper helper;
-    helper.CreateBackup();
-    return 0;
-}
+// int main()
+// {
+//     BackupHelper helper;
+//     helper.CreateBackup();
+//     return 0;
+// }

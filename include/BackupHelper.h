@@ -20,9 +20,12 @@ private:
     long lastBackupTime;
 
 public:
-    BackupHelper() {
+    BackupHelper()
+    {
         backupPath = settings("Backup_Path");
         dataPath = settings("Filename_Label");
+        if (!fs::exists(backupPath))
+            fs::create_directories(backupPath);
         vector<string> bakfiles;
         readFiles(bakfiles, backupPath, ".bak");
         lastBackupTime = 0;
