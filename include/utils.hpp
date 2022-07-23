@@ -163,6 +163,8 @@ void readPakFilesList(string path, vector<string> &files);
 
 void readAllDirs(vector<string> &dirs, string basePath);
 
+void readFiles(vector<string> &paths, string path, string extension, bool recursive = false);
+
 long getMilliTime();
 
 void removeFilenameLabel(string &path);

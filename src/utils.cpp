@@ -401,6 +401,45 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
     return map;
 }
 
+void readFiles(vector<string> &paths, string path, string extension, bool recursive)
+{
+    try
+    {
+        if (!recursive)
+        {
+            for (auto const &dir_entry : fs::directory_iterator{path})
+            {
+                if (fs::is_regular_file(dir_entry))
+                {
+                    fs::path file = dir_entry.path();
+                    if (file.extension() == extension)
+                    {
+                        paths.push_back(fs::path(path) / file.filename().string());
+                    }
+                }
+            }
+        }
+        else
+        {
+            for (auto const &dir_entry : fs::recursive_directory_iterator{path})
+            {
+                if (fs::is_regular_file(dir_entry))
+                {
+                    fs::path file = dir_entry.path();
+                    if (file.extension() == extension)
+                    {
+                        paths.push_back(fs::path(path) / file.filename().string());
+                    }
+                }
+            }
+        }
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+}
+
 //获取某一目录下的所有文件
 //不递归子文件夹
 void readFileList(string path, vector<string> &files)
@@ -571,11 +610,6 @@ void readTEMFilesList(string path, vector<string> &files)
         finalPath += "/" + path;
     else
         finalPath += path;
-    if (DB_CreateDirectory(const_cast<char *>(finalPath.c_str())))
-    {
-        errorCode = errno;
-        return;
-    }
     try
     {
         for (auto const &dir_entry : fs::directory_iterator(finalPath))

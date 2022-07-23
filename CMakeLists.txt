@@ -20,8 +20,8 @@ ELSE()
     INCLUDE_DIRECTORIES(/opt/homebrew/Cellar/python@3.9/3.9.10/Frameworks/Python.framework/Versions/3.9/include/python3.9)
     ADD_LIBRARY(CassFactoryDB SHARED ${SOURCES})
 
-    ADD_EXECUTABLE(test.o test.cpp)
-    TARGET_LINK_LIBRARIES(test.o CassFactoryDB pthread python3.9)
+    # ADD_EXECUTABLE(test.o test.cpp)
+    # TARGET_LINK_LIBRARIES(test.o CassFactoryDB pthread python3.9)
 ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 # ADD_LIBRARY(CassFactoryDB SHARED ${SOURCES})

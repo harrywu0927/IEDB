@@ -62,6 +62,18 @@ void checkSettings()
 
 int main()
 {
+    cout << system("mv testdir/* testdir2/") << endl;
+    return 0;
+    // FILE *file = fopen("test.o", "rb");
+    // char *writeBuffer = new char[1024 * 1024 * 4]; // 20MB
+    // cout << fread(writeBuffer, 1, 1024 * 1024 * 4, file);
+    // // setvbuf(file, writeBuffer, _IOFBF, 1024);
+    // // char x[2050];
+    // // memset(x, 1, 2050);
+    // // cout << fwrite(x, 2050, 1, file) << endl;
+    // fclose(file);
+    // delete[] writeBuffer;
+    // return 0;
     fs::path testpath = "testIEDB/test2/fsdfeg.feg";
     cout << testpath.stem();
     try
@@ -80,12 +92,12 @@ int main()
     // fs::create_directories(mypath);
     auto freespace = fs::space(mypath);
 
-    fs::path file = "settings.json";
-    cout << (file.filename().extension() == ".json") << endl;
-    auto time = fs::last_write_time(file);
-    cout << decltype(time)::clock::to_time_t(time) << endl;
-    auto size = fs::file_size(file);
-    cout << size << endl;
+    // fs::path file = "settings.json";
+    // cout << (file.filename().extension() == ".json") << endl;
+    // auto time = fs::last_write_time(file);
+    // cout << decltype(time)::clock::to_time_t(time) << endl;
+    // auto size = fs::file_size(file);
+    // cout << size << endl;
     // for (auto const &dir_entry : fs::recursive_directory_iterator{"src"})
     // {
     //     cout << dir_entry.path() << endl;
