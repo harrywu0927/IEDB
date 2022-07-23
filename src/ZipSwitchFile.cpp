@@ -681,6 +681,8 @@ int DB_ZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
 {
     IOBusy = true;
     int err;
+    if(ZipTemPath==NULL || pathToLine==NULL)
+        return StatusCode::EMPTY_SAVE_PATH;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
     {
@@ -763,6 +765,8 @@ int DB_ZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
 int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
 {
     int err;
+    if(ZipTemPath==NULL || pathToLine==NULL)
+        return StatusCode::EMPTY_SAVE_PATH;
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如直接使用单线程
     {
@@ -831,6 +835,8 @@ int DB_ReZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
 {
     IOBusy = true;
     int err = 0;
+    if(ZipTemPath==NULL || pathToLine==NULL)
+        return StatusCode::EMPTY_SAVE_PATH;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
     {
@@ -903,6 +909,8 @@ int DB_ReZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
 int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
 {
     int err = 0;
+    if(ZipTemPath==NULL || pathToLine==NULL)
+        return StatusCode::EMPTY_SAVE_PATH;
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如使用单线程
     {
@@ -973,6 +981,8 @@ int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
 int DB_ZipRecvSwitchBuff(const char *ZipTemPath, const char *filepath, char *buff, long *buffLength)
 {
     int err = 0;
+    if(ZipTemPath==NULL)
+        return StatusCode::EMPTY_SAVE_PATH;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
     {
@@ -2289,15 +2299,17 @@ int DB_ReZipSwitchFileByFileID(struct DB_ZipParams *params)
 // }
 // int main()
 // {
-//     DB_ZipParams param;
-//     param.ZipType = FILE_ID;
-//     param.pathToLine = "JinfeiSeven";
-//     param.fileID = "JinfeiSeven1810030";
-//     param.zipNums = 40;
-//     param.EID = NULL;
-//     cout << DB_ZipSwitchFileByFileID(&param) << endl;
-//     cout << DB_ReZipSwitchFileByFileID(&param) << endl;
-//     // DB_ZipSwitchFile("RobotTS","RobotTS");
-//     // DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest");
+//     DB_ZipSwitchFile("JinfeiSeven","JinfeiSeven");
 //     return 0;
+//     //     DB_ZipParams param;
+//     //     param.ZipType = FILE_ID;
+//     //     param.pathToLine = "JinfeiSeven";
+//     //     param.fileID = "JinfeiSeven1810030";
+//     //     param.zipNums = 40;
+//     //     param.EID = NULL;
+//     //     cout << DB_ZipSwitchFileByFileID(&param) << endl;
+//     //     cout << DB_ReZipSwitchFileByFileID(&param) << endl;
+//     //     // DB_ZipSwitchFile("RobotTS","RobotTS");
+//     //     // DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest");
+//     //     return 0;
 // }

@@ -337,9 +337,15 @@ public:
     long timeseriesSpan = 0;        //时间序列的采样时间
     ValueType::ValueType valueType; //基本数据类型
 
-    char maxValue[10];      //最大值
-    char minValue[10];      //最小值
-    char standardValue[10]; //标准值
+    // char maxValue[10];      //最大值
+    // char minValue[10];      //最小值
+    // char standardValue[10]; //标准值
+    char maxValue[5];      //最大值
+    char minValue[5];      //最小值
+    char standardValue[5]; //标准值
+    char (*max)[5];
+    char (*min)[5];
+    char (*standard)[5];
 
     //实现分割字符串(源字符串也将改变) 线程不安全
     //@param srcstr     源字符串
@@ -643,50 +649,151 @@ public:
         vector<DataType> dataTypes;
         while (i < length)
         {
-            char variable[30], dataType[30], standardValue[10], maxValue[10], minValue[10], hasTime[1], timeseriesSpan[4];
+            DataType type;
+            char variable[30], dataType[30], standardValue[5], maxValue[5], minValue[5], hasTime[1], timeseriesSpan[4];
+            //变量名
             memcpy(variable, buf + i, 30);
             i += 30;
+            dataName.push_back(variable);
+
+            //数据类型
             memcpy(dataType, buf + i, 30);
             i += 30;
-            memcpy(standardValue, buf + i, 10);
-            i += 10;
-            memcpy(maxValue, buf + i, 10);
-            i += 10;
-            memcpy(minValue, buf + i, 10);
-            i += 10;
-            memcpy(hasTime, buf + i, 1);
-            i += 1;
-            memcpy(timeseriesSpan, buf + i, 4);
-            i += 4;
-            vector<string> paths;
-
-            dataName.push_back(variable);
-            DataType type;
-
-            memcpy(type.standardValue, standardValue, 10);
-            memcpy(type.maxValue, maxValue, 10);
-            memcpy(type.minValue, minValue, 10);
-            type.hasTime = (bool)hasTime[0];
-            // strcpy(type.standardValue,standardValue);
-            // strcpy(type.maxValue,maxValue);
-            // strcpy(type.minValue,minValue);
-            type.timeseriesSpan = dtc.ToUInt32_m(timeseriesSpan);
             if (DataType::GetDataTypeFromStr(dataType, type) == 0)
             {
                 if ((bool)hasTime[0] == true && !type.isTimeseries) //如果是时间序列，即使hasTime为1，依然不额外携带时间
                     type.hasTime = true;
                 else
                     type.hasTime = false;
-                dataTypes.push_back(type);
             }
             else
                 return errorCode;
+
+            //标准值、最大值、最小值
+            if (type.isArray)
+            {
+                memset(type.maxValue, 0, sizeof(type.maxValue));
+                memset(type.minValue, 0, sizeof(type.minValue));
+                memset(type.standardValue, 0, sizeof(type.standardValue));
+                type.standard = new char[type.arrayLen][5];
+                for (int t = 0; t < type.arrayLen; t++)
+                {
+                    memcpy(type.standard[t], buf + i, 5);
+                    i += 5;
+                }
+                type.max = new char[type.arrayLen][5];
+                for (int t = 0; t < type.arrayLen; t++)
+                {
+                    memcpy(type.max[t], buf + i, 5);
+                    i += 5;
+                }
+                type.min = new char[type.arrayLen][5];
+                for (int t = 0; t < type.arrayLen; t++)
+                {
+                    memcpy(type.min[t], buf + i, 5);
+                    i += 5;
+                }
+            }
+            else
+            {
+                memcpy(standardValue, buf + i, 5);
+                i += 5;
+                memcpy(maxValue, buf + i, 5);
+                i += 5;
+                memcpy(minValue, buf + i, 5);
+                i += 5;
+                memcpy(type.standardValue, standardValue, 5);
+                memcpy(type.maxValue, maxValue, 5);
+                memcpy(type.minValue, minValue, 5);
+            }
+
+            memcpy(hasTime, buf + i, 1);
+            i += 1;
+            memcpy(timeseriesSpan, buf + i, 4);
+            i += 4;
+            type.hasTime = (bool)hasTime[0];
+            type.timeseriesSpan = dtc.ToUInt32_m(timeseriesSpan);
+            dataTypes.push_back(type);
         }
         ZipTemplate tem(dataName, dataTypes, path);
         AddZipTemplate(tem);
         CurrentZipTemplate = tem;
         return 0;
     }
+    // static int SetZipTemplate(const char *path)
+    // {
+    //     vector<string> files;
+    //     readFileList(path, files);
+    //     string temPath = "";
+    //     for (string file : files) //找到带有后缀ziptem的文件
+    //     {
+    //         string s = file;
+    //         vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
+    //         if (vec[vec.size() - 1].find("ziptem") != string::npos)
+    //         {
+    //             temPath = file;
+    //             break;
+    //         }
+    //     }
+    //     if (temPath == "")
+    //         return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    //     long length;
+    //     DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &length);
+    //     char buf[length];
+    //     int err = DB_OpenAndRead(const_cast<char *>(temPath.c_str()), buf);
+    //     if (err != 0)
+    //         return err;
+    //     int i = 0;
+
+    //     DataTypeConverter dtc;
+    //     vector<string> dataName;
+    //     vector<DataType> dataTypes;
+    //     while (i < length)
+    //     {
+    //         char variable[30], dataType[30], standardValue[10], maxValue[10], minValue[10], hasTime[1], timeseriesSpan[4];
+    //         memcpy(variable, buf + i, 30);
+    //         i += 30;
+    //         memcpy(dataType, buf + i, 30);
+    //         i += 30;
+    //         memcpy(standardValue, buf + i, 10);
+    //         i += 10;
+    //         memcpy(maxValue, buf + i, 10);
+    //         i += 10;
+    //         memcpy(minValue, buf + i, 10);
+    //         i += 10;
+    //         memcpy(hasTime, buf + i, 1);
+    //         i += 1;
+    //         memcpy(timeseriesSpan, buf + i, 4);
+    //         i += 4;
+    //         vector<string> paths;
+
+    //         dataName.push_back(variable);
+    //         DataType type;
+
+    //         memcpy(type.standardValue, standardValue, 10);
+    //         memcpy(type.maxValue, maxValue, 10);
+    //         memcpy(type.minValue, minValue, 10);
+    //         type.hasTime = (bool)hasTime[0];
+    //         // strcpy(type.standardValue,standardValue);
+    //         // strcpy(type.maxValue,maxValue);
+    //         // strcpy(type.minValue,minValue);
+    //         type.timeseriesSpan = dtc.ToUInt32_m(timeseriesSpan);
+    //         if (DataType::GetDataTypeFromStr(dataType, type) == 0)
+    //         {
+    //             if ((bool)hasTime[0] == true && !type.isTimeseries) //如果是时间序列，即使hasTime为1，依然不额外携带时间
+    //                 type.hasTime = true;
+    //             else
+    //                 type.hasTime = false;
+    //             dataTypes.push_back(type);
+    //         }
+    //         else
+    //             return errorCode;
+    //     }
+    //     ZipTemplate tem(dataName, dataTypes, path);
+    //     AddZipTemplate(tem);
+    //     CurrentZipTemplate = tem;
+    //     return 0;
+    // }
     //卸载指定路径下的模版
     static int UnsetZipTemplate(string path)
     {
