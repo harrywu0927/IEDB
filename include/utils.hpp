@@ -100,6 +100,7 @@ namespace StatusCode
         ZIPNUM_AND_EID_ERROR = 184,       // zipNum和EID冲突，不能同时设置
         VARIABLE_NAME_NOT_INT_CODE = 185, //编码中不包含指定变量名
         MEMORY_INSUFFICIENT = 186,        //内存不足
+        BACKUP_BROKEN = 187,              //备份文件损坏
     };
 }
 namespace ValueType

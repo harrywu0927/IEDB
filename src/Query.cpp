@@ -88,6 +88,7 @@ int CheckQueryParams(DB_QueryParams *params)
 	}
 	if (params->byPath == 1 && params->pathCode == NULL)
 	{
+		cout << "pathcode is null" << endl;
 		return StatusCode::PATHCODE_CHECK_ERROR;
 	}
 	if (params->compareType != CMP_NONE)
@@ -110,7 +111,7 @@ int CheckQueryParams(DB_QueryParams *params)
 		}
 		else if (params->start == 0 && params->end == 0)
 		{
-			params->end = getMilliTime();
+			return StatusCode::INVALID_TIMESPAN;
 		}
 		else if (params->end == 0)
 		{
@@ -917,7 +918,11 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 	IOBusy = true;
 	int check = CheckQueryParams(params);
 	if (check != 0)
+	{
+		IOBusy = false;
+		buffer->bufferMalloced = 0;
 		return check;
+	}
 	//确认当前模版
 	if (TemplateManager::CheckTemplate(params->pathToLine) != 0 && ZipTemplateManager::CheckZipTemplate(params->pathToLine) != 0)
 	{
@@ -2996,7 +3001,7 @@ int main()
 	code[7] = (char)0;
 	code[8] = (char)0;
 	code[9] = (char)0;
-	params.pathCode = code;
+	params.pathCode = NULL;
 	params.valueName = "S1ON,S1OFF";
 	// params.valueName = NULL;
 	params.start = 1553728593562;
@@ -3004,7 +3009,7 @@ int main()
 	// params.end = 1651894834176;
 	params.order = ASCEND;
 	params.sortVariable = "S1ON";
-	params.compareType = GT;
+	params.compareType = LT;
 	params.compareValue = "100";
 	params.compareVariable = "S1ON";
 	params.queryType = FILEID;

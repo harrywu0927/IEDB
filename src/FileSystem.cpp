@@ -198,6 +198,7 @@ int DB_Write(long fp, char *buf, long length)
         if (fwrite(buf, length, 1, file) != 1)
         {
             perror("Error while writing");
+            throw(int) errno;
             return errno;
         }
         return 0;
