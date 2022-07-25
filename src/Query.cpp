@@ -90,7 +90,16 @@ int CheckQueryParams(DB_QueryParams *params)
 	{
 		return StatusCode::PATHCODE_CHECK_ERROR;
 	}
-
+	if (params->compareType != CMP_NONE)
+	{
+		if (params->compareValue == NULL || params->compareVariable == NULL)
+			return StatusCode::INVALID_QRY_PARAMS;
+	}
+	if (params->order != ODR_NONE)
+	{
+		if (params->sortVariable == NULL)
+			return StatusCode::INVALID_QRY_PARAMS;
+	}
 	switch (params->queryType)
 	{
 	case TIMESPAN:
