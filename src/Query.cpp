@@ -2959,7 +2959,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		}
 		if (params->order != ODR_NONE)
 			sortResult(mallocedMemory, params, Ext_Params.typeList[Ext_Params.sortIndex]);
-		if (!Ext_Params.hasIMG)
+		else if (!Ext_Params.hasIMG)
 		{
 			buffer->buffer = rawBuff;
 			buffer->bufferMalloced = 1;
@@ -2981,14 +2981,14 @@ int main()
 	DataTypeConverter converter;
 	DB_QueryParams params;
 	params.pathToLine = "JinfeiSixteen";
-	params.fileID = "200000";
-	params.fileIDend = "300000";
-	// params.fileIDend = NULL;
+	params.fileID = "20000";
+	// params.fileIDend = "300000";
+	params.fileIDend = NULL;
 	char code[10];
 	code[0] = (char)0;
 	code[1] = (char)1;
 	code[2] = (char)0;
-	code[3] = (char)0;
+	code[3] = (char)1;
 	code[4] = 0;
 	// code[4] = 'R';
 	code[5] = (char)0;
@@ -3009,7 +3009,7 @@ int main()
 	params.compareVariable = "S1ON";
 	params.queryType = FILEID;
 	params.byPath = 1;
-	params.queryNums = 1000000;
+	params.queryNums = 100;
 	DB_DataBuffer buffer;
 	buffer.savePath = "/";
 	// cout << settings("Pack_Mode") << endl;
@@ -3029,12 +3029,12 @@ int main()
 	if (buffer.bufferMalloced)
 	{
 		cout << buffer.length << endl;
-		// for (int i = 0; i < buffer.length; i++)
-		// {
-		// 	cout << (int)*(char *)(buffer.buffer + i) << " ";
-		// 	if (i % 11 == 0)
-		// 		cout << endl;
-		// }
+		for (int i = 0; i < buffer.length; i++)
+		{
+			cout << (int)*(char *)(buffer.buffer + i) << " ";
+			if (i % 11 == 0)
+				cout << endl;
+		}
 
 		free(buffer.buffer);
 	}
