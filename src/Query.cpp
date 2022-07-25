@@ -86,9 +86,8 @@ int CheckQueryParams(DB_QueryParams *params)
 	{
 		return StatusCode::VARIABLE_NAME_CHECK_ERROR;
 	}
-	if (params->byPath == 1 && params->pathCode == NULL)
+	if (params->byPath != 0 && params->pathCode == NULL)
 	{
-		cout << "pathcode is null" << endl;
 		return StatusCode::PATHCODE_CHECK_ERROR;
 	}
 	if (params->compareType != CMP_NONE)
