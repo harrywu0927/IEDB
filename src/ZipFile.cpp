@@ -1808,6 +1808,8 @@ int DB_ZipFile_Single(const char *ZipTemPath, const char *pathToLine)
 {
     IOBusy = true;
     int err = 0;
+    if(ZipTemPath==NULL || pathToLine==NULL)
+        return StatusCode::EMPTY_SAVE_PATH;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
     {
@@ -1892,6 +1894,8 @@ int DB_ZipFile_Single(const char *ZipTemPath, const char *pathToLine)
 int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
 {
     int err;
+    if(ZipTemPath==NULL || pathToLine==NULL)
+        return StatusCode::EMPTY_SAVE_PATH;
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如直接使用单线程
     {
@@ -1960,6 +1964,8 @@ int DB_ReZipFile_Single(const char *ZipTemPath, const char *pathToLine)
 {
     IOBusy = true;
     int err = 0;
+    if(ZipTemPath==NULL || pathToLine==NULL)
+        return StatusCode::EMPTY_SAVE_PATH;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
     {
@@ -2033,6 +2039,8 @@ int DB_ReZipFile_Single(const char *ZipTemPath, const char *pathToLine)
 int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
 {
     int err;
+    if(ZipTemPath==NULL || pathToLine==NULL)
+        return StatusCode::EMPTY_SAVE_PATH;
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如直接使用单线程
     {
@@ -2102,6 +2110,8 @@ int DB_ReZipFile(const char *ZipTemPath, const char *pathToLine)
 int DB_ZipRecvBuff(const char *ZipTemPath, const char *filepath, char *buff, long *buffLength)
 {
     int err = 0;
+    if(ZipTemPath==NULL)
+        return StatusCode::EMPTY_SAVE_PATH;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
     {
@@ -3413,30 +3423,15 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
 // int main()
 // {
 //     // DB_ReZipSwitchFile("JinfeiSeven", "JinfeiSeven");
-//     DB_ZipParams param;
-//     param.ZipType = FILE_ID;
-//     param.pathToLine = "JinfeiSeven";
-//     param.fileID = "JinfeiSeven1527000";
-//     param.zipNums = 100;
-//     param.EID = NULL;
+//     // DB_ZipParams param;
+//     // param.ZipType = FILE_ID;
+//     // param.pathToLine = "JinfeiSeven";
+//     // param.fileID = "JinfeiSeven1527000";
+//     // param.zipNums = 100;
+//     // param.EID = NULL;
 //     // cout << DB_ZipFileByFileID(&param) << endl;
 //     // cout << DB_ReZipFileByFileID(&param) << endl;
-//     //   DB_ZipSwitchFile("RobotTsTest","RobotTsTest");
-//     // DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest");
-//     return 0;
-// }
-// int main()
-// {
-//     // DB_ReZipSwitchFile("JinfeiSeven", "JinfeiSeven");
-//     DB_ZipParams param;
-//     param.ZipType = FILE_ID;
-//     param.pathToLine = "JinfeiTem";
-//     param.fileID = "55";
-//     param.zipNums = 1;
-//     param.EID = NULL;
-//     cout << DB_ZipFileByFileID(&param) << endl;
-//     // cout << DB_ReZipFileByFileID(&param) << endl;
-//     //   DB_ZipSwitchFile("RobotTsTest","RobotTsTest");
+//     DB_ZipFile("JinfeiSeven","JinfeiSeven");
 //     // DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest");
 //     return 0;
 // }
