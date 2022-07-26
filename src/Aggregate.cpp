@@ -116,9 +116,9 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
     for (int i = 0; i < typeNum; i++)
     {
         cur = startPos + getBufferDataPos(typeList, i);
-        int bytes = typeList[i].valueBytes; //此类型的值字节数
-        char column[bytes * rows];          //每列的所有值缓存
-        long colPos = 0;                    //在column中的偏移量
+        int bytes = typeList[i].valueBytes;    //此类型的值字节数
+        char *column = new char[bytes * rows]; //每列的所有值缓存
+        long colPos = 0;                       //在column中的偏移量
         for (int j = 0; j < rows; j++)
         {
             memcpy(column + colPos, buffer->buffer + cur, bytes);
@@ -259,6 +259,7 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
         default:
             break;
         }
+        delete[] column;
     }
     free(buffer->buffer);
     buffer->buffer = NULL;
@@ -306,9 +307,9 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
     for (int i = 0; i < typeNum; i++)
     {
         cur = startPos + getBufferDataPos(typeList, i);
-        int bytes = typeList[i].valueBytes; //此类型的值字节数
-        char column[bytes * rows];          //每列的所有值缓存
-        long colPos = 0;                    //在column中的偏移量
+        int bytes = typeList[i].valueBytes;    //此类型的值字节数
+        char *column = new char[bytes * rows]; //每列的所有值缓存
+        long colPos = 0;                       //在column中的偏移量
         for (int j = 0; j < rows; j++)
         {
             memcpy(column + colPos, buffer->buffer + cur, bytes);
@@ -449,6 +450,7 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
         default:
             break;
         }
+        delete[] column;
     }
     free(buffer->buffer);
     buffer->buffer = NULL;
@@ -496,9 +498,9 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
     for (int i = 0; i < typeNum; i++)
     {
         cur = startPos + getBufferDataPos(typeList, i);
-        int bytes = typeList[i].valueBytes; //此类型的值字节数
-        char column[bytes * rows];          //每列的所有值缓存
-        long colPos = 0;                    //在column中的偏移量
+        int bytes = typeList[i].valueBytes;    //此类型的值字节数
+        char *column = new char[bytes * rows]; //每列的所有值缓存
+        long colPos = 0;                       //在column中的偏移量
         for (int j = 0; j < rows; j++)
         {
             memcpy(column + colPos, buffer->buffer + cur, bytes);
@@ -640,6 +642,7 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
         default:
             break;
         }
+        delete[] column;
     }
     free(buffer->buffer);
     buffer->buffer = NULL;
@@ -696,9 +699,9 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
     for (int i = 0; i < typeNum; i++)
     {
         cur = startPos + getBufferDataPos(typeList, i);
-        int bytes = typeList[i].valueBytes; //此类型的值字节数
-        char column[bytes * rows];          //每列的所有值缓存
-        long colPos = 0;                    //在column中的偏移量
+        int bytes = typeList[i].valueBytes;    //此类型的值字节数
+        char *column = new char[bytes * rows]; //每列的所有值缓存
+        long colPos = 0;                       //在column中的偏移量
         for (int j = 0; j < rows; j++)
         {
             memcpy(column + colPos, buffer->buffer + cur, bytes);
@@ -812,6 +815,7 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
         default:
             break;
         }
+        delete[] column;
     }
     free(buffer->buffer);
     buffer->buffer = NULL;
@@ -918,9 +922,9 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
     for (int i = 0; i < typeNum; i++)
     {
         cur = startPos + getBufferDataPos(typeList, i);
-        int bytes = typeList[i].valueBytes; //此类型的值字节数
-        char column[bytes * rows];          //每列的所有值缓存
-        long colPos = 0;                    //在column中的偏移量
+        int bytes = typeList[i].valueBytes;    //此类型的值字节数
+        char *column = new char[bytes * rows]; //每列的所有值缓存
+        long colPos = 0;                       //在column中的偏移量
         for (int j = 0; j < rows; j++)
         {
             memcpy(column + colPos, buffer->buffer + cur, bytes);
@@ -1076,6 +1080,7 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
         default:
             break;
         }
+        delete[] column;
     }
     free(buffer->buffer);
     buffer->buffer = NULL;
@@ -1132,9 +1137,9 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
     for (int i = 0; i < typeNum; i++)
     {
         cur = startPos + getBufferDataPos(typeList, i);
-        int bytes = typeList[i].valueBytes; //此类型的值字节数
-        char column[bytes * rows];          //每列的所有值缓存
-        long colPos = 0;                    //在column中的偏移量
+        int bytes = typeList[i].valueBytes;    //此类型的值字节数
+        char *column = new char[bytes * rows]; //每列的所有值缓存
+        long colPos = 0;                       //在column中的偏移量
         for (int j = 0; j < rows; j++)
         {
             memcpy(column + colPos, buffer->buffer + cur, bytes);
@@ -1289,6 +1294,7 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
         default:
             break;
         }
+        delete[] column;
     }
     free(buffer->buffer);
     buffer->buffer = NULL;

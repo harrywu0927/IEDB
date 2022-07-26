@@ -2982,6 +2982,9 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 int main()
 {
 	// Py_Initialize();
+	vector<string> files;
+	readTEMFilesList("JinfeiSeven", files);
+	return 0;
 	DataTypeConverter converter;
 	DB_QueryParams params;
 	params.pathToLine = "JinfeiSixteen";
