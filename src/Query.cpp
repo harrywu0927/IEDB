@@ -963,8 +963,9 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 		startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
 
 		//此处可能会分配多余的空间，但最多在两个包的可接受大小内
-		// int size = Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos;
-		rawBuff = (char *)malloc(Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos);
+		int size = Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos + 1;
+		cout << "memory size alloced: " << size << endl;
+		rawBuff = (char *)malloc(Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos + 1);
 		if (rawBuff == NULL)
 			return StatusCode::MEMORY_INSUFFICIENT;
 		memcpy(rawBuff, head, startPos);
@@ -2982,20 +2983,17 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 int main()
 {
 	// Py_Initialize();
-	vector<string> files;
-	readTEMFilesList("JinfeiSeven", files);
-	return 0;
 	DataTypeConverter converter;
 	DB_QueryParams params;
-	params.pathToLine = "JinfeiSixteen";
-	params.fileID = "20000";
+	params.pathToLine = "testdata";
+	params.fileID = "123456";
 	// params.fileIDend = "300000";
 	params.fileIDend = NULL;
 	char code[10];
 	code[0] = (char)0;
 	code[1] = (char)1;
 	code[2] = (char)0;
-	code[3] = (char)1;
+	code[3] = (char)0;
 	code[4] = 0;
 	// code[4] = 'R';
 	code[5] = (char)0;
@@ -3003,20 +3001,20 @@ int main()
 	code[7] = (char)0;
 	code[8] = (char)0;
 	code[9] = (char)0;
-	params.pathCode = NULL;
-	params.valueName = "S1ON,S1OFF";
-	// params.valueName = NULL;
+	params.pathCode = code;
+	// params.valueName = "S1ON,S1OFF";
+	params.valueName = NULL;
 	params.start = 1553728593562;
 	params.end = 1751908603642;
 	// params.end = 1651894834176;
-	params.order = ASCEND;
+	params.order = ODR_NONE;
 	params.sortVariable = "S1ON";
-	params.compareType = LT;
+	params.compareType = CMP_NONE;
 	params.compareValue = "100";
 	params.compareVariable = "S1ON";
-	params.queryType = FILEID;
+	params.queryType = TIMESPAN;
 	params.byPath = 1;
-	params.queryNums = 100;
+	params.queryNums = 11;
 	DB_DataBuffer buffer;
 	buffer.savePath = "/";
 	// cout << settings("Pack_Mode") << endl;
@@ -3026,7 +3024,7 @@ int main()
 	auto startTime = std::chrono::system_clock::now();
 	// char zeros[10] = {0};
 	// memcpy(params.pathCode, zeros, 10);
-	DB_QueryByFileID(&buffer, &params);
+	DB_QueryByTimespan(&buffer, &params);
 	// DB_QueryLastRecords(&buffer, &params);
 	// DB_QueryByTimespan_Single(&buffer, &params);
 	auto endTime = std::chrono::system_clock::now();
@@ -3036,12 +3034,12 @@ int main()
 	if (buffer.bufferMalloced)
 	{
 		cout << buffer.length << endl;
-		for (int i = 0; i < buffer.length; i++)
-		{
-			cout << (int)*(char *)(buffer.buffer + i) << " ";
-			if (i % 11 == 0)
-				cout << endl;
-		}
+		// for (int i = 0; i < buffer.length; i++)
+		// {
+		// 	cout << (int)*(char *)(buffer.buffer + i) << " ";
+		// 	if (i % 11 == 0)
+		// 		cout << endl;
+		// }
 
 		free(buffer.buffer);
 	}
