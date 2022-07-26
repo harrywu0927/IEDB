@@ -88,11 +88,15 @@ int ParseBufferHead(vector<DataType> &typeList, int &pos, int &recordLength, cha
 int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
-    TemplateManager::CheckTemplate(params->pathToLine);
+    int err;
+    if ((err = CheckQueryParams(params)) != 0)
+        return err;
+    if ((err = TemplateManager::CheckTemplate(params->pathToLine)) != 0)
+        return err;
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
-    int err = DB_ExecuteQuery(buffer, params);
+    err = DB_ExecuteQuery(buffer, params);
     if (err != 0)
         return err;
     if (!buffer->bufferMalloced)
@@ -274,11 +278,15 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
 int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
-    TemplateManager::CheckTemplate(params->pathToLine);
+    int err;
+    if ((err = CheckQueryParams(params)) != 0)
+        return err;
+    if ((err = TemplateManager::CheckTemplate(params->pathToLine)) != 0)
+        return err;
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
-    int err = DB_ExecuteQuery(buffer, params);
+    err = DB_ExecuteQuery(buffer, params);
     if (err != 0)
         return err;
     if (!buffer->bufferMalloced)
@@ -460,11 +468,15 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
 int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
-    TemplateManager::CheckTemplate(params->pathToLine);
+    int err;
+    if ((err = CheckQueryParams(params)) != 0)
+        return err;
+    if ((err = TemplateManager::CheckTemplate(params->pathToLine)) != 0)
+        return err;
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
-    int err = DB_ExecuteQuery(buffer, params);
+    err = DB_ExecuteQuery(buffer, params);
     if (err != 0)
         return err;
     if (!buffer->bufferMalloced)
@@ -656,11 +668,15 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
 int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
-    TemplateManager::CheckTemplate(params->pathToLine);
+    int err;
+    if ((err = CheckQueryParams(params)) != 0)
+        return err;
+    if ((err = TemplateManager::CheckTemplate(params->pathToLine)) != 0)
+        return err;
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
-    int err = DB_ExecuteQuery(buffer, params);
+    err = DB_ExecuteQuery(buffer, params);
     if (err != 0)
         return err;
     if (!buffer->bufferMalloced)
@@ -823,10 +839,6 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
  */
 int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
-    //检查是否有图片或数组
-    TemplateManager::CheckTemplate(params->pathToLine);
-    if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
-        return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
     int err = DB_ExecuteQuery(buffer, params);
     if (err != 0)
@@ -878,11 +890,15 @@ int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
 int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
-    TemplateManager::SetTemplate(params->pathToLine);
+    int err;
+    if ((err = CheckQueryParams(params)) != 0)
+        return err;
+    if ((err = TemplateManager::CheckTemplate(params->pathToLine)) != 0)
+        return err;
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
-    int err = DB_ExecuteQuery(buffer, params);
+    err = DB_ExecuteQuery(buffer, params);
     if (err != 0)
         return err;
     if (!buffer->bufferMalloced)
@@ -1088,11 +1104,15 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
 int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
     //检查是否有图片或数组
-    TemplateManager::CheckTemplate(params->pathToLine);
+    int err;
+    if ((err = CheckQueryParams(params)) != 0)
+        return err;
+    if ((err = TemplateManager::CheckTemplate(params->pathToLine)) != 0)
+        return err;
     if (params->byPath == 1 && CurrentTemplate.checkHasArray(params->pathCode))
         return StatusCode::QUERY_TYPE_NOT_SURPPORT;
     buffer->bufferMalloced = 0;
-    int err = DB_ExecuteQuery(buffer, params);
+    err = DB_ExecuteQuery(buffer, params);
     if (err != 0)
         return err;
     if (!buffer->bufferMalloced)
