@@ -338,7 +338,7 @@ int DB_ReadFile(DB_DataBuffer *buffer)
     if (savepath[0] != '/')
         finalPath += "/";
     finalPath += savepath;
-    cout << finalPath << '\n';
+    // cout << finalPath << '\n';
     FILE *fp = fopen(finalPath.c_str(), "rb");
     if (fp == NULL)
         return errno;

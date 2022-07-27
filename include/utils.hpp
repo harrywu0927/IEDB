@@ -1,3 +1,6 @@
+#ifndef _UTILS_HPP
+#define _UTILS_HPP
+#endif
 #include <Python.h>
 #include <vector>
 #include <string>

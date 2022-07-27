@@ -106,7 +106,8 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
     int recordLength = 0; //每行的长度
     int pos = 1;
     ParseBufferHead(typeList, pos, recordLength, buffer->buffer);
-    long startPos = pos;                                    //数据区起始位置
+    long startPos = pos; //数据区起始位置
+    // cout << "buffer length" << buffer->length << endl;
     long rows = (buffer->length - startPos) / recordLength; //获取行数
     long cur = startPos;                                    //在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
@@ -3432,7 +3433,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
 //     params.start = 0;
 //     params.end = 1751165600000;
 //     params.order = ODR_NONE;
-//     params.compareType = LT;
+//     params.compareType = CMP_NONE;
 //     params.compareValue = "100";
 //     params.queryType = TIMESPAN;
 //     params.byPath = 1;
@@ -3455,7 +3456,7 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
 //     //     converter.ToUInt32Buff(v, buf);
 //     //     memcpy(newbuf + 12 + i * 4, buf, 4);
 //     // }
-//     DB_STD(&buffer, &params);
+//     DB_MAX(&buffer, &params);
 //     if (buffer.bufferMalloced)
 //     {
 //         char buf[buffer.length];

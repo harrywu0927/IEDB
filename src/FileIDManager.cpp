@@ -1,7 +1,7 @@
 #include <utils.hpp>
 
 /**
- * @brief
+ * @brief 根据ID算出包中文件总数（不精确）
  *
  * @param packs
  * @return long
@@ -18,7 +18,7 @@ long FileIDManager::GetPacksRhythmNum(vector<pair<string, tuple<long, long>>> &p
 }
 
 /**
- * @brief
+ * @brief 根据ID算出包中文件总数（不精确）
  *
  * @param packs
  * @return long
@@ -30,7 +30,7 @@ long FileIDManager::GetPacksRhythmNum(vector<pair<char *, long>> &packs)
     {
         string path = pack.first;
         auto range = fidIndex[path];
-        res += std::get<1>(range) - std::get<0>(range);
+        res += std::get<1>(range) - std::get<0>(range) + 1;
     }
     return res;
 }

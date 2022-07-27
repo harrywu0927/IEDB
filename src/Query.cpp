@@ -3,7 +3,7 @@
  * @author your name (you@domain.com)
  * @brief
  * @version 0.9.0
- * @date 2022-07-21
+ * @date 2022-07-27
  *
  * @copyright Copyright (c) 2022
  *
@@ -319,7 +319,6 @@ int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Param
 int DataExtraction(vector<tuple<char *, long, long, long>> &mallocedMemory, Extraction_Params &Ext_Params, DB_QueryParams *Qry_params, long &cur, long &timestamp, char *buff)
 {
 	int err = 0;
-	//获取数据的偏移量和字节数
 	if (Ext_Params.hasIMG) //数据带有图片
 	{
 		Ext_Params.copyBytes = 0;
@@ -418,8 +417,6 @@ int DataExtraction(vector<tuple<char *, long, long, long>> &mallocedMemory, Extr
 
 	if (canCopy) //需要此数据
 	{
-		// char *memory = new char[Ext_Params.copyBytes];
-		// memcpy(memory, copyValue, Ext_Params.copyBytes);
 		cur += Ext_Params.copyBytes;
 		mallocedMemory.push_back(make_tuple(copyValue, Ext_Params.copyBytes, Ext_Params.sortPos, timestamp));
 		return 0;
@@ -736,6 +733,7 @@ int sortResult(vector<tuple<char *, long, long, long>> &mallocedMemory, DB_Query
 	{
 		bool hasIMG = params->byPath ? CurrentTemplate.checkHasImage(params->pathCode) : type.valueType == ValueType::IMAGE;
 		vector<pair<char *, int>> existedValues;
+		vector<tuple<char *, long, long, long>> newMemory;
 		for (int i = 0; i < mallocedMemory.size(); i++)
 		{
 			char *value = std::get<0>(mallocedMemory[i]) + std::get<2>(mallocedMemory[i]);
@@ -751,18 +749,19 @@ int sortResult(vector<tuple<char *, long, long, long>> &mallocedMemory, DB_Query
 				if (equals)
 				{
 					if (hasIMG)
-						free(get<0>(mallocedMemory[i]));			  //重复值，释放此内存
-					mallocedMemory.erase(mallocedMemory.begin() + i); //注：此操作在查询量大时效率可能很低
+						free(get<0>(mallocedMemory[i])); //重复值，释放此内存
+					// mallocedMemory.erase(mallocedMemory.begin() + i); //注：此操作在查询量大时效率可能很低
 					isRepeat = true;
-					i--;
+					// i--;
 				}
 			}
 			if (!isRepeat) //不是重复值
 			{
 				existedValues.push_back(make_pair(value, type.valueBytes));
+				newMemory.push_back(mallocedMemory[i]);
 			}
 		}
-
+		mallocedMemory = newMemory;
 		break;
 	}
 	case TIME_ASC:
@@ -855,51 +854,10 @@ int DB_ExecuteQuery(DB_DataBuffer *buffer, DB_QueryParams *params)
  */
 int DB_QueryWholeFile(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
-	// int check = CheckQueryParams(params);
-	// if (check != 0)
-	// 	return check;
-	if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
-		return StatusCode::SCHEMA_FILE_NOT_FOUND;
-
-	vector<PathCode> pathCodes;
-	if (params->byPath)
-	{
-		int err = CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
-		if (err != 0)
-			return err;
-		if (pathCodes.size() > 1)
-		{
-			if ((params->queryType != QRY_NONE || params->compareType != CMP_NONE) && (params->valueName == NULL || strcmp(params->valueName, "") == 0)) //若此编码包含的数据类型大于1，而未指定变量名，又需要比较或排序，返回异常
-				return StatusCode::INVALID_QRY_PARAMS;
-		}
-		else
-		{
-			if ((params->valueName == NULL || strcmp(params->valueName, "") == 0) && (params->queryType != QRY_NONE || params->compareType != CMP_NONE)) //由于编码会变为全0，因此若需要排序或比较，需要添加变量名
-			{
-				params->valueName = pathCodes[0].name.c_str();
-			}
-		}
-		char zeros[10] = {0};
-		memcpy(params->pathCode, zeros, 10);
-	}
-	else
-	{
-		params->byPath = 1;
-		char zeros[10] = {0};
-		memcpy(params->pathCode, zeros, 10);
-	}
-	switch (params->queryType)
-	{
-	case TIMESPAN:
-		return DB_QueryByTimespan(buffer, params);
-	case LAST:
-		return DB_QueryLastRecords(buffer, params);
-	case FILEID:
-		return DB_QueryByFileID(buffer, params);
-	default:
-		return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-	}
-	return StatusCode::QUERY_TYPE_NOT_SURPPORT;
+	char zeros[10] = {0};
+	params->pathCode = zeros;
+	params->byPath = 1;
+	return DB_ExecuteQuery(buffer, params);
 }
 
 /**
@@ -933,7 +891,10 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 	Extraction_Params Ext_Params;
 	err = GetExtractionParams(Ext_Params, params);
 	if (err != 0)
+	{
+		IOBusy = false;
 		return err;
+	}
 	vector<pair<string, long>> filesWithTime, selectedFiles;
 	auto selectedPacks = packManager.GetPacksByTime(params->pathToLine, params->start, params->end);
 	//获取每个数据文件，并带有时间戳
@@ -963,11 +924,14 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 		startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
 
 		//此处可能会分配多余的空间，但最多在两个包的可接受大小内
-		int size = Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos + 1;
-		cout << "memory size alloced: " << size << endl;
-		rawBuff = (char *)malloc(Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos + 1);
+		int size = Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos;
+		cout << "memory size alloced: " << size << "\n";
+		rawBuff = (char *)malloc(Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos);
 		if (rawBuff == NULL)
+		{
+			IOBusy = false;
 			return StatusCode::MEMORY_INSUFFICIENT;
+		}
 		memcpy(rawBuff, head, startPos);
 		cur = startPos;
 	}
@@ -1035,6 +999,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 						GarbageMemRecollection(mallocedMemory);
 					else
 						free(rawBuff);
+					IOBusy = false;
 					return err;
 				}
 				newBuffer = new char[readLength + len];
@@ -1058,6 +1023,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 					GarbageMemRecollection(mallocedMemory);
 				else
 					free(rawBuff);
+				IOBusy = false;
 				return err;
 			}
 		}
@@ -1090,6 +1056,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 				GarbageMemRecollection(mallocedMemory);
 			else
 				free(rawBuff);
+			IOBusy = false;
 			return err;
 		}
 	}
@@ -1104,6 +1071,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 			buffer->buffer = rawBuff;
 			buffer->bufferMalloced = 1;
 			buffer->length = cur;
+			IOBusy = false;
 			return 0;
 		}
 	}
@@ -1112,6 +1080,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 		buffer->buffer = NULL;
 		buffer->length = 0;
 		buffer->bufferMalloced = 0;
+		IOBusy = false;
 		if (rawBuff != nullptr)
 			free(rawBuff);
 		return StatusCode::NO_DATA_QUERIED;
@@ -1119,6 +1088,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 	err = WriteDataToBuffer(mallocedMemory, Ext_Params, params, buffer, cur);
 	if (!Ext_Params.hasIMG)
 		free(rawBuff);
+	IOBusy = false;
 	return err;
 }
 
@@ -2131,7 +2101,10 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 	if (params->byPath && params->pathCode != NULL)
 		CurrentTemplate.GetAllPathsByCode(params->pathCode, Ext_Params.pathCodes);
 	if (err != 0)
+	{
+		IOBusy = false;
 		return err;
+	}
 	vector<pair<string, long>> selectedFiles;
 
 	//获取每个数据文件，并带有时间戳
@@ -2158,7 +2131,10 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 		startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
 		rawBuff = (char *)malloc(Ext_Params.copyBytes * params->queryNums + startPos);
 		if (rawBuff == NULL)
+		{
+			IOBusy = false;
 			return StatusCode::MEMORY_INSUFFICIENT;
+		}
 		memcpy(rawBuff, head, startPos);
 		cur = startPos;
 	}
@@ -2186,6 +2162,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 				GarbageMemRecollection(mallocedMemory);
 			else
 				free(rawBuff);
+			IOBusy = false;
 			return err;
 		}
 		if (selectedNum == params->queryNums)
@@ -2258,6 +2235,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 						GarbageMemRecollection(mallocedMemory);
 					else
 						free(rawBuff);
+					IOBusy = false;
 					return StatusCode::UNKNWON_DATAFILE;
 				}
 				}
@@ -2272,6 +2250,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 							GarbageMemRecollection(mallocedMemory);
 						else
 							free(rawBuff);
+						IOBusy = false;
 						return err;
 					}
 					newBuffer = new char[readLength + len];
@@ -2297,6 +2276,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 						GarbageMemRecollection(mallocedMemory);
 					else
 						free(rawBuff);
+					IOBusy = false;
 					return err;
 				}
 				if (selectedNum == params->queryNums)
@@ -2315,19 +2295,24 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 			free(rawBuff);
 		return StatusCode::NO_DATA_QUERIED;
 	}
-	if (params->order != TIME_ASC && params->order != TIME_DSC && params->order != ODR_NONE) //时间排序仅需在拷贝时反向
+	if (params->order != TIME_DSC && params->order != ODR_NONE)
 		sortResult(mallocedMemory, params, Ext_Params.typeList[Ext_Params.sortIndex]);
-	else if (params->order == ODR_NONE || params->order == TIME_ASC)
+	else if (params->order == ODR_NONE || params->order == TIME_DSC)
 	{
 		if (!Ext_Params.hasIMG)
 		{
 			buffer->buffer = rawBuff;
 			buffer->bufferMalloced = 1;
 			buffer->length = cur;
+			IOBusy = false;
 			return 0;
 		}
 	}
-	return WriteDataToBuffer(mallocedMemory, Ext_Params, params, buffer, cur);
+	err = WriteDataToBuffer(mallocedMemory, Ext_Params, params, buffer, cur);
+	if (!Ext_Params.hasIMG)
+		free(rawBuff);
+	IOBusy = false;
+	return err;
 }
 
 /**
@@ -2358,7 +2343,10 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 	Extraction_Params Ext_Params;
 	int err = GetExtractionParams(Ext_Params, params);
 	if (err != 0)
+	{
+		IOBusy = false;
 		return err;
+	}
 	cout << "check complete\n";
 	string pathToLine = params->pathToLine;
 	string fileid = params->fileID;
@@ -2632,7 +2620,10 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 				//此处假设数据全部选中，可能会分配多余的空间
 				rawBuff = (char *)malloc(Ext_Params.copyBytes * (end - start) + startPos);
 				if (rawBuff == NULL)
+				{
+					IOBusy = false;
 					return StatusCode::MEMORY_INSUFFICIENT;
+				}
 				memcpy(rawBuff, head, startPos);
 				cur = startPos;
 			}
@@ -2684,6 +2675,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 									GarbageMemRecollection(mallocedMemory);
 								else
 									free(rawBuff);
+								IOBusy = false;
 								return err;
 							}
 							if (Ext_Params.hasIMG)
@@ -2695,6 +2687,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 								if (err != 0)
 								{
 									GarbageMemRecollection(mallocedMemory);
+									IOBusy = false;
 									return err;
 								}
 								newBuffer = new char[readLength + len];
@@ -2718,6 +2711,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 									GarbageMemRecollection(mallocedMemory);
 								else
 									free(rawBuff);
+								IOBusy = false;
 								return err;
 							}
 						}
@@ -2725,6 +2719,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 				}
 			}
 			delete[] tempBuff;
+			delete[] completeZiped;
 			if (currentFileID != fileidEnd) //还未结束
 			{
 				vector<pair<string, long>> dataFiles;
@@ -2762,6 +2757,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 								GarbageMemRecollection(mallocedMemory);
 							else
 								free(rawBuff);
+							IOBusy = false;
 							return err;
 						}
 					}
@@ -2774,6 +2770,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 				buffer->buffer = NULL;
 				buffer->length = 0;
 				buffer->bufferMalloced = 0;
+				IOBusy = false;
 				if (rawBuff != nullptr)
 					free(rawBuff);
 				return StatusCode::NO_DATA_QUERIED;
@@ -2790,6 +2787,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			err = WriteDataToBuffer(mallocedMemory, Ext_Params, params, buffer, cur);
 			if (!Ext_Params.hasIMG)
 				free(rawBuff);
+			IOBusy = false;
 			return err;
 		}
 	}
@@ -2815,7 +2813,11 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			//此处可能会分配多余的空间
 			rawBuff = (char *)malloc(Ext_Params.copyBytes * params->queryNums + startPos);
 			if (rawBuff == NULL)
+			{
+				IOBusy = false;
 				return StatusCode::MEMORY_INSUFFICIENT;
+			}
+
 			memcpy(rawBuff, head, startPos);
 			cur = startPos;
 		}
@@ -2871,6 +2873,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 								GarbageMemRecollection(mallocedMemory);
 							else
 								free(rawBuff);
+							IOBusy = false;
 							return err;
 						}
 						if (Ext_Params.hasIMG)
@@ -2906,6 +2909,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 								GarbageMemRecollection(mallocedMemory);
 							else
 								free(rawBuff);
+							IOBusy = false;
 							return err;
 						}
 					}
@@ -2913,6 +2917,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			}
 		}
 		delete[] tempBuff;
+		delete[] completeZiped;
 		if (scanNum < params->queryNums)
 		{
 			vector<pair<string, long>> dataFiles;
@@ -2949,6 +2954,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 							GarbageMemRecollection(mallocedMemory);
 						else
 							free(rawBuff);
+						IOBusy = false;
 						return err;
 					}
 				}
@@ -2985,7 +2991,7 @@ int main()
 	// Py_Initialize();
 	DataTypeConverter converter;
 	DB_QueryParams params;
-	params.pathToLine = "testdata";
+	params.pathToLine = "JinfeiSeven";
 	params.fileID = "123456";
 	// params.fileIDend = "300000";
 	params.fileIDend = NULL;
@@ -3007,7 +3013,7 @@ int main()
 	params.start = 1553728593562;
 	params.end = 1751908603642;
 	// params.end = 1651894834176;
-	params.order = ODR_NONE;
+	params.order = DISTINCT;
 	params.sortVariable = "S1ON";
 	params.compareType = CMP_NONE;
 	params.compareValue = "100";
@@ -3034,12 +3040,12 @@ int main()
 	if (buffer.bufferMalloced)
 	{
 		cout << buffer.length << endl;
-		// for (int i = 0; i < buffer.length; i++)
-		// {
-		// 	cout << (int)*(char *)(buffer.buffer + i) << " ";
-		// 	if (i % 11 == 0)
-		// 		cout << endl;
-		// }
+		for (int i = 0; i < buffer.length; i++)
+		{
+			cout << (int)*(char *)(buffer.buffer + i) << " ";
+			if (i % 11 == 0)
+				cout << endl;
+		}
 
 		free(buffer.buffer);
 	}
