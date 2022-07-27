@@ -2,8 +2,8 @@
  * @file PackManager.cpp
  * @author your name (you@domain.com)
  * @brief 对内存中pak的LRU管理和pak获取
- * @version 0.8.5
- * @date Modified in 2022-06-15
+ * @version 0.9.0
+ * @date Last Modification in 2022-07-27
  *
  * @copyright Copyright (c) 2022
  *
@@ -18,57 +18,91 @@
  */
 PackManager::PackManager(long memcap) //初始化allPacks
 {
-    vector<string> packList, dirs;
+    vector<string> dirs;
 
     readAllDirs(dirs, settings("Filename_Label"));
-    for (auto &d : dirs)
+
+    for (auto &dir : dirs)
     {
-        DIR *dir = opendir(d.c_str());
-        struct dirent *ptr;
-        if (dir == NULL)
-            continue;
-        while ((ptr = readdir(dir)) != NULL)
+        try
         {
-            if (ptr->d_name[0] == '.')
-                continue;
-            if (ptr->d_type == 8)
+            for (auto const &dir_entry : fs::directory_iterator{dir})
             {
-                string fileName = ptr->d_name;
-                string dirWithoutPrefix = d + "/" + fileName;
-                string fileLabel = settings("Filename_Label");
-                while (fileLabel[fileLabel.length() - 1] == '/')
+                if (fs::is_regular_file(dir_entry))
                 {
-                    fileLabel.pop_back();
-                }
-                for (int i = 0; i <= fileLabel.length(); i++)
-                {
-                    dirWithoutPrefix.erase(dirWithoutPrefix.begin());
-                }
-                string pathToLine = DataType::splitWithStl(dirWithoutPrefix, "/")[0];
-                if (fileName.find(".pak") != string::npos)
-                {
-                    string str = d;
-                    for (int i = 0; i <= settings("Filename_Label").length(); i++)
+                    string dirWithoutLabel = dir_entry.path().string();
+                    removeFilenameLabel(dirWithoutLabel);
+                    fs::path file = dirWithoutLabel;
+                    fs::path pathToLine = file.parent_path(); // Not only absolute path here
+                    if (file.extension() == ".pak")
                     {
-                        str.erase(str.begin());
-                    }
-                    string tmp = fileName;
-                    while (tmp.back() == '/')
-                        tmp.pop_back();
-                    vector<string> vec = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
-                    string packName = vec[vec.size() - 1];
-                    vector<string> timespan = DataType::StringSplit(const_cast<char *>(packName.c_str()), "-");
-                    if (timespan.size() > 0)
-                    {
-                        long start = atol(timespan[0].c_str());
-                        long end = atol(timespan[1].c_str());
-                        allPacks[pathToLine].push_back(make_pair(str + "/" + fileName, make_tuple(start, end)));
+                        auto timespan = DataType::splitWithStl(file.stem(), "-");
+                        if (timespan.size() > 1)
+                        {
+                            long start = atol(timespan[0].c_str());
+                            long end = atol(timespan[1].c_str());
+                            if(end < start)
+                                continue;
+                            allPacks[pathToLine].push_back(make_pair(dirWithoutLabel, make_tuple(start, end)));
+                        }
                     }
                 }
             }
         }
-        closedir(dir);
+        catch (const std::exception &e)
+        {
+            std::cerr << e.what() << '\n';
+        }
     }
+
+    // for (auto &d : dirs)
+    // {
+    //     DIR *dir = opendir(d.c_str());
+    //     struct dirent *ptr;
+    //     if (dir == NULL)
+    //         continue;
+    //     while ((ptr = readdir(dir)) != NULL)
+    //     {
+    //         if (ptr->d_name[0] == '.')
+    //             continue;
+    //         if (ptr->d_type == 8)
+    //         {
+    //             string fileName = ptr->d_name;
+    //             string dirWithoutPrefix = d + "/" + fileName;
+    //             string fileLabel = settings("Filename_Label");
+    //             while (fileLabel[fileLabel.length() - 1] == '/')
+    //             {
+    //                 fileLabel.pop_back();
+    //             }
+    //             for (int i = 0; i <= fileLabel.length(); i++)
+    //             {
+    //                 dirWithoutPrefix.erase(dirWithoutPrefix.begin());
+    //             }
+    //             string pathToLine = DataType::splitWithStl(dirWithoutPrefix, "/")[0];
+    //             if (fileName.find(".pak") != string::npos)
+    //             {
+    //                 string str = d;
+    //                 for (int i = 0; i <= settings("Filename_Label").length(); i++)
+    //                 {
+    //                     str.erase(str.begin());
+    //                 }
+    //                 string tmp = fileName;
+    //                 while (tmp.back() == '/')
+    //                     tmp.pop_back();
+    //                 vector<string> vec = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
+    //                 string packName = vec[vec.size() - 1];
+    //                 vector<string> timespan = DataType::StringSplit(const_cast<char *>(packName.c_str()), "-");
+    //                 if (timespan.size() > 0)
+    //                 {
+    //                     long start = atol(timespan[0].c_str());
+    //                     long end = atol(timespan[1].c_str());
+    //                     allPacks[pathToLine].push_back(make_pair(str + "/" + fileName, make_tuple(start, end)));
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     closedir(dir);
+    // }
     for (auto &iter : allPacks)
     {
         sort(iter.second.begin(), iter.second.end(),
@@ -322,11 +356,11 @@ void PackManager::ReadPack(string path)
             PutPack(path, {buffer.buffer, buffer.length});
         else
         {
-            char *newBuffer = (char *)malloc(reader.GetPackLength());
+            char *newBuffer = (char *)malloc(24 + fileNum * (CurrentTemplate.totalBytes + 29));
             memcpy(newBuffer, reader.packBuffer, 24);
             long posInPack = 24;
             int imgPos = 0;
-            //假定图片数据均在模版的最后,获取第一张图片的位置
+            /* 假定图片数据均在模版的最后,获取第一张图片的位置 */
             for (auto &schema : CurrentTemplate.schemas)
             {
                 if (schema.second.valueType == ValueType::IMAGE)
@@ -362,12 +396,13 @@ void PackManager::ReadPack(string path)
                 cur += 29;
                 if (zipType == 0)
                 {
+                    /* 此处，imgPos即为非图片部分的数据长度 */
                     memcpy(newBuffer + cur, &imgPos, 4);
                     cur += 4;
                     memcpy(newBuffer + cur, reader.packBuffer + posInPack + 4, imgPos);
                     cur += imgPos;
                 }
-                //带有图片的数据不可能完全压缩
+                /* 带有图片的数据不可能完全压缩,ziptype = 2 */
                 else
                 {
                     int offset = GetZipImgPos(reader.packBuffer + posInPack + 4);

@@ -3,7 +3,7 @@
  * @author your name (you@domain.com)
  * @brief
  * @version 0.8.4
- * @date Modified in 2022-06-14
+ * @date Last Modification in 2022-06-14
  *
  * @copyright Copyright (c) 2022
  *

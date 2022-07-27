@@ -114,6 +114,7 @@ int DB_GetFileLengthByPath(char path[], long *length)
     {
         std::cerr << e.what() << '\n';
         cout << filepath << endl;
+        throw int(errno);
     }
 
     *length = len;
@@ -125,6 +126,7 @@ int DB_GetFileLengthByFilePtr(long fileptr, long *length)
     if (fseek(fp, 0, SEEK_END) != 0)
     {
         perror("Error while getting file length");
+        throw int(errno);
         return errno;
     }
     long len = ftell(fp);

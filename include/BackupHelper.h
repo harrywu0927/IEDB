@@ -2,7 +2,8 @@
 #include <string>
 
 using namespace std;
-
+#define WRITE_BUFFER_SIZE 1024 * 1024 * 20
+#define READ_BUFFER_SIZE 1024 * 1024 * 20
 /**
  * @brief bak文件头定义：
  * 按照字节序依次为：
@@ -20,16 +21,7 @@ private:
     long lastBackupTime;
 
 public:
-    BackupHelper()
-    {
-        backupPath = settings("Backup_Path");
-        dataPath = settings("Filename_Label");
-        if (!fs::exists(backupPath))
-            fs::create_directories(backupPath);
-        vector<string> bakfiles;
-        readFiles(bakfiles, backupPath, ".bak");
-        lastBackupTime = 0;
-    }
+    BackupHelper();
     ~BackupHelper() {}
     int ChangeBackupPath(string path);
     int BackupUpdate();
@@ -43,7 +35,7 @@ public:
         fread(h, 18, 1, file);
         memcpy(&timestamp, h, 8);
         memcpy(&fileNum, h + 8, 8);
-        ushort L = __builtin_bswap16(*((ushort *)(h + 16)));
+        ushort L = *((ushort *)(h + 16));
         if (L > 1000) //文件内容可能被篡改
             return -1;
         char p[L];

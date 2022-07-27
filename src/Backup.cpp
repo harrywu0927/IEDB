@@ -1,5 +1,26 @@
 #include <BackupHelper.h>
 
+BackupHelper::BackupHelper()
+{
+    backupPath = settings("Backup_Path");
+    dataPath = settings("Filename_Label");
+    if (!fs::exists(backupPath))
+        fs::create_directories(backupPath);
+    vector<string> bakfiles;
+    readFiles(bakfiles, backupPath, ".bak");
+    lastBackupTime = 0;
+    /* Check the maximum of last write time in all bak files */
+    for (auto &bak : bakfiles)
+    {
+        auto ftime = fs::last_write_time(bak);
+        long timestamp = decltype(ftime)::clock::to_time_t(ftime);
+        if (timestamp > lastBackupTime)
+        {
+            lastBackupTime = timestamp;
+        }
+    }
+}
+
 /**
  * @brief 备份目录更换和数据迁移
  *
@@ -12,6 +33,7 @@ int BackupHelper::ChangeBackupPath(string path)
         fs::create_directories(path);
     string cmd = "mv " + backupPath + "/* " + path + "/";
     int err = system(cmd.c_str());
+    backupPath = path;
     return err;
 }
 
@@ -52,9 +74,9 @@ int BackupHelper::CheckDataToUpdate(vector<string> &files)
  *
  * @return int
  * @note bak文件体格式为：
+ *  8字节pak文件大小
  *  2字节pak文件路径长度 L
  *  L字节pak文件路径
- *  8字节文件大小
  *  pak文件内容
  */
 int BackupHelper::CreateBackup()
@@ -73,9 +95,9 @@ int BackupHelper::CreateBackup()
     readFiles(pakFiles, "testIEDB/JinfeiSixteen", ".pak", true);
     if ((err = WriteBakHead(file, timestamp, pakFiles.size(), backupPath)) != 0)
         return err;
-    char *writeBuffer = new char[1024 * 1024 * 4]; // 20MB
-    char *readBuffer = new char[1024 * 1024 * 4];
-    setvbuf(file, writeBuffer, _IOFBF, 1024 * 1024 * 4); //设置写缓冲
+    char *writeBuffer = new char[WRITE_BUFFER_SIZE]; // 20MB
+    char *readBuffer = new char[READ_BUFFER_SIZE];
+    setvbuf(file, writeBuffer, _IOFBF, WRITE_BUFFER_SIZE); //设置写缓冲
     for (auto &pak : pakFiles)
     {
         try
@@ -83,7 +105,6 @@ int BackupHelper::CreateBackup()
             FILE *pakfile;
             if (!(pakfile = fopen(pak.c_str(), "rb")))
             {
-                fclose(file);
                 delete[] writeBuffer;
                 delete[] readBuffer;
                 return err;
@@ -91,23 +112,24 @@ int BackupHelper::CreateBackup()
             long paklen;
             DB_GetFileLengthByFilePtr((long)pakfile, &paklen);
             unsigned short pakPathLen = pak.length();
-            // DB_Write((long)file, (char *)(&pakPathLen), 2);
-            // DB_Write((long)file, (char *)(pak.c_str()), pakPathLen);
-            // DB_Write((long)file, (char *)(&paklen), 8);
-            fwrite(&pakPathLen, 2, 1, file);
-            fwrite(pak.c_str(), pakPathLen, 1, file);
-            fwrite(&paklen, 8, 1, file);
+            DB_Write((long)file, (char *)(&paklen), 8);
+            DB_Write((long)file, (char *)(&pakPathLen), 2);
+            DB_Write((long)file, (char *)(pak.c_str()), pakPathLen);
+
+            // fwrite(&pakPathLen, 2, 1, file);
+            // fwrite(pak.c_str(), pakPathLen, 1, file);
+            // fwrite(&paklen, 8, 1, file);
             int readlen = 0;
-            while ((readlen = fread(readBuffer, 1, 1024 * 1024 * 4, pakfile)) > 0)
+            while ((readlen = fread(readBuffer, 1, READ_BUFFER_SIZE, pakfile)) > 0)
             {
                 DB_Write((long)file, readBuffer, readlen);
-                // fwrite(readBuffer, readlen, 1, file);
             }
         }
         catch (int &e)
         {
             delete[] writeBuffer;
             delete[] readBuffer;
+            fclose(file);
             return e;
         }
         catch (std::exception &e)
@@ -115,6 +137,7 @@ int BackupHelper::CreateBackup()
             cerr << e.what() << endl;
             delete[] writeBuffer;
             delete[] readBuffer;
+            fclose(file);
             return -1;
         }
     }
@@ -123,6 +146,7 @@ int BackupHelper::CreateBackup()
     cout << "Backup " << to_string(timestamp) + ".bak completed in " << backupPath << ".\nCheckpoint at" << ctime(&timestamp) << "\n";
     delete[] writeBuffer;
     delete[] readBuffer;
+    lastBackupTime = timestamp;
     return 0;
 }
 
@@ -134,9 +158,7 @@ int BackupHelper::CreateBackup()
 int BackupHelper::BackupUpdate()
 {
     vector<string> filesToUpdate, bakFiles;
-    int err;
-    if ((err = CheckDataToUpdate(filesToUpdate)) != 0)
-        return err;
+
     readFiles(bakFiles, backupPath, ".bak");
     /* 若不存在bak文件，新建一个 */
     if (bakFiles.size() == 0)
@@ -144,6 +166,9 @@ int BackupHelper::BackupUpdate()
         cout << "Backup file not found. Creating new backup...\n";
         return CreateBackup();
     }
+    int err;
+    if ((err = CheckDataToUpdate(filesToUpdate)) != 0)
+        return err;
     /* 选择最新的bak文件更新 */
     string latestBak;
     long maxTimestamp = 0;
@@ -157,24 +182,122 @@ int BackupHelper::BackupUpdate()
         }
     }
 
+    /* Check file */
     FILE *file;
     if (!(file = fopen(latestBak.c_str(), "a+b")))
         return errno;
     long timestamp, filenum;
     string path;
+
+    fseek(file, -10, SEEK_END);
+    long pos = ftell(file);
+    char check[10];
+    fread(check, 10, 1, file);
     fseek(file, 0, SEEK_SET);
     if (ReadBakHead(file, timestamp, filenum, path) == -1)
         return StatusCode::UNKNWON_DATAFILE;
-    fseek(file, -10, SEEK_END);
-    char check[10];
-    fread(check, 10, 1, file);
+    long nowTime = getMilliTime();
+    if (nowTime < timestamp)
+    {
+        fclose(file);
+        return StatusCode::UNKNWON_DATAFILE;
+    }
+
     if (string(check) != "checkpoint")
     {
         cout << "Backup file broken, trying to rollback to previous checkpoint...\n";
-        /* 从头遍历备份文件，检查写入时中断的部分数据，将其删除 */
+        /* 从头遍历备份文件，检查写入时中断的部分数据，将其覆盖 */
+        size_t filesize = fs::file_size(latestBak);
+        size_t curPos = ftell(file);
+        size_t lastPos = curPos;
+        long scanedFile = 0;
+        long pakLen;
+        unsigned short pakPathLen;
+        while (curPos < filesize - 10 && scanedFile < filenum)
+        {
+            lastPos = curPos;
+            fread(&pakLen, 8, 1, file);
+            fread(&pakPathLen, 2, 1, file);
+            if (fseek(file, pakPathLen, SEEK_CUR) != 0 || fseek(file, pakLen, SEEK_CUR) != 0)
+            {
+                /* File pointer exceeded the end of file */
+                fclose(file);
+                cout << "Failed to rollback, the bak file may be maliciously modified.\n";
+                throw StatusCode::UNKNWON_DATAFILE;
+                return StatusCode::UNKNWON_DATAFILE;
+            }
+            curPos = ftell(file);
+            scanedFile++;
+        }
+        cout << "Rollback completed, " << filenum - scanedFile << "file(s) lost.\n";
 
+        pos = lastPos;
+        filenum = scanedFile;
     }
-    
+
+    /* Start backup */
+    fseek(file, pos, SEEK_SET);
+    char *writeBuffer = new char[WRITE_BUFFER_SIZE]; // 20MB
+    char *readBuffer = new char[READ_BUFFER_SIZE];
+    setvbuf(file, writeBuffer, _IOFBF, WRITE_BUFFER_SIZE); //设置写缓冲
+    for (auto &pak : filesToUpdate)
+    {
+        try
+        {
+            FILE *pakfile;
+            if (!(pakfile = fopen(pak.c_str(), "rb")))
+            {
+                delete[] writeBuffer;
+                delete[] readBuffer;
+                return err;
+            }
+            long paklen;
+            DB_GetFileLengthByFilePtr((long)pakfile, &paklen);
+            unsigned short pakPathLen = pak.length();
+            // fwrite(&pakPathLen, 2, 1, file);
+            // fwrite(pak.c_str(), pakPathLen, 1, file);
+            // fwrite(&paklen, 8, 1, file);
+            DB_Write((long)file, (char *)(&paklen), 8);
+            DB_Write((long)file, (char *)(&pakPathLen), 2);
+            DB_Write((long)file, (char *)(pak.c_str()), pakPathLen);
+
+            int readlen = 0;
+            while ((readlen = fread(readBuffer, 1, READ_BUFFER_SIZE, pakfile)) > 0)
+            {
+                DB_Write((long)file, readBuffer, readlen);
+            }
+        }
+        catch (int &e)
+        {
+            delete[] writeBuffer;
+            delete[] readBuffer;
+            fclose(file);
+            throw e;
+            return e;
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << e.what() << '\n';
+            delete[] writeBuffer;
+            delete[] readBuffer;
+            fclose(file);
+            throw e;
+            return -1;
+        }
+    }
+    fwrite("checkpoint", 10, 1, file); //检查点
+
+    /* Update bak head */
+    fflush(file);
+    fseek(file, 0, SEEK_SET);
+    long newFileNum = filenum + filesToUpdate.size();
+    err = WriteBakHead(file, nowTime, newFileNum, path);
+    fclose(file);
+    cout << "Backup " << to_string(timestamp) + ".bak completed in " << backupPath << ".\nCheckpoint at" << ctime(&timestamp) << "\n";
+    delete[] writeBuffer;
+    delete[] readBuffer;
+    lastBackupTime = timestamp;
+    return err;
 }
 
 // int main()

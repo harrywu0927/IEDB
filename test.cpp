@@ -62,32 +62,44 @@ void checkSettings()
 
 int main()
 {
-    DB_LoadZipSchema("arrTest");
-    DataTypeConverter dt;
-    cout<<CurrentZipTemplate.schemas.size()<<endl;
-    char test[5][5];
-    memcpy(test[0],CurrentZipTemplate.schemas[0].second.max[0],5);
-    uint32_t max1 = dt.ToUInt32_m(test[0]);
-    memcpy(test[1],CurrentZipTemplate.schemas[0].second.max[1],5);
-    uint32_t max2 = dt.ToUInt32_m(test[1]);
-    memcpy(test[2],CurrentZipTemplate.schemas[0].second.max[2],5);
-    uint32_t max3 = dt.ToUInt32_m(test[2]);
-    memcpy(test[3],CurrentZipTemplate.schemas[0].second.max[3],5);
-    uint32_t max4 = dt.ToUInt32_m(test[3]);
-    memcpy(test[4],CurrentZipTemplate.schemas[0].second.max[4],5);
-    uint32_t max5 = dt.ToUInt32_m(test[4]);
-    cout<<max1<<endl;cout<<max2<<endl;cout<<max3<<endl;cout<<max4<<endl;cout<<max5<<endl;
+    // DB_LoadZipSchema("arrTest");
+    // DataTypeConverter dt;
+    // cout<<CurrentZipTemplate.schemas.size()<<endl;
+    // char test[5][5];
+    // memcpy(test[0],CurrentZipTemplate.schemas[0].second.max[0],5);
+    // uint32_t max1 = dt.ToUInt32_m(test[0]);
+    // memcpy(test[1],CurrentZipTemplate.schemas[0].second.max[1],5);
+    // uint32_t max2 = dt.ToUInt32_m(test[1]);
+    // memcpy(test[2],CurrentZipTemplate.schemas[0].second.max[2],5);
+    // uint32_t max3 = dt.ToUInt32_m(test[2]);
+    // memcpy(test[3],CurrentZipTemplate.schemas[0].second.max[3],5);
+    // uint32_t max4 = dt.ToUInt32_m(test[3]);
+    // memcpy(test[4],CurrentZipTemplate.schemas[0].second.max[4],5);
+    // uint32_t max5 = dt.ToUInt32_m(test[4]);
+    // cout<<max1<<endl;cout<<max2<<endl;cout<<max3<<endl;cout<<max4<<endl;cout<<max5<<endl;
 
-    char bool1 = CurrentZipTemplate.schemas[1].second.max[0][0];
-    char bool2 = CurrentZipTemplate.schemas[1].second.max[1][0];
-    char bool3 = CurrentZipTemplate.schemas[1].second.max[2][0];
-    char bool4 = CurrentZipTemplate.schemas[1].second.max[3][0];
-    char bool5 = CurrentZipTemplate.schemas[1].second.max[4][0];
-    char bool6 = CurrentZipTemplate.schemas[1].second.max[5][0];
-    cout<<bool1<<endl;cout<<bool2<<endl;cout<<bool3<<endl;cout<<bool4<<endl;cout<<bool5<<endl;cout<<bool6<<endl;
+    // char bool1 = CurrentZipTemplate.schemas[1].second.max[0][0];
+    // char bool2 = CurrentZipTemplate.schemas[1].second.max[1][0];
+    // char bool3 = CurrentZipTemplate.schemas[1].second.max[2][0];
+    // char bool4 = CurrentZipTemplate.schemas[1].second.max[3][0];
+    // char bool5 = CurrentZipTemplate.schemas[1].second.max[4][0];
+    // char bool6 = CurrentZipTemplate.schemas[1].second.max[5][0];
+    // cout<<bool1<<endl;cout<<bool2<<endl;cout<<bool3<<endl;cout<<bool4<<endl;cout<<bool5<<endl;cout<<bool6<<endl;
+    // return 0;
+
+    int process = 0;
+    for (int i = 0; i < 10; i++)
+    {
+        printf("\rprocess %4d ", i);
+        //在Linux下\033[K是清除光标到行尾的数据
+        // printf("process %4d \r\033[K", process);
+        // Linux下printf有缓冲区，要用fflush来显示，不然不能及时显示
+        fflush(stdout);
+        sleep(1);
+    }
     return 0;
     fs::path testpath = "testIEDB/test2/fsdfeg.feg";
-    cout << testpath.stem();
+    cout << testpath.parent_path();
     try
     {
         for (auto const &direntry : fs::recursive_directory_iterator(testpath))
@@ -117,21 +129,21 @@ int main()
 
     // // cout << mypath.filename() / "sdf.fe" << endl;
     // return 0;
-    //int (*M)[10] = new int[10][10];
-    char (*maxValue)[10];
+    // int (*M)[10] = new int[10][10];
+    char(*maxValue)[10];
     maxValue = new char[10][10];
     // char** maxValue;
     // maxValue = new char*[1];
     // for(int i=0;i<1;i++)
     //     maxValue[i] = new char[10];
-    char max[10] = {'0','1','2','3','4','5','6','7','8','9'};
-    char min[10] = {'9','8','7','6','5','4','3','2','1','0'};
-    memcpy(maxValue[1],min,10);
-    memcpy(maxValue[0],max,10);
-    for(int i=0;i<10;i++)
-        cout<<maxValue[0][i]<<endl;
-    for(int i=0;i<10;i++)
-        cout<<maxValue[1][i]<<endl;
+    char max[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+    char min[10] = {'9', '8', '7', '6', '5', '4', '3', '2', '1', '0'};
+    memcpy(maxValue[1], min, 10);
+    memcpy(maxValue[0], max, 10);
+    for (int i = 0; i < 10; i++)
+        cout << maxValue[0][i] << endl;
+    for (int i = 0; i < 10; i++)
+        cout << maxValue[1][i] << endl;
     delete[] maxValue;
     return 0;
 
