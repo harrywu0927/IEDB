@@ -18,7 +18,7 @@ class BackupHelper
 private:
     string backupPath;
     string dataPath;
-    long lastBackupTime;
+    time_t lastBackupTime;
 
 public:
     BackupHelper();

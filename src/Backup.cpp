@@ -13,7 +13,7 @@ BackupHelper::BackupHelper()
     for (auto &bak : bakfiles)
     {
         auto ftime = fs::last_write_time(bak);
-        long timestamp = decltype(ftime)::clock::to_time_t(ftime);
+        time_t timestamp = decltype(ftime)::clock::to_time_t(ftime);
         if (timestamp > lastBackupTime)
         {
             lastBackupTime = timestamp;
@@ -81,7 +81,7 @@ int BackupHelper::CheckDataToUpdate(vector<string> &files)
  */
 int BackupHelper::CreateBackup()
 {
-    long timestamp = getMilliTime();
+    time_t timestamp = time(0);
     FILE *file;
     int err;
     if (!(file = fopen((backupPath + "/" + to_string(timestamp) + ".bak").c_str(), "wb")))
@@ -143,7 +143,7 @@ int BackupHelper::CreateBackup()
     }
     fwrite("checkpoint", 10, 1, file); //检查点
     fclose(file);
-    cout << "Backup " << to_string(timestamp) + ".bak completed in " << backupPath << ".\nCheckpoint at" << ctime(&timestamp) << "\n";
+    cout << "Backup " << to_string(timestamp) + ".bak completed in " << backupPath << ".\nCheckpoint at " << ctime(&timestamp) << "\n";
     delete[] writeBuffer;
     delete[] readBuffer;
     lastBackupTime = timestamp;
@@ -184,25 +184,25 @@ int BackupHelper::BackupUpdate()
 
     /* Check file */
     FILE *file;
-    if (!(file = fopen(latestBak.c_str(), "a+b")))
+    if (!(file = fopen(latestBak.c_str(), "r+b")))
         return errno;
-    long timestamp, filenum;
+    long filenum;
+    time_t timestamp;
     string path;
 
     fseek(file, -10, SEEK_END);
     long pos = ftell(file);
-    char check[10];
+    char check[11] = {0};
     fread(check, 10, 1, file);
     fseek(file, 0, SEEK_SET);
     if (ReadBakHead(file, timestamp, filenum, path) == -1)
         return StatusCode::UNKNWON_DATAFILE;
-    long nowTime = getMilliTime();
+    time_t nowTime = time(0);
     if (nowTime < timestamp)
     {
         fclose(file);
         return StatusCode::UNKNWON_DATAFILE;
     }
-
     if (string(check) != "checkpoint")
     {
         cout << "Backup file broken, trying to rollback to previous checkpoint...\n";
@@ -229,7 +229,7 @@ int BackupHelper::BackupUpdate()
             curPos = ftell(file);
             scanedFile++;
         }
-        cout << "Rollback completed, " << filenum - scanedFile << "file(s) lost.\n";
+        cout << "Rollback completed, " << filenum - scanedFile << " file(s) lost.\n";
 
         pos = lastPos;
         filenum = scanedFile;
@@ -249,7 +249,8 @@ int BackupHelper::BackupUpdate()
             {
                 delete[] writeBuffer;
                 delete[] readBuffer;
-                return err;
+                throw errno;
+                return errno;
             }
             long paklen;
             DB_GetFileLengthByFilePtr((long)pakfile, &paklen);
@@ -293,16 +294,16 @@ int BackupHelper::BackupUpdate()
     long newFileNum = filenum + filesToUpdate.size();
     err = WriteBakHead(file, nowTime, newFileNum, path);
     fclose(file);
-    cout << "Backup " << to_string(timestamp) + ".bak completed in " << backupPath << ".\nCheckpoint at" << ctime(&timestamp) << "\n";
+    cout << "Backup " << to_string(nowTime) + ".bak update completed in " << backupPath << ".\nCheckpoint at " << ctime(&nowTime) << "\n";
     delete[] writeBuffer;
     delete[] readBuffer;
-    lastBackupTime = timestamp;
+    lastBackupTime = nowTime;
     return err;
 }
 
-// int main()
-// {
-//     BackupHelper helper;
-//     helper.CreateBackup();
-//     return 0;
-// }
+int main()
+{
+    BackupHelper helper;
+    helper.BackupUpdate();
+    return 0;
+}

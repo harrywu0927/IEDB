@@ -20,6 +20,7 @@
 #include <string.h>
 #include <sstream>
 #include <fcntl.h>
+#include <ctime>
 #include <future>
 #ifndef __linux__
 #include <mach/mach.h>
