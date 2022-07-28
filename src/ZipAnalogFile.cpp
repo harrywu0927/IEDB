@@ -187,6 +187,7 @@ int IsAnalogTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *rea
                     addAnalogEndFlag(writebuff, writebuff_pos);
                 }
             }
+            break;
         }
         case 1: // UINT
         {
@@ -215,6 +216,7 @@ int IsAnalogTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *rea
                     addAnalogEndFlag(writebuff, writebuff_pos);
                 }
             }
+            break;
         }
         case 6: // SINT
         {
@@ -243,6 +245,7 @@ int IsAnalogTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *rea
                     addAnalogEndFlag(writebuff, writebuff_pos);
                 }
             }
+            break;
         }
         case 4: // INT
         {
@@ -271,6 +274,7 @@ int IsAnalogTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *rea
                     addAnalogEndFlag(writebuff, writebuff_pos);
                 }
             }
+            break;
         }
         case 7://DINT
         {
@@ -299,6 +303,7 @@ int IsAnalogTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *rea
                     addAnalogEndFlag(writebuff, writebuff_pos);
                 }
             }
+            break;
         }
         case 8://REAL
         {
@@ -327,6 +332,7 @@ int IsAnalogTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *rea
                     addAnalogEndFlag(writebuff, writebuff_pos);
                 }
             }
+            break;
         }
         default:
         {

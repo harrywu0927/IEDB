@@ -4403,6 +4403,10 @@ int readIDBFilesListBySIDandEID(string path, string SID, string EID, vector<pair
     }
     int E_ID = atoi(SIDnum);
 
+    //如果SID比EID大
+    if(S_ID > E_ID)
+        return StatusCode::ERROR_SID_EID_RANGE;
+
     //如果SID比最后一个文件ID大 或者 EID比第一个文件的ID小
     if (S_ID > lastID || E_ID < firstID)
         return StatusCode::DATAFILE_NOT_FOUND;
@@ -4736,6 +4740,10 @@ int readIDBZIPFilesListBySIDandEID(string path, string SID, string EID, vector<p
         }
     }
     int E_ID = atoi(SIDnum);
+
+    //如果SID比EID大
+    if(S_ID > E_ID)
+        return StatusCode::ERROR_SID_EID_RANGE;
 
     //如果SID比最后一个文件ID大 或者 EID比第一个文件的ID小
     if (S_ID > lastID || E_ID < firstID)

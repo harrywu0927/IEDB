@@ -3031,6 +3031,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 // 	// char zeros[10] = {0};
 // 	// memcpy(params.pathCode, zeros, 10);
 // 	DB_QueryByTimespan(&buffer, &params);
+// 	return 0;
 // 	// DB_QueryLastRecords(&buffer, &params);
 // 	// DB_QueryByTimespan_Single(&buffer, &params);
 // 	auto endTime = std::chrono::system_clock::now();
