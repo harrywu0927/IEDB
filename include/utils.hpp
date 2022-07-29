@@ -105,6 +105,7 @@ namespace StatusCode
         VARIABLE_NAME_NOT_INT_CODE = 185, //编码中不包含指定变量名
         MEMORY_INSUFFICIENT = 186,        //内存不足
         BACKUP_BROKEN = 187,              //备份文件损坏
+        ERROR_SID_EID_RANGE = 188,        //SID大于EID
     };
 }
 namespace ValueType
