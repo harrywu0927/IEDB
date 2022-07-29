@@ -1,3 +1,7 @@
+#ifndef _BACKUP_HELPER_H
+#define _BACKUP_HELPER_H
+#endif
+
 #include "utils.hpp"
 #include <string>
 
@@ -9,8 +13,16 @@ using namespace std;
  * 按照字节序依次为：
  *  8字节最近更新的时间戳
  *  8字节文件总数
- *  2字节数据文件夹绝对路径长度 L
- *  L字节路径
+ *  2字节数据文件夹绝对路径长度 P
+ *  P字节路径
+ *
+ * bak文件体格式为：
+ *  8字节pak文件大小
+ *  2字节pak文件路径长度 P
+ *  P字节pak文件路径
+ *  5字节LZMA参数
+ *  8字节压缩后大小 C
+ *  C字节压缩后文件内容
  *
  */
 class BackupHelper
@@ -18,15 +30,15 @@ class BackupHelper
 private:
     string backupPath;
     string dataPath;
-    time_t lastBackupTime;
+    unordered_map<string, time_t> lastBackupTime;
 
 public:
     BackupHelper();
     ~BackupHelper() {}
     int ChangeBackupPath(string path);
     int BackupUpdate();
-    int CreateBackup();
-    int CheckDataToUpdate(vector<string> &files);
+    int CreateBackup(string path);
+    int CheckDataToUpdate(unordered_map<string, vector<string>> &files);
     int DataRecovery();
     int BakRestoration();
     int ReadBakHead(FILE *file, long &timestamp, long &fileNum, string &path)

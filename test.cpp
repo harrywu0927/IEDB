@@ -1,6 +1,7 @@
 #include <iostream>
 #include "include/CassFactoryDB.h"
 #include "include/utils.hpp"
+#include "include/compress/LzmaLib.h"
 // #include <numpy/arrayobject.h>
 #include <string>
 #include <fstream>
@@ -87,7 +88,27 @@ int main()
     // char bool6 = CurrentZipTemplate.schemas[1].second.max[5][0];
     // cout<<bool1<<endl;cout<<bool2<<endl;cout<<bool3<<endl;cout<<bool4<<endl;cout<<bool5<<endl;cout<<bool6<<endl;
     // return 0;
+    FILE *fp = fopen("lib/libCassFactoryDB.dylib", "rb");
+    Byte *buf = new Byte[1024 * 1024 * 10];
+    int ret = 0;
+    int len = 0;
+    while ((ret = fread(buf, 1, 1024 * 1024, fp)) > 0)
+    {
+        len += ret;
+    }
+    fclose(fp);
+    cout << len << endl;
+    Byte *res = new Byte[1024 * 1024 * 10];
+    size_t reslen = 1024 * 1024 * 10, outpropsize = LZMA_PROPS_SIZE;
+    Byte outprops[5];
+    cout << LzmaCompress(res, &reslen, buf, len, outprops, &outpropsize, 5, 1 << 24, 3, 0, 2, 32, 2) << endl;
+    cout << reslen << endl;
+    SizeT uncompressedsize=1024*1024*10;
+    cout << LzmaUncompress(buf, &uncompressedsize, res, &reslen, outprops, LZMA_PROPS_SIZE);
+    delete[] buf;
+    delete[] res;
 
+    return 0;
     int process = 0;
     for (int i = 0; i < 10; i++)
     {
@@ -160,72 +181,6 @@ int main()
     // auto end = std::chrono::system_clock::now();
     // std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
     // // sleep(100);
-    // return 0;
-    // Py_Initialize();
-    // // 指定py文件目录
-    // PyRun_SimpleString("import sys");
-    // PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
-    // PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
-    // PyObject *mymodule2 = PyImport_ImportModule("Statistics");
-    // for (int a = 0; a < 5; a++)
-    // {
-    //     PyObject *arr = PyList_New(100);
-    //     PyObject *lstitem;
-    //     for (int i = 0; i < 100; i++)
-    //     {
-    //         lstitem = PyLong_FromLong(i % 20 == 0 ? rand() % 100 : rand() % 10);
-    //         PyList_SetItem(arr, i, lstitem);
-    //         // PyList_Append(test, lstitem);
-    //     }
-
-    //     PyObject *obj;
-
-    //     // PyObject *pname = Py_BuildValue("s", "testpy");
-
-    //     // PyObject *numpy = PyImport_ImportModule("numpy");
-    //     // PyObject *std = PyObject_GetAttrString(numpy, "fft");
-    //     PyObject *pValue, *pArgs, *pFunc;
-    //     long res = 0;
-    //     if (mymodule != NULL)
-    //     {
-    //         // 从模块中获取函数
-    //         pFunc = PyObject_GetAttrString(mymodule, "Outliers");
-
-    //         if (pFunc && PyCallable_Check(pFunc))
-    //         {
-    //             // 创建参数元组
-    //             pArgs = PyTuple_New(2);
-    //             PyTuple_SetItem(pArgs, 0, arr);
-    //             PyTuple_SetItem(pArgs, 1, PyLong_FromLong(1));
-    //             // 函数执行
-    //             PyObject *ret = PyObject_CallObject(pFunc, pArgs);
-    //             PyObject *item;
-    //             long val;
-    //             int len = PyObject_Size(ret);
-    //             for (int i = 0; i < len; i++)
-    //             {
-    //                 item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
-    //                 val = PyLong_AsLong(item);     //转换为c类型的数据
-    //                 cout << val << " ";
-    //             }
-    //             // res = PyLong_AsLong(PyList_GetItem(pValue, 1));
-    //             // cout << pValue->ob_type->tp_name << endl;
-    //         }
-    //     }
-    // }
-    // Py_Finalize();
-    // return 0;
-    // long timestart = 1763728603642;
-    // DataTypeConverter dt;
-    // char time[8] = {0};
-    // dt.ToLong64Buff(timestart, time);
-    // float f = 31.5;
-    // char ff[4] = {0};
-    // dt.ToFloatBuff(f, ff);
-    // float fff = dt.ToFloat(ff);
-    // char ffff[4] = {0};
-    // dt.ToFloatBuff_m(f, ffff);
-    // float fffff = dt.ToFloat_m(ffff);
     // return 0;
 
     DB_QueryParams params;
@@ -305,155 +260,5 @@ int main()
 
         // free(buffer.buffer);
     }
-    // DB_QueryByFileID(&buffer, &params);
-    return 0;
-    // cout << settings("Pack_Mode") << endl;
-
-    double total = 0;
-    // for (int i = 0; i < 10; i++)
-    // {
-    //     startTime = std::chrono::system_clock::now();
-    //     DB_QueryByTimespan_Old(&buffer, &params);
-
-    //     endTime = std::chrono::system_clock::now();
-    //     std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    //     free(buffer.buffer);
-    //     // cout << buffer.length << endl;
-    //     buffer.length = 0;
-    //     total += (endTime - startTime).count();
-    // }
-    // cout << "使用缓存,不使用多线程的平均查询时间:" << total / 10 << endl;
-    // total = 0;
-    for (int i = 0; i < 10; i++)
-    {
-        startTime = std::chrono::system_clock::now();
-        DB_QueryByTimespan(&buffer, &params);
-
-        endTime = std::chrono::system_clock::now();
-        std::cout << "第" << i + 1 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-        // cout << buffer.length << endl;
-        free(buffer.buffer);
-        buffer.length = 0;
-        total += (endTime - startTime).count();
-    }
-    cout << "使用缓存和单线程的平均查询时间:" << total / 10 << endl;
-    total = 0;
-    return 0;
-    for (int i = 0; i < 10; i++)
-    {
-        startTime = std::chrono::system_clock::now();
-        DB_QueryByTimespan(&buffer, &params);
-
-        endTime = std::chrono::system_clock::now();
-        std::cout << "第" << i + 11 << "次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-        free(buffer.buffer);
-        total += (endTime - startTime).count();
-    }
-    cout << "使用缓存和多线程的平均查询时间:" << total / 10 << endl;
-    return 0;
-    // long count = 0;
-    // DB_GetNormalDataCount(&params, &count);
-    // cout << count << endl;
-    // DB_GetAbnormalDataCount(&params, &count);
-    // cout << count << endl;
-    // sleep(10);
-    // DB_MAX(&buffer, &params);
-    // if (buffer.bufferMalloced)
-    // {
-    //     char buf[buffer.length];
-    //     memcpy(buf, buffer.buffer, buffer.length);
-    //     cout << buffer.length << endl;
-    //     for (int i = 0; i < buffer.length; i++)
-    //     {
-    //         cout << (int)buf[i] << " ";
-    //         if (i % 11 == 0)
-    //             cout << endl;
-    //     }
-
-    //     free(buffer.buffer);
-    // }
-    // // DB_QueryByFileID(&buffer, &params);
-    // return 0;
-
-    // struct tm t;
-    // t.tm_year = atoi("2022") - 1900;
-    // t.tm_mon = atoi("4") - 1;
-    // t.tm_mday = atoi("10");
-    // t.tm_hour = atoi("0");
-    // t.tm_min = atoi("0");
-    // t.tm_sec = atoi("0");
-    // t.tm_isdst = -1; //不设置夏令时
-    // time_t seconds = mktime(&t);
-    // int ms = atoi("0");
-    // long start = seconds * 1000 + ms;
-    // cout<<start<<endl;
-    DB_ZipParams zipParam;
-    zipParam.pathToLine = "jinfei/";
-    zipParam.start = 1648742400000;
-    zipParam.end = 1648828800000;
-    // zipParam.start=1649520000000;
-    // zipParam.end=1649692800000;
-    zipParam.fileID = "99";
-    // DB_ZipSwitchFileByTimeSpan(&zipParam);
-    // DB_ReZipSwitchFileByTimeSpan(&zipParam);
-    // DB_ZipSwitchFileByFileID(&zipParam);
-    // DB_ReZipSwitchFileByFileID(&zipParam);
-    // DB_ZipAnalogFileByTimeSpan(&zipParam);
-    // DB_ReZipAnalogFileByTimeSpan(&zipParam);
-    // DB_ZipAnalogFileByFileID(&zipParam);
-    // DB_ReZipAnalogFileByFileID(&zipParam);
-    // DB_ZipFileByTimeSpan(&zipParam);
-    // DB_ReZipFileByTimeSpan(&zipParam);
-    // DB_ZipFileByFileID(&zipParam);
-    // DB_ReZipFileByFileID(&zipParam);
-    // char test[zipParam.bufferLen];
-    // memcpy(test,zipParam.buffer,zipParam.bufferLen);
-    // cout<<zipParam.bufferLen<<endl;
-    // free(zipParam.buffer);
-
-    // long len;
-    // DB_GetFileLengthByPath("/jinfei91_2022-4-1-19-28-49-807.idb",&len);
-    // cout<<len<<endl;
-    // char buff[len];
-    // DB_OpenAndRead("/jinfei91_2022-4-1-19-28-49-807.idb",buff);
-    // DB_ZipRecvAnalogFile("jinfei","jinfei",buff,&len);
-    // DB_ZipRecvSwitchBuff("jinfei","jinfei",buff,&len);
-    // DB_ZipRecvBuff("jinfei","jinfei",buff,&len);
-    // cout<<len<<endl;
-
-    // DB_ZipSwitchFile("jinfei","jinfei");
-    // DB_ReZipSwitchFile("jinfei","jinfei");
-    // DB_ZipAnalogFile("jinfei","jinfei");
-    // DB_ReZipAnalogFile("jinfei","jinfei");
-    // DB_ZipFile("jinfei", "jinfei");
-    // DB_ReZipFile("jinfei","jinfei");
-
-    // DB_DataBuffer buffer;
-    // buffer.savePath = "jinfei";
-    // buffer.length = 11;
-    // char buf[11] = {'3'};
-    // buffer.buffer = buf;
-    // cout<<"test"<<endl;
-    // // thread th(tk,1);
-    // // th.join();
-    // for (int i = 0; i < 20; i++)
-    // {
-    //     char type = 1;
-    //     memcpy(buffer.buffer,&type,1);
-    //     DB_InsertRecord(&buffer, 1);
-    //     usleep(1000000);
-    // }
-
-    // DB_ReadFile(&buffer);
-
-    // char value[4];
-    // int num = 12000;
-    // DataTypeConverter dc;
-    // dc.ToUInt32Buff_m(num, value);
-    // cout << num << endl;
-    // char value1[2];
-    // int num1 = 45536;
-    // dc.ToUInt16Buff_m(num1, value1);
-    // cout << num1 << endl;
     return 0;
 }

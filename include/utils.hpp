@@ -35,6 +35,7 @@
 #include <chrono>
 #include <stdarg.h>
 #include <queue>
+#include <LzmaLib.h>
 using namespace std;
 #ifdef __linux__
 #include <experimental/filesystem>
