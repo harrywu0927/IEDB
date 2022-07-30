@@ -39,8 +39,8 @@ public:
     int BackupUpdate();
     int CreateBackup(string path);
     int CheckDataToUpdate(unordered_map<string, vector<string>> &files);
-    int DataRecovery();
-    int BakRestoration();
+    int DataRecovery(string path);
+    int BakRestoration(FILE *file, size_t &pos, size_t bodyPos = 0);
     int ReadBakHead(FILE *file, long &timestamp, long &fileNum, string &path)
     {
         char h[18];

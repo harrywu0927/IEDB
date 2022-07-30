@@ -286,18 +286,23 @@ int BackupHelper::BackupUpdate()
             long scanedFile = 0;
             long pakLen;
             unsigned short pakPathLen;
-            while (curPos < filesize - 10 && scanedFile < filenum)
+            size_t compressedSize;
+            while (curPos < filesize - 23 && scanedFile < filenum)
             {
                 lastPos = curPos;
                 fread(&pakLen, 8, 1, file);
                 fread(&pakPathLen, 2, 1, file);
-                if (fseek(file, pakPathLen, SEEK_CUR) != 0 || fseek(file, pakLen, SEEK_CUR) != 0)
+                fseek(file, pakPathLen + 5, SEEK_CUR);
+                fread(&compressedSize, 8, 1, file);
+
+                if (fseek(file, compressedSize, SEEK_CUR) != 0)
                 {
                     /* File pointer exceeded the end of file */
-                    fclose(file);
-                    cout << "Failed to rollback, the bak file may be maliciously modified.\n";
-                    throw StatusCode::UNKNWON_DATAFILE;
-                    return StatusCode::UNKNWON_DATAFILE;
+                    break;
+                    // fclose(file);
+                    // cout << "Failed to rollback, the bak file may be maliciously modified.\n";
+                    // throw StatusCode::UNKNWON_DATAFILE;
+                    // return StatusCode::UNKNWON_DATAFILE;
                 }
                 curPos = ftell(file);
                 scanedFile++;
@@ -390,9 +395,9 @@ int BackupHelper::BackupUpdate()
     return err;
 }
 
-int main()
-{
-    BackupHelper helper;
-    helper.BackupUpdate();
-    return 0;
-}
+// int main()
+// {
+//     BackupHelper helper;
+//     helper.BackupUpdate();
+//     return 0;
+// }

@@ -64,6 +64,8 @@ void checkSettings()
 
 int main()
 {
+    cout<<stol("12345-2335");
+    return 0;
     DB_ZipNodeParams param;
     param.pathToLine = "arrTest";
     param.valueName = "DB1";
