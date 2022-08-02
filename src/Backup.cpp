@@ -2,33 +2,44 @@
 
 BackupHelper::BackupHelper()
 {
-    backupPath = settings("Backup_Path");
-    dataPath = settings("Filename_Label");
-    if (!fs::exists(backupPath))
-        fs::create_directories(backupPath);
-    vector<string> dirs;
-    readAllDirs(dirs, backupPath);
-    for (auto &dir : dirs)
+    try
     {
-        vector<string> bakfiles;
-        readFiles(bakfiles, dir, ".bak", true);
-        lastBackupTime[dir] = 0;
-        /* Check the maximum of last write time in all bak files */
-        for (auto &bak : bakfiles)
+        backupPath = settings("Backup_Path");
+        dataPath = settings("Filename_Label");
+        if (!fs::exists(backupPath))
+            fs::create_directories(backupPath);
+        vector<string> dirs;
+        readAllDirs(dirs, backupPath);
+        for (auto &dir : dirs)
         {
-            auto ftime = fs::last_write_time(bak);
-            time_t timestamp = decltype(ftime)::clock::to_time_t(ftime);
-            if (timestamp > lastBackupTime[dir])
+            vector<string> bakfiles;
+            readFiles(bakfiles, dir, ".bak", true);
+            lastBackupTime[dir] = 0;
+            /* Check the maximum of last write time in all bak files */
+            for (auto &bak : bakfiles)
             {
-                lastBackupTime[dir] = timestamp;
+                auto ftime = fs::last_write_time(bak);
+                time_t timestamp = decltype(ftime)::clock::to_time_t(ftime);
+                if (timestamp > lastBackupTime[dir])
+                {
+                    lastBackupTime[dir] = timestamp;
+                }
             }
         }
+        logger = spdlog::get("backuplog.log");
+        if (logger == nullptr)
+            logger = spdlog::rotating_logger_mt("backup_logger", "backuplog.log", 1024 * 1024 * 5, 1);
+        // logger->info("Backup initilization succeed");
+        spdlog::info("Backup initilization succeed");
     }
-    logger = spdlog::get("backuplog.log");
-    if (logger == nullptr)
-        logger = spdlog::rotating_logger_mt("backup_logger", "backuplog.log", 1024 * 1024 * 5, 1);
-    logger->info("Backup initilization succeed");
-    spdlog::info("Backup initilization succeed");
+    catch (fs::filesystem_error &e)
+    {
+        spdlog::critical("Backup initilization filed: {}", e.what());
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << '\n';
+    }
 }
 
 /**

@@ -75,4 +75,4 @@ src/Inseert
 *.xlsx
 *.bak
 src/Recovery
-backuplog.log
+*.log

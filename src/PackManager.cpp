@@ -41,8 +41,11 @@ PackManager::PackManager(long memcap) //初始化allPacks
                         {
                             long start = atol(timespan[0].c_str());
                             long end = atol(timespan[1].c_str());
-                            if(end < start)
+                            if (end < start)
+                            {
+                                RuntimeLogger.warn("Package {} has invalid time range. It will be ignored.", dir_entry.path().string());
                                 continue;
+                            }
                             allPacks[pathToLine].push_back(make_pair(dirWithoutLabel, make_tuple(start, end)));
                         }
                     }
@@ -55,54 +58,6 @@ PackManager::PackManager(long memcap) //初始化allPacks
         }
     }
 
-    // for (auto &d : dirs)
-    // {
-    //     DIR *dir = opendir(d.c_str());
-    //     struct dirent *ptr;
-    //     if (dir == NULL)
-    //         continue;
-    //     while ((ptr = readdir(dir)) != NULL)
-    //     {
-    //         if (ptr->d_name[0] == '.')
-    //             continue;
-    //         if (ptr->d_type == 8)
-    //         {
-    //             string fileName = ptr->d_name;
-    //             string dirWithoutPrefix = d + "/" + fileName;
-    //             string fileLabel = settings("Filename_Label");
-    //             while (fileLabel[fileLabel.length() - 1] == '/')
-    //             {
-    //                 fileLabel.pop_back();
-    //             }
-    //             for (int i = 0; i <= fileLabel.length(); i++)
-    //             {
-    //                 dirWithoutPrefix.erase(dirWithoutPrefix.begin());
-    //             }
-    //             string pathToLine = DataType::splitWithStl(dirWithoutPrefix, "/")[0];
-    //             if (fileName.find(".pak") != string::npos)
-    //             {
-    //                 string str = d;
-    //                 for (int i = 0; i <= settings("Filename_Label").length(); i++)
-    //                 {
-    //                     str.erase(str.begin());
-    //                 }
-    //                 string tmp = fileName;
-    //                 while (tmp.back() == '/')
-    //                     tmp.pop_back();
-    //                 vector<string> vec = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
-    //                 string packName = vec[vec.size() - 1];
-    //                 vector<string> timespan = DataType::StringSplit(const_cast<char *>(packName.c_str()), "-");
-    //                 if (timespan.size() > 0)
-    //                 {
-    //                     long start = atol(timespan[0].c_str());
-    //                     long end = atol(timespan[1].c_str());
-    //                     allPacks[pathToLine].push_back(make_pair(str + "/" + fileName, make_tuple(start, end)));
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     closedir(dir);
-    // }
     for (auto &iter : allPacks)
     {
         sort(iter.second.begin(), iter.second.end(),

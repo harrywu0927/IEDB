@@ -43,7 +43,7 @@ void FileIDManager::GetSettings()
     string contents(buffer.str());
     neb::CJsonObject tmp(contents);
     settings = tmp;
-    strcpy(Label, settings("Filename_Label").c_str());
+    // strcpy(Label, settings("Filename_Label").c_str());
 }
 neb::CJsonObject FileIDManager::GetSetting()
 {
@@ -52,7 +52,7 @@ neb::CJsonObject FileIDManager::GetSetting()
     buffer << t.rdbuf();
     string contents(buffer.str());
     neb::CJsonObject tmp(contents);
-    strcpy(Label, settings("Filename_Label").c_str());
+    // strcpy(Label, settings("Filename_Label").c_str());
     // pthread_create(&settingsWatcher, NULL, checkSettings, NULL);
     // settingsWatcher = thread(checkSettings);
     // settingsWatcher.detach();

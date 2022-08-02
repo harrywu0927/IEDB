@@ -2517,7 +2517,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 					}
 
 					//获取数据的偏移量和字节数
-					long bytes = 0, pos = 0;		 //单个变量
+					// long bytes = 0, pos = 0;		 //单个变量
 					vector<long> posList, bytesList; //多个变量
 					long copyBytes = 0;
 					int err;
@@ -2535,13 +2535,6 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 						buffer->length = 0;
 						IOBusy = false;
 						return err;
-					}
-					if (len < pos)
-					{
-						buffer->buffer = NULL;
-						buffer->bufferMalloced = 0;
-						IOBusy = false;
-						return StatusCode::UNKNWON_DATAFILE;
 					}
 
 					//开始拷贝数据
@@ -2986,70 +2979,70 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 	IOBusy = false;
 	return StatusCode::DATAFILE_NOT_FOUND;
 }
-// int main()
-// {
-// 	// Py_Initialize();
-// 	DataTypeConverter converter;
-// 	DB_QueryParams params;
-// 	params.pathToLine = "JinfeiSeven";
-// 	params.fileID = "123456";
-// 	// params.fileIDend = "300000";
-// 	params.fileIDend = NULL;
-// 	char code[10];
-// 	code[0] = (char)0;
-// 	code[1] = (char)1;
-// 	code[2] = (char)0;
-// 	code[3] = (char)0;
-// 	code[4] = 0;
-// 	// code[4] = 'R';
-// 	code[5] = (char)0;
-// 	code[6] = 0;
-// 	code[7] = (char)0;
-// 	code[8] = (char)0;
-// 	code[9] = (char)0;
-// 	params.pathCode = code;
-// 	// params.valueName = "S1ON,S1OFF";
-// 	params.valueName = NULL;
-// 	params.start = 1553728593562;
-// 	params.end = 1751908603642;
-// 	// params.end = 1651894834176;
-// 	params.order = DISTINCT;
-// 	params.sortVariable = "S1ON";
-// 	params.compareType = CMP_NONE;
-// 	params.compareValue = "100";
-// 	params.compareVariable = "S1ON";
-// 	params.queryType = TIMESPAN;
-// 	params.byPath = 1;
-// 	params.queryNums = 11;
-// 	DB_DataBuffer buffer;
-// 	buffer.savePath = "/";
-// 	// cout << settings("Pack_Mode") << endl;
-// 	// vector<pair<string, long>> files;
-// 	// readDataFilesWithTimestamps("", files);
-// 	// Packer::Pack("/",files);
-// 	auto startTime = std::chrono::system_clock::now();
-// 	// char zeros[10] = {0};
-// 	// memcpy(params.pathCode, zeros, 10);
-// 	DB_QueryByTimespan(&buffer, &params);
-// 	return 0;
-// 	// DB_QueryLastRecords(&buffer, &params);
-// 	// DB_QueryByTimespan_Single(&buffer, &params);
-// 	auto endTime = std::chrono::system_clock::now();
-// 	// free(buffer.buffer);
-// 	std::cout << "第一次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+int main()
+{
+	// Py_Initialize();
+	DataTypeConverter converter;
+	DB_QueryParams params;
+	params.pathToLine = "JinfeiTem";
+	params.fileID = "60";
+	// params.fileIDend = "300000";
+	params.fileIDend = NULL;
+	char code[10];
+	code[0] = (char)0;
+	code[1] = (char)0;
+	code[2] = (char)0;
+	code[3] = (char)0;
+	code[4] = 0;
+	// code[4] = 'R';
+	code[5] = (char)0;
+	code[6] = 0;
+	code[7] = (char)0;
+	code[8] = (char)0;
+	code[9] = (char)0;
+	params.pathCode = code;
+	// params.valueName = "S1ON,S1OFF";
+	params.valueName = "A1RTem";
+	params.start = 1553728593562;
+	params.end = 1751908603642;
+	// params.end = 1651894834176;
+	params.order = ODR_NONE;
+	params.sortVariable = "S1ON";
+	params.compareType = CMP_NONE;
+	params.compareValue = "100";
+	params.compareVariable = "S1ON";
+	params.queryType = TIMESPAN;
+	params.byPath = 0;
+	params.queryNums = 1;
+	DB_DataBuffer buffer;
+	buffer.savePath = "/";
+	// cout << settings("Pack_Mode") << endl;
+	// vector<pair<string, long>> files;
+	// readDataFilesWithTimestamps("", files);
+	// Packer::Pack("/",files);
+	auto startTime = std::chrono::system_clock::now();
+	// char zeros[10] = {0};
+	// memcpy(params.pathCode, zeros, 10);
+	DB_QueryByFileID(&buffer, &params);
+	// return 0;
+	// DB_QueryLastRecords(&buffer, &params);
+	// DB_QueryByTimespan_Single(&buffer, &params);
+	auto endTime = std::chrono::system_clock::now();
+	// free(buffer.buffer);
+	std::cout << "第一次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
 
-// 	if (buffer.bufferMalloced)
-// 	{
-// 		cout << buffer.length << endl;
-// 		for (int i = 0; i < buffer.length; i++)
-// 		{
-// 			cout << (int)*(char *)(buffer.buffer + i) << " ";
-// 			if (i % 11 == 0)
-// 				cout << endl;
-// 		}
+	if (buffer.bufferMalloced)
+	{
+		cout << buffer.length << endl;
+		for (int i = 0; i < buffer.length; i++)
+		{
+			cout << (int)*(char *)(buffer.buffer + i) << " ";
+			if (i % 11 == 0)
+				cout << endl;
+		}
 
-// 		free(buffer.buffer);
-// 	}
-// 	// buffer.buffer = NULL;
-// 	return 0;
-// }
+		free(buffer.buffer);
+	}
+	// buffer.buffer = NULL;
+	return 0;
+}

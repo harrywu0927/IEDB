@@ -97,7 +97,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
             DB_DeleteFile(const_cast<char *>(buffer.savePath));
             if (buffer.length != 0)
             {
-                if (file.first.find(".idbzip") == string::npos) //未压缩
+                if (fs::path(file.first).extension() == ".idb") //未压缩
                 {
                     char type = 0;
                     memcpy(packBuffer + cur++, &type, 1);
@@ -131,6 +131,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
     DB_Close(fp);
     packManager.allPacks[pathToLine].push_back({pakPath, make_tuple(start, end)});
     packMutex.unlock();
+    RuntimeLogger.info("Package {} completed, {} files were packed", packageName, filesNum);
     IOBusy = false;
     return 0;
 }
@@ -189,7 +190,10 @@ int Packer::RePack(string pathToLine, int packThres)
     {
         string finalPath = settings("Filename_Label") + (settings("Filename_Label").back() == '/' ? pack.first : ("/" + pack.first));
         if (stat(finalPath.c_str(), &fileInfo) == -1)
+        {
+            RuntimeLogger.error("Filed to get the size of file {} : {}", finalPath, strerror(errno));
             continue;
+        }
 
         cursize += fileInfo.st_size;
         curPacks.push_back(pack);
@@ -255,6 +259,7 @@ int Packer::RePack(string pathToLine, int packThres)
             packManager.AddPack(pathToLine, newPackPath, newStart, newEnd);
             delete[] buffer;
             lastTemName = "";
+            RuntimeLogger.info("Repacked package {} completed", newPackPath);
             // cursize = 0;
             // curPacks.clear();
         }

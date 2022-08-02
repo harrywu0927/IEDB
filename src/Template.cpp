@@ -690,17 +690,17 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char *buff, vector<lon
         if (codeEquals)
         {
             int num = 1;
-            // if (schema.second.isTimeseries)
-            // {
-            //     if (schema.second.isArray) //暂不支持图片的时间序列
-            //     {
-            //         num = schema.second.arrayLen * schema.second.tsLen;
-            //     }
-            //     else
-            //     {
-            //         num = schema.second.tsLen;
-            //     }
-            // }
+            if (schema.second.isTimeseries)
+            {
+                if (schema.second.isArray) //暂不支持图片的时间序列
+                {
+                    num = schema.second.arrayLen * schema.second.tsLen;
+                }
+                else
+                {
+                    num = schema.second.tsLen;
+                }
+            }
             if (schema.second.isArray)
             {
                 if (schema.second.valueType == ValueType::IMAGE)

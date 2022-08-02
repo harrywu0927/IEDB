@@ -388,6 +388,7 @@ int DB_CreateDirectory(char path[])
     catch (const std::exception &e)
     {
         std::cerr << e.what() << '\n';
+        RuntimeLogger.error("Failed to create directory {}", path);
         return errno;
     }
     return 0;
