@@ -147,6 +147,11 @@ int BackupHelper::ChangeBackupPath(string path)
         if (!fs::exists(path))
             fs::create_directories(path);
     }
+    catch (fs::filesystem_error &e)
+    {
+        std::cerr << e.what() << '\n';
+        return -1;
+    }
     catch (const std::exception &e)
     {
         std::cerr << e.what() << '\n';

@@ -2562,9 +2562,9 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 					long lineCur = 0;
 					for (int i = 0; i < bytesList.size(); i++)
 					{
-						long curBytes = typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i]; //本次写字节数
-						memcpy(data + startPos + lineCur, buff + posList[i], curBytes);
-						lineCur += curBytes;
+						// long curBytes = typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i]; //本次写字节数
+						memcpy(data + startPos + lineCur, buff + posList[i], bytesList[i]);
+						lineCur += bytesList[i];
 					}
 					buffer->buffer = data;
 					buffer->length = copyBytes + startPos;
@@ -3034,7 +3034,7 @@ int main()
 	if (buffer.bufferMalloced)
 	{
 		cout << buffer.length << endl;
-		for (int i = 0; i < buffer.length; i++)
+		for (int i = 0; i < 50; i++)
 		{
 			cout << (int)*(char *)(buffer.buffer + i) << " ";
 			if (i % 11 == 0)
