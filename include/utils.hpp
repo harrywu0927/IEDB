@@ -38,6 +38,7 @@
 #include <LzmaLib.h>
 #include <spdlog/spdlog.h>
 #include "spdlog/sinks/rotating_file_sink.h"
+#include <Logger.h>
 
 using namespace std;
 #ifdef __linux__
@@ -830,7 +831,7 @@ public:
     }
 };
 
-static char Label[100] = "./";
+// static char Label[100] = "./";
 
 //负责数据文件的打包，打包后的数据将存为一个文件，文件名为时间段.pak，
 //格式为数据包头 + 每8字节时间戳，接20字节文件ID，接1字节表示是否为压缩文件(1:完全压缩，2:不完全压缩，0:非压缩），

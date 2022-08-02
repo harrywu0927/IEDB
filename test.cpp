@@ -67,6 +67,7 @@ int main()
 {
     spdlog::info("welcome");
     spdlog::critical("critical");
+    spdlog::warn("warning");
     spdlog::error("error");
     return 0;
     DB_ZipNodeParams param;

@@ -67,6 +67,8 @@ int BackupHelper::DataRecovery(string path)
         FILE *backup;
         if (!(backup = fopen(selectedBackup.c_str(), "r+b")))
         {
+            spdlog::critical("Error when opening {} : {}", selectedBackup, strerror(errno));
+            logger->critical("Error when opening {} : {}", selectedBackup, strerror(errno));
             return errno;
         }
         long filenum;
@@ -85,6 +87,7 @@ int BackupHelper::DataRecovery(string path)
         {
             fclose(backup);
             logger->critical("Backup file's timestamp exceeded current time, it may have broken:{}", selectedBackup);
+            spdlog::critical("Backup file's timestamp exceeded current time, it may have broken:{}", selectedBackup);
             return StatusCode::UNKNWON_DATAFILE;
         }
         size_t filesize = fs::file_size(selectedBackup);
@@ -96,7 +99,6 @@ int BackupHelper::DataRecovery(string path)
         size_t compressedSize;
         if (string(check) != "checkpoint")
         {
-            // cout << "Backup file broken, trying to rollback to previous checkpoint...\n";
             spdlog::warn("Backup file {} broken, trying to rollback to previous checkpoint...", selectedBackup);
             logger->warn("Backup file {} broken, trying to rollback to previous checkpoint...", selectedBackup);
             size_t prevPos = curPos;
@@ -176,13 +178,11 @@ int BackupHelper::DataRecovery(string path)
     }
     catch (bad_alloc &e)
     {
-        // cout << "bad alloc when uncompressing\n";
         spdlog::critical("bad alloc when uncompressing");
         logger->critical("bad alloc when uncompressing");
     }
     catch (int &e)
     {
-        // cout << "error occured when uncompressing: code " << e << '\n';
         spdlog::error("Error occured when uncompressing: code{}", e);
         logger->error("Error occured when uncompressing: code{}", e);
     }
@@ -201,11 +201,13 @@ int BackupHelper::DataRecovery(string path)
  */
 int BackupHelper::RecoverAll(string path)
 {
+    if (!fs::exists(path))
+        fs::create_directories(path);
     if (!fs::is_directory(path))
         return -1;
     string dir = path;
     removeFilenameLabel(dir);
-    dir += backupPath;
+    dir = backupPath + "/" + dir;
     vector<string> bakFiles;
     readFiles(bakFiles, dir, ".bak");
     try
@@ -247,7 +249,6 @@ int BackupHelper::RecoverAll(string path)
             size_t compressedSize;
             if (string(check) != "checkpoint")
             {
-                // cout << "Backup file broken, trying to rollback to previous checkpoint...\n";
                 spdlog::warn("Backup file {} broken, trying to rollback to previous checkpoint...", bak);
                 logger->warn("Backup file {} broken, trying to rollback to previous checkpoint...", bak);
                 size_t prevPos = curPos;
@@ -271,7 +272,6 @@ int BackupHelper::RecoverAll(string path)
                 fwrite("checkpoint", 10, 1, backup);
                 fflush(backup);
                 fs::resize_file(bak, prevPos + 10);
-                // cout << "Rollback completed, " << filenum - scanedFile << " file(s) lost.\n";
                 spdlog::warn("Rollback completed, {} file(s) lost.", filenum - scanedFile);
                 logger->warn("Rollback completed, {} file(s) lost.", filenum - scanedFile);
                 filenum = scanedFile;
@@ -299,7 +299,7 @@ int BackupHelper::RecoverAll(string path)
                     throw err;
                 }
                 FILE *pack;
-                if (!(pack = fopen(path.c_str(), "wb")))
+                if (!(pack = fopen(string(pakPath).c_str(), "wb")))
                 {
                     delete[] uncompressed;
                     delete[] compressed;
@@ -308,7 +308,6 @@ int BackupHelper::RecoverAll(string path)
                 }
                 fwrite(uncompressed, 1, pakLen, pack);
                 fclose(pack);
-                // cout << pakPath << "recover success\n";
                 spdlog::info("{} recover success", string(pakPath));
                 logger->info("{} recover success", string(pakPath));
             }
@@ -317,13 +316,11 @@ int BackupHelper::RecoverAll(string path)
     }
     catch (bad_alloc &e)
     {
-        // cout << "bad alloc when uncompressing\n";
         spdlog::critical("Memory allocation failed when compressing data!");
         logger->critical("Memory allocation failed when compressing data!");
     }
     catch (int &e)
     {
-        // cout << "error occured when uncompressing: code " << e << '\n';
         spdlog::error("Error occured when uncompressing: code{}", e);
         logger->error("Error occured when uncompressing: code{}", e);
         return e;
@@ -340,9 +337,10 @@ int DB_Recovery(const char *path)
     return fs::is_directory(path) ? backupHelper.RecoverAll(path) : backupHelper.DataRecovery(path);
 }
 
-int main()
-{
-    // BackupHelper helper;
-    // helper.DataRecovery("testIEDB/JinfeiSixteen/1650140143507-1650150945955.pak");
-    return 0;
-}
+// int main()
+// {
+//     // BackupHelper helper;
+//     // helper.DataRecovery("testIEDB/JinfeiSixteen/1650140143507-1650150945955.pak");
+//     backupHelper.RecoverAll("testIEDB/JinfeiSixteen");
+//     return 0;
+// }

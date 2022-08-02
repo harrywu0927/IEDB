@@ -13,6 +13,7 @@ queue<string> fileQueue = InitFileQueue();
 unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
 PackManager packManager(atoi(settings("Pack_Cache_Size").c_str()) * 1024);
 BackupHelper backupHelper;
+Logger RuntimeLogger("runtime");
 
 /**
  * @brief 调取在python脚本中定义的函数，并获取返回结果

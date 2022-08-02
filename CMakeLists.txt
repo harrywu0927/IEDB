@@ -31,6 +31,8 @@ ELSE()
     # LINK_LIBRARIES(/opt/homebrew/Cellar/python@3.9/3.9.10/Frameworks/Python.framework/Versions/3.9/lib/libpython3.9.dylib)
     INCLUDE_DIRECTORIES(/opt/homebrew/Cellar/numpy/1.22.2/lib/python3.9/site-packages/numpy/core/include)
     INCLUDE_DIRECTORIES(/opt/homebrew/Cellar/python@3.9/3.9.10/Frameworks/Python.framework/Versions/3.9/include/python3.9)
+
+    # link_libraries(${CMAKE_SOURCE_DIR}/lib/libspdlog.a)
     ADD_LIBRARY(CassFactoryDB SHARED ${SOURCES} ${LZMA})
 
     # IF(!LIBLZMA_FOUND)
@@ -39,7 +41,7 @@ ELSE()
     # ADD_LIBRARY(CassFactoryDB SHARED ${SOURCES})
     # target_link_libraries(CassFactoryDB ${LIBLZMA_LIBRARIES})
     # ENDIF(!LIBLZMA_FOUND)
-    target_link_libraries(CassFactoryDB /opt/homebrew/Cellar/python@3.9/3.9.10/Frameworks/Python.framework/Versions/3.9/lib/libpython3.9.dylib)
+    TARGET_LINK_LIBRARIES(CassFactoryDB /opt/homebrew/Cellar/python@3.9/3.9.10/Frameworks/Python.framework/Versions/3.9/lib/libpython3.9.dylib)
 
     # ADD_EXECUTABLE(test.o test.cpp)
     # TARGET_LINK_LIBRARIES(test.o CassFactoryDB pthread python3.9)
