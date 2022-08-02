@@ -65,11 +65,10 @@ void checkSettings()
 
 int main()
 {
-    spdlog::info("welcome");
-    spdlog::critical("critical");
-    spdlog::warn("warning");
-    spdlog::error("error");
-    return 0;
+    // spdlog::info("welcome");
+    // spdlog::critical("critical");
+    // spdlog::error("error");
+    // return 0;
     DB_ZipNodeParams param;
     param.pathToLine = "arrTest";
     param.valueName = "DB1";
@@ -85,7 +84,23 @@ int main()
     param.maxValue = "-600.5 -700.5 -800.5 -900.5 -1000.5";
     param.minValue = "-1100.5 -1200.5 -1300.5 -1400.5 -1500.5";
     // DB_AddNodeToZipSchema(&param);
-    DB_DeleteNodeToZipSchema(&param);
+    // DB_DeleteNodeToZipSchema(&param);
+    DB_ZipNodeParams newParam;
+    newParam.pathToLine = "dsfsf";
+    newParam.newPath = "newArrTest";
+    newParam.valueName = "DB77";
+    newParam.valueType = 3;
+    newParam.isTS = 0;
+    newParam.tsLen = 6;
+    newParam.isArrary = 0;
+    newParam.arrayLen = 10;
+    //char a[4] = {'1','2','0',0};
+    newParam.maxValue = "999";
+    newParam.minValue = "98";
+    newParam.standardValue = "80";
+    newParam.tsSpan = 20000;
+    newParam.hasTime = 0;
+    DB_UpdateNodeToZipSchema(&param, &newParam);
     return 0;
     // DB_LoadZipSchema("arrTest");
     // DataTypeConverter dt;
@@ -174,23 +189,20 @@ int main()
 
     // // cout << mypath.filename() / "sdf.fe" << endl;
     // return 0;
+    
     // int (*M)[10] = new int[10][10];
-    char(*maxValue)[10];
-    maxValue = new char[10][10];
-    // char** maxValue;
-    // maxValue = new char*[1];
-    // for(int i=0;i<1;i++)
-    //     maxValue[i] = new char[10];
-    char max[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
-    char min[10] = {'9', '8', '7', '6', '5', '4', '3', '2', '1', '0'};
-    memcpy(maxValue[1], min, 10);
-    memcpy(maxValue[0], max, 10);
-    for (int i = 0; i < 10; i++)
-        cout << maxValue[0][i] << endl;
-    for (int i = 0; i < 10; i++)
-        cout << maxValue[1][i] << endl;
-    delete[] maxValue;
-    return 0;
+    // char(*maxValue)[10];
+    // maxValue = new char[10][10];
+    // char max[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+    // char min[10] = {'9', '8', '7', '6', '5', '4', '3', '2', '1', '0'};
+    // memcpy(maxValue[1], min, 10);
+    // memcpy(maxValue[0], max, 10);
+    // for (int i = 0; i < 10; i++)
+    //     cout << maxValue[0][i] << endl;
+    // for (int i = 0; i < 10; i++)
+    //     cout << maxValue[1][i] << endl;
+    // delete[] maxValue;
+    // return 0;
 
     // DB_DataBuffer dbf;
     // dbf.savePath = "JinfeiSeven/JinfeiSeven1527050_2022-5-12-18-10-35-620.idb";
