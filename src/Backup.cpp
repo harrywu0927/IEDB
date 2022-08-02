@@ -24,6 +24,11 @@ BackupHelper::BackupHelper()
             }
         }
     }
+    logger = spdlog::get("backuplog.log");
+    if (logger == nullptr)
+        logger = spdlog::rotating_logger_mt("backup_logger", "backuplog.log", 1024 * 1024 * 5, 1);
+    logger->info("Backup initilization succeed");
+    spdlog::info("Backup initilization succeed");
 }
 
 /**
@@ -36,14 +41,14 @@ BackupHelper::BackupHelper()
 int WritePacks(vector<string> &paks, FILE *file)
 {
     int err = 0;
-    char *writeBuffer = new char[WRITE_BUFFER_SIZE]; // 20MB
+    char *writeBuffer = new char[WRITE_BUFFER_SIZE];
     char *readBuffer = new char[READ_BUFFER_SIZE];
     setvbuf(file, writeBuffer, _IOFBF, WRITE_BUFFER_SIZE); //设置写缓冲
     for (auto &pak : paks)
     {
+        FILE *pakfile;
         try
         {
-            FILE *pakfile;
             if (!(pakfile = fopen(pak.c_str(), "rb")))
             {
                 return err;
@@ -60,16 +65,17 @@ int WritePacks(vector<string> &paks, FILE *file)
             fwrite(pak.c_str(), pakPathLen, 1, file);
 
             /* Compress the content of pack using LZMA */
-            Byte *pakBuffer = new Byte[paklen];
+            Byte *pakBuffer = nullptr;
+            pakBuffer = new Byte[paklen];
             int readlen = 0;
             long pakpos = 0;
             while ((readlen = fread(readBuffer, 1, READ_BUFFER_SIZE, pakfile)) > 0)
             {
-                // DB_Write((long)file, readBuffer, readlen);
                 memcpy(pakBuffer + pakpos, readBuffer, readlen);
                 pakpos += readlen;
             }
-            Byte *compressedBuffer = new Byte[paklen];
+            Byte *compressedBuffer = nullptr;
+            compressedBuffer = new Byte[paklen];
             size_t compressedLen = paklen, outpropsSize = LZMA_PROPS_SIZE;
             Byte outprops[5];
             if ((err = LzmaCompress(compressedBuffer, &compressedLen, pakBuffer, paklen, outprops, &outpropsSize, 5, 1 << 24, 3, 0, 2, 3, 2)) != 0)
@@ -82,21 +88,33 @@ int WritePacks(vector<string> &paks, FILE *file)
             fwrite(&compressedLen, sizeof(compressedLen), 1, file);
             fwrite(compressedBuffer, compressedLen, 1, file);
         }
-        catch (int &e)
+        catch (bad_alloc &e)
         {
+            fclose(pakfile);
             delete[] writeBuffer;
             delete[] readBuffer;
+            backupHelper.logger->critical("Memory allocation failed when compressing data!");
+            spdlog::critical("Memory allocation failed when compressing data!");
             throw e;
-            return e;
+        }
+        catch (int &e)
+        {
+            fclose(pakfile);
+            delete[] writeBuffer;
+            delete[] readBuffer;
+            backupHelper.logger->error("Failed to uncompress data, error code {}", e);
+            spdlog::error("Error occured when uncompressing: code{}", e);
+            throw e;
         }
         catch (std::exception &e)
         {
+            fclose(pakfile);
             cerr << e.what() << endl;
             delete[] writeBuffer;
             delete[] readBuffer;
             throw e;
-            return -1;
         }
+        fclose(pakfile);
     }
     fwrite("checkpoint", 10, 1, file); //检查点
 
@@ -125,8 +143,18 @@ int BackupHelper::ChangeBackupPath(string path)
     }
 
     string cmd = "mv " + backupPath + "/* " + path + "/";
+    logger->info("Executing command: {}", cmd);
+    spdlog::info("Executing command: {}", cmd);
     int err = system(cmd.c_str());
-    backupPath = path;
+    if (err == 0)
+    {
+        spdlog::info("Backup path changed from {} to {}", backupPath, path);
+        logger->info("Backup path changed from {} to {}", backupPath, path);
+        backupPath = path;
+    }
+    else
+        logger->error("Faile to change backup path to {}, error code : {}", path, err);
+
     return err;
 }
 
@@ -167,6 +195,8 @@ int BackupHelper::CheckDataToUpdate(unordered_map<string, vector<string>> &files
     catch (const std::exception &e)
     {
         std::cerr << e.what() << '\n';
+        spdlog::error("Error when checking data to update: {}", e.what());
+        logger->error("Error when checking data to update: {}", e.what());
     }
     return 0;
 }
@@ -200,7 +230,9 @@ int BackupHelper::CreateBackup(string path)
     try
     {
         WritePacks(pakFiles, file);
-        cout << "Backup " << to_string(timestamp) + ".bak completed in " << backupPath + "/" + tmp << ".\nCheckpoint at " << ctime(&timestamp) << "\n";
+        // cout << "Backup " << to_string(timestamp) + ".bak completed in " << backupPath + "/" + tmp << ".\nCheckpoint at " << ctime(&timestamp) << "\n";
+        spdlog::info("Backup {}.bak completed in {}/{}.\nCheckpoint at {}", timestamp, backupPath, tmp, ctime(&timestamp));
+        logger->info("Backup {}.bak completed in {}/{}.\nCheckpoint at {}", timestamp, backupPath, tmp, ctime(&timestamp));
         lastBackupTime[path] = timestamp;
     }
     catch (int &e)
@@ -237,7 +269,9 @@ int BackupHelper::BackupUpdate()
         /* 若不存在bak文件，新建一个 */
         if (bakFiles.size() == 0)
         {
-            cout << "Backup file not found. Creating new backup...\n";
+            // cout << "Backup file not found. Creating new backup...\n";
+            spdlog::info("Backup file not found in {}. Create a new backup file", line.first);
+            logger->info("Backup file not found in {}. Create a new backup file", line.first);
             CreateBackup(line.first);
             continue;
         }
@@ -254,7 +288,37 @@ int BackupHelper::BackupUpdate()
                 maxTimestamp = decltype(ftime)::clock::to_time_t(ftime);
             }
         }
+        /* When backup file size is greater than 4GB, create a new backup */
+        if (fs::file_size(latestBak) > ((size_t)1 << 32))
+        {
 
+            time_t t = time(0);
+            spdlog::info("Backup {} is larger than 4GB, changing to {}.bak", latestBak, t);
+            logger->info("Backup {} is larger than 4GB, changing to {}.bak", latestBak, t);
+            latestBak = fs::path(latestBak).parent_path().string() + "/" + to_string(t) + ".bak";
+            FILE *file = fopen(latestBak.c_str(), "wb");
+            if ((err = WriteBakHead(file, t, line.second.size(), backupPath)) != 0)
+                return err;
+            try
+            {
+                WritePacks(line.second, file);
+                // cout << "Backup " << to_string(t) + ".bak completed in " << latestBak << ".\nCheckpoint at " << ctime(&t) << "\n";
+                spdlog::info("Backup {}.bak completed in {}. Checkpoint at {}", t, latestBak, ctime(&t));
+                logger->info("Backup {}.bak completed in {}. Checkpoint at {}", t, latestBak, ctime(&t));
+                lastBackupTime[line.first] = t;
+            }
+            catch (int &e)
+            {
+                fclose(file);
+                throw e;
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << e.what() << '\n';
+            }
+            fclose(file);
+            return 0;
+        }
         /* Check file */
         FILE *file;
         if (!(file = fopen(latestBak.c_str(), "r+b")))
@@ -274,11 +338,15 @@ int BackupHelper::BackupUpdate()
         if (nowTime < timestamp)
         {
             fclose(file);
+            spdlog::critical("Backup file's timestamp exceeded current time, it may have broken:{}", latestBak);
+            logger->critical("Backup file's timestamp exceeds current time, it may have broken:{}", latestBak);
             return StatusCode::UNKNWON_DATAFILE;
         }
         if (string(check) != "checkpoint")
         {
-            cout << "Backup file broken, trying to rollback to previous checkpoint...\n";
+            // cout << "Backup file broken, trying to rollback to previous checkpoint...\n";
+            spdlog::warn("Backup file {} broken, trying to rollback to previous checkpoint...", latestBak);
+            logger->warn("Backup file {} broken, trying to rollback to previous checkpoint...", latestBak);
             /* 从头遍历备份文件，检查写入时中断的部分数据，将其覆盖 */
             size_t filesize = fs::file_size(latestBak);
             size_t curPos = ftell(file);
@@ -307,8 +375,9 @@ int BackupHelper::BackupUpdate()
                 curPos = ftell(file);
                 scanedFile++;
             }
-            cout << "Rollback completed, " << filenum - scanedFile << " file(s) lost.\n";
-
+            // cout << "Rollback completed, " << filenum - scanedFile << " file(s) lost.\n";
+            spdlog::warn("Rollback completed, {} file(s) lost.", filenum - scanedFile);
+            logger->warn("Rollback completed, {} file(s) lost.", filenum - scanedFile);
             pos = lastPos;
             filenum = scanedFile;
         }
@@ -324,8 +393,9 @@ int BackupHelper::BackupUpdate()
             long newFileNum = filenum + line.second.size();
             err = WriteBakHead(file, nowTime, newFileNum, path);
             fclose(file);
-            cout << "Backup " << to_string(nowTime) + ".bak update completed in " << line.first << ".\nCheckpoint at " << ctime(&nowTime) << "\n";
-
+            // cout << "Backup " << to_string(nowTime) + ".bak update completed in " << line.first << ".\nCheckpoint at " << ctime(&nowTime) << "\n";
+            spdlog::info("Backup {}.bak update completed in {}. Checkpoint at {}", nowTime, line.first, ctime(&nowTime));
+            logger->info("Backup {}.bak update completed in {}. Checkpoint at {}", nowTime, line.first, ctime(&nowTime));
             lastBackupTime[line.first] = nowTime;
         }
         catch (int &e)
@@ -341,58 +411,12 @@ int BackupHelper::BackupUpdate()
         }
     }
 
-    // char *writeBuffer = new char[WRITE_BUFFER_SIZE]; // 20MB
-    // char *readBuffer = new char[READ_BUFFER_SIZE];
-    // setvbuf(file, writeBuffer, _IOFBF, WRITE_BUFFER_SIZE); //设置写缓冲
-    // for (auto &pak : filesToUpdate)
-    // {
-    //     try
-    //     {
-    //         FILE *pakfile;
-    //         if (!(pakfile = fopen(pak.c_str(), "rb")))
-    //         {
-    //             delete[] writeBuffer;
-    //             delete[] readBuffer;
-    //             throw errno;
-    //             return errno;
-    //         }
-    //         long paklen;
-    //         DB_GetFileLengthByFilePtr((long)pakfile, &paklen);
-    //         unsigned short pakPathLen = pak.length();
-    //         // fwrite(&pakPathLen, 2, 1, file);
-    //         // fwrite(pak.c_str(), pakPathLen, 1, file);
-    //         // fwrite(&paklen, 8, 1, file);
-    //         DB_Write((long)file, (char *)(&paklen), 8);
-    //         DB_Write((long)file, (char *)(&pakPathLen), 2);
-    //         DB_Write((long)file, (char *)(pak.c_str()), pakPathLen);
-
-    //         int readlen = 0;
-    //         while ((readlen = fread(readBuffer, 1, READ_BUFFER_SIZE, pakfile)) > 0)
-    //         {
-    //             DB_Write((long)file, readBuffer, readlen);
-    //         }
-    //     }
-    //     catch (int &e)
-    //     {
-    //         delete[] writeBuffer;
-    //         delete[] readBuffer;
-    //         fclose(file);
-    //         throw e;
-    //         return e;
-    //     }
-    //     catch (const std::exception &e)
-    //     {
-    //         std::cerr << e.what() << '\n';
-    //         delete[] writeBuffer;
-    //         delete[] readBuffer;
-    //         fclose(file);
-    //         throw e;
-    //         return -1;
-    //     }
-    // }
-    // fwrite("checkpoint", 10, 1, file); //检查点
-
     return err;
+}
+
+int DB_Backup(const char *path)
+{
+    return backupHelper.CreateBackup(path);
 }
 
 // int main()

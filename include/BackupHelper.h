@@ -4,10 +4,11 @@
 
 #include "utils.hpp"
 #include <string>
+#include <CassFactoryDB.h>
 
 using namespace std;
-#define WRITE_BUFFER_SIZE 1024 * 1024 * 20
-#define READ_BUFFER_SIZE 1024 * 1024 * 20
+#define WRITE_BUFFER_SIZE 1 << 25 // 32MB
+#define READ_BUFFER_SIZE 1 << 25  // 32MB
 /**
  * @brief bak文件头定义：
  * 按照字节序依次为：
@@ -33,6 +34,7 @@ private:
     unordered_map<string, time_t> lastBackupTime;
 
 public:
+    shared_ptr<spdlog::logger> logger;
     BackupHelper();
     ~BackupHelper() {}
     int ChangeBackupPath(string path);
@@ -40,6 +42,7 @@ public:
     int CreateBackup(string path);
     int CheckDataToUpdate(unordered_map<string, vector<string>> &files);
     int DataRecovery(string path);
+    int RecoverAll(string path);
     int BakRestoration(FILE *file, size_t &pos, size_t bodyPos = 0);
     int ReadBakHead(FILE *file, long &timestamp, long &fileNum, string &path)
     {
@@ -66,3 +69,5 @@ public:
         return fwrite(x, 18 + L, 1, file) == EOF ? errno : 0;
     }
 };
+
+extern BackupHelper backupHelper;

@@ -1,6 +1,7 @@
 #include <iostream>
 #include "include/CassFactoryDB.h"
 #include "include/utils.hpp"
+#include "include/spdlog/spdlog.h"
 #include "include/compress/LzmaLib.h"
 // #include <numpy/arrayobject.h>
 #include <string>
@@ -64,7 +65,9 @@ void checkSettings()
 
 int main()
 {
-    cout<<stol("12345-2335");
+    spdlog::info("welcome");
+    spdlog::critical("critical");
+    spdlog::error("error");
     return 0;
     DB_ZipNodeParams param;
     param.pathToLine = "arrTest";
@@ -122,7 +125,7 @@ int main()
     Byte outprops[5];
     cout << LzmaCompress(res, &reslen, buf, len, outprops, &outpropsize, 5, 1 << 24, 3, 0, 2, 32, 2) << endl;
     cout << reslen << endl;
-    SizeT uncompressedsize=1024*1024*10;
+    SizeT uncompressedsize = 1024 * 1024 * 10;
     cout << LzmaUncompress(buf, &uncompressedsize, res, &reslen, outprops, LZMA_PROPS_SIZE);
     delete[] buf;
     delete[] res;
@@ -280,4 +283,4 @@ int main()
         // free(buffer.buffer);
     }
     return 0;
- }
+}

@@ -23,7 +23,7 @@
 #include <memory>
 #include <stack>
 #include <mutex>
-#include <stdio.h>
+#include <cstdio>
 #include <string.h>
 #include <algorithm>
 #include "DataTypeConvert.hpp"
@@ -36,6 +36,9 @@
 #include <stdarg.h>
 #include <queue>
 #include <LzmaLib.h>
+#include <spdlog/spdlog.h>
+#include "spdlog/sinks/rotating_file_sink.h"
+
 using namespace std;
 #ifdef __linux__
 #include <experimental/filesystem>
@@ -105,7 +108,7 @@ namespace StatusCode
         VARIABLE_NAME_NOT_INT_CODE = 185, //编码中不包含指定变量名
         MEMORY_INSUFFICIENT = 186,        //内存不足
         BACKUP_BROKEN = 187,              //备份文件损坏
-        ERROR_SID_EID_RANGE = 188,        //SID大于EID
+        ERROR_SID_EID_RANGE = 188,        // SID大于EID
     };
 }
 namespace ValueType
@@ -137,6 +140,7 @@ extern int RepackThreshold; //再打包的最大大小
 extern neb::CJsonObject settings;
 
 extern queue<string> fileQueue;
+
 //获取某一目录下的所有文件
 //不递归子文件夹
 void readFileList(string path, vector<string> &files);

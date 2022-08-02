@@ -1,5 +1,5 @@
 #include <utils.hpp>
-
+#include <BackupHelper.h>
 unordered_map<string, int> getDirCurrentFileIDIndex();
 long getMilliTime();
 
@@ -12,6 +12,7 @@ neb::CJsonObject settings = FileIDManager::GetSetting();
 queue<string> fileQueue = InitFileQueue();
 unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
 PackManager packManager(atoi(settings("Pack_Cache_Size").c_str()) * 1024);
+BackupHelper backupHelper;
 
 /**
  * @brief 调取在python脚本中定义的函数，并获取返回结果
@@ -4404,7 +4405,7 @@ int readIDBFilesListBySIDandEID(string path, string SID, string EID, vector<pair
     int E_ID = atoi(SIDnum);
 
     //如果SID比EID大
-    if(S_ID > E_ID)
+    if (S_ID > E_ID)
         return StatusCode::ERROR_SID_EID_RANGE;
 
     //如果SID比最后一个文件ID大 或者 EID比第一个文件的ID小
@@ -4742,7 +4743,7 @@ int readIDBZIPFilesListBySIDandEID(string path, string SID, string EID, vector<p
     int E_ID = atoi(SIDnum);
 
     //如果SID比EID大
-    if(S_ID > E_ID)
+    if (S_ID > E_ID)
         return StatusCode::ERROR_SID_EID_RANGE;
 
     //如果SID比最后一个文件ID大 或者 EID比第一个文件的ID小
