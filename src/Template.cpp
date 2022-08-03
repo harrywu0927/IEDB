@@ -726,7 +726,18 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char *buff, vector<lon
         else
         {
             int num = 1;
-            if (schema.second.isArray)
+            if (schema.second.isTimeseries)
+            {
+                if (schema.second.isArray)
+                {
+                    num = schema.second.arrayLen * schema.second.tsLen;
+                }
+                else
+                {
+                    num = schema.second.tsLen;
+                }
+            }
+            else if (schema.second.isArray)
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
@@ -860,7 +871,18 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char *buff, vector<lon
         if (codeEquals)
         {
             int num = 1;
-            if (schema.second.isArray)
+            if (schema.second.isTimeseries)
+            {
+                if (schema.second.isArray)
+                {
+                    num = schema.second.arrayLen * schema.second.tsLen;
+                }
+                else
+                {
+                    num = schema.second.tsLen;
+                }
+            }
+            else if (schema.second.isArray)
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
@@ -884,7 +906,18 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char *buff, vector<lon
         else
         {
             int num = 1;
-            if (schema.second.isArray)
+            if (schema.second.isTimeseries)
+            {
+                if (schema.second.isArray)
+                {
+                    num = schema.second.arrayLen * schema.second.tsLen;
+                }
+                else
+                {
+                    num = schema.second.tsLen;
+                }
+            }
+            else if (schema.second.isArray)
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {

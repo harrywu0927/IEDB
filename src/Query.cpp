@@ -2611,7 +2611,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 				int start = atoi(startNum.c_str());
 				int end = atoi(endNum.c_str());
 				//此处假设数据全部选中，可能会分配多余的空间
-				rawBuff = (char *)malloc(Ext_Params.copyBytes * (end - start) + startPos);
+				rawBuff = (char *)malloc(Ext_Params.copyBytes * (end - start + 1) + startPos);
 				if (rawBuff == NULL)
 				{
 					IOBusy = false;
@@ -2986,8 +2986,8 @@ int main()
 	DB_QueryParams params;
 	params.pathToLine = "JinfeiTem";
 	params.fileID = "60";
-	// params.fileIDend = "300000";
-	params.fileIDend = NULL;
+	params.fileIDend = "60";
+	// params.fileIDend = NULL;
 	char code[10];
 	code[0] = (char)0;
 	code[1] = (char)0;
