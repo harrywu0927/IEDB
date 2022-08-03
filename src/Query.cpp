@@ -2985,9 +2985,9 @@ int main()
 	DataTypeConverter converter;
 	DB_QueryParams params;
 	params.pathToLine = "JinfeiTem";
-	params.fileID = "60";
-	params.fileIDend = "60";
-	// params.fileIDend = NULL;
+	params.fileID = "62";
+	// params.fileIDend = "300000";
+	params.fileIDend = NULL;
 	char code[10];
 	code[0] = (char)0;
 	code[1] = (char)0;
@@ -3011,7 +3011,7 @@ int main()
 	params.compareType = CMP_NONE;
 	params.compareValue = "100";
 	params.compareVariable = "S1ON";
-	params.queryType = TIMESPAN;
+	params.queryType = FILEID;
 	params.byPath = 0;
 	params.queryNums = 1;
 	DB_DataBuffer buffer;
@@ -3023,7 +3023,7 @@ int main()
 	auto startTime = std::chrono::system_clock::now();
 	// char zeros[10] = {0};
 	// memcpy(params.pathCode, zeros, 10);
-	DB_QueryByFileID(&buffer, &params);
+	cout<<DB_QueryByFileID(&buffer, &params);
 	// return 0;
 	// DB_QueryLastRecords(&buffer, &params);
 	// DB_QueryByTimespan_Single(&buffer, &params);

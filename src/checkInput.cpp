@@ -54,16 +54,11 @@ int checkInputPathcode(char pathcode[])
     return 0;
 }
 
-/**
- * @brief 检查数据值是否合法
- *
- * @param variableType 数据类型
- * @param value 数据值
- * @return int
- */
-int checkInputValue(string variableType, string value)
+int checkInputSingleValue(int variableType, string value)
 {
-    if (variableType == "BOOL")
+    switch (variableType)
+    {
+    case 5: // BOOL
     {
         if (value.length() != 1)
         {
@@ -73,8 +68,9 @@ int checkInputValue(string variableType, string value)
         {
             return StatusCode::VALUE_CHECKE_ERROR;
         }
+        break;
     }
-    else if (variableType == "USINT")
+    case 2: // USINT
     {
         for (int i = 0; i < value.length(); i++) //检查是否都为数字
         {
@@ -92,8 +88,9 @@ int checkInputValue(string variableType, string value)
         {
             return StatusCode::VALUE_CHECKE_ERROR;
         }
+        break;
     }
-    else if (variableType == "UINT")
+    case 1: // UINT
     {
         for (int i = 0; i < value.length(); i++) //检查是否都为数字
         {
@@ -111,8 +108,9 @@ int checkInputValue(string variableType, string value)
         {
             return StatusCode::VALUE_CHECKE_ERROR;
         }
+        break;
     }
-    else if (variableType == "UDINT")
+    case 3: // UDINT
     {
         for (int i = 0; i < value.length(); i++) //检查是否都为数字
         {
@@ -130,8 +128,9 @@ int checkInputValue(string variableType, string value)
         {
             return StatusCode::VALUE_CHECKE_ERROR;
         }
+        break;
     }
-    else if (variableType == "SINT")
+    case 6: // SINT
     {
         if (value.length() == 1 && value[0] == '-') //只有一个 -
         {
@@ -159,8 +158,9 @@ int checkInputValue(string variableType, string value)
         {
             return StatusCode::VALUE_CHECKE_ERROR;
         }
+        break;
     }
-    else if (variableType == "INT")
+    case 4: // INT
     {
         if (value.length() == 1 && value[0] == '-') //只有一个 -
         {
@@ -188,8 +188,9 @@ int checkInputValue(string variableType, string value)
         {
             return StatusCode::VALUE_CHECKE_ERROR;
         }
+        break;
     }
-    else if (variableType == "DINT")
+    case 7: // DINT
     {
         if (value.length() == 1 && value[0] == '-') //只有一个 -
         {
@@ -217,8 +218,9 @@ int checkInputValue(string variableType, string value)
         {
             return StatusCode::VALUE_CHECKE_ERROR;
         }
+        break;
     }
-    else if (variableType == "REAL")
+    case 8: // REAL
     {
         if (value.find(".") != string::npos) //包含小数点
         {
@@ -334,8 +336,152 @@ int checkInputValue(string variableType, string value)
                 }
             }
         }
+        break;
+    }
+    default:
+        return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+        break;
     }
     return 0;
+}
+
+/**
+ * @brief 检查数据值是否合法
+ *
+ * @param variableType 数据类型
+ * @param value 数据值
+ * @return int
+ */
+int checkInputValue(string variableType, string value, int isArray, int arrayLen)
+{
+    int err = 0;
+    int type = DataType::JudgeValueType(variableType);
+
+    if (isArray == 0)
+    {
+        err = checkInputSingleValue(type, value);
+    }
+    else
+    {
+        if (arrayLen < 1)
+            return StatusCode::ARRAYLEN_ERROR;
+        vector<string> valueArr = DataType::splitWithStl(value, " ");
+        if (valueArr.size() != arrayLen)
+            return StatusCode::VALUE_CHECKE_ERROR;
+        else
+        {
+            for (int i = 0; i < arrayLen; i++)
+            {
+                err = checkInputSingleValue(type, valueArr[i]);
+                if (err != 0)
+                    break;
+            }
+        }
+    }
+    return err;
+}
+
+int checkSingleValueRange(int variableType, string standardValue, string maxValue, string minValue)
+{
+    switch (variableType)
+    {
+    case 5: // BOOL
+    {
+        if (standardValue != maxValue || standardValue != minValue || minValue != maxValue)
+        {
+            cout << "BOOL类型标准值、最大值、最小值必须保持一致!" << endl;
+            return StatusCode::VALUE_RANGE_ERROR;
+        }
+        break;
+    }
+    case 2: // USINT
+    {
+        uint8_t standard = (uint8_t)atoi(standardValue.c_str());
+        uint8_t min = (uint8_t)atoi(minValue.c_str());
+        uint8_t max = (uint8_t)atoi(maxValue.c_str());
+        if (standard < min || standard > max)
+        {
+            cout << "请检查标准值、最大值、最小值的范围！" << endl;
+            return StatusCode::VALUE_RANGE_ERROR;
+        }
+        break;
+    }
+    case 1: // UINT
+    {
+        uint16_t standard = (uint16_t)atoi(standardValue.c_str());
+        uint16_t min = (uint16_t)atoi(minValue.c_str());
+        uint16_t max = (uint16_t)atoi(maxValue.c_str());
+        if (standard < min || standard > max)
+        {
+            cout << "请检查标准值、最大值、最小值的范围！" << endl;
+            return StatusCode::VALUE_RANGE_ERROR;
+        }
+        break;
+    }
+    case 3: // UDINT
+    {
+        uint32_t standard = (uint32_t)atoi(standardValue.c_str());
+        uint32_t min = (uint32_t)atoi(minValue.c_str());
+        uint32_t max = (uint32_t)atoi(maxValue.c_str());
+        if (standard < min || standard > max)
+        {
+            cout << "请检查标准值、最大值、最小值的范围！" << endl;
+            return StatusCode::VALUE_RANGE_ERROR;
+        }
+        break;
+    }
+    case 6: // SINT
+    {
+        int8_t standard = (int8_t)atoi(standardValue.c_str());
+        int8_t min = (int8_t)atoi(minValue.c_str());
+        int8_t max = (int8_t)atoi(maxValue.c_str());
+        if (standard < min || standard > max)
+        {
+            cout << "请检查标准值、最大值、最小值的范围！" << endl;
+            return StatusCode::VALUE_RANGE_ERROR;
+        }
+        break;
+    }
+    case 4: // INT
+    {
+        int16_t standard = (int16_t)atoi(standardValue.c_str());
+        int16_t min = (int16_t)atoi(minValue.c_str());
+        int16_t max = (int16_t)atoi(maxValue.c_str());
+        if (standard < min || standard > max)
+        {
+            cout << "请检查标准值、最大值、最小值的范围！" << endl;
+            return StatusCode::VALUE_RANGE_ERROR;
+        }
+        break;
+    }
+    case 7: // DINT
+    {
+        int32_t standard = (int32_t)atoi(standardValue.c_str());
+        int32_t min = (int32_t)atoi(minValue.c_str());
+        int32_t max = (int32_t)atoi(maxValue.c_str());
+        if (standard < min || standard > max)
+        {
+            cout << "请检查标准值、最大值、最小值的范围！" << endl;
+            return StatusCode::VALUE_RANGE_ERROR;
+        }
+        break;
+    }
+    case 8: // REAL
+    {
+        double standard = atof(standardValue.c_str());
+        double min = atof(minValue.c_str());
+        double max = atof(maxValue.c_str());
+        if (standard < min || standard > max)
+        {
+            cout << "请检查标准值、最大值、最小值的范围！" << endl;
+            return StatusCode::VALUE_RANGE_ERROR;
+        }
+        break;
+    }
+    default:
+        return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+        break;
+    }
 }
 
 /**
@@ -347,94 +493,39 @@ int checkInputValue(string variableType, string value)
  * @param minValue 最小值
  * @return int
  */
-int checkValueRange(string variableType, string standardValue, string maxValue, string minValue)
+int checkValueRange(string variableType, string standardValue, string maxValue, string minValue, int isArray, int arrayLen)
 {
-    if (variableType == "BOOL")
+    int err = 0;
+    int type = DataType::JudgeValueType(variableType);
+
+    if (isArray == 0)
     {
-        if (standardValue != maxValue || standardValue != minValue || minValue != maxValue)
+        err = checkSingleValueRange(type, standardValue, maxValue, minValue);
+    }
+    else
+    {
+        if (arrayLen < 1)
+            return StatusCode::ARRAYLEN_ERROR;
+        vector<string> standardValueArr = DataType::splitWithStl(standardValue, " ");
+        vector<string> MaxValueArr = DataType::splitWithStl(maxValue, " ");
+        vector<string> MinValueArr = DataType::splitWithStl(minValue, " ");
+        if (standardValueArr.size() != arrayLen)
+            return StatusCode::VALUE_CHECKE_ERROR;
+        if (MaxValueArr.size() != arrayLen)
+            return StatusCode::VALUE_CHECKE_ERROR;
+        if (MinValueArr.size() != arrayLen)
+            return StatusCode::VALUE_CHECKE_ERROR;
+        else
         {
-            cout << "BOOL类型标准值、最大值、最小值必须保持一致!" << endl;
-            return StatusCode::VALUE_RANGE_ERROR;
+            for (int i = 0; i < arrayLen; i++)
+            {
+                err = checkSingleValueRange(type, standardValueArr[i], MaxValueArr[i], MinValueArr[i]);
+                if (err != 0)
+                    break;
+            }
         }
     }
-    if (variableType == "USINT")
-    {
-        uint8_t standard = (uint8_t)atoi(standardValue.c_str());
-        uint8_t min = (uint8_t)atoi(minValue.c_str());
-        uint8_t max = (uint8_t)atoi(maxValue.c_str());
-        if (standard < min || standard > max)
-        {
-            cout << "请检查标准值、最大值、最小值的范围！" << endl;
-            return StatusCode::VALUE_RANGE_ERROR;
-        }
-    }
-    if (variableType == "UINT")
-    {
-        uint16_t standard = (uint16_t)atoi(standardValue.c_str());
-        uint16_t min = (uint16_t)atoi(minValue.c_str());
-        uint16_t max = (uint16_t)atoi(maxValue.c_str());
-        if (standard < min || standard > max)
-        {
-            cout << "请检查标准值、最大值、最小值的范围！" << endl;
-            return StatusCode::VALUE_RANGE_ERROR;
-        }
-    }
-    if (variableType == "UDINT")
-    {
-        uint32_t standard = (uint32_t)atoi(standardValue.c_str());
-        uint32_t min = (uint32_t)atoi(minValue.c_str());
-        uint32_t max = (uint32_t)atoi(maxValue.c_str());
-        if (standard < min || standard > max)
-        {
-            cout << "请检查标准值、最大值、最小值的范围！" << endl;
-            return StatusCode::VALUE_RANGE_ERROR;
-        }
-    }
-    if (variableType == "SINT")
-    {
-        int8_t standard = (int8_t)atoi(standardValue.c_str());
-        int8_t min = (int8_t)atoi(minValue.c_str());
-        int8_t max = (int8_t)atoi(maxValue.c_str());
-        if (standard < min || standard > max)
-        {
-            cout << "请检查标准值、最大值、最小值的范围！" << endl;
-            return StatusCode::VALUE_RANGE_ERROR;
-        }
-    }
-    if (variableType == "INT")
-    {
-        int16_t standard = (int16_t)atoi(standardValue.c_str());
-        int16_t min = (int16_t)atoi(minValue.c_str());
-        int16_t max = (int16_t)atoi(maxValue.c_str());
-        if (standard < min || standard > max)
-        {
-            cout << "请检查标准值、最大值、最小值的范围！" << endl;
-            return StatusCode::VALUE_RANGE_ERROR;
-        }
-    }
-    if (variableType == "DINT")
-    {
-        int32_t standard = (int32_t)atoi(standardValue.c_str());
-        int32_t min = (int32_t)atoi(minValue.c_str());
-        int32_t max = (int32_t)atoi(maxValue.c_str());
-        if (standard < min || standard > max)
-        {
-            cout << "请检查标准值、最大值、最小值的范围！" << endl;
-            return StatusCode::VALUE_RANGE_ERROR;
-        }
-    }
-    if (variableType == "REAL")
-    {
-        double standard = atof(standardValue.c_str());
-        double min = atof(minValue.c_str());
-        double max = atof(maxValue.c_str());
-        if (standard < min || standard > max)
-        {
-            cout << "请检查标准值、最大值、最小值的范围！" << endl;
-            return StatusCode::VALUE_RANGE_ERROR;
-        }
-    }
-    return 0;
+    return err;
 }
 
 /**
@@ -703,3 +794,9 @@ int checkQueryNodeParam(struct DB_QueryNodeParams *params)
         return StatusCode::EMPTY_PATH_TO_LINE;
     return 0;
 }
+
+// int main()
+// {
+//     cout<< checkInputValue("BOOL", "1 0 1 0 1 2",1,6) <<endl;
+//     return 0;
+// }

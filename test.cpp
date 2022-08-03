@@ -64,7 +64,69 @@ void checkSettings()
 }
 
 int main()
-{
+{DataTypeConverter converter;
+	DB_QueryParams params;
+	params.pathToLine = "JinfeiTem";
+	params.fileID = "62";
+	// params.fileIDend = "300000";
+	params.fileIDend = NULL;
+	char code[10];
+	code[0] = (char)0;
+	code[1] = (char)0;
+	code[2] = (char)0;
+	code[3] = (char)0;
+	code[4] = 0;
+	// code[4] = 'R';
+	code[5] = (char)0;
+	code[6] = 0;
+	code[7] = (char)0;
+	code[8] = (char)0;
+	code[9] = (char)0;
+	params.pathCode = code;
+	// params.valueName = "S1ON,S1OFF";
+	params.valueName = "A1RTem";
+	params.start = 1553728593562;
+	params.end = 1751908603642;
+	// params.end = 1651894834176;
+	params.order = ODR_NONE;
+	params.sortVariable = "S1ON";
+	params.compareType = CMP_NONE;
+	params.compareValue = "100";
+	params.compareVariable = "S1ON";
+	params.queryType = FILEID;
+	params.byPath = 0;
+	params.queryNums = 1;
+	DB_DataBuffer buffer;
+	buffer.savePath = "/";
+	// cout << settings("Pack_Mode") << endl;
+	// vector<pair<string, long>> files;
+	// readDataFilesWithTimestamps("", files);
+	// Packer::Pack("/",files);
+	auto startTime = std::chrono::system_clock::now();
+	// char zeros[10] = {0};
+	// memcpy(params.pathCode, zeros, 10);
+	cout<<DB_QueryByFileID(&buffer, &params);
+	// return 0;
+	// DB_QueryLastRecords(&buffer, &params);
+	// DB_QueryByTimespan_Single(&buffer, &params);
+	auto endTime = std::chrono::system_clock::now();
+	// free(buffer.buffer);
+	std::cout << "第一次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+
+	if (buffer.bufferMalloced)
+	{
+		cout << buffer.length << endl;
+		for (int i = 0; i < buffer.length; i++)
+		{
+			cout << (int)*(char *)(buffer.buffer + i) << " ";
+			if (i % 11 == 0)
+				cout << endl;
+		}
+
+		free(buffer.buffer);
+	}
+	// buffer.buffer = NULL;
+	return 0;
     // spdlog::info("welcome");
     // spdlog::critical("critical");
     // spdlog::error("error");
@@ -218,82 +280,82 @@ int main()
     // // sleep(100);
     // return 0;
 
-    DB_QueryParams params;
-    params.pathToLine = "JinfeiSeven";
-    params.fileID = "RobotDataTwenty50";
-    params.fileIDend = NULL;
-    char code[10];
-    code[0] = (char)0;
-    code[1] = (char)1;
-    code[2] = (char)0;
-    code[3] = (char)0;
-    code[4] = 0;
-    code[5] = (char)0;
-    code[6] = 0;
-    code[7] = (char)0;
-    code[8] = (char)0;
-    code[9] = (char)0;
-    params.pathCode = code;
-    params.valueName = "S1ON";
-    // params.valueName = NULL;
-    // params.start = 0;
-    // params.end = 1652099030250;
-    params.start = 1553728593562;
-    params.end = 1651897393777;
-    params.order = ODR_NONE;
-    params.compareType = CMP_NONE;
-    params.compareValue = "666";
-    params.queryType = TIMESPAN;
-    params.byPath = 0;
-    params.queryNums = 10000;
-    DB_DataBuffer buffer;
-    buffer.savePath = "JinfeiTTE";
-    long count;
-    // char x[3] = {'1', '2', '3'};
-    // buffer.buffer = x;
-    // buffer.length = 3;
-    // DB_InsertRecord(&buffer, 0);
-    // sleep(100);
-    // return 0;
-    auto startTime = std::chrono::system_clock::now();
-    // DB_MAX(&buffer, &params);
-    for (int i = 0; i < 1000; i++)
-    {
-        DB_QueryByTimespan(&buffer, &params);
-        // cout << buffer.length << endl;
-        free(buffer.buffer);
-    }
-
-    // if (buffer.bufferMalloced)
+    // DB_QueryParams params;
+    // params.pathToLine = "JinfeiTem";
+    // params.fileID = "62";
+    // params.fileIDend = NULL;
+    // char code[10];
+    // code[0] = (char)0;
+    // code[1] = (char)1;
+    // code[2] = (char)0;
+    // code[3] = (char)0;
+    // code[4] = 0;
+    // code[5] = (char)0;
+    // code[6] = 0;
+    // code[7] = (char)0;
+    // code[8] = (char)0;
+    // code[9] = (char)0;
+    // params.pathCode = code;
+    // params.valueName = "A1RTem";
+    // // params.valueName = NULL;
+    // // params.start = 0;
+    // // params.end = 1652099030250;
+    // params.start = 1553728593562;
+    // params.end = 1651897393777;
+    // params.order = ODR_NONE;
+    // params.compareType = CMP_NONE;
+    // params.compareValue = "666";
+    // params.queryType = FILEID;
+    // params.byPath = 0;
+    // params.queryNums = 1;
+    // DB_DataBuffer buffer;
+    // buffer.savePath = "JinfeiTTE";
+    // long count;
+    // // char x[3] = {'1', '2', '3'};
+    // // buffer.buffer = x;
+    // // buffer.length = 3;
+    // // DB_InsertRecord(&buffer, 0);
+    // // sleep(100);
+    // // return 0;
+    // auto startTime = std::chrono::system_clock::now();
+    // // DB_MAX(&buffer, &params);
+    // for (int i = 0; i < 1000; i++)
     // {
-    //     char buf[buffer.length];
-    //     memcpy(buf, buffer.buffer, buffer.length);
-    //     cout << buffer.length << endl;
-    //     for (int i = 0; i < buffer.length; i++)
-    //     {
-    //         cout << (int)buf[i] << " ";
-    //         if (i % 11 == 0)
-    //             cout << endl;
-    //     }
-
+    //     DB_QueryByTimespan(&buffer, &params);
+    //     // cout << buffer.length << endl;
     //     free(buffer.buffer);
     // }
-    // DB_MAX(&buffer);
-    auto endTime = std::chrono::system_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
-    if (buffer.bufferMalloced)
-    {
-        // char buf[buffer.length];
-        // memcpy(buf, buffer.buffer, buffer.length);
-        // cout << buffer.length << endl;
-        // for (int i = 0; i < buffer.length; i++)
-        // {
-        //     cout << (int)buf[i] << " ";
-        //     if (i % 11 == 0)
-        //         cout << endl;
-        // }
 
-        // free(buffer.buffer);
-    }
+    // // if (buffer.bufferMalloced)
+    // // {
+    // //     char buf[buffer.length];
+    // //     memcpy(buf, buffer.buffer, buffer.length);
+    // //     cout << buffer.length << endl;
+    // //     for (int i = 0; i < buffer.length; i++)
+    // //     {
+    // //         cout << (int)buf[i] << " ";
+    // //         if (i % 11 == 0)
+    // //             cout << endl;
+    // //     }
+
+    // //     free(buffer.buffer);
+    // // }
+    // // DB_MAX(&buffer);
+    // auto endTime = std::chrono::system_clock::now();
+    // std::cout << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+    // if (buffer.bufferMalloced)
+    // {
+    //     // char buf[buffer.length];
+    //     // memcpy(buf, buffer.buffer, buffer.length);
+    //     // cout << buffer.length << endl;
+    //     // for (int i = 0; i < buffer.length; i++)
+    //     // {
+    //     //     cout << (int)buf[i] << " ";
+    //     //     if (i % 11 == 0)
+    //     //         cout << endl;
+    //     // }
+
+    //     // free(buffer.buffer);
+    // }
     return 0;
 }

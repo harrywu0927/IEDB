@@ -289,9 +289,13 @@ int checkInputVaribaleName(string variableName);
 
 int checkInputPathcode(char pathcode[]);
 
-int checkInputValue(string variableType, string value);
+int checkInputSingleValue(int variableType, string value);
 
-int checkValueRange(string variableType, string standardValue, string maxValue, string minValue);
+int checkInputValue(string variableType, string value, int isArray, int arrayLen);
+
+int checkSingleValueRange(int variableType, string standardValue, string maxValue, string minValue);
+
+int checkValueRange(string variableType, string standardValue, string maxValue, string minValue, int isArray, int arrayLen);
 
 int checkQueryNodeParam(struct DB_QueryNodeParams *params);
 

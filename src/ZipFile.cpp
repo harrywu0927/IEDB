@@ -3423,15 +3423,15 @@ int DB_ReZipFileByFileID(struct DB_ZipParams *params)
 // int main()
 // {
 //     // DB_ReZipSwitchFile("JinfeiSeven", "JinfeiSeven");
-//     // DB_ZipParams param;
-//     // param.ZipType = FILE_ID;
-//     // param.pathToLine = "JinfeiSeven";
-//     // param.fileID = "JinfeiSeven1527000";
-//     // param.zipNums = 100;
-//     // param.EID = NULL;
-//     // cout << DB_ZipFileByFileID(&param) << endl;
+//     DB_ZipParams param;
+//     param.ZipType = FILE_ID;
+//     param.pathToLine = "JinfeiTem";
+//     param.fileID = "62";
+//     param.zipNums = 1;
+//     param.EID = NULL;
+//     cout << DB_ZipFileByFileID(&param) << endl;
 //     // cout << DB_ReZipFileByFileID(&param) << endl;
-//     DB_ZipFile("JinfeiSeven","JinfeiSeven");
+//     // DB_ZipFile("JinfeiSeven","JinfeiSeven");
 //     // DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest");
 //     return 0;
 // }
