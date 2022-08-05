@@ -281,7 +281,29 @@ pair<char *, long> PackManager::GetPack(string path)
         return key2pos[path]->second;
     }
     //缺页中断
-    ReadPack(path);
+    try
+    {
+        ReadPack(path);
+    }
+    catch (bad_alloc &e)
+    {
+        // RuntimeLogger.critical("Memory ");
+        throw e;
+    }
+    catch (int &e)
+    {
+        if (e == StatusCode::MEMORY_INSUFFICIENT)
+        {
+            RuntimeLogger.critical("Memory insufficient when reading pack");
+        }
+        else
+            throw e;
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+
     search = key2pos.find(path);
     PutPack(path, key2pos[path]->second);
     return key2pos[path]->second;
@@ -297,21 +319,26 @@ void PackManager::ReadPack(string path)
 {
     DB_DataBuffer buffer;
     buffer.savePath = path.c_str();
-    cout << "read pack:" << buffer.savePath << endl;
-    DB_ReadFile(&buffer);
+    spdlog::info("Read pack:{}", buffer.savePath);
+    int err = DB_ReadFile(&buffer);
+    if (err != 0)
+        throw err;
     if (buffer.bufferMalloced)
     {
         PackFileReader reader(buffer.buffer, buffer.length);
         string templateName;
         int fileNum;
         reader.ReadPackHead(fileNum, templateName);
-        TemplateManager::CheckTemplate(templateName);
-        ZipTemplateManager::CheckZipTemplate(templateName);
+        if (TemplateManager::CheckTemplate(templateName) != 0 &&
+            ZipTemplateManager::CheckZipTemplate(templateName) != 0)
+            throw StatusCode::SCHEMA_FILE_NOT_FOUND;
         if (!CurrentTemplate.hasImage)
             PutPack(path, {buffer.buffer, buffer.length});
         else
         {
             char *newBuffer = (char *)malloc(24 + fileNum * (CurrentTemplate.totalBytes + 29));
+            if (newBuffer == NULL)
+                throw bad_alloc();
             memcpy(newBuffer, reader.packBuffer, 24);
             long posInPack = 24;
             int imgPos = 0;
@@ -358,18 +385,30 @@ void PackManager::ReadPack(string path)
                     cur += imgPos;
                 }
                 /* 带有图片的数据不可能完全压缩,ziptype = 2 */
-                else
+                else if (zipType == 2)
                 {
                     int offset = GetZipImgPos(reader.packBuffer + posInPack + 4);
+                    if (offset >= readLength)
+                        throw StatusCode::UNKNWON_DATAFILE;
                     memcpy(newBuffer + cur, &offset, 4);
                     cur += 4;
                     memcpy(newBuffer + cur, reader.packBuffer + posInPack + 4, offset);
                     cur += offset;
                 }
+                /* 包内数据异常 */
+                else
+                {
+                    throw StatusCode::UNKNWON_DATAFILE;
+                }
                 posInPack += 4 + readLength;
             }
             PutPack(path, {newBuffer, cur});
         }
+    }
+    else
+    {
+        RuntimeLogger.critical("Failed to read pack : {}, Error code {}", path, err);
+        throw err;
     }
 }
 

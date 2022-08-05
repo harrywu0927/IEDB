@@ -122,7 +122,7 @@ int FindImage(char **buff, long &length, string &path, int index, char *pathCode
     DB_ReadFile(&buffer);
     if (buffer.bufferMalloced)
     {
-        if (path.find(".pak") != string::npos)
+        if (fs::path(path).extension() == ".pak")
         {
             PackFileReader reader(buffer.buffer, buffer.length);
             reader.Skip(index);
@@ -275,29 +275,6 @@ void readAllDirs(vector<string> &dirs, string basePath)
     {
         std::cerr << e.what() << '\n';
     }
-    return;
-    // DIR *dir;
-    // struct dirent *ptr;
-    // if ((dir = opendir(basePath.c_str())) == NULL)
-    // {
-    //     perror("Error while opening directory");
-    //     return;
-    // }
-
-    // while ((ptr = readdir(dir)) != NULL)
-    // {
-    //     if (strcmp(ptr->d_name, ".") == 0 || strcmp(ptr->d_name, "..") == 0) /// current dir OR parrent dir
-    //         continue;
-    //     else if (ptr->d_type == 4) /// dir
-    //     {
-    //         string base = basePath;
-    //         base += "/";
-    //         base += ptr->d_name;
-    //         dirs.push_back(base);
-    //         readAllDirs(dirs, base);
-    //     }
-    // }
-    // closedir(dir);
 }
 
 //获取当前工程根目录下所有产线-已有最大文件ID键值对
@@ -463,34 +440,6 @@ void readFileList(string path, vector<string> &files)
     {
         std::cerr << e.what() << '\n';
     }
-    return;
-
-    // struct dirent *ptr;
-    // DIR *dir;
-    // string finalPath = settings("Filename_Label");
-    // if (path[0] != '/')
-    //     finalPath += "/" + path;
-    // else
-    //     finalPath += path;
-    // if (DB_CreateDirectory(const_cast<char *>(finalPath.c_str())))
-    // {
-    //     errorCode = errno;
-    //     return;
-    // }
-    // dir = opendir(finalPath.c_str());
-    // // cout<<finalPath<<endl;
-    // while ((ptr = readdir(dir)) != NULL)
-    // {
-    //     if (ptr->d_name[0] == '.')
-    //         continue;
-
-    //     if (ptr->d_type == 8)
-    //     {
-    //         string p;
-    //         files.push_back(p.append(path).append("/").append(ptr->d_name));
-    //     }
-    // }
-    // closedir(dir);
 }
 
 //获取.idb文件路径
@@ -519,33 +468,6 @@ void readIDBFilesList(string path, vector<string> &files)
     {
         std::cerr << e.what() << '\n';
     }
-    // struct dirent *ptr;
-    // DIR *dir;
-    // string finalPath = settings("Filename_Label");
-    // if (path[0] != '/')
-    //     finalPath += "/" + path;
-    // else
-    //     finalPath += path;
-    // if (DB_CreateDirectory(const_cast<char *>(finalPath.c_str())))
-    // {
-    //     errorCode = errno;
-    //     return;
-    // }
-    // dir = opendir(finalPath.c_str());
-    // while ((ptr = readdir(dir)) != NULL)
-    // {
-    //     if (ptr->d_name[0] == '.')
-    //         continue;
-
-    //     if (ptr->d_type == 8)
-    //     {
-    //         string p;
-    //         string datafile = ptr->d_name;
-    //         if ((datafile.find(".idb") != string::npos) && (datafile.find(".idbzip") == string::npos))
-    //             files.push_back(p.append(path).append("/").append(ptr->d_name));
-    //     }
-    // }
-    // closedir(dir);
 }
 
 //获取.idbzip文件路径
@@ -574,34 +496,6 @@ void readIDBZIPFilesList(string path, vector<string> &files)
     {
         std::cerr << e.what() << '\n';
     }
-    // struct dirent *ptr;
-    // DIR *dir;
-    // string finalPath = settings("Filename_Label");
-    // if (path[0] != '/')
-    //     finalPath += "/" + path;
-    // else
-    //     finalPath += path;
-    // if (DB_CreateDirectory(const_cast<char *>(finalPath.c_str())))
-    // {
-    //     errorCode = errno;
-    //     return;
-    // }
-    // dir = opendir(finalPath.c_str());
-    // while ((ptr = readdir(dir)) != NULL)
-    // {
-    //     if (ptr->d_name[0] == '.')
-    //         continue;
-
-    //     if (ptr->d_type == 8)
-    //     {
-    //         string p;
-    //         string datafile = ptr->d_name;
-
-    //         if (datafile.find(".idbzip") != string::npos)
-    //             files.push_back(p.append(path).append("/").append(ptr->d_name));
-    //     }
-    // }
-    // closedir(dir);
 }
 
 //获取.tem文件路径
@@ -626,25 +520,6 @@ void readTEMFilesList(string path, vector<string> &files)
     {
         std::cerr << e.what() << '\n';
     }
-    return;
-    // struct dirent *ptr;
-    // DIR *dir;
-    // dir = opendir(finalPath.c_str());
-    // while ((ptr = readdir(dir)) != NULL)
-    // {
-    //     if (ptr->d_name[0] == '.')
-    //         continue;
-
-    //     if (ptr->d_type == 8)
-    //     {
-    //         string p;
-    //         string datafile = ptr->d_name;
-
-    //         if (datafile.find(".tem") != string::npos)
-    //             files.push_back(p.append(path).append("/").append(ptr->d_name));
-    //     }
-    // }
-    // closedir(dir);
 }
 
 //获取.ziptem文件路径
@@ -673,34 +548,6 @@ void readZIPTEMFilesList(string path, vector<string> &files)
     {
         std::cerr << e.what() << '\n';
     }
-    // struct dirent *ptr;
-    // DIR *dir;
-    // string finalPath = settings("Filename_Label");
-    // if (path[0] != '/')
-    //     finalPath += "/" + path;
-    // else
-    //     finalPath += path;
-    // if (DB_CreateDirectory(const_cast<char *>(finalPath.c_str())))
-    // {
-    //     errorCode = errno;
-    //     return;
-    // }
-    // dir = opendir(finalPath.c_str());
-    // while ((ptr = readdir(dir)) != NULL)
-    // {
-    //     if (ptr->d_name[0] == '.')
-    //         continue;
-
-    //     if (ptr->d_type == 8)
-    //     {
-    //         string p;
-    //         string datafile = ptr->d_name;
-
-    //         if (datafile.find(".ziptem") != string::npos)
-    //             files.push_back(p.append(path).append("/").append(ptr->d_name));
-    //     }
-    // }
-    // closedir(dir);
 }
 
 /**
@@ -753,50 +600,6 @@ void readDataFilesWithTimestamps(string path, vector<pair<string, long>> &filesW
     {
         std::cerr << e.what() << '\n';
     }
-    // struct dirent *ptr;
-    // DIR *dir;
-    // string finalPath = settings("Filename_Label");
-    // if (path[0] != '/')
-    //     finalPath += "/" + path;
-    // else
-    //     finalPath += path;
-    // dir = opendir(finalPath.c_str());
-    // if (dir == NULL)
-    //     return;
-    // while ((ptr = readdir(dir)) != NULL)
-    // {
-    //     if (ptr->d_name[0] == '.')
-    //         continue;
-
-    //     if (ptr->d_type == 8)
-    //     {
-    //         string p;
-    //         string datafile = ptr->d_name;
-    //         if (datafile.find(".idbzip") != string::npos || datafile.find(".idb") != string::npos)
-    //         {
-    //             string tmp = datafile;
-    //             vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[1].c_str()), "-");
-    //             if (time.size() == 0)
-    //             {
-    //                 continue;
-    //             }
-    //             time[time.size() - 1] = DataType::StringSplit(const_cast<char *>(time[time.size() - 1].c_str()), ".")[0];
-    //             struct tm t;
-    //             t.tm_year = atoi(time[0].c_str()) - 1900;
-    //             t.tm_mon = atoi(time[1].c_str()) - 1;
-    //             t.tm_mday = atoi(time[2].c_str());
-    //             t.tm_hour = atoi(time[3].c_str());
-    //             t.tm_min = atoi(time[4].c_str());
-    //             t.tm_sec = atoi(time[5].c_str());
-    //             t.tm_isdst = -1; //不设置夏令时
-    //             time_t seconds = mktime(&t);
-    //             int ms = atoi(time[6].c_str());
-    //             long millis = seconds * 1000 + ms;
-    //             filesWithTime.push_back(make_pair(p.append(path).append("/").append(ptr->d_name), millis));
-    //         }
-    //     }
-    // }
-    // closedir(dir);
 }
 
 /**
@@ -830,30 +633,6 @@ void readDataFiles(string path, vector<string> &files)
     {
         std::cerr << e.what() << '\n';
     }
-    // struct dirent *ptr;
-    // DIR *dir;
-    // string finalPath = settings("Filename_Label");
-    // if (path[0] != '/')
-    //     finalPath += "/" + path;
-    // else
-    //     finalPath += path;
-    // dir = opendir(finalPath.c_str());
-    // while ((ptr = readdir(dir)) != NULL)
-    // {
-    //     if (ptr->d_name[0] == '.')
-    //         continue;
-
-    //     if (ptr->d_type == 8)
-    //     {
-    //         string p;
-    //         string datafile = ptr->d_name;
-    //         if (datafile.find(".idbzip") != string::npos || datafile.find(".idb") != string::npos)
-    //         {
-    //             files.push_back(p.append(path).append("/").append(ptr->d_name));
-    //         }
-    //     }
-    // }
-    // closedir(dir);
 }
 
 /**
@@ -906,48 +685,6 @@ void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWi
     {
         std::cerr << e.what() << '\n';
     }
-    // struct dirent *ptr;
-    // DIR *dir;
-    // string finalPath = settings("Filename_Label");
-    // if (path[0] != '/')
-    //     finalPath += "/" + path;
-    // else
-    //     finalPath += path;
-    // dir = opendir(finalPath.c_str());
-    // while ((ptr = readdir(dir)) != NULL)
-    // {
-    //     if (ptr->d_name[0] == '.')
-    //         continue;
-
-    //     if (ptr->d_type == 8)
-    //     {
-    //         string p;
-    //         string datafile = ptr->d_name;
-    //         if (datafile.find(".idbzip") == string::npos && datafile.find(".idb") != string::npos)
-    //         {
-    //             string tmp = datafile;
-    //             vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[1].c_str()), "-");
-    //             if (time.size() == 0)
-    //             {
-    //                 continue;
-    //             }
-    //             time[time.size() - 1] = DataType::StringSplit(const_cast<char *>(time[time.size() - 1].c_str()), ".")[0];
-    //             struct tm t;
-    //             t.tm_year = atoi(time[0].c_str()) - 1900;
-    //             t.tm_mon = atoi(time[1].c_str()) - 1;
-    //             t.tm_mday = atoi(time[2].c_str());
-    //             t.tm_hour = atoi(time[3].c_str());
-    //             t.tm_min = atoi(time[4].c_str());
-    //             t.tm_sec = atoi(time[5].c_str());
-    //             t.tm_isdst = -1; //不设置夏令时
-    //             time_t seconds = mktime(&t);
-    //             int ms = atoi(time[6].c_str());
-    //             long millis = seconds * 1000 + ms;
-    //             filesWithTime.push_back(make_pair(p.append(path).append("/").append(ptr->d_name), millis));
-    //         }
-    //     }
-    // }
-    // closedir(dir);
 }
 
 /**
@@ -1000,48 +737,6 @@ void readIDBZIPFilesWithTimestamps(string path, vector<pair<string, long>> &file
     {
         std::cerr << e.what() << '\n';
     }
-    // struct dirent *ptr;
-    // DIR *dir;
-    // string finalPath = settings("Filename_Label");
-    // if (path[0] != '/')
-    //     finalPath += "/" + path;
-    // else
-    //     finalPath += path;
-    // dir = opendir(finalPath.c_str());
-    // while ((ptr = readdir(dir)) != NULL)
-    // {
-    //     if (ptr->d_name[0] == '.')
-    //         continue;
-
-    //     if (ptr->d_type == 8)
-    //     {
-    //         string p;
-    //         string datafile = ptr->d_name;
-    //         if (datafile.find(".idbzip") != string::npos)
-    //         {
-    //             string tmp = datafile;
-    //             vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[1].c_str()), "-");
-    //             if (time.size() == 0)
-    //             {
-    //                 continue;
-    //             }
-    //             time[time.size() - 1] = DataType::StringSplit(const_cast<char *>(time[time.size() - 1].c_str()), ".")[0];
-    //             struct tm t;
-    //             t.tm_year = atoi(time[0].c_str()) - 1900;
-    //             t.tm_mon = atoi(time[1].c_str()) - 1;
-    //             t.tm_mday = atoi(time[2].c_str());
-    //             t.tm_hour = atoi(time[3].c_str());
-    //             t.tm_min = atoi(time[4].c_str());
-    //             t.tm_sec = atoi(time[5].c_str());
-    //             t.tm_isdst = -1; //不设置夏令时
-    //             time_t seconds = mktime(&t);
-    //             int ms = atoi(time[6].c_str());
-    //             long millis = seconds * 1000 + ms;
-    //             filesWithTime.push_back(make_pair(p.append(path).append("/").append(ptr->d_name), millis));
-    //         }
-    //     }
-    // }
-    // closedir(dir);
 }
 
 /**
@@ -1075,33 +770,6 @@ void readPakFilesList(string path, vector<string> &files)
     {
         std::cerr << e.what() << '\n';
     }
-    // struct dirent *ptr;
-    // DIR *dir;
-    // string finalPath = settings("Filename_Label");
-    // if (path[0] != '/')
-    //     finalPath += "/" + path;
-    // else
-    //     finalPath += path;
-    // if (DB_CreateDirectory(const_cast<char *>(finalPath.c_str())))
-    // {
-    //     errorCode = errno;
-    //     return;
-    // }
-    // dir = opendir(finalPath.c_str());
-    // while ((ptr = readdir(dir)) != NULL)
-    // {
-    //     if (ptr->d_name[0] == '.')
-    //         continue;
-
-    //     if (ptr->d_type == 8)
-    //     {
-    //         string p;
-    //         string datafile = ptr->d_name;
-    //         if (datafile.find(".pak") != string::npos)
-    //             files.push_back(p.append(path).append("/").append(ptr->d_name));
-    //     }
-    // }
-    // closedir(dir);
 }
 
 /**

@@ -123,6 +123,8 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
         else
         {
             packMutex.unlock();
+            RuntimeLogger.error("Error occured when reading file {} : {}", file.first, strerror(errno));
+            IOBusy = false;
             return errno;
         }
     }
@@ -280,6 +282,11 @@ PackFileReader::PackFileReader(string pathFilePath)
     DB_DataBuffer buffer;
     buffer.savePath = pathFilePath.c_str();
     int err = DB_ReadFile(&buffer);
+    if (err != 0)
+    {
+        errorCode = err;
+        throw err;
+    }
     if (buffer.bufferMalloced)
     {
         packBuffer = buffer.buffer;
@@ -291,9 +298,8 @@ PackFileReader::PackFileReader(string pathFilePath)
     else
     {
         packBuffer = NULL;
+        throw err;
     }
-    if (err != 0)
-        errorCode = err;
 }
 
 /**
@@ -304,13 +310,15 @@ PackFileReader::PackFileReader(string pathFilePath)
  */
 PackFileReader::PackFileReader(char *buffer, long length, bool freeit)
 {
+    if (buffer == nullptr || buffer == NULL)
+        throw StatusCode::DATAFILE_NOT_FOUND;
     char tempName[20] = {0};
     memcpy(tempName, buffer + 4, 20);
-    TemplateManager::CheckTemplate(tempName);
-    if (CurrentTemplate.hasImage)
-        hasImg = true;
-    else
-        hasImg = false;
+    // TemplateManager::CheckTemplate(tempName);
+    // if (CurrentTemplate.hasImage)
+    //     hasImg = true;
+    // else
+    //     hasImg = false;
     packBuffer = buffer;
     // buffer = NULL;
     packLength = length;
@@ -347,7 +355,6 @@ long PackFileReader::Next(int &readLength, long &timestamp, string &fileID, int 
     {
     case 0: //非压缩
     {
-        // memcpy(&readLength, packBuffer + curPos, 4);
         readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
         curPos += 4 + readLength;
@@ -360,14 +367,13 @@ long PackFileReader::Next(int &readLength, long &timestamp, string &fileID, int 
     }
     case 2: //不完全压缩
     {
-        // memcpy(&readLength, packBuffer + curPos, 4);
         readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
         curPos += 4 + readLength;
         break;
     }
     default:
-        break;
+        throw StatusCode::UNKNWON_DATAFILE;
     }
     if (buffer != nullptr)
     {
@@ -401,7 +407,6 @@ long PackFileReader::Next(int &readLength, long &timestamp, int &zipType, char *
     {
     case 0: //非压缩
     {
-        // memcpy(&readLength, packBuffer + curPos, 4);
         readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
         curPos += 4 + readLength;
@@ -414,14 +419,13 @@ long PackFileReader::Next(int &readLength, long &timestamp, int &zipType, char *
     }
     case 2: //不完全压缩
     {
-        // memcpy(&readLength, packBuffer + curPos, 4);
         readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
         curPos += 4 + readLength;
         break;
     }
     default:
-        break;
+        throw StatusCode::UNKNWON_DATAFILE;
     }
     if (buffer != nullptr)
     {
@@ -458,7 +462,6 @@ long PackFileReader::Next(int &readLength, string &fileID, int &zipType, char **
     {
     case 0: //非压缩
     {
-        // memcpy(&readLength, packBuffer + curPos, 4);
         readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
         curPos += 4 + readLength;
@@ -471,14 +474,13 @@ long PackFileReader::Next(int &readLength, string &fileID, int &zipType, char **
     }
     case 2: //不完全压缩
     {
-        // memcpy(&readLength, packBuffer + curPos, 4);
         readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
         curPos += 4 + readLength;
         break;
     }
     default:
-        break;
+        throw StatusCode::UNKNWON_DATAFILE;
     }
     if (buffer != nullptr)
     {
@@ -518,6 +520,8 @@ void PackFileReader::Skip(int num)
             int len = *(int *)(packBuffer + curPos);
             curPos += 4 + len;
         }
+        else if (ztype != 2 && ztype != 0)
+            throw StatusCode::UNKNWON_DATAFILE;
     }
 }
 

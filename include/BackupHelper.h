@@ -34,7 +34,8 @@ private:
     unordered_map<string, time_t> lastBackupTime;
 
 public:
-    shared_ptr<spdlog::logger> logger;
+    // shared_ptr<spdlog::logger> logger;
+    Logger logger;
     BackupHelper();
     ~BackupHelper() {}
     int ChangeBackupPath(string path);

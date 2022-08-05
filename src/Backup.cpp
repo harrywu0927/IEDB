@@ -26,19 +26,22 @@ BackupHelper::BackupHelper()
                 }
             }
         }
-        logger = spdlog::get("backuplog.log");
-        if (logger == nullptr)
-            logger = spdlog::rotating_logger_mt("backup_logger", "backuplog.log", 1024 * 1024 * 5, 1);
-        // logger->info("Backup initilization succeed");
+        logger = Logger("backuplog");
+        // logger = spdlog::get("backuplog.log");
+        // if (logger == nullptr)
+        //     logger = spdlog::rotating_logger_mt("backup_logger", "backuplog.log", 1024 * 1024 * 5, 1);
+        // logger.info("Backup initilization succeed");
         spdlog::info("Backup initilization succeed");
     }
     catch (fs::filesystem_error &e)
     {
-        spdlog::critical("Backup initilization filed: {}", e.what());
+        // spdlog::critical("Backup initilization filed: {}", e.what());
+        logger.critical("Backup initilization filed: {}. Check your path or permission.", e.what());
     }
     catch (const std::exception &e)
     {
         std::cerr << e.what() << '\n';
+        logger.critical("Backup initilization filed: {}", e.what());
     }
 }
 
@@ -104,8 +107,8 @@ int WritePacks(vector<string> &paks, FILE *file)
             fclose(pakfile);
             delete[] writeBuffer;
             delete[] readBuffer;
-            backupHelper.logger->critical("Memory allocation failed when compressing data!");
-            spdlog::critical("Memory allocation failed when compressing data!");
+            backupHelper.logger.critical("Memory allocation failed when compressing data!");
+            // spdlog::critical("Memory allocation failed when compressing data!");
             throw e;
         }
         catch (int &e)
@@ -113,8 +116,8 @@ int WritePacks(vector<string> &paks, FILE *file)
             fclose(pakfile);
             delete[] writeBuffer;
             delete[] readBuffer;
-            backupHelper.logger->error("Failed to uncompress data, error code {}", e);
-            spdlog::error("Error occured when uncompressing: code{}", e);
+            backupHelper.logger.error("Failed to uncompress data, error code {}", e);
+            // spdlog::error("Error occured when uncompressing: code{}", e);
             throw e;
         }
         catch (std::exception &e)
@@ -159,17 +162,15 @@ int BackupHelper::ChangeBackupPath(string path)
     }
 
     string cmd = "mv " + backupPath + "/* " + path + "/";
-    logger->info("Executing command: {}", cmd);
-    spdlog::info("Executing command: {}", cmd);
+    logger.info("Executing command: {}", cmd);
     int err = system(cmd.c_str());
     if (err == 0)
     {
-        spdlog::info("Backup path changed from {} to {}", backupPath, path);
-        logger->info("Backup path changed from {} to {}", backupPath, path);
+        logger.info("Backup path changed from {} to {}", backupPath, path);
         backupPath = path;
     }
     else
-        logger->error("Faile to change backup path to {}, error code : {}", path, err);
+        logger.error("Faile to change backup path to {}, error code : {}", path, err);
 
     return err;
 }
@@ -211,8 +212,7 @@ int BackupHelper::CheckDataToUpdate(unordered_map<string, vector<string>> &files
     catch (const std::exception &e)
     {
         std::cerr << e.what() << '\n';
-        spdlog::error("Error when checking data to update: {}", e.what());
-        logger->error("Error when checking data to update: {}", e.what());
+        logger.error("Error when checking data to update: {}", e.what());
     }
     return 0;
 }
@@ -246,9 +246,7 @@ int BackupHelper::CreateBackup(string path)
     try
     {
         WritePacks(pakFiles, file);
-        // cout << "Backup " << to_string(timestamp) + ".bak completed in " << backupPath + "/" + tmp << ".\nCheckpoint at " << ctime(&timestamp) << "\n";
-        spdlog::info("Backup {}.bak completed in {}/{}.\nCheckpoint at {}", timestamp, backupPath, tmp, ctime(&timestamp));
-        logger->info("Backup {}.bak completed in {}/{}.\nCheckpoint at {}", timestamp, backupPath, tmp, ctime(&timestamp));
+        logger.info("Backup {}.bak completed in {}/{}.\nCheckpoint at {}", timestamp, backupPath, tmp, ctime(&timestamp));
         lastBackupTime[path] = timestamp;
     }
     catch (int &e)
@@ -285,9 +283,7 @@ int BackupHelper::BackupUpdate()
         /* 若不存在bak文件，新建一个 */
         if (bakFiles.size() == 0)
         {
-            // cout << "Backup file not found. Creating new backup...\n";
-            spdlog::info("Backup file not found in {}. Create a new backup file", line.first);
-            logger->info("Backup file not found in {}. Create a new backup file", line.first);
+            logger.info("Backup file not found in {}. Create a new backup file", line.first);
             CreateBackup(line.first);
             continue;
         }
@@ -309,8 +305,7 @@ int BackupHelper::BackupUpdate()
         {
 
             time_t t = time(0);
-            spdlog::info("Backup {} is larger than 4GB, changing to {}.bak", latestBak, t);
-            logger->info("Backup {} is larger than 4GB, changing to {}.bak", latestBak, t);
+            logger.info("Backup {} is larger than 4GB, changing to {}.bak", latestBak, t);
             latestBak = fs::path(latestBak).parent_path().string() + "/" + to_string(t) + ".bak";
             FILE *file = fopen(latestBak.c_str(), "wb");
             if ((err = WriteBakHead(file, t, line.second.size(), backupPath)) != 0)
@@ -318,9 +313,7 @@ int BackupHelper::BackupUpdate()
             try
             {
                 WritePacks(line.second, file);
-                // cout << "Backup " << to_string(t) + ".bak completed in " << latestBak << ".\nCheckpoint at " << ctime(&t) << "\n";
-                spdlog::info("Backup {}.bak completed in {}. Checkpoint at {}", t, latestBak, ctime(&t));
-                logger->info("Backup {}.bak completed in {}. Checkpoint at {}", t, latestBak, ctime(&t));
+                logger.info("Backup {}.bak completed in {}. Checkpoint at {}", t, latestBak, ctime(&t));
                 lastBackupTime[line.first] = t;
             }
             catch (int &e)
@@ -354,15 +347,12 @@ int BackupHelper::BackupUpdate()
         if (nowTime < timestamp)
         {
             fclose(file);
-            spdlog::critical("Backup file's timestamp exceeded current time, it may have broken:{}", latestBak);
-            logger->critical("Backup file's timestamp exceeds current time, it may have broken:{}", latestBak);
+            logger.critical("Backup file's timestamp exceeds current time, it may have broken:{}", latestBak);
             return StatusCode::UNKNWON_DATAFILE;
         }
         if (string(check) != "checkpoint")
         {
-            // cout << "Backup file broken, trying to rollback to previous checkpoint...\n";
-            spdlog::warn("Backup file {} broken, trying to rollback to previous checkpoint...", latestBak);
-            logger->warn("Backup file {} broken, trying to rollback to previous checkpoint...", latestBak);
+            logger.warn("Backup file {} broken, trying to rollback to previous checkpoint...", latestBak);
             /* 从头遍历备份文件，检查写入时中断的部分数据，将其覆盖 */
             size_t filesize = fs::file_size(latestBak);
             size_t curPos = ftell(file);
@@ -391,9 +381,7 @@ int BackupHelper::BackupUpdate()
                 curPos = ftell(file);
                 scanedFile++;
             }
-            // cout << "Rollback completed, " << filenum - scanedFile << " file(s) lost.\n";
-            spdlog::warn("Rollback completed, {} file(s) lost.", filenum - scanedFile);
-            logger->warn("Rollback completed, {} file(s) lost.", filenum - scanedFile);
+            logger.warn("Rollback completed, {} file(s) lost.", filenum - scanedFile);
             pos = lastPos;
             filenum = scanedFile;
         }
@@ -409,9 +397,7 @@ int BackupHelper::BackupUpdate()
             long newFileNum = filenum + line.second.size();
             err = WriteBakHead(file, nowTime, newFileNum, path);
             fclose(file);
-            // cout << "Backup " << to_string(nowTime) + ".bak update completed in " << line.first << ".\nCheckpoint at " << ctime(&nowTime) << "\n";
-            spdlog::info("Backup {}.bak update completed in {}. Checkpoint at {}", nowTime, line.first, ctime(&nowTime));
-            logger->info("Backup {}.bak update completed in {}. Checkpoint at {}", nowTime, line.first, ctime(&nowTime));
+            logger.info("Backup {}.bak update completed in {}. Checkpoint at {}", nowTime, line.first, ctime(&nowTime));
             lastBackupTime[line.first] = nowTime;
         }
         catch (int &e)

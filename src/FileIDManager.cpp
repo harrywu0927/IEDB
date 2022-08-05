@@ -47,16 +47,27 @@ void FileIDManager::GetSettings()
 }
 neb::CJsonObject FileIDManager::GetSetting()
 {
-    ifstream t("settings.json");
-    stringstream buffer;
-    buffer << t.rdbuf();
-    string contents(buffer.str());
-    neb::CJsonObject tmp(contents);
+    neb::CJsonObject setting;
+    try
+    {
+        ifstream t("settings.json");
+        stringstream buffer;
+        buffer << t.rdbuf();
+        string contents(buffer.str());
+        setting = neb::CJsonObject(contents);
+        // neb::CJsonObject tmp(contents);
+    }
+    catch (const std::exception &e)
+    {
+        RuntimeLogger.critical("Failed to load settings file : {} Program will be aborted.", e.what());
+        exit(0);
+    }
+
     // strcpy(Label, settings("Filename_Label").c_str());
     // pthread_create(&settingsWatcher, NULL, checkSettings, NULL);
     // settingsWatcher = thread(checkSettings);
     // settingsWatcher.detach();
-    return tmp;
+    return setting;
 }
 
 string FileIDManager::GetFileID(string path)
@@ -91,5 +102,5 @@ string FileIDManager::GetFileID(string path)
         readDataFilesWithTimestamps(path, filesWithTime);
         packer.Pack(path, filesWithTime);
     }
-    return prefix + to_string(curNum[path]) + "_";
+    return prefix + to_string(curNum[path]);
 }

@@ -67,8 +67,8 @@ int BackupHelper::DataRecovery(string path)
         FILE *backup;
         if (!(backup = fopen(selectedBackup.c_str(), "r+b")))
         {
-            spdlog::critical("Error when opening {} : {}", selectedBackup, strerror(errno));
-            logger->critical("Error when opening {} : {}", selectedBackup, strerror(errno));
+            // spdlog::critical("Error when opening {} : {}", selectedBackup, strerror(errno));
+            logger.critical("Error when opening {} : {}", selectedBackup, strerror(errno));
             return errno;
         }
         long filenum;
@@ -86,7 +86,7 @@ int BackupHelper::DataRecovery(string path)
         if (nowTime < timestamp)
         {
             fclose(backup);
-            logger->critical("Backup file's timestamp exceeded current time, it may have broken:{}", selectedBackup);
+            // logger.critical("Backup file's timestamp exceeded current time, it may have broken:{}", selectedBackup);
             spdlog::critical("Backup file's timestamp exceeded current time, it may have broken:{}", selectedBackup);
             return StatusCode::UNKNWON_DATAFILE;
         }
@@ -99,8 +99,8 @@ int BackupHelper::DataRecovery(string path)
         size_t compressedSize;
         if (string(check) != "checkpoint")
         {
-            spdlog::warn("Backup file {} broken, trying to rollback to previous checkpoint...", selectedBackup);
-            logger->warn("Backup file {} broken, trying to rollback to previous checkpoint...", selectedBackup);
+            // spdlog::warn("Backup file {} broken, trying to rollback to previous checkpoint...", selectedBackup);
+            logger.warn("Backup file {} broken, trying to rollback to previous checkpoint...", selectedBackup);
             size_t prevPos = curPos;
             while (curPos < filesize - 23 && scanedFile < filenum)
             {
@@ -124,8 +124,8 @@ int BackupHelper::DataRecovery(string path)
             fflush(backup);
             fs::resize_file(selectedBackup, prevPos + 10);
             // cout << "Rollback completed, " << filenum - scanedFile << " file(s) lost.\n";
-            spdlog::warn("Rollback completed, {} file(s) lost.", filenum - scanedFile);
-            logger->warn("Rollback completed, {} file(s) lost.", filenum - scanedFile);
+            // spdlog::warn("Rollback completed, {} file(s) lost.", filenum - scanedFile);
+            logger.warn("Rollback completed, {} file(s) lost.", filenum - scanedFile);
         }
 
         fseek(backup, startPos, SEEK_SET);
@@ -178,13 +178,13 @@ int BackupHelper::DataRecovery(string path)
     }
     catch (bad_alloc &e)
     {
-        spdlog::critical("bad alloc when uncompressing");
-        logger->critical("bad alloc when uncompressing");
+        // spdlog::critical("bad alloc when uncompressing");
+        logger.critical("bad alloc when uncompressing");
     }
     catch (int &e)
     {
-        spdlog::error("Error occured when uncompressing: code{}", e);
-        logger->error("Error occured when uncompressing: code{}", e);
+        // spdlog::error("Error occured when uncompressing: code{}", e);
+        logger.error("Error occured when uncompressing: code{}", e);
     }
     catch (const std::exception &e)
     {
@@ -217,8 +217,8 @@ int BackupHelper::RecoverAll(string path)
             FILE *backup;
             if (!(backup = fopen(bak.c_str(), "rb")))
             {
-                spdlog::critical("Error when opening {} : {}", bak, strerror(errno));
-                logger->critical("Error when opening {} : {}", bak, strerror(errno));
+                // spdlog::critical("Error when opening {} : {}", bak, strerror(errno));
+                logger.critical("Error when opening {} : {}", bak, strerror(errno));
                 return errno;
             }
             long filenum;
@@ -236,8 +236,8 @@ int BackupHelper::RecoverAll(string path)
             if (nowTime < timestamp)
             {
                 fclose(backup);
-                spdlog::critical("Backup file's timestamp exceeded current time, it may have broken:{}", bak);
-                logger->critical("Backup file's timestamp exceeded current time, it may have broken:{}", bak);
+                // spdlog::critical("Backup file's timestamp exceeded current time, it may have broken:{}", bak);
+                logger.critical("Backup file's timestamp exceeded current time, it may have broken:{}", bak);
                 return StatusCode::UNKNWON_DATAFILE;
             }
             size_t filesize = fs::file_size(bak);
@@ -249,8 +249,8 @@ int BackupHelper::RecoverAll(string path)
             size_t compressedSize;
             if (string(check) != "checkpoint")
             {
-                spdlog::warn("Backup file {} broken, trying to rollback to previous checkpoint...", bak);
-                logger->warn("Backup file {} broken, trying to rollback to previous checkpoint...", bak);
+                // spdlog::warn("Backup file {} broken, trying to rollback to previous checkpoint...", bak);
+                logger.warn("Backup file {} broken, trying to rollback to previous checkpoint...", bak);
                 size_t prevPos = curPos;
                 while (curPos < filesize - 23 && scanedFile < filenum)
                 {
@@ -272,8 +272,8 @@ int BackupHelper::RecoverAll(string path)
                 fwrite("checkpoint", 10, 1, backup);
                 fflush(backup);
                 fs::resize_file(bak, prevPos + 10);
-                spdlog::warn("Rollback completed, {} file(s) lost.", filenum - scanedFile);
-                logger->warn("Rollback completed, {} file(s) lost.", filenum - scanedFile);
+                // spdlog::warn("Rollback completed, {} file(s) lost.", filenum - scanedFile);
+                logger.warn("Rollback completed, {} file(s) lost.", filenum - scanedFile);
                 filenum = scanedFile;
             }
 
@@ -308,21 +308,21 @@ int BackupHelper::RecoverAll(string path)
                 }
                 fwrite(uncompressed, 1, pakLen, pack);
                 fclose(pack);
-                spdlog::info("{} recover success", string(pakPath));
-                logger->info("{} recover success", string(pakPath));
+                // spdlog::info("{} recover success", string(pakPath));
+                logger.info("{} recover success", string(pakPath));
             }
             fclose(backup);
         }
     }
     catch (bad_alloc &e)
     {
-        spdlog::critical("Memory allocation failed when compressing data!");
-        logger->critical("Memory allocation failed when compressing data!");
+        // spdlog::critical("Memory allocation failed when compressing data!");
+        logger.critical("Memory allocation failed when compressing data!");
     }
     catch (int &e)
     {
-        spdlog::error("Error occured when uncompressing: code{}", e);
-        logger->error("Error occured when uncompressing: code{}", e);
+        // spdlog::error("Error occured when uncompressing: code{}", e);
+        logger.error("Error occured when uncompressing: code{}", e);
         return e;
     }
     catch (const std::exception &e)

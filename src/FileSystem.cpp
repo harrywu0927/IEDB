@@ -28,6 +28,7 @@ int get_file_size_time(const char *filename, pair<long, long> *s_t)
     if (!fs::exists(file))
     {
         cout << "Error: file " << file << " does not exist\n";
+        throw 2;
     }
     if (fs::is_regular_file(file))
     {
@@ -65,8 +66,8 @@ int readFileList_FS(const char *basePath, vector<string> *files)
     }
     catch (const std::exception &e)
     {
-        std::cerr << e.what() << '\n';
-        return errno;
+        // RuntimeLogger.error("Error when reading files: {}", e.what());
+        throw errno;
     }
     return 0;
 }
@@ -74,23 +75,36 @@ int readFileList_FS(const char *basePath, vector<string> *files)
 queue<string> InitFileQueue()
 {
     vector<string> files;
-    readFileList_FS(settings("Filename_Label").c_str(), &files);
-    vector<pair<string, pair<long, long>>> vec; //将键值对保存在数组中以便排序
-    for (string &file : files)
+    try
     {
-        pair<long, long> s_t;
-        if (get_file_size_time(file.c_str(), &s_t) == 0)
+        readFileList_FS(settings("Filename_Label").c_str(), &files);
+        vector<pair<string, pair<long, long>>> vec; //将键值对保存在数组中以便排序
+        for (string &file : files)
         {
-            vec.push_back(make_pair(file, make_pair(s_t.first, s_t.second)));
+            pair<long, long> s_t;
+            if (get_file_size_time(file.c_str(), &s_t) == 0)
+            {
+                vec.push_back(make_pair(file, make_pair(s_t.first, s_t.second)));
+            }
         }
+
+        //按照时间升序排序
+        sort(vec.begin(), vec.end(),
+             [](pair<string, pair<long, long>> iter1, pair<string, pair<long, long>> iter2) -> bool
+             {
+                 return iter1.second.second < iter2.second.second;
+             });
+    }
+    catch (int &e)
+    {
+        RuntimeLogger.critical("Error occured when initializing file list : {}", strerror(e));
+        exit(0);
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << '\n';
     }
 
-    //按照时间升序排序
-    sort(vec.begin(), vec.end(),
-         [](pair<string, pair<long, long>> iter1, pair<string, pair<long, long>> iter2) -> bool
-         {
-             return iter1.second.second < iter2.second.second;
-         });
     queue<string> que;
     for (auto &file : files)
     {
@@ -112,8 +126,7 @@ int DB_GetFileLengthByPath(char path[], long *length)
     }
     catch (const std::exception &e)
     {
-        std::cerr << e.what() << '\n';
-        cout << filepath << endl;
+        RuntimeLogger.error("Error when getting file length: {}. File {}", e.what(), filepath);
         throw int(errno);
     }
 
@@ -125,7 +138,7 @@ int DB_GetFileLengthByFilePtr(long fileptr, long *length)
     FILE *fp = (FILE *)fileptr;
     if (fseek(fp, 0, SEEK_END) != 0)
     {
-        perror("Error while getting file length");
+        RuntimeLogger.error("Error when getting file length: {}", strerror(errno));
         throw int(errno);
         return errno;
     }
@@ -147,7 +160,11 @@ bool LoopMode(char buf[], long length)
             fileQueue.pop();
             if (remove(file.c_str()) == 0)
             {
+                RuntimeLogger.warn("File {} was deleted.", file);
                 getDiskSpaces();
+            }
+            else
+            {
             }
         }
         if (availableSpace >= needSpace)
@@ -199,7 +216,7 @@ int DB_Write(long fp, char *buf, long length)
     {
         if (fwrite(buf, length, 1, file) != 1)
         {
-            perror("Error while writing");
+            RuntimeLogger.critical("Error when writing: {}", strerror(errno));
             throw(int) errno;
             return errno;
         }
@@ -251,8 +268,7 @@ int DB_Open(char path[], char mode[], long *fptr)
         }
         else
         {
-            cout << filepath << endl;
-            perror("Error while opening file");
+            RuntimeLogger.error("Error when opening {} : {}", filepath, strerror(errno));
             return errno;
         }
     }
@@ -292,7 +308,7 @@ int DB_Read(long fptr, char buf[])
     int readnum = fread(buf, len, 1, fp);
     if (readnum < 0)
     {
-        perror("Error while reading:");
+        RuntimeLogger.error("Error when reading : {}", strerror(errno));
         return errno;
     }
     return 0;
@@ -319,7 +335,7 @@ int DB_OpenAndRead(char path[], char buf[])
     fclose(fp); //读完后关闭文件
     if (readnum < 0)
     {
-        perror("Error while reading:");
+        RuntimeLogger.error("Error when reading {} : {}", path, strerror(errno));
         return errno;
     }
 
@@ -343,17 +359,26 @@ int DB_ReadFile(DB_DataBuffer *buffer)
     // cout << finalPath << '\n';
     FILE *fp = fopen(finalPath.c_str(), "rb");
     if (fp == NULL)
+    {
+        buffer->bufferMalloced = 0;
         return errno;
+    }
     fseek(fp, 0, SEEK_END);
     long len = ftell(fp);
     if (len == 0)
     {
         buffer->length = 0;
+        buffer->bufferMalloced = 0;
         fclose(fp);
         return 0;
     }
     fseek(fp, 0, SEEK_SET);
     char *buf = (char *)malloc(len);
+    if (buf == NULL)
+    {
+        fclose(fp);
+        return StatusCode::MEMORY_INSUFFICIENT;
+    }
     int readnum = fread(buf, len, 1, fp);
     fclose(fp); //读完后关闭文件
     if (readnum < 0)
@@ -387,8 +412,7 @@ int DB_CreateDirectory(char path[])
     }
     catch (const std::exception &e)
     {
-        std::cerr << e.what() << '\n';
-        RuntimeLogger.error("Failed to create directory {}", path);
+        RuntimeLogger.error("Failed to create directory {} : {}", path, e.what());
         return errno;
     }
     return 0;

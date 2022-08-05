@@ -15,6 +15,7 @@ private:
     shared_ptr<spdlog::logger> logger;
 
 public:
+    Logger() {}
     Logger(string name)
     {
         logger = spdlog::get(name + ".log");
@@ -48,6 +49,13 @@ public:
     {
         logger->critical(fmt, std::forward<Args>(args)...);
         spdlog::critical(fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void debug(format_string_t<Args...> fmt, Args &&...args)
+    {
+        logger->debug(fmt, std::forward<Args>(args)...);
+        spdlog::debug(fmt, std::forward<Args>(args)...);
     }
 };
 

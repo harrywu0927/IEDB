@@ -418,7 +418,7 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int zip)
     long curtime = getMilliTime();
     time_t time = curtime / 1000;
     struct tm *dateTime = localtime(&time);
-    string fileID = FileIDManager::GetFileID(buffer->savePath);
+    string fileID = FileIDManager::GetFileID(buffer->savePath) + "_";
     string finalPath = "";
     finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000));
     char mode[2] = {'a', 'b'};

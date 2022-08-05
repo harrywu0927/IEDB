@@ -64,6 +64,7 @@ void checkSettings()
 }
 
 int main()
+<<<<<<< Updated upstream
 {DataTypeConverter converter;
 	DB_QueryParams params;
 	params.pathToLine = "JinfeiTem";
@@ -131,6 +132,14 @@ int main()
     // spdlog::critical("critical");
     // spdlog::error("error");
     // return 0;
+=======
+{
+    spdlog::info("welcome");
+    spdlog::critical("critical");
+    spdlog::error("error");
+    spdlog::debug("debug");
+    return 0;
+>>>>>>> Stashed changes
     DB_ZipNodeParams param;
     param.pathToLine = "arrTest";
     param.valueName = "DB1";
@@ -156,7 +165,7 @@ int main()
     newParam.tsLen = 6;
     newParam.isArrary = 0;
     newParam.arrayLen = 10;
-    //char a[4] = {'1','2','0',0};
+    // char a[4] = {'1','2','0',0};
     newParam.maxValue = "999";
     newParam.minValue = "98";
     newParam.standardValue = "80";
@@ -251,7 +260,7 @@ int main()
 
     // // cout << mypath.filename() / "sdf.fe" << endl;
     // return 0;
-    
+
     // int (*M)[10] = new int[10][10];
     // char(*maxValue)[10];
     // maxValue = new char[10][10];

@@ -345,28 +345,28 @@ int DataType::CompareValueInBytes(DataType &type, char *compared, const char *to
     case ValueType::INT:
     {
         short value1 = converter.ToInt16(compared);
-        short value2 = converter.ToInt16(toCompare);
+        short value2 = converter.ToInt16((void *)toCompare);
         return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
         break;
     }
     case ValueType::DINT:
     {
         int value1 = converter.ToInt32(compared);
-        int value2 = converter.ToInt32(toCompare);
+        int value2 = converter.ToInt32((void *)toCompare);
         return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
         break;
     }
     case ValueType::UDINT:
     {
         uint value1 = converter.ToUInt32(compared);
-        uint value2 = converter.ToUInt32(toCompare);
+        uint value2 = converter.ToUInt32((void *)toCompare);
         return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
         break;
     }
     case ValueType::UINT:
     {
         uint16_t value1 = converter.ToUInt16(compared);
-        uint16_t value2 = converter.ToUInt16(toCompare);
+        uint16_t value2 = converter.ToUInt16((void *)toCompare);
         return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
         break;
     }
@@ -380,14 +380,14 @@ int DataType::CompareValueInBytes(DataType &type, char *compared, const char *to
     case ValueType::TIME:
     {
         int value1 = converter.ToInt32(compared);
-        int value2 = converter.ToInt32(toCompare);
+        int value2 = converter.ToInt32((void *)toCompare);
         return value1 == value2 ? 0 : (value1 > value2 ? 1 : -1);
         break;
     }
     case ValueType::REAL:
     {
         float f1 = converter.ToFloat(compared);
-        float f2 = converter.ToFloat(toCompare);
+        float f2 = converter.ToFloat((void *)toCompare);
         return f1 == f2 ? 0 : (f1 > f2 ? 1 : -1);
         break;
     }

@@ -5,8 +5,7 @@
 
 ## Dependency
 ### For Linux(Ubuntu18.04 or later):
-```sudo apt install python3.8-dev```
-
+```sudo apt install python3.8-dev openssl```
 #### 为python3.8安装numpy、pandas、sklearn、matplotlib:
 若不使用Anaconda：
 
@@ -21,7 +20,7 @@
 ```python3.8 -m pip install scikit-learn-intelex```
 
 ### For macOS:
-```brew install python@3.9```
+```brew install python@3.9 openssl```
 ## 使用说明
 
 1.  在文件根目录中，```cmake .```

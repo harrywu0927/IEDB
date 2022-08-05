@@ -4,7 +4,7 @@
 using namespace std;
 
 //将大端存储方式的字符数组转换为指定类型的数值
-short DataTypeConverter::ToInt16(const char *str)
+short DataTypeConverter::ToInt16(void *str)
 {
     short value = 0;
     if (this->isBigEndian)
@@ -16,19 +16,19 @@ short DataTypeConverter::ToInt16(const char *str)
         value = __builtin_bswap16(*(short *)str);
     }
     return value;
-    void *pf;
-    pf = &value;
-    for (char i = 0; i < 2; i++)
-    {
-        *((unsigned char *)pf + i) = str[1 - i];
-    }
+    // void *pf;
+    // pf = &value;
+    // for (char i = 0; i < 2; i++)
+    // {
+    //     *((unsigned char *)pf + i) = str[1 - i];
+    // }
     // value |= str[0];
     // value <<= 8;
     // value |= str[1];
 
-    return value;
+    // return value;
 }
-uint16_t DataTypeConverter::ToUInt16(const char *str)
+uint16_t DataTypeConverter::ToUInt16(void *str)
 {
     uint16_t value = 0;
     if (this->isBigEndian)
@@ -40,18 +40,18 @@ uint16_t DataTypeConverter::ToUInt16(const char *str)
         value = __builtin_bswap16(*(unsigned short *)str);
     }
     return value;
-    void *pf;
-    pf = &value;
-    for (char i = 0; i < 2; i++)
-    {
-        *((unsigned char *)pf + i) = str[1 - i];
-    }
+    // void *pf;
+    // pf = &value;
+    // for (char i = 0; i < 2; i++)
+    // {
+    //     *((unsigned char *)pf + i) = str[1 - i];
+    // }
     // value |= str[0];
     // value <<= 8;
     // value |= str[1];
-    return value;
+    // return value;
 }
-int DataTypeConverter::ToInt32(const char *str)
+int DataTypeConverter::ToInt32(void *str)
 {
     int value = 0;
     if (this->isBigEndian)
@@ -63,15 +63,15 @@ int DataTypeConverter::ToInt32(const char *str)
         value = __builtin_bswap32(*(int *)str);
     }
     return value;
-    void *pf;
-    pf = &value;
-    for (char i = 0; i < 4; i++)
-    {
-        *((unsigned char *)pf + i) = str[3 - i];
-    }
-    return value;
+    // void *pf;
+    // pf = &value;
+    // for (char i = 0; i < 4; i++)
+    // {
+    //     *((unsigned char *)pf + i) = str[3 - i];
+    // }
+    // return value;
 }
-uint32_t DataTypeConverter::ToUInt32(const char *str)
+uint32_t DataTypeConverter::ToUInt32(void *str)
 {
     uint32_t value = 0;
     if (this->isBigEndian)
@@ -83,15 +83,15 @@ uint32_t DataTypeConverter::ToUInt32(const char *str)
         value = __builtin_bswap32(*(uint32_t *)str);
     }
     return value;
-    void *pf;
-    pf = &value;
-    for (char i = 0; i < 4; i++)
-    {
-        *((unsigned char *)pf + i) = str[3 - i];
-    }
-    return value;
+    // void *pf;
+    // pf = &value;
+    // for (char i = 0; i < 4; i++)
+    // {
+    //     *((unsigned char *)pf + i) = str[3 - i];
+    // }
+    // return value;
 }
-float DataTypeConverter::ToFloat(const char *str)
+float DataTypeConverter::ToFloat(void *str)
 {
     float floatVariable;
     if (isBigEndian)
@@ -108,12 +108,12 @@ float DataTypeConverter::ToFloat(const char *str)
     pf = &floatVariable;
     for (char i = 0; i < 4; i++)
     {
-        *((unsigned char *)pf + i) = str[3 - i];
+        *((unsigned char *)pf + i) = ((unsigned char *)str)[3 - i];
     }
     return floatVariable;
 }
 
-uint64_t DataTypeConverter::ToLong64(const char *str)
+uint64_t DataTypeConverter::ToLong64(void *str)
 {
     uint64_t value = 0;
     if (isBigEndian)
@@ -125,17 +125,17 @@ uint64_t DataTypeConverter::ToLong64(const char *str)
         value = __builtin_bswap64(*(uint64_t *)str);
     }
     return value;
-    void *pf;
-    pf = &value;
-    for (char i = 0; i < 8; i++)
-    {
-        *((unsigned char *)pf + i) = str[7 - i];
-    }
-    return value;
+    // void *pf;
+    // pf = &value;
+    // for (char i = 0; i < 8; i++)
+    // {
+    //     *((unsigned char *)pf + i) = str[7 - i];
+    // }
+    // return value;
 }
 
 //将小端存储方式的字符数组转换为指定类型数值
-short DataTypeConverter::ToInt16_m(const char *str)
+short DataTypeConverter::ToInt16_m(void *str)
 {
     short value = 0;
     if (!isBigEndian)
@@ -147,18 +147,18 @@ short DataTypeConverter::ToInt16_m(const char *str)
         value = __builtin_bswap16(*(short *)str);
     }
     return value;
-    void *pf;
-    pf = &value;
-    for (char i = 0; i < 2; i++)
-    {
-        *((unsigned char *)pf + i) = str[i];
-    }
-    // value |= str[1];
-    // value <<= 8;
-    // value |= str[0];
-    return value;
+    // void *pf;
+    // pf = &value;
+    // for (char i = 0; i < 2; i++)
+    // {
+    //     *((unsigned char *)pf + i) = str[i];
+    // }
+    // // value |= str[1];
+    // // value <<= 8;
+    // // value |= str[0];
+    // return value;
 }
-uint16_t DataTypeConverter::ToUInt16_m(const char *str)
+uint16_t DataTypeConverter::ToUInt16_m(void *str)
 {
     uint16_t value = 0;
     if (!isBigEndian)
@@ -170,18 +170,18 @@ uint16_t DataTypeConverter::ToUInt16_m(const char *str)
         value = __builtin_bswap16(*(uint16_t *)str);
     }
     return value;
-    void *pf;
-    pf = &value;
-    for (char i = 0; i < 2; i++)
-    {
-        *((unsigned char *)pf + i) = str[i];
-    }
-    // value |= str[1];
-    // value <<= 8;
-    // value |= str[0];
-    return value;
+    // void *pf;
+    // pf = &value;
+    // for (char i = 0; i < 2; i++)
+    // {
+    //     *((unsigned char *)pf + i) = str[i];
+    // }
+    // // value |= str[1];
+    // // value <<= 8;
+    // // value |= str[0];
+    // return value;
 }
-int DataTypeConverter::ToInt32_m(const char *str)
+int DataTypeConverter::ToInt32_m(void *str)
 {
     int value = 0;
     if (!isBigEndian)
@@ -193,15 +193,15 @@ int DataTypeConverter::ToInt32_m(const char *str)
         value = __builtin_bswap32(*(int *)str);
     }
     return value;
-    void *pf;
-    pf = &value;
-    for (char i = 0; i < 4; i++)
-    {
-        *((unsigned char *)pf + i) = str[i];
-    }
-    return value;
+    // void *pf;
+    // pf = &value;
+    // for (char i = 0; i < 4; i++)
+    // {
+    //     *((unsigned char *)pf + i) = str[i];
+    // }
+    // return value;
 }
-uint32_t DataTypeConverter::ToUInt32_m(const char *str)
+uint32_t DataTypeConverter::ToUInt32_m(void *str)
 {
     uint32_t value = 0;
     if (!isBigEndian)
@@ -213,15 +213,15 @@ uint32_t DataTypeConverter::ToUInt32_m(const char *str)
         value = __builtin_bswap32(*(uint32_t *)str);
     }
     return value;
-    void *pf;
-    pf = &value;
-    for (char i = 0; i < 4; i++)
-    {
-        *((unsigned char *)pf + i) = str[i];
-    }
-    return value;
+    // void *pf;
+    // pf = &value;
+    // for (char i = 0; i < 4; i++)
+    // {
+    //     *((unsigned char *)pf + i) = str[i];
+    // }
+    // return value;
 }
-float DataTypeConverter::ToFloat_m(const char *str)
+float DataTypeConverter::ToFloat_m(void *str)
 {
     float floatVariable;
     if (!isBigEndian)
@@ -238,12 +238,12 @@ float DataTypeConverter::ToFloat_m(const char *str)
     pf = &floatVariable;
     for (char i = 0; i < 4; i++)
     {
-        *((unsigned char *)pf + i) = str[i];
+        *((unsigned char *)pf + i) = ((unsigned char *)str)[i];
     }
     return floatVariable;
 }
 
-uint64_t DataTypeConverter::ToLong64_m(const char *str)
+uint64_t DataTypeConverter::ToLong64_m(void *str)
 {
     uint64_t value = 0;
     if (!isBigEndian)
@@ -255,13 +255,13 @@ uint64_t DataTypeConverter::ToLong64_m(const char *str)
         value = __builtin_bswap64(*(uint64_t *)str);
     }
     return value;
-    void *pf;
-    pf = &value;
-    for (char i = 0; i < 8; i++)
-    {
-        *((unsigned char *)pf + i) = str[i];
-    }
-    return value;
+    // void *pf;
+    // pf = &value;
+    // for (char i = 0; i < 8; i++)
+    // {
+    //     *((unsigned char *)pf + i) = str[i];
+    // }
+    // return value;
 }
 
 //将指定类型的数值转换为大端存储方式的字符数组

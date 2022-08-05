@@ -1,3 +1,6 @@
+#ifndef _DATA_TYPE_CONVERT_HPP
+#define _DATA_TYPE_CONVERT_HPP
+#endif
 #include <string>
 
 using namespace std;
@@ -15,12 +18,12 @@ public:
     DataTypeConverter() { CheckBigEndian(); }
     //大端存储方式
     //字符数组转成指定数据类型
-    short ToInt16(const char *str);
-    uint16_t ToUInt16(const char *str);
-    int ToInt32(const char *str);
-    float ToFloat(const char *str);
-    uint32_t ToUInt32(const char *str);
-    uint64_t ToLong64(const char *str);
+    short ToInt16(void *str);
+    uint16_t ToUInt16(void *str);
+    int ToInt32(void *str);
+    float ToFloat(void *str);
+    uint32_t ToUInt32(void *str);
+    uint64_t ToLong64(void *str);
     //指定数据类型转成对应的字符数组
     void ToInt16Buff(short num, char *buff);
     void ToUInt16Buff(uint16_t num, char *buff);
@@ -31,12 +34,12 @@ public:
 
     //小端存储方式
     //字符数组转成指定数据类型
-    short ToInt16_m(const char *str);
-    uint16_t ToUInt16_m(const char *str);
-    int ToInt32_m(const char *str);
-    float ToFloat_m(const char *str);
-    uint32_t ToUInt32_m(const char *str);
-    uint64_t ToLong64_m(const char *str);
+    short ToInt16_m(void *str);
+    uint16_t ToUInt16_m(void *str);
+    int ToInt32_m(void *str);
+    float ToFloat_m(void *str);
+    uint32_t ToUInt32_m(void *str);
+    uint64_t ToLong64_m(void *str);
     //指定数据类型转成对应的字符数组
     void ToInt16Buff_m(short num, char *buff);
     void ToUInt16Buff_m(uint16_t num, char *buff);

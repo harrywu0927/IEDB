@@ -154,6 +154,46 @@ int CheckQueryParams(DB_QueryParams *params)
 }
 
 /**
+ * @brief 检查文件是否人为增加或删除内容
+ *
+ * @param tem
+ * @param buff
+ * @param size
+ */
+void CheckFile(Template &tem, void *buff, size_t size)
+{
+	if (tem.hasImage)
+	{
+		DataTypeConverter converter;
+		char *imgPos = (char *)buff + tem.totalBytes; //起始图片位置
+		size_t imgOffset = tem.totalBytes;			  //当前偏移量
+		int imgNum = 0;								  //图片个数
+		for (auto &schema : tem.schemas)
+		{
+			if (schema.second.valueType == ValueType::IMAGE)
+				imgNum++;
+		}
+		for (int i = 0; i < imgNum; i++)
+		{
+			if (imgOffset >= size)
+			{
+				throw iedb_err(StatusCode::DATAFILE_MODIFIED);
+			}
+			uint imgSize = converter.ToUInt16(imgPos) * converter.ToUInt16(imgPos + 2) * converter.ToUInt16(imgPos + 4);
+			imgPos += 6 + imgSize;
+			imgOffset += 6 + imgSize;
+		}
+		if (imgOffset < size)
+			throw iedb_err(StatusCode::DATAFILE_MODIFIED);
+	}
+	else
+	{
+		if (tem.totalBytes != size)
+			throw iedb_err(StatusCode::DATAFILE_MODIFIED);
+	}
+}
+
+/**
  * @brief 提取数据时可用到的静态参数，避免DataExtration函数的参数过多从而略微影响性能
  *
  * @note 64位Linux系统中函数参数少于7个时， 参数从左到右放入寄存器: rdi, rsi, rdx, rcx, r8, r9。 当参数为7个以上时， 前 6 个与前面一样， 但后面的依次从 “右向左” 放入栈中，即和32位汇编一样。
@@ -599,103 +639,6 @@ int WriteDataToBuffer(vector<tuple<char *, long, long, long>> &mallocedMemory, E
 
 /**
  * @brief 根据指定数据类型的数值对查询结果排序或去重，此函数仅对内存地址-长度对操作
- * @param mallocedMemory        已在堆区分配的内存地址-长度对集
- * @param poses           指定数据在缓冲区中的位置
- * @param params        查询参数
- * @param type        数据类型
- *
- * @return  0:success,
- *          others: StatusCode
- * @note
- */
-int sortResultByValue(vector<pair<char *, long>> &mallocedMemory, vector<long> &poses, DB_QueryParams *params, DataType &type)
-{
-	if (type.isArray || type.valueType == ValueType::IMAGE)
-		return StatusCode::QUERY_TYPE_NOT_SURPPORT;
-	vector<pair<pair<char *, long>, long>> memAndPos; //使数据偏移与内存-长度对建立关联
-	for (int i = 0; i < poses.size(); i++)
-	{
-		memAndPos.push_back(make_pair(mallocedMemory[i], poses[i]));
-	}
-
-	switch (params->order)
-	{
-	case ASCEND: //升序
-	{
-		sort(memAndPos.begin(), memAndPos.end(),
-			 [&type](pair<pair<char *, long>, long> iter1, pair<pair<char *, long>, long> iter2) -> bool
-			 {
-				 char value1[type.valueBytes], value2[type.valueBytes];
-				 memcpy(value1, iter1.first.first + iter1.second, type.valueBytes);
-				 memcpy(value2, iter2.first.first + iter2.second, type.valueBytes);
-				 return DataType::CompareValueInBytes(type, value1, value2) < 0;
-			 });
-		for (int i = 0; i < mallocedMemory.size(); i++)
-		{
-			mallocedMemory[i] = memAndPos[i].first;
-		}
-
-		break;
-	}
-
-	case DESCEND: //降序
-	{
-		sort(memAndPos.begin(), memAndPos.end(),
-			 [&type](pair<pair<char *, long>, long> iter1, pair<pair<char *, long>, long> iter2) -> bool
-			 {
-				 char value1[type.valueBytes], value2[type.valueBytes];
-				 memcpy(value1, iter1.first.first + iter1.second, type.valueBytes);
-				 memcpy(value2, iter2.first.first + iter2.second, type.valueBytes);
-				 return DataType::CompareValueInBytes(type, value1, value2) > 0;
-			 });
-		for (int i = 0; i < mallocedMemory.size(); i++)
-		{
-			mallocedMemory[i] = memAndPos[i].first;
-		}
-		break;
-	}
-	case DISTINCT: //去除重复
-	{
-		vector<pair<char *, long>> existedValues;
-		for (int i = 0; i < mallocedMemory.size(); i++)
-		{
-			char value[type.valueBytes];
-			memcpy(value, mallocedMemory[i].first + poses[i], type.valueBytes);
-			bool isRepeat = false;
-			for (auto &&added : existedValues)
-			{
-				bool equals = true;
-				for (int i = 0; i < added.second; i++)
-				{
-					if (value[i] != added.first[i])
-						equals = false;
-				}
-				if (equals)
-				{
-					free(mallocedMemory[i].first);					  //重复值，释放此内存
-					mallocedMemory.erase(mallocedMemory.begin() + i); //注：此操作在查询量大时效率可能很低
-					isRepeat = true;
-					i--;
-				}
-			}
-			if (!isRepeat) //不是重复值
-			{
-				char *v = value;
-				existedValues.push_back(make_pair(v, type.valueBytes));
-			}
-		}
-
-		break;
-	}
-	default:
-		break;
-	}
-
-	return 0;
-}
-
-/**
- * @brief 根据指定数据类型的数值对查询结果排序或去重，此函数仅对内存地址-长度对操作
  * @param mallocedMemory        已在堆区分配的内存地址-长度-排序值偏移量-时间戳元组
  * @param params        查询参数
  * @param type        数据类型
@@ -779,6 +722,97 @@ int sortResult(vector<tuple<char *, long, long, long>> &mallocedMemory, DB_Query
 			 [](tuple<char *, long, long, long> iter1, tuple<char *, long, long, long> iter2) -> bool
 			 {
 				 return std::get<3>(iter1) > std::get<3>(iter2);
+			 });
+		break;
+	}
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief 根据指定数据类型的数值对查询结果排序或去重，此函数仅对内存地址-长度对操作
+ * @param mallocedMemory        已在堆区分配的内存地址-长度-排序值偏移量-时间戳元组
+ * @param params        查询参数
+ * @param type        数据类型
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note
+ */
+int sortResult_NonIMG(vector<tuple<char *, long>> &mallocedMemory, long sortPos, DB_QueryParams *params, DataType &type)
+{
+	if (type.isArray || type.valueType == ValueType::IMAGE || type.isTimeseries)
+		throw iedb_err(StatusCode::QUERY_TYPE_NOT_SURPPORT);
+	switch (params->order)
+	{
+	case ASCEND: //升序
+	{
+		sort(mallocedMemory.begin(), mallocedMemory.end(),
+			 [&type, &sortPos](tuple<char *, long> iter1, tuple<char *, long> iter2) -> bool
+			 {
+				 return DataType::CompareValueInBytes(type, std::get<0>(iter1) + sortPos, std::get<0>(iter2) + sortPos) < 0;
+			 });
+		break;
+	}
+
+	case DESCEND: //降序
+	{
+		sort(mallocedMemory.begin(), mallocedMemory.end(),
+			 [&type, &sortPos](tuple<char *, long> iter1, tuple<char *, long> iter2) -> bool
+			 {
+				 return DataType::CompareValueInBytes(type, std::get<0>(iter1) + sortPos, std::get<0>(iter2) + sortPos) > 0;
+			 });
+		break;
+	}
+	case DISTINCT: //去除重复
+	{
+		bool hasIMG = params->byPath ? CurrentTemplate.checkHasImage(params->pathCode) : type.valueType == ValueType::IMAGE;
+		vector<pair<char *, int>> existedValues;
+		vector<tuple<char *, long>> newMemory;
+		for (int i = 0; i < mallocedMemory.size(); i++)
+		{
+			char *value = std::get<0>(mallocedMemory[i]) + sortPos;
+			bool isRepeat = false;
+			for (auto &&added : existedValues)
+			{
+				bool equals = true;
+				for (int i = 0; i < added.second; i++)
+				{
+					if (value[i] != added.first[i])
+						equals = false;
+				}
+				if (equals)
+				{
+					isRepeat = true;
+				}
+			}
+			if (!isRepeat) //不是重复值
+			{
+				existedValues.push_back(make_pair(value, type.valueBytes));
+				newMemory.push_back(mallocedMemory[i]);
+			}
+		}
+		mallocedMemory = newMemory;
+		break;
+	}
+	case TIME_ASC:
+	{
+		sort(mallocedMemory.begin(), mallocedMemory.end(),
+			 [](tuple<char *, long> iter1, tuple<char *, long> iter2) -> bool
+			 {
+				 return std::get<1>(iter1) < std::get<1>(iter2);
+			 });
+		break;
+	}
+	case TIME_DSC:
+	{
+		sort(mallocedMemory.begin(), mallocedMemory.end(),
+			 [](tuple<char *, long> iter1, tuple<char *, long> iter2) -> bool
+			 {
+				 return std::get<1>(iter1) > std::get<1>(iter2);
 			 });
 		break;
 	}
@@ -881,7 +915,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 		return check;
 	}
 	//确认当前模版
-	if (TemplateManager::CheckTemplate(params->pathToLine) != 0 && ZipTemplateManager::CheckZipTemplate(params->pathToLine) != 0)
+	if (TemplateManager::CheckTemplate(params->pathToLine) != 0 || ZipTemplateManager::CheckZipTemplate(params->pathToLine) != 0)
 	{
 		IOBusy = false;
 		return StatusCode::SCHEMA_FILE_NOT_FOUND;
@@ -917,149 +951,190 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 	char *rawBuff = nullptr;
 	int startPos;
-	if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
+	try
 	{
-		char typeNum = Ext_Params.typeList.size(); //数据类型总数
-		char head[(int)typeNum * 19 + 1];
-		startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
-
-		//此处可能会分配多余的空间，但最多在两个包的可接受大小内
-		int size = Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos;
-		cout << "memory size alloced: " << size << "\n";
-		rawBuff = (char *)malloc(Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos);
-		if (rawBuff == NULL)
+		if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
 		{
-			IOBusy = false;
-			return StatusCode::MEMORY_INSUFFICIENT;
+			char typeNum = Ext_Params.typeList.size(); //数据类型总数
+			char head[(int)typeNum * 19 + 1];
+			startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
+
+			//此处可能会分配多余的空间，但最多在两个包的可接受大小内
+			// int size = Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos;
+			// cout << "memory size alloced: " << size << "\n";
+			rawBuff = (char *)malloc(Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos);
+			if (rawBuff == NULL)
+			{
+				throw bad_alloc();
+			}
+			memcpy(rawBuff, head, startPos);
+			cur = startPos;
 		}
-		memcpy(rawBuff, head, startPos);
-		cur = startPos;
 	}
+	catch (bad_alloc &e)
+	{
+		IOBusy = false;
+		return StatusCode::MEMORY_INSUFFICIENT;
+	}
+	catch (iedb_err &e)
+	{
+		RuntimeLogger.critical(e.what());
+	}
+	catch (const std::exception &e)
+	{
+		RuntimeLogger.critical("Unexpected error occured:{}", e.what());
+		return -1;
+	}
+
 	/**
 	 * @brief 完全压缩的数据还原后必然相同，因此仅需还原一次后保存备用
 	 * 此处仅还原了非图片部分的数据，遇到图片后将图片与之拼接即可
 	 */
-	char *completeZiped = new char[CurrentTemplate.totalBytes];
-	char *tempBuff = new char[CurrentTemplate.totalBytes];
-	int rezipedlen = 0;
-	ReZipBuff(&completeZiped, rezipedlen, params->pathToLine);
-	//先对时序在前的包文件检索
-	for (auto &pack : selectedPacks)
+	char *completeZiped = nullptr;
+	char *tempBuff = nullptr;
+	try
 	{
-		auto pk = packManager.GetPack(pack.first);
-		PackFileReader packReader(pk.first, pk.second);
-		if (packReader.packBuffer == NULL)
-			continue;
-		int fileNum;
-		string templateName;
-		packReader.ReadPackHead(fileNum, templateName);
-		if (params->byPath)
+		completeZiped = new char[CurrentTemplate.totalBytes];
+		tempBuff = new char[CurrentTemplate.totalBytes];
+		int rezipedlen = 0;
+		ReZipBuff(&completeZiped, rezipedlen, params->pathToLine);
+		CheckFile(CurrentTemplate, completeZiped, CurrentTemplate.totalBytes);
+		//先对时序在前的包文件检索
+		for (auto &pack : selectedPacks)
 		{
-			CurrentTemplate.GetAllPathsByCode(params->pathCode, Ext_Params.pathCodes);
+			auto pk = packManager.GetPack(pack.first);
+			PackFileReader packReader(pk.first, pk.second);
+			if (packReader.packBuffer == NULL)
+				continue;
+			int fileNum;
+			string templateName;
+			packReader.ReadPackHead(fileNum, templateName);
+			if (params->byPath)
+			{
+				CurrentTemplate.GetAllPathsByCode(params->pathCode, Ext_Params.pathCodes);
+			}
+			for (int i = 0; i < fileNum; i++)
+			{
+				char *buff = nullptr, *img = nullptr;
+				long timestamp;
+				int zipType, readLength;
+				// long dataPos = packReader.Next(readLength, timestamp, zipType, &buff, completeZiped);
+				long dataPos = packReader.Next(readLength, timestamp, zipType);
+				if (timestamp < params->start || timestamp > params->end) //在时间区间外
+					continue;
+				switch (zipType)
+				{
+				case 0:
+				{
+					buff = packReader.packBuffer + dataPos;
+					break;
+				}
+				case 1:
+				{
+					buff = completeZiped;
+					break;
+				}
+				case 2:
+				{
+					buff = tempBuff;
+					memcpy(buff, packReader.packBuffer + dataPos, readLength);
+					ReZipBuff(&buff, readLength);
+					break;
+				}
+				default:
+					RuntimeLogger.critical("Unknown ziptype detected, data file {} may have broken.", pack.first);
+					throw iedb_err(StatusCode::DATAFILE_MODIFIED);
+				}
+				if (Ext_Params.hasIMG)
+				{
+					char *newBuffer = nullptr;
+					long len = 0;
+					err = params->byPath ? FindImage(&img, len, pack.first, i, params->pathCode) : FindImage(&img, len, pack.first, i, Ext_Params.names);
+					if (err != 0)
+					{
+						throw iedb_err(err);
+					}
+					newBuffer = new char[readLength + len];
+					memcpy(newBuffer, buff, zipType == 1 ? CurrentTemplate.totalBytes : readLength);
+					memcpy(newBuffer + readLength, img, len);
+					// if (zipType == 2)
+					// 	delete[] buff;
+					buff = newBuffer;
+					err = DataExtraction(mallocedMemory, Ext_Params, params, cur, timestamp, buff);
+				}
+				else
+				{
+					err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, timestamp);
+				}
+
+				if (err > 0)
+				{
+					throw iedb_err(err);
+				}
+			}
 		}
-		for (int i = 0; i < fileNum; i++)
+
+		//对时序在后的普通文件检索
+		for (auto &file : selectedFiles)
 		{
-			char *buff = nullptr, *img = nullptr;
-			long timestamp;
-			int zipType, readLength;
-			// long dataPos = packReader.Next(readLength, timestamp, zipType, &buff, completeZiped);
-			long dataPos = packReader.Next(readLength, timestamp, zipType);
-			if (timestamp < params->start || timestamp > params->end) //在时间区间外
-				continue;
-			switch (zipType)
+			long len;
+			DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+			char *buff = new char[len];
+			DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+			if (fs::path(file.first).extension() == ".idbzip")
 			{
-			case 0:
-			{
-				buff = packReader.packBuffer + dataPos; //直接指向目标数据区，无需再拷贝数据
-				break;
-			}
-			case 1:
-			{
-				buff = completeZiped;
-				break;
-			}
-			case 2:
-			{
-				buff = tempBuff;
-				memcpy(buff, packReader.packBuffer + dataPos, readLength);
-				ReZipBuff(&buff, readLength);
-				break;
-			}
-			default:
-				continue;
+				ReZipBuff(&buff, (int &)len, params->pathToLine);
 			}
 			if (Ext_Params.hasIMG)
-			{
-				char *newBuffer;
-				long len;
-				err = params->byPath ? FindImage(&img, len, pack.first, i, params->pathCode) : FindImage(&img, len, pack.first, i, Ext_Params.names);
-				if (err != 0)
-				{
-					if (Ext_Params.hasIMG)
-						GarbageMemRecollection(mallocedMemory);
-					else
-						free(rawBuff);
-					IOBusy = false;
-					return err;
-				}
-				newBuffer = new char[readLength + len];
-				memcpy(newBuffer, buff, zipType == 1 ? CurrentTemplate.totalBytes : readLength);
-				memcpy(newBuffer + readLength, img, len);
-				// if (zipType == 2)
-				// 	delete[] buff;
-				buff = newBuffer;
-				err = DataExtraction(mallocedMemory, Ext_Params, params, cur, timestamp, buff);
-			}
+				err = DataExtraction(mallocedMemory, Ext_Params, params, cur, file.second, buff);
 			else
-			{
-				err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, timestamp);
-			}
-
-			// if (zipType == 2 || Ext_Params.hasIMG)
-			// 	delete[] buff;
+				err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, file.second);
+			delete[] buff;
 			if (err > 0)
 			{
-				if (Ext_Params.hasIMG)
-					GarbageMemRecollection(mallocedMemory);
-				else
-					free(rawBuff);
-				IOBusy = false;
-				return err;
+				throw iedb_err(err);
 			}
 		}
 	}
-
-	//对时序在后的普通文件检索
-	for (auto &file : selectedFiles)
+	catch (bad_alloc &e)
 	{
-		long len;
-		DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
-		if (len == 0)
-		{
-			cout << "file null\n";
-			continue;
-		}
-		char *buff = new char[len];
-		DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
-		if (fs::path(file.first).extension() == ".idbzip")
-		{
-			ReZipBuff(&buff, (int &)len, params->pathToLine);
-		}
+		RuntimeLogger.critical("Memory allocation failed!");
 		if (Ext_Params.hasIMG)
-			err = DataExtraction(mallocedMemory, Ext_Params, params, cur, file.second, buff);
+			GarbageMemRecollection(mallocedMemory);
 		else
-			err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, file.second);
-		delete[] buff;
-		if (err > 0)
-		{
-			if (Ext_Params.hasIMG)
-				GarbageMemRecollection(mallocedMemory);
-			else
-				free(rawBuff);
-			IOBusy = false;
-			return err;
-		}
+			free(rawBuff);
+		IOBusy = false;
+		if (completeZiped != nullptr)
+			delete[] completeZiped;
+		if (tempBuff != nullptr)
+			delete[] tempBuff;
+		return StatusCode::MEMORY_INSUFFICIENT;
 	}
+	catch (iedb_err &e)
+	{
+		if (Ext_Params.hasIMG)
+			GarbageMemRecollection(mallocedMemory);
+		else
+			free(rawBuff);
+		IOBusy = false;
+		delete[] completeZiped;
+		delete[] tempBuff;
+		RuntimeLogger.critical("Error occured : {}. Query params : {}", e.what(), e.paramInfo(params));
+		return e.code;
+	}
+	catch (...)
+	{
+		if (Ext_Params.hasIMG)
+			GarbageMemRecollection(mallocedMemory);
+		else
+			free(rawBuff);
+		IOBusy = false;
+		delete[] completeZiped;
+		delete[] tempBuff;
+		RuntimeLogger.critical(strerror(errno));
+		return errno;
+	}
+
 	delete[] completeZiped;
 	delete[] tempBuff;
 	if (params->order != TIME_ASC && params->order != TIME_DSC && params->order != ODR_NONE) //时间排序仅需在拷贝时反向
@@ -1075,7 +1150,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 			return 0;
 		}
 	}
-	if (cur == startPos)
+	if (cur == startPos && !Ext_Params.hasIMG)
 	{
 		buffer->buffer = NULL;
 		buffer->length = 0;
@@ -1150,6 +1225,7 @@ int PackProcess(pair<string, pair<char *, long>> *packInfo, DB_QueryParams *para
 			break;
 		}
 		default:
+			RuntimeLogger.critical("Unknown ziptype detected, data file {} may have broken.", packInfo->first);
 			continue;
 		}
 
@@ -1775,7 +1851,7 @@ int PackProcess_New(DB_QueryParams *params, atomic<long> *cur, atomic<int> *inde
 				canCopy = true;
 			if (canCopy) //需要此数据
 			{
-				char *memory = new (std::nothrow) char[copyBytes];
+				char *memory = new char[copyBytes];
 				if (memory == nullptr)
 				{
 					cout << "memory null" << endl;
@@ -2123,170 +2199,216 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 	char *rawBuff = nullptr;
 	int startPos = 0;
-	if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
+	try
 	{
-		char typeNum = Ext_Params.typeList.size(); //数据类型总数
-		char head[(int)typeNum * 19 + 1];
-		//数据区起始位置
-		startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
-		rawBuff = (char *)malloc(Ext_Params.copyBytes * params->queryNums + startPos);
-		if (rawBuff == NULL)
+		if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
 		{
-			IOBusy = false;
-			return StatusCode::MEMORY_INSUFFICIENT;
+			char typeNum = Ext_Params.typeList.size(); //数据类型总数
+			char head[(int)typeNum * 19 + 1];
+			//数据区起始位置
+			startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
+			rawBuff = (char *)malloc(Ext_Params.copyBytes * params->queryNums + startPos);
+			if (rawBuff == NULL)
+			{
+				throw bad_alloc();
+			}
+			memcpy(rawBuff, head, startPos);
+			cur = startPos;
 		}
-		memcpy(rawBuff, head, startPos);
-		cur = startPos;
 	}
-	for (auto &file : selectedFiles)
+	catch (bad_alloc &e)
 	{
-		long len; //文件长度
-		char *buff;
-		DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
-		buff = new char[len];
-		DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
-		if (fs::path(file.first).extension() == "idbzip")
+		IOBusy = false;
+		return StatusCode::MEMORY_INSUFFICIENT;
+	}
+	catch (iedb_err &e)
+	{
+		RuntimeLogger.critical(e.what());
+	}
+	catch (const std::exception &e)
+	{
+		RuntimeLogger.critical("Unexpected error occured:{}", e.what());
+		return -1;
+	}
+	char *completeZiped = nullptr;
+	char *tempBuff = nullptr;
+	try
+	{
+		for (auto &file : selectedFiles)
 		{
-			ReZipBuff(&buff, (int &)len, params->pathToLine);
-		}
-		if (Ext_Params.hasIMG)
-			err = DataExtraction(mallocedMemory, Ext_Params, params, cur, file.second, buff);
-		else
-			err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, file.second);
-		delete[] buff;
-		if (err == 0)
-			selectedNum++;
-		else if (err != -1)
-		{
+			long len; //文件长度
+			char *buff;
+			DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+			buff = new char[len];
+			DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+			if (fs::path(file.first).extension() == "idbzip")
+			{
+				ReZipBuff(&buff, (int &)len, params->pathToLine);
+			}
 			if (Ext_Params.hasIMG)
-				GarbageMemRecollection(mallocedMemory);
+				err = DataExtraction(mallocedMemory, Ext_Params, params, cur, file.second, buff);
 			else
-				free(rawBuff);
-			IOBusy = false;
-			return err;
-		}
-		if (selectedNum == params->queryNums)
-			break;
-	}
-
-	char *completeZiped = new char[CurrentTemplate.totalBytes];
-	char *tempBuff = new char[CurrentTemplate.totalBytes];
-	int rezipedlen = 0;
-	ReZipBuff(&completeZiped, rezipedlen, params->pathToLine);
-	if (selectedNum < params->queryNums)
-	{
-		//检索到的数量不够，继续从打包文件中获取
-		int packNums = packManager.allPacks[params->pathToLine].size();
-		for (int index = 1; selectedNum < params->queryNums && index <= packNums; index++)
-		{
-			auto pack = packManager.GetLastPack(params->pathToLine, index);
-			PackFileReader packReader(pack.second.first, pack.second.second);
-			if (packReader.packBuffer == NULL)
-				continue;
-			int fileNum;
-			string templateName;
-			packReader.ReadPackHead(fileNum, templateName);
-			stack<pair<long, tuple<int, long, int>>> filestk;
-			for (int i = 0; i < fileNum; i++)
+				err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, file.second);
+			delete[] buff;
+			if (err == 0)
+				selectedNum++;
+			else if (err != -1)
 			{
-				long timestamp;
-				int readLength, zipType;
-				long dataPos = packReader.Next(readLength, timestamp, zipType);
-				auto t = make_tuple(readLength, timestamp, zipType);
-				filestk.push(make_pair(dataPos, t));
-			}
-			int i = fileNum; //指示当前节拍在包中的位序
-			while (!filestk.empty())
-			{
-				i--;
-				auto fileInfo = filestk.top();
-				filestk.pop();
-				long dataPos = fileInfo.first;
-				int readLength = get<0>(fileInfo.second);
-				long timestamp = get<1>(fileInfo.second);
-				int zipType = get<2>(fileInfo.second);
-
-				char *buff = nullptr, *img = nullptr;
-				switch (zipType)
-				{
-				case 0:
-				{
-					buff = packReader.packBuffer + dataPos;
-					break;
-				}
-				case 1:
-				{
-					buff = completeZiped;
-					break;
-				}
-				case 2:
-				{
-					buff = tempBuff;
-					memcpy(buff, packReader.packBuffer + dataPos, readLength);
-					// if (buff == nullptr || buff == NULL)
-					// 	cerr << "buff null!" << endl;
-					ReZipBuff(&buff, readLength);
-					// tempBuff = buff;
-					break;
-				}
-				default:
-				{
-					if (Ext_Params.hasIMG)
-						GarbageMemRecollection(mallocedMemory);
-					else
-						free(rawBuff);
-					IOBusy = false;
-					return StatusCode::UNKNWON_DATAFILE;
-				}
-				}
 				if (Ext_Params.hasIMG)
-				{
-					char *newBuffer;
-					long len;
-					err = params->byPath ? FindImage(&img, len, pack.first, i, params->pathCode) : FindImage(&img, len, pack.first, i, Ext_Params.names);
-					if (err != 0)
-					{
-						if (Ext_Params.hasIMG)
-							GarbageMemRecollection(mallocedMemory);
-						else
-							free(rawBuff);
-						IOBusy = false;
-						return err;
-					}
-					newBuffer = new char[readLength + len];
-					memcpy(newBuffer, buff, zipType == 1 ? CurrentTemplate.totalBytes : readLength);
-					memcpy(newBuffer + readLength, img, len);
-					// if (zipType == 2)
-					// 	delete[] buff;
-					buff = newBuffer;
-					err = DataExtraction(mallocedMemory, Ext_Params, params, cur, timestamp, buff);
-				}
+					GarbageMemRecollection(mallocedMemory);
 				else
-				{
-					err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, timestamp);
-				}
+					free(rawBuff);
+				IOBusy = false;
+				return err;
+			}
+			if (selectedNum == params->queryNums)
+				break;
+		}
 
-				// if (zipType == 2 || Ext_Params.hasIMG)
-				// 	delete[] buff;
-				if (err == 0)
-					selectedNum++;
-				else if (err > 0)
+		completeZiped = new char[CurrentTemplate.totalBytes];
+		tempBuff = new char[CurrentTemplate.totalBytes];
+		int rezipedlen = 0;
+		ReZipBuff(&completeZiped, rezipedlen, params->pathToLine);
+		if (selectedNum < params->queryNums)
+		{
+			//检索到的数量不够，继续从打包文件中获取
+			int packNums = packManager.allPacks[params->pathToLine].size();
+			for (int index = 1; selectedNum < params->queryNums && index <= packNums; index++)
+			{
+				auto pack = packManager.GetLastPack(params->pathToLine, index);
+				PackFileReader packReader(pack.second.first, pack.second.second);
+				if (packReader.packBuffer == NULL)
+					continue;
+				int fileNum;
+				string templateName;
+				packReader.ReadPackHead(fileNum, templateName);
+				stack<pair<long, tuple<int, long, int>>> filestk;
+				for (int i = 0; i < fileNum; i++)
 				{
-					if (Ext_Params.hasIMG)
-						GarbageMemRecollection(mallocedMemory);
-					else
-						free(rawBuff);
-					IOBusy = false;
-					return err;
+					long timestamp;
+					int readLength, zipType;
+					long dataPos = packReader.Next(readLength, timestamp, zipType);
+					auto t = make_tuple(readLength, timestamp, zipType);
+					filestk.push(make_pair(dataPos, t));
 				}
-				if (selectedNum == params->queryNums)
-					break;
+				int i = fileNum; //指示当前节拍在包中的位序
+				while (!filestk.empty())
+				{
+					i--;
+					auto fileInfo = filestk.top();
+					filestk.pop();
+					long dataPos = fileInfo.first;
+					int readLength = get<0>(fileInfo.second);
+					long timestamp = get<1>(fileInfo.second);
+					int zipType = get<2>(fileInfo.second);
+
+					char *buff = nullptr, *img = nullptr;
+					switch (zipType)
+					{
+					case 0:
+					{
+						buff = packReader.packBuffer + dataPos;
+						break;
+					}
+					case 1:
+					{
+						buff = completeZiped;
+						break;
+					}
+					case 2:
+					{
+						buff = tempBuff;
+						memcpy(buff, packReader.packBuffer + dataPos, readLength);
+						// if (buff == nullptr || buff == NULL)
+						// 	cerr << "buff null!" << endl;
+						ReZipBuff(&buff, readLength);
+						// tempBuff = buff;
+						break;
+					}
+					default:
+					{
+						RuntimeLogger.critical("Unknown ziptype detected, data file {} may have broken.", pack.first);
+						throw iedb_err(StatusCode::DATAFILE_MODIFIED);
+					}
+					}
+					if (Ext_Params.hasIMG)
+					{
+						char *newBuffer;
+						long len;
+						err = params->byPath ? FindImage(&img, len, pack.first, i, params->pathCode) : FindImage(&img, len, pack.first, i, Ext_Params.names);
+						if (err != 0)
+						{
+							throw iedb_err(err);
+						}
+						newBuffer = new char[readLength + len];
+						memcpy(newBuffer, buff, zipType == 1 ? CurrentTemplate.totalBytes : readLength);
+						memcpy(newBuffer + readLength, img, len);
+						// if (zipType == 2)
+						// 	delete[] buff;
+						buff = newBuffer;
+						err = DataExtraction(mallocedMemory, Ext_Params, params, cur, timestamp, buff);
+					}
+					else
+					{
+						err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, timestamp);
+					}
+
+					// if (zipType == 2 || Ext_Params.hasIMG)
+					// 	delete[] buff;
+					if (err == 0)
+						selectedNum++;
+					else if (err > 0)
+					{
+						throw iedb_err(err);
+					}
+					if (selectedNum == params->queryNums)
+						break;
+				}
 			}
 		}
 	}
+	catch (bad_alloc &e)
+	{
+		RuntimeLogger.critical("Memory allocation failed!");
+		if (Ext_Params.hasIMG)
+			GarbageMemRecollection(mallocedMemory);
+		else
+			free(rawBuff);
+		IOBusy = false;
+		if (completeZiped != nullptr)
+			delete[] completeZiped;
+		if (tempBuff != nullptr)
+			delete[] tempBuff;
+		return StatusCode::MEMORY_INSUFFICIENT;
+	}
+	catch (iedb_err &e)
+	{
+		if (Ext_Params.hasIMG)
+			GarbageMemRecollection(mallocedMemory);
+		else
+			free(rawBuff);
+		IOBusy = false;
+		delete[] completeZiped;
+		delete[] tempBuff;
+		RuntimeLogger.critical("Error occured : {}. Query params : {}", e.what(), e.paramInfo(params));
+		return e.code;
+	}
+	catch (...)
+	{
+		if (Ext_Params.hasIMG)
+			GarbageMemRecollection(mallocedMemory);
+		else
+			free(rawBuff);
+		IOBusy = false;
+		delete[] completeZiped;
+		delete[] tempBuff;
+		RuntimeLogger.critical(strerror(errno));
+		return errno;
+	}
+
 	delete[] completeZiped;
 	delete[] tempBuff;
-	if (cur == startPos)
+	if (cur == startPos && !Ext_Params.hasIMG)
 	{
 		buffer->buffer = NULL;
 		buffer->bufferMalloced = 0;
@@ -2380,117 +2502,114 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			if (packInfo.first != NULL && packInfo.second != 0)
 			{
 				auto pack = packManager.GetPack(packInfo.first);
-				if (pack.first != NULL && pack.second != 0)
+				PackFileReader packReader(pack.first, pack.second);
+				int fileNum;
+				string templateName;
+				packReader.ReadPackHead(fileNum, templateName);
+				for (int i = 0; i < fileNum; i++)
 				{
-					PackFileReader packReader(pack.first, pack.second);
-					int fileNum;
-					string templateName;
-					packReader.ReadPackHead(fileNum, templateName);
-					for (int i = 0; i < fileNum; i++)
+					string fileID;
+					int readLength, zipType;
+					long dataPos = packReader.Next(readLength, fileID, zipType);
+					if (fileID == fileid)
 					{
-						string fileID;
-						int readLength, zipType;
-						long dataPos = packReader.Next(readLength, fileID, zipType);
-						if (fileID == fileid)
+						char *buff = new char[CurrentTemplate.totalBytes];
+						switch (zipType)
 						{
-							char *buff = new char[CurrentTemplate.totalBytes];
-							switch (zipType)
-							{
-							case 0:
-							{
-								memcpy(buff, packReader.packBuffer + dataPos, readLength);
-								break;
-							}
-							case 1:
-							{
-								ReZipBuff(&buff, readLength, params->pathToLine);
-								break;
-							}
-							case 2:
-							{
-								memcpy(buff, packReader.packBuffer + dataPos, readLength);
-								ReZipBuff(&buff, readLength, params->pathToLine);
-								break;
-							}
-							default:
-								delete[] buff;
-								IOBusy = false;
-								return StatusCode::UNKNWON_DATAFILE;
-								break;
-							}
+						case 0:
+						{
+							memcpy(buff, packReader.packBuffer + dataPos, readLength);
+							break;
+						}
+						case 1:
+						{
+							ReZipBuff(&buff, readLength, params->pathToLine);
+							break;
+						}
+						case 2:
+						{
+							memcpy(buff, packReader.packBuffer + dataPos, readLength);
+							ReZipBuff(&buff, readLength, params->pathToLine);
+							break;
+						}
+						default:
+							delete[] buff;
+							IOBusy = false;
+							return StatusCode::UNKNWON_DATAFILE;
+							break;
+						}
 
-							if (Ext_Params.hasIMG)
-							{
-								char *img = nullptr;
-								long len;
-								char *newBuffer;
-								string path = packInfo.first;
-								err = params->byPath ? FindImage(&img, len, path, i, params->pathCode) : FindImage(&img, len, path, i, params->valueName);
-								if (err != 0)
-								{
-									errorCode = err;
-									continue;
-								}
-								newBuffer = new char[readLength + len];
-								memcpy(newBuffer, buff, zipType == 1 ? CurrentTemplate.totalBytes : readLength);
-								memcpy(newBuffer + readLength, img, len);
-								if (zipType == 2)
-									delete[] buff;
-								buff = newBuffer;
-							}
-							//获取数据的偏移量和字节数
-							vector<long> posList, bytesList; //多个变量
-							long copyBytes = 0;
-							int err;
-							DataType type;
-							vector<DataType> typeList;
-							// vector<string> names;
-
-							err = params->byPath ? CurrentTemplate.FindMultiDatatypePosByCode(params->pathCode, buff, posList, bytesList, typeList) : CurrentTemplate.FindMultiDatatypePosByNames(Ext_Params.names, buff, posList, bytesList, typeList);
-							for (int i = 0; i < bytesList.size() && err == 0; i++)
-							{
-								copyBytes += typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i];
-							}
+						if (Ext_Params.hasIMG)
+						{
+							char *img = nullptr;
+							long len;
+							char *newBuffer;
+							string path = packInfo.first;
+							err = params->byPath ? FindImage(&img, len, path, i, params->pathCode) : FindImage(&img, len, path, i, params->valueName);
 							if (err != 0)
 							{
-								buffer->buffer = NULL;
-								buffer->bufferMalloced = 0;
-								IOBusy = false;
-								return err;
+								errorCode = err;
+								continue;
 							}
-
-							//开始拷贝数据
-
-							char typeNum = typeList.size() == 0 ? 1 : typeList.size(); //数据类型总数
-
-							char *data = (char *)malloc(copyBytes + 1 + (int)typeNum * 19);
-							int startPos;
-							if (!params->byPath)
-								startPos = CurrentTemplate.writeBufferHead(Ext_Params.names, typeList, data); //写入缓冲区头，获取数据区起始位置
-							else
-								startPos = CurrentTemplate.writeBufferHead(params->pathCode, typeList, data);
-							if (data == NULL)
-							{
-								buffer->buffer = NULL;
-								buffer->bufferMalloced = 0;
-								IOBusy = false;
-								return StatusCode::BUFFER_FULL;
-							}
-
-							buffer->bufferMalloced = 1;
-							long lineCur = 0;
-							for (int i = 0; i < bytesList.size(); i++)
-							{
-								long curBytes = typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i]; //本次写字节数
-								memcpy(data + startPos + lineCur, buff + posList[i], curBytes);
-								lineCur += curBytes;
-							}
-							delete[] buff;
-							buffer->buffer = data;
-							buffer->length = copyBytes + startPos;
-							IOBusy = false;
-							return 0;
+							newBuffer = new char[readLength + len];
+							memcpy(newBuffer, buff, zipType == 1 ? CurrentTemplate.totalBytes : readLength);
+							memcpy(newBuffer + readLength, img, len);
+							if (zipType == 2)
+								delete[] buff;
+							buff = newBuffer;
 						}
+						//获取数据的偏移量和字节数
+						vector<long> posList, bytesList; //多个变量
+						long copyBytes = 0;
+						int err;
+						DataType type;
+						vector<DataType> typeList;
+						// vector<string> names;
+
+						err = params->byPath ? CurrentTemplate.FindMultiDatatypePosByCode(params->pathCode, buff, posList, bytesList, typeList) : CurrentTemplate.FindMultiDatatypePosByNames(Ext_Params.names, buff, posList, bytesList, typeList);
+						for (int i = 0; i < bytesList.size() && err == 0; i++)
+						{
+							copyBytes += typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i];
+						}
+						if (err != 0)
+						{
+							buffer->buffer = NULL;
+							buffer->bufferMalloced = 0;
+							IOBusy = false;
+							return err;
+						}
+
+						//开始拷贝数据
+
+						char typeNum = typeList.size() == 0 ? 1 : typeList.size(); //数据类型总数
+
+						char *data = (char *)malloc(copyBytes + 1 + (int)typeNum * 19);
+						int startPos;
+						if (!params->byPath)
+							startPos = CurrentTemplate.writeBufferHead(Ext_Params.names, typeList, data); //写入缓冲区头，获取数据区起始位置
+						else
+							startPos = CurrentTemplate.writeBufferHead(params->pathCode, typeList, data);
+						if (data == NULL)
+						{
+							buffer->buffer = NULL;
+							buffer->bufferMalloced = 0;
+							IOBusy = false;
+							return StatusCode::BUFFER_FULL;
+						}
+
+						buffer->bufferMalloced = 1;
+						long lineCur = 0;
+						for (int i = 0; i < bytesList.size(); i++)
+						{
+							long curBytes = typeList[i].hasTime ? bytesList[i] + 8 : bytesList[i]; //本次写字节数
+							memcpy(data + startPos + lineCur, buff + posList[i], curBytes);
+							lineCur += curBytes;
+						}
+						delete[] buff;
+						buffer->buffer = data;
+						buffer->length = copyBytes + startPos;
+						IOBusy = false;
+						return 0;
 					}
 				}
 			}
@@ -2582,183 +2701,227 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			vector<tuple<char *, long, long, long>> mallocedMemory;
 			long cur = 0;
 			string currentFileID = "";
-			char *completeZiped = new char[CurrentTemplate.totalBytes];
-			char *tempBuff = new char[CurrentTemplate.totalBytes];
-			int rezipedlen = 0;
-			ReZipBuff(&completeZiped, rezipedlen, params->pathToLine);
+
 			char *rawBuff = nullptr;
-			int startPos;
-			if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
+			int startPos = 0;
+			try
 			{
-				char typeNum = params->byPath ? (Ext_Params.typeList.size() == 0 ? 1 : Ext_Params.typeList.size()) : 1; //数据类型总数
-				char head[(int)typeNum * 19 + 1];
-				startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
-				string startNum = "", endNum = "";
-				for (int i = 0; i < fileid.length(); i++)
+				if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
 				{
-					if (isdigit(fileid[i]))
+					char typeNum = params->byPath ? (Ext_Params.typeList.size() == 0 ? 1 : Ext_Params.typeList.size()) : 1; //数据类型总数
+					char head[(int)typeNum * 19 + 1];
+					startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
+					string startNum = "", endNum = "";
+					for (int i = 0; i < fileid.length(); i++)
 					{
-						startNum += fileid[i];
+						if (isdigit(fileid[i]))
+						{
+							startNum += fileid[i];
+						}
 					}
-				}
-				for (int i = 0; i < fileidEnd.length(); i++)
-				{
-					if (isdigit(fileidEnd[i]))
+					for (int i = 0; i < fileidEnd.length(); i++)
 					{
-						endNum += fileidEnd[i];
+						if (isdigit(fileidEnd[i]))
+						{
+							endNum += fileidEnd[i];
+						}
 					}
+					int start = atoi(startNum.c_str());
+					int end = atoi(endNum.c_str());
+					//此处假设数据全部选中，可能会分配多余的空间
+					rawBuff = (char *)malloc(Ext_Params.copyBytes * (end - start + 1) + startPos);
+					if (rawBuff == NULL)
+					{
+						throw bad_alloc();
+					}
+					memcpy(rawBuff, head, startPos);
+					cur = startPos;
 				}
-				int start = atoi(startNum.c_str());
-				int end = atoi(endNum.c_str());
-				//此处假设数据全部选中，可能会分配多余的空间
-				rawBuff = (char *)malloc(Ext_Params.copyBytes * (end - start + 1) + startPos);
-				if (rawBuff == NULL)
-				{
-					IOBusy = false;
-					return StatusCode::MEMORY_INSUFFICIENT;
-				}
-				memcpy(rawBuff, head, startPos);
-				cur = startPos;
 			}
-			for (auto &packInfo : packsInfo)
+			catch (bad_alloc &e)
 			{
-				if (packInfo.first == NULL && packInfo.second == 0)
-					continue;
-				auto pack = packManager.GetPack(packInfo.first);
-				if (pack.first != NULL && pack.second != 0)
+				IOBusy = false;
+				return StatusCode::MEMORY_INSUFFICIENT;
+			}
+			catch (iedb_err &e)
+			{
+				RuntimeLogger.critical(e.what());
+			}
+			catch (const std::exception &e)
+			{
+				RuntimeLogger.critical("Unexpected error occured:{}", e.what());
+				return -1;
+			}
+			char *completeZiped = nullptr;
+			char *tempBuff = nullptr;
+			try
+			{
+				completeZiped = new char[CurrentTemplate.totalBytes];
+				tempBuff = new char[CurrentTemplate.totalBytes];
+				int rezipedlen = 0;
+				ReZipBuff(&completeZiped, rezipedlen, params->pathToLine);
+				CheckFile(CurrentTemplate, completeZiped, CurrentTemplate.totalBytes);
+				for (auto &packInfo : packsInfo)
 				{
-					PackFileReader packReader(pack.first, pack.second);
-					int fileNum;
-					string templateName;
-					packReader.ReadPackHead(fileNum, templateName);
-
-					for (int i = 0; i < fileNum; i++)
+					if (packInfo.first == NULL && packInfo.second == 0)
+						continue;
+					auto pack = packManager.GetPack(packInfo.first);
+					if (pack.first != NULL && pack.second != 0)
 					{
-						if (currentFileID == fileidEnd)
-							break;
-						int readLength, zipType;
-						long timestamp;
-						long dataPos = packReader.Next(readLength, timestamp, currentFileID, zipType);
+						PackFileReader packReader(pack.first, pack.second);
+						int fileNum;
+						string templateName;
+						packReader.ReadPackHead(fileNum, templateName);
 
-						if (firstIndexFound || currentFileID == fileid) //找到首个相同ID的文件，故直接取接下来的若干个文件，无需再比较
+						for (int i = 0; i < fileNum; i++)
+						{
+							if (currentFileID == fileidEnd)
+								break;
+							int readLength, zipType;
+							long timestamp;
+							long dataPos = packReader.Next(readLength, timestamp, currentFileID, zipType);
+
+							if (firstIndexFound || currentFileID == fileid) //找到首个相同ID的文件，故直接取接下来的若干个文件，无需再比较
+							{
+								firstIndexFound = true;
+								char *buff = nullptr, *img = nullptr;
+								switch (zipType)
+								{
+								case 0:
+								{
+									buff = packReader.packBuffer + dataPos; //直接指向目标数据区，无需再拷贝数据
+									break;
+								}
+								case 1:
+								{
+									buff = completeZiped;
+									break;
+								}
+								case 2:
+								{
+									buff = tempBuff;
+									memcpy(buff, packReader.packBuffer + dataPos, readLength);
+									ReZipBuff(&buff, readLength);
+									break;
+								}
+								default:
+									RuntimeLogger.critical("Unknown ziptype detected, data file {} may have broken.", pack.first);
+									throw iedb_err(StatusCode::DATAFILE_MODIFIED);
+								}
+								if (Ext_Params.hasIMG)
+								{
+									char *newBuffer;
+									long len;
+									string path = packInfo.first;
+									err = params->byPath ? FindImage(&img, len, path, i, params->pathCode) : FindImage(&img, len, path, i, Ext_Params.names);
+									if (err != 0)
+									{
+										throw iedb_err(err);
+									}
+									newBuffer = new char[readLength + len];
+									memcpy(newBuffer, buff, zipType == 1 ? CurrentTemplate.totalBytes : readLength);
+									memcpy(newBuffer + readLength, img, len);
+									// if (zipType == 2)
+									// 	delete[] buff;
+									buff = newBuffer;
+
+									err = DataExtraction(mallocedMemory, Ext_Params, params, cur, timestamp, buff);
+								}
+								else
+								{
+									err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, timestamp);
+								}
+								// if (zipType == 2 || Ext_Params.hasIMG)
+								// 	delete[] buff;
+								if (err > 0)
+								{
+									throw iedb_err(err);
+								}
+							}
+						}
+					}
+				}
+				if (currentFileID != fileidEnd) //还未结束
+				{
+					vector<pair<string, long>> dataFiles;
+					readDataFilesWithTimestamps(params->pathToLine, dataFiles);
+					sortByTime(dataFiles, TIME_ASC);
+					for (auto &file : dataFiles)
+					{
+						string tmp = file.first;
+						vector<string> vec = DataType::splitWithStl(fs::path(tmp).stem(), "_");
+						if (vec.size() == 0)
+							continue;
+						if (firstIndexFound || vec[0] == fileid)
 						{
 							firstIndexFound = true;
-							char *buff = nullptr, *img = nullptr;
-							switch (zipType)
+							currentFileID = file.first;
+							long len; //文件长度
+							DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+							char *buff = new char[len];
+							DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+							if (fs::path(file.first).extension() == "idbzip")
 							{
-							case 0:
-							{
-								buff = packReader.packBuffer + dataPos; //直接指向目标数据区，无需再拷贝数据
-								break;
-							}
-							case 1:
-							{
-								buff = completeZiped;
-								break;
-							}
-							case 2:
-							{
-								buff = tempBuff;
-								memcpy(buff, packReader.packBuffer + dataPos, readLength);
-								ReZipBuff(&buff, readLength);
-								break;
-							}
-							default:
-								if (Ext_Params.hasIMG)
-									GarbageMemRecollection(mallocedMemory);
-								else
-									free(rawBuff);
-								IOBusy = false;
-								return err;
+								ReZipBuff(&buff, (int &)len, params->pathToLine);
 							}
 							if (Ext_Params.hasIMG)
-							{
-								char *newBuffer;
-								long len;
-								string path = packInfo.first;
-								err = params->byPath ? FindImage(&img, len, path, i, params->pathCode) : FindImage(&img, len, path, i, Ext_Params.names);
-								if (err != 0)
-								{
-									GarbageMemRecollection(mallocedMemory);
-									IOBusy = false;
-									return err;
-								}
-								newBuffer = new char[readLength + len];
-								memcpy(newBuffer, buff, zipType == 1 ? CurrentTemplate.totalBytes : readLength);
-								memcpy(newBuffer + readLength, img, len);
-								// if (zipType == 2)
-								// 	delete[] buff;
-								buff = newBuffer;
-
-								err = DataExtraction(mallocedMemory, Ext_Params, params, cur, timestamp, buff);
-							}
+								err = DataExtraction(mallocedMemory, Ext_Params, params, cur, file.second, buff);
 							else
-							{
-								err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, timestamp);
-							}
-							// if (zipType == 2 || Ext_Params.hasIMG)
-							// 	delete[] buff;
+								err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, file.second);
+							delete[] buff;
 							if (err > 0)
 							{
-								if (Ext_Params.hasIMG)
-									GarbageMemRecollection(mallocedMemory);
-								else
-									free(rawBuff);
-								IOBusy = false;
-								return err;
+								throw iedb_err(err);
 							}
 						}
+						if (currentFileID.find(fileidEnd) != string::npos)
+							break;
 					}
 				}
 			}
+			catch (bad_alloc &e)
+			{
+				RuntimeLogger.critical("Memory allocation failed!");
+				if (Ext_Params.hasIMG)
+					GarbageMemRecollection(mallocedMemory);
+				else
+					free(rawBuff);
+				IOBusy = false;
+				if (completeZiped != nullptr)
+					delete[] completeZiped;
+				if (tempBuff != nullptr)
+					delete[] tempBuff;
+				return StatusCode::MEMORY_INSUFFICIENT;
+			}
+			catch (iedb_err &e)
+			{
+				if (Ext_Params.hasIMG)
+					GarbageMemRecollection(mallocedMemory);
+				else
+					free(rawBuff);
+				IOBusy = false;
+				delete[] completeZiped;
+				delete[] tempBuff;
+				RuntimeLogger.critical("Error occured : {}. Query params : {}", e.what(), e.paramInfo(params));
+				return e.code;
+			}
+			catch (...)
+			{
+				if (Ext_Params.hasIMG)
+					GarbageMemRecollection(mallocedMemory);
+				else
+					free(rawBuff);
+				IOBusy = false;
+				delete[] completeZiped;
+				delete[] tempBuff;
+				RuntimeLogger.critical(strerror(errno));
+				return errno;
+			}
+
 			delete[] tempBuff;
 			delete[] completeZiped;
-			if (currentFileID != fileidEnd) //还未结束
-			{
-				vector<pair<string, long>> dataFiles;
-				readDataFilesWithTimestamps(params->pathToLine, dataFiles);
-				sortByTime(dataFiles, TIME_ASC);
-				for (auto &file : dataFiles)
-				{
-					string tmp = file.first;
-					vector<string> vec = DataType::splitWithStl(tmp, "/");
-					if (vec.size() == 0)
-						continue;
-					vec = DataType::splitWithStl(vec[vec.size() - 1], "_");
-					if (vec.size() == 0)
-						continue;
-					if (firstIndexFound || vec[0] == fileid)
-					{
-						firstIndexFound = true;
-						currentFileID = file.first;
-						long len; //文件长度
-						DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
-						char *buff = new char[len];
-						DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
-						if (fs::path(file.first).extension() == "idbzip")
-						{
-							ReZipBuff(&buff, (int &)len, params->pathToLine);
-						}
-						if (Ext_Params.hasIMG)
-							err = DataExtraction(mallocedMemory, Ext_Params, params, cur, file.second, buff);
-						else
-							err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, file.second);
-						delete[] buff;
-						if (err > 0)
-						{
-							if (Ext_Params.hasIMG)
-								GarbageMemRecollection(mallocedMemory);
-							else
-								free(rawBuff);
-							IOBusy = false;
-							return err;
-						}
-					}
-					if (currentFileID.find(fileidEnd) != string::npos)
-						break;
-				}
-			}
-			if (cur == startPos)
+
+			if (cur == startPos && !Ext_Params.hasIMG)
 			{
 				buffer->buffer = NULL;
 				buffer->length = 0;
@@ -2792,168 +2955,216 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 		vector<tuple<char *, long, long, long>> mallocedMemory; //内存地址-长度-排序值偏移-时间戳元组集
 		long cur = 0;
-		char *completeZiped = new char[CurrentTemplate.totalBytes];
-		char *tempBuff = new char[CurrentTemplate.totalBytes];
-		int rezipedlen = 0;
-		ReZipBuff(&completeZiped, rezipedlen, params->pathToLine);
+
 		char *rawBuff = nullptr;
 		int startPos;
-		if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
+		try
 		{
-			char typeNum = Ext_Params.typeList.size(); //数据类型总数
-			char head[(int)typeNum * 19 + 1];
-			startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
-			//此处可能会分配多余的空间
-			rawBuff = (char *)malloc(Ext_Params.copyBytes * params->queryNums + startPos);
-			if (rawBuff == NULL)
+			if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
 			{
-				IOBusy = false;
-				return StatusCode::MEMORY_INSUFFICIENT;
+				char typeNum = Ext_Params.typeList.size(); //数据类型总数
+				char head[(int)typeNum * 19 + 1];
+				startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
+				//此处可能会分配多余的空间
+				rawBuff = (char *)malloc(Ext_Params.copyBytes * params->queryNums + startPos);
+				if (rawBuff == NULL)
+				{
+					throw bad_alloc();
+				}
+
+				memcpy(rawBuff, head, startPos);
+				cur = startPos;
+			}
+		}
+		catch (bad_alloc &e)
+		{
+			IOBusy = false;
+			return StatusCode::MEMORY_INSUFFICIENT;
+		}
+		catch (iedb_err &e)
+		{
+			RuntimeLogger.critical(e.what());
+		}
+		catch (const std::exception &e)
+		{
+			RuntimeLogger.critical("Unexpected error occured:{}", e.what());
+			return -1;
+		}
+		char *completeZiped = nullptr;
+		char *tempBuff = nullptr;
+		try
+		{
+			completeZiped = new char[CurrentTemplate.totalBytes];
+			tempBuff = new char[CurrentTemplate.totalBytes];
+			int rezipedlen = 0;
+			ReZipBuff(&completeZiped, rezipedlen, params->pathToLine);
+			CheckFile(CurrentTemplate, completeZiped, CurrentTemplate.totalBytes);
+			int scanNum = 0;
+			for (auto &packInfo : packsInfo)
+			{
+				if (packInfo.first == NULL && packInfo.second == 0)
+					continue;
+				auto pack = packManager.GetPack(packInfo.first);
+
+				if (pack.first != NULL && pack.second != 0)
+				{
+					PackFileReader packReader(pack.first, pack.second);
+					int fileNum;
+					string templateName;
+					packReader.ReadPackHead(fileNum, templateName);
+
+					for (int i = 0; i < fileNum; i++)
+					{
+						if (scanNum == params->queryNums)
+							break;
+						string fileID;
+						int readLength, zipType;
+						long timestamp;
+						long dataPos = packReader.Next(readLength, timestamp, fileID, zipType);
+
+						if (firstIndexFound || fileID == fileid) //找到首个相同ID的文件，故直接取接下来的若干个文件，无需再比较
+						{
+							firstIndexFound = true;
+
+							char *buff = nullptr, *img = nullptr;
+							switch (zipType)
+							{
+							case 0:
+							{
+								buff = packReader.packBuffer + dataPos;
+								break;
+							}
+							case 1:
+							{
+								buff = completeZiped;
+								break;
+							}
+							case 2:
+							{
+								buff = tempBuff;
+								memcpy(buff, packReader.packBuffer + dataPos, readLength);
+								ReZipBuff(&buff, readLength, params->pathToLine);
+								break;
+							}
+							default:
+								RuntimeLogger.critical("Unknown ziptype detected, data file {} may have broken.", pack.first);
+								throw iedb_err(StatusCode::DATAFILE_MODIFIED);
+							}
+							if (Ext_Params.hasIMG)
+							{
+								char *newBuffer;
+								long len;
+								string path = packInfo.first;
+								err = params->byPath ? FindImage(&img, len, path, i, params->pathCode) : FindImage(&img, len, path, i, Ext_Params.names);
+								if (err != 0)
+								{
+									throw iedb_err(err);
+								}
+								newBuffer = new char[readLength + len];
+								memcpy(newBuffer, buff, zipType == 1 ? CurrentTemplate.totalBytes : readLength);
+								memcpy(newBuffer + readLength, img, len);
+								// if (zipType == 2)
+								// 	delete[] buff;
+								buff = newBuffer;
+
+								err = DataExtraction(mallocedMemory, Ext_Params, params, cur, timestamp, buff);
+							}
+							else
+							{
+								err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, timestamp);
+							}
+							scanNum++;
+							// if (zipType == 2 || Ext_Params.hasIMG)
+							// 	delete[] buff;
+							if (err > 0)
+							{
+								throw iedb_err(err);
+							}
+						}
+					}
+				}
 			}
 
-			memcpy(rawBuff, head, startPos);
-			cur = startPos;
-		}
-		int scanNum = 0;
-		for (auto &packInfo : packsInfo)
-		{
-			if (packInfo.first == NULL && packInfo.second == 0)
-				continue;
-			auto pack = packManager.GetPack(packInfo.first);
-
-			if (pack.first != NULL && pack.second != 0)
+			if (scanNum < params->queryNums)
 			{
-				PackFileReader packReader(pack.first, pack.second);
-				int fileNum;
-				string templateName;
-				packReader.ReadPackHead(fileNum, templateName);
+				vector<pair<string, long>> dataFiles;
+				readDataFilesWithTimestamps(params->pathToLine, dataFiles);
+				sortByTime(dataFiles, TIME_ASC);
 
-				for (int i = 0; i < fileNum; i++)
+				for (auto &file : dataFiles)
 				{
 					if (scanNum == params->queryNums)
 						break;
-					string fileID;
-					int readLength, zipType;
-					long timestamp;
-					long dataPos = packReader.Next(readLength, timestamp, fileID, zipType);
-
-					if (firstIndexFound || fileID == fileid) //找到首个相同ID的文件，故直接取接下来的若干个文件，无需再比较
+					auto vec = DataType::splitWithStl(fs::path(file.first).stem(), "_");
+					if (vec.size() == 0)
+						continue;
+					if (firstIndexFound || vec[0] == fileid)
 					{
 						firstIndexFound = true;
-
-						char *buff = nullptr, *img = nullptr;
-						switch (zipType)
+						long len; //文件长度
+						DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
+						char *buff = new char[len];
+						DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
+						if (fs::path(file.first).extension() == "idbzip")
 						{
-						case 0:
-						{
-							buff = packReader.packBuffer + dataPos;
-							break;
-						}
-						case 1:
-						{
-							buff = completeZiped;
-							break;
-						}
-						case 2:
-						{
-							buff = tempBuff;
-							memcpy(buff, packReader.packBuffer + dataPos, readLength);
-							ReZipBuff(&buff, readLength, params->pathToLine);
-							break;
-						}
-						default:
-							if (Ext_Params.hasIMG)
-								GarbageMemRecollection(mallocedMemory);
-							else
-								free(rawBuff);
-							IOBusy = false;
-							return err;
+							ReZipBuff(&buff, (int &)len, params->pathToLine);
 						}
 						if (Ext_Params.hasIMG)
-						{
-							char *newBuffer;
-							long len;
-							string path = packInfo.first;
-							err = params->byPath ? FindImage(&img, len, path, i, params->pathCode) : FindImage(&img, len, path, i, Ext_Params.names);
-							if (err != 0)
-							{
-								GarbageMemRecollection(mallocedMemory);
-								return err;
-							}
-							newBuffer = new char[readLength + len];
-							memcpy(newBuffer, buff, zipType == 1 ? CurrentTemplate.totalBytes : readLength);
-							memcpy(newBuffer + readLength, img, len);
-							// if (zipType == 2)
-							// 	delete[] buff;
-							buff = newBuffer;
-
-							err = DataExtraction(mallocedMemory, Ext_Params, params, cur, timestamp, buff);
-						}
+							err = DataExtraction(mallocedMemory, Ext_Params, params, cur, file.second, buff);
 						else
-						{
-							err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, timestamp);
-						}
+							err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, file.second);
+						delete[] buff;
 						scanNum++;
-						// if (zipType == 2 || Ext_Params.hasIMG)
-						// 	delete[] buff;
 						if (err > 0)
 						{
-							if (Ext_Params.hasIMG)
-								GarbageMemRecollection(mallocedMemory);
-							else
-								free(rawBuff);
-							IOBusy = false;
-							return err;
+							throw iedb_err(err);
 						}
 					}
 				}
 			}
 		}
+		catch (bad_alloc &e)
+		{
+			RuntimeLogger.critical("Memory allocation failed!");
+			if (Ext_Params.hasIMG)
+				GarbageMemRecollection(mallocedMemory);
+			else
+				free(rawBuff);
+			IOBusy = false;
+			if (completeZiped != nullptr)
+				delete[] completeZiped;
+			if (tempBuff != nullptr)
+				delete[] tempBuff;
+			return StatusCode::MEMORY_INSUFFICIENT;
+		}
+		catch (iedb_err &e)
+		{
+			if (Ext_Params.hasIMG)
+				GarbageMemRecollection(mallocedMemory);
+			else
+				free(rawBuff);
+			IOBusy = false;
+			delete[] completeZiped;
+			delete[] tempBuff;
+			RuntimeLogger.critical("Error occured : {}. Query params : {}", e.what(), e.paramInfo(params));
+			return e.code;
+		}
+		catch (...)
+		{
+			if (Ext_Params.hasIMG)
+				GarbageMemRecollection(mallocedMemory);
+			else
+				free(rawBuff);
+			IOBusy = false;
+			delete[] completeZiped;
+			delete[] tempBuff;
+			RuntimeLogger.critical(strerror(errno));
+			return errno;
+		}
+
 		delete[] tempBuff;
 		delete[] completeZiped;
-		if (scanNum < params->queryNums)
-		{
-			vector<pair<string, long>> dataFiles;
-			readDataFilesWithTimestamps(params->pathToLine, dataFiles);
-			sortByTime(dataFiles, TIME_ASC);
-
-			for (auto &file : dataFiles)
-			{
-				if (scanNum == params->queryNums)
-					break;
-				auto vec = DataType::splitWithStl(fs::path(file.first).stem(), "_");
-				if (vec.size() == 0)
-					continue;
-				if (firstIndexFound || vec[0] == fileid)
-				{
-					firstIndexFound = true;
-					long len; //文件长度
-					DB_GetFileLengthByPath(const_cast<char *>(file.first.c_str()), &len);
-					char *buff = new char[len];
-					DB_OpenAndRead(const_cast<char *>(file.first.c_str()), buff);
-					if (fs::path(file.first).extension() == "idbzip")
-					{
-						ReZipBuff(&buff, (int &)len, params->pathToLine);
-					}
-					if (Ext_Params.hasIMG)
-						err = DataExtraction(mallocedMemory, Ext_Params, params, cur, file.second, buff);
-					else
-						err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, file.second);
-					delete[] buff;
-					scanNum++;
-					if (err > 0)
-					{
-						if (Ext_Params.hasIMG)
-							GarbageMemRecollection(mallocedMemory);
-						else
-							free(rawBuff);
-						IOBusy = false;
-						return err;
-					}
-				}
-			}
-		}
-		if (cur == 0 || cur == startPos)
+		if (cur == 0 || (cur == startPos && !Ext_Params.hasIMG))
 		{
 			buffer->buffer = NULL;
 			buffer->bufferMalloced = 0;

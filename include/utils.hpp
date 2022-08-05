@@ -39,6 +39,7 @@
 #include <spdlog/spdlog.h>
 #include "spdlog/sinks/rotating_file_sink.h"
 #include <Logger.h>
+#include <openssl/sha.h>
 
 using namespace std;
 #ifdef __linux__
@@ -110,6 +111,7 @@ namespace StatusCode
         MEMORY_INSUFFICIENT = 186,        //内存不足
         BACKUP_BROKEN = 187,              //备份文件损坏
         ERROR_SID_EID_RANGE = 188,        // SID大于EID
+        DATAFILE_MODIFIED = 189,          //文件内容被篡改
     };
 }
 namespace ValueType
@@ -303,6 +305,20 @@ int getValueStringByValueType(char *value, ValueType::ValueType type, int schema
 
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);
+
+class iedb_err : exception
+{
+public:
+    int code;
+    iedb_err(){};
+    iedb_err(int code)
+    {
+        this->code = code;
+    }
+    ~iedb_err(){};
+    const char *what() const noexcept;
+    string paramInfo(DB_QueryParams *params);
+};
 
 class PathCode
 {
@@ -530,15 +546,20 @@ public:
         // pathToLine.pop_back();
         readFileList(pathToLine, files);
         string temPath = "";
-        for (string file : files) //找到带有后缀tem的文件
+        for (string &file : files) //找到带有后缀tem的文件
         {
-            string s = file;
-            vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
-            if (vec[vec.size() - 1].find("tem") != string::npos && vec[vec.size() - 1].find("ziptem") == string::npos)
+            if (fs::path(file).extension() == ".tem")
             {
                 temPath = file;
                 break;
             }
+            // string s = file;
+            // vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
+            // if (vec[vec.size() - 1].find("tem") != string::npos && vec[vec.size() - 1].find("ziptem") == string::npos)
+            // {
+            //     temPath = file;
+            //     break;
+            // }
         }
         if (temPath == "")
             return StatusCode::SCHEMA_FILE_NOT_FOUND;
@@ -579,7 +600,7 @@ public:
             pathEncodes.push_back(pathCode);
         }
         Template tem(pathEncodes, dataTypes, path);
-        AddTemplate(tem);
+        // AddTemplate(tem);
         CurrentTemplate = tem;
         return 0;
     }
@@ -602,8 +623,8 @@ class ZipTemplate //压缩模板
 public:
     vector<pair<string, DataType>> schemas;
     // unordered_map<vector<int>, string> pathNames;
-    string path;         //挂载路径
-    char *temFileBuffer; //模版文件缓存
+    string path; //挂载路径
+    // char *temFileBuffer; //模版文件缓存
     long fileLength;
     long totalBytes;
     ZipTemplate() {}
@@ -821,7 +842,7 @@ public:
         }
         CurrentZipTemplate.path = "";
         CurrentZipTemplate.schemas.clear();
-        CurrentZipTemplate.temFileBuffer = NULL;
+        // CurrentZipTemplate.temFileBuffer = NULL;
         return 0;
     }
     //检查是否已加载了模板
