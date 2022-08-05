@@ -299,7 +299,7 @@ int checkValueRange(string variableType, string standardValue, string maxValue, 
 
 int checkQueryNodeParam(struct DB_QueryNodeParams *params);
 
-int getValueStringByValueType(char *value, ValueType::ValueType type, int schemaPos, int MaxOrMin);
+int getValueStringByValueType(char *value, ValueType::ValueType type, int schemaPos, int MaxOrMin, int isArray, int arrayLen);
 
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);

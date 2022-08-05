@@ -1910,7 +1910,7 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
     }
 
     //检测值范围是否合法
-    err = checkValueRange(DataType::JudgeValueTypeByNum(ZipParams->valueType), stringStandardValue, stringMaxValue, stringMinValue,ZipParams->isArrary, ZipParams->arrayLen);
+    err = checkValueRange(DataType::JudgeValueTypeByNum(ZipParams->valueType), stringStandardValue, stringMaxValue, stringMinValue, ZipParams->isArrary, ZipParams->arrayLen);
     if (err != 0)
         return StatusCode::VALUE_RANGE_ERROR;
 
@@ -2688,29 +2688,53 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
         }
     }
 
-    int s_new = 0, max_new = 0, min_new = 0;
+    int s_new = 0, max_new = 0, min_new = 0; //用于标志是否申请了空间
     if (newZipParams->standardValue == NULL)
     {
         s_new = 1;
-        newZipParams->standardValue = new char[10];
-        getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0);
+        if (newZipParams->isArrary == 0)
+        {
+            newZipParams->standardValue = new char[10];
+            getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0, newZipParams->isArrary, newZipParams->arrayLen);
+        }
+        else
+        {
+            newZipParams->standardValue = new char[11 * newZipParams->arrayLen];
+            getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0, newZipParams->isArrary, newZipParams->arrayLen);
+        }
     }
     if (newZipParams->maxValue == NULL)
     {
         max_new = 1;
-        newZipParams->maxValue = new char[10];
-        getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 1);
+        if (newZipParams->isArrary == 0)
+        {
+            newZipParams->maxValue = new char[10];
+            getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 1, newZipParams->isArrary, newZipParams->arrayLen);
+        }
+        else
+        {
+            newZipParams->maxValue = new char[11 * newZipParams->arrayLen];
+            getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0, newZipParams->isArrary, newZipParams->arrayLen);
+        }
     }
     if (newZipParams->minValue == NULL)
     {
         min_new = 1;
-        newZipParams->minValue = new char[10];
-        getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 2);
+        if (newZipParams->isArrary == 0)
+        {
+            newZipParams->minValue = new char[10];
+            getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 2, newZipParams->isArrary, newZipParams->arrayLen);
+        }
+        else
+        {
+            newZipParams->minValue = new char[11 * newZipParams->arrayLen];
+            getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0, newZipParams->isArrary, newZipParams->arrayLen);
+        }
     }
 
     //检测更新后标准值输入是否合法
     string stringStandardValue = newZipParams->standardValue;
-    err = checkInputValue(DataType::JudgeValueTypeByNum(newZipParams->valueType), stringStandardValue,newZipParams->isArrary, newZipParams->arrayLen);
+    err = checkInputValue(DataType::JudgeValueTypeByNum(newZipParams->valueType), stringStandardValue, newZipParams->isArrary, newZipParams->arrayLen);
     if (err != 0)
     {
         cout << "标准值输入不合法！" << endl;
@@ -2719,7 +2743,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
 
     //检测更新后最大值输入是否合法
     string stringMaxValue = newZipParams->maxValue;
-    err = checkInputValue(DataType::JudgeValueTypeByNum(newZipParams->valueType), stringMaxValue,newZipParams->isArrary, newZipParams->arrayLen);
+    err = checkInputValue(DataType::JudgeValueTypeByNum(newZipParams->valueType), stringMaxValue, newZipParams->isArrary, newZipParams->arrayLen);
     if (err != 0)
     {
         cout << "最大值输入不合法！" << endl;
@@ -2728,7 +2752,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
 
     //检测更新后最小值输入是否合法
     string stringMinValue = newZipParams->minValue;
-    err = checkInputValue(DataType::JudgeValueTypeByNum(newZipParams->valueType), stringMinValue,newZipParams->isArrary, newZipParams->arrayLen);
+    err = checkInputValue(DataType::JudgeValueTypeByNum(newZipParams->valueType), stringMinValue, newZipParams->isArrary, newZipParams->arrayLen);
     if (err != 0)
     {
         cout << "最小值输入不合法！" << endl;
@@ -2736,7 +2760,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
     }
 
     //检测值范围是否合法
-    err = checkValueRange(DataType::JudgeValueTypeByNum(newZipParams->valueType), stringStandardValue, stringMaxValue, stringMinValue,newZipParams->isArrary, newZipParams->arrayLen);
+    err = checkValueRange(DataType::JudgeValueTypeByNum(newZipParams->valueType), stringStandardValue, stringMaxValue, stringMinValue, newZipParams->isArrary, newZipParams->arrayLen);
     if (err != 0)
         return err;
 
@@ -3341,7 +3365,8 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
  * @param newZipParams 需要修改的信息
  * @return　0:success,
  *         others: StatusCode
- * @note   更新节点参数必须齐全，pathToLine valueNmae hasTime valueType isArray arrayLen standardValue maxValue minValue
+ * @note   其中newZipParams中 pathToLine为空则默认覆盖原文件,valueNmae为空则使用原变量名,hasTime valueType isArray isTS必须填,
+ *         arrayLen和TsLen为0时默认使用原长度,standardValue maxValue minValue为空时默认使用原数值
  *         新文件夹名称里不能包含数字
  */
 int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams)
@@ -3492,20 +3517,47 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     if (newZipParams->standardValue == NULL)
     {
         s_new = 1;
-        newZipParams->standardValue = new char[10];
-        getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0);
+        if (newZipParams->isArrary == 0)
+        {
+            newZipParams->standardValue = new char[10];
+            getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0, newZipParams->isArrary, newZipParams->arrayLen);
+        }
+        else
+        {
+            newZipParams->standardValue = new char[11 * newZipParams->arrayLen];
+            memset(newZipParams->standardValue,0,sizeof(newZipParams->standardValue));
+            getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0, newZipParams->isArrary, newZipParams->arrayLen);
+        }
     }
     if (newZipParams->maxValue == NULL)
     {
         max_new = 1;
-        newZipParams->maxValue = new char[10];
-        getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 1);
+        if (newZipParams->isArrary == 0)
+        {
+            newZipParams->maxValue = new char[10];
+            getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 1, newZipParams->isArrary, newZipParams->arrayLen);
+        }
+        else
+        {
+            newZipParams->maxValue = new char[11 * newZipParams->arrayLen];
+            memset(newZipParams->maxValue,0,sizeof(newZipParams->maxValue));
+            getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 1, newZipParams->isArrary, newZipParams->arrayLen);
+        }
     }
     if (newZipParams->minValue == NULL)
     {
         min_new = 1;
-        newZipParams->minValue = new char[10];
-        getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 2);
+        if (newZipParams->isArrary == 0)
+        {
+            newZipParams->minValue = new char[10];
+            getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 2, newZipParams->isArrary, newZipParams->arrayLen);
+        }
+        else
+        {
+            newZipParams->minValue = new char[11 * newZipParams->arrayLen];
+            memset(newZipParams->minValue,0,sizeof(newZipParams->minValue));
+            getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 2, newZipParams->isArrary, newZipParams->arrayLen);
+        }
     }
 
     //检测更新后标准值输入是否合法
@@ -3536,7 +3588,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     }
 
     //检测值范围是否合法
-    err = checkValueRange(DataType::JudgeValueTypeByNum(newZipParams->valueType), stringStandardValue, stringMaxValue, stringMinValue,newZipParams->isArrary, newZipParams->arrayLen);
+    err = checkValueRange(DataType::JudgeValueTypeByNum(newZipParams->valueType), stringStandardValue, stringMaxValue, stringMinValue, newZipParams->isArrary, newZipParams->arrayLen);
     if (err != 0)
         return err;
 
@@ -4603,41 +4655,42 @@ int DB_QueryZipNode(struct DB_QueryNodeParams *QueryParams)
 //     return 0;
 // }
 
-int main()
-{
-    DB_ZipNodeParams param;
-    param.pathToLine = "arrTest";
-    param.valueName = "DB5";
-    param.valueType = 5;
-    param.newPath = "newArrTest";
-    param.hasTime = 1;
-    param.isTS = 1;
-    param.tsLen = 10;
-    param.tsSpan = 1000;
-    param.isArrary = 1;
-    param.arrayLen = 5;
-    param.standardValue = "0 1 0 1 1";
-    param.maxValue = "0 1 0 1 1";
-    param.minValue = "0 1 0 1 1";
-    DB_AddNodeToZipSchema(&param);
-    // DB_DeleteNodeToZipSchema(&param);
-    DB_ZipNodeParams newParam;
-    newParam.newPath = "newTest";
-    newParam.pathToLine = "newArrTest";
-    newParam.valueName = NULL;
-    newParam.valueType = 3;
-    newParam.isTS = 0;
-    newParam.tsLen = 6;
-    newParam.isArrary = 0;
-    newParam.arrayLen = 10;
-    newParam.maxValue = "150";
-    newParam.minValue = "90";
-    newParam.standardValue = "110";
-    newParam.tsSpan = 20000;
-    newParam.hasTime = 0;
-    // DB_UpdateNodeToZipSchema(&param, &newParam);
-    return 0;
-}
+// int main()
+// {
+//     DB_ZipNodeParams param;
+//     param.pathToLine = "arrTest";
+//     param.valueName = "DB1";
+//     param.valueType = 5;
+//     param.newPath = "newArrTest";
+//     param.hasTime = 1;
+//     param.isTS = 1;
+//     param.tsLen = 10;
+//     param.tsSpan = 1000;
+//     param.isArrary = 1;
+//     param.arrayLen = 5;
+//     param.standardValue = "0 1 0 1 1";
+//     param.maxValue = "0 1 0 1 1";
+//     param.minValue = "0 1 0 1 1";
+//     // DB_AddNodeToZipSchema(&param);
+//     // DB_DeleteNodeToZipSchema(&param);
+//     DB_ZipNodeParams newParam;
+//     newParam.newPath = "newTest";
+//     newParam.pathToLine = "newArrTest";
+//     newParam.valueName = "DB7";
+//     newParam.valueType = 3;
+//     newParam.isTS = 0;
+//     newParam.tsLen = 6;
+//     newParam.isArrary = 1;
+//     newParam.arrayLen = 5;
+//     newParam.maxValue = NULL;
+//     newParam.minValue = NULL;
+//     newParam.standardValue = NULL;
+//     newParam.tsSpan = 20000;
+//     newParam.hasTime = 0;
+//     DB_UpdateNodeToZipSchema(&param, &newParam);
+//     return 0;
+// }
+
 // int main()
 // {
 //     DB_QueryNodeParams params;

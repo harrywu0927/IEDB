@@ -482,6 +482,7 @@ int checkSingleValueRange(int variableType, string standardValue, string maxValu
         return StatusCode::DATA_TYPE_MISMATCH_ERROR;
         break;
     }
+    return 0;
 }
 
 /**
@@ -537,215 +538,585 @@ int checkValueRange(string variableType, string standardValue, string maxValue, 
  * @param MaxOrMin 最大值or最小值or标准值
  * @return int
  */
-int getValueStringByValueType(char *value, ValueType::ValueType type, int schemaPos, int MaxOrMin)
+int getValueStringByValueType(char *value, ValueType::ValueType type, int schemaPos, int MaxOrMin, int isArray, int arrayLen)
 {
     DataTypeConverter converter;
+    char *s = new char[32];
     if (type == ValueType::BOOL)
     {
-        if (MaxOrMin == 0)
-            memcpy(value, CurrentZipTemplate.schemas[schemaPos].second.standardValue, 1);
-        else if (MaxOrMin == 1)
-            memcpy(value, CurrentZipTemplate.schemas[schemaPos].second.maxValue, 1);
-        else if (MaxOrMin == 2)
-            memcpy(value, CurrentZipTemplate.schemas[schemaPos].second.minValue, 1);
+        if (isArray == 0)
+        {
+            if (MaxOrMin == 0)
+            {
+                //标准值
+                uint8_t sValue = CurrentZipTemplate.schemas[schemaPos].second.standardValue[0];
+                sprintf(s, "%u", sValue);
+                memcpy(value, s, 1);
+            }
+            else if (MaxOrMin == 1)
+            {
+                //最大值
+                uint8_t maValue = CurrentZipTemplate.schemas[schemaPos].second.maxValue[0];
+                sprintf(s, "%u", maValue);
+                memcpy(value, s, 1);
+            }
+            else if (MaxOrMin == 2)
+            {
+                //最小值
+                uint8_t miValue = CurrentZipTemplate.schemas[schemaPos].second.minValue[0];
+                sprintf(s, "%u", miValue);
+                memcpy(value, s, 1);
+            }
+            else
+                return StatusCode::MAX_OR_MIN_ERROR;
+        }
         else
-            return StatusCode::MAX_OR_MIN_ERROR;
+        {
+            if (arrayLen != CurrentZipTemplate.schemas[schemaPos].second.arrayLen)
+                return StatusCode::ARRAYLEN_ERROR;
+            if (MaxOrMin == 0)
+            {
+                //标准值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    uint8_t sValue = CurrentZipTemplate.schemas[schemaPos].second.standard[i][0];
+                    sprintf(s, "%u", sValue);
+                    memcpy(value + 2 * i, s, 1);
+                    if (i != arrayLen - 1)
+                        value[2 * i + 1] = ' ';
+                }
+            }
+            else if (MaxOrMin == 1)
+            {
+                //最大值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    uint8_t maValue = CurrentZipTemplate.schemas[schemaPos].second.max[i][0];
+                    sprintf(s, "%u", maValue);
+                    memcpy(value + 2 * i, s, 1);
+                    if (i != arrayLen - 1)
+                        value[2 * i + 1] = ' ';
+                }
+            }
+            else if (MaxOrMin == 2)
+            {
+                //最小值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    uint8_t miValue = CurrentZipTemplate.schemas[schemaPos].second.min[i][0];
+                    sprintf(s, "%u", miValue);
+                    memcpy(value + 2 * i, s, 1);
+                    if (i != arrayLen - 1)
+                        value[2 * i + 1] = ' ';
+                }
+            }
+            else
+                return StatusCode::MAX_OR_MIN_ERROR;
+        }
     }
     else if (type == ValueType::USINT)
     {
-        if (MaxOrMin == 0)
+        if (isArray == 0)
         {
-            char s[10];
-            uint8_t sValue = CurrentZipTemplate.schemas[schemaPos].second.standardValue[0];
-            sprintf(s, "%d", sValue);
-            memcpy(value, s, 10);
-        }
-        else if (MaxOrMin == 1)
-        {
-            //最大值
-            char ma[10];
-            uint8_t maValue = CurrentZipTemplate.schemas[schemaPos].second.maxValue[0];
-            sprintf(ma, "%d", maValue);
-            memcpy(value, ma, 10);
-        }
-        else if (MaxOrMin == 2)
-        {
-            //最小值
-            char mi[10];
-            uint8_t miValue = CurrentZipTemplate.schemas[schemaPos].second.minValue[0];
-            sprintf(mi, "%d", miValue);
-            memcpy(value, mi, 10);
+            if (MaxOrMin == 0)
+            {
+                //标准值
+                uint8_t sValue = CurrentZipTemplate.schemas[schemaPos].second.standardValue[0];
+                sprintf(s, "%u", sValue);
+                memcpy(value, s, 10);
+            }
+            else if (MaxOrMin == 1)
+            {
+                //最大值
+                uint8_t maValue = CurrentZipTemplate.schemas[schemaPos].second.maxValue[0];
+                sprintf(s, "%u", maValue);
+                memcpy(value, s, 10);
+            }
+            else if (MaxOrMin == 2)
+            {
+                //最小值
+                uint8_t miValue = CurrentZipTemplate.schemas[schemaPos].second.minValue[0];
+                sprintf(s, "%u", miValue);
+                memcpy(value, s, 10);
+            }
+            else
+                return StatusCode::MAX_OR_MIN_ERROR;
         }
         else
-            return StatusCode::MAX_OR_MIN_ERROR;
+        {
+            if (arrayLen != CurrentZipTemplate.schemas[schemaPos].second.arrayLen)
+                return StatusCode::ARRAYLEN_ERROR;
+            if (MaxOrMin == 0)
+            {
+                //标准值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    uint8_t sValue = CurrentZipTemplate.schemas[schemaPos].second.standard[i][0];
+                    sprintf(s, "%u", sValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else if (MaxOrMin == 1)
+            {
+                //最大值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    uint8_t maValue = CurrentZipTemplate.schemas[schemaPos].second.max[i][0];
+                    sprintf(s, "%u", maValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else if (MaxOrMin == 2)
+            {
+                //最小值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    uint8_t miValue = CurrentZipTemplate.schemas[schemaPos].second.min[i][0];
+                    sprintf(s, "%u", miValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else
+                return StatusCode::MAX_OR_MIN_ERROR;
+        }
     }
     else if (type == ValueType::UINT)
     {
-        if (MaxOrMin == 0)
+        if (isArray == 0)
         {
-            char s[10];
-            uint16_t sValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
-            sprintf(s, "%d", sValue);
-            memcpy(value, s, 10);
-        }
-        else if (MaxOrMin == 1)
-        {
-            //最大值
-            char ma[10];
-            uint16_t maValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
-            sprintf(ma, "%d", maValue);
-            memcpy(value, ma, 10);
-        }
-        else if (MaxOrMin == 2)
-        {
-            //最小值
-            char mi[10];
-            uint16_t miValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.minValue);
-            sprintf(mi, "%d", miValue);
-            memcpy(value, mi, 10);
+            if (MaxOrMin == 0)
+            {
+                //标准值
+                uint16_t sValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
+                sprintf(s, "%u", sValue);
+                memcpy(value, s, 10);
+            }
+            else if (MaxOrMin == 1)
+            {
+                //最大值
+                uint16_t maValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
+                sprintf(s, "%u", maValue);
+                memcpy(value, s, 10);
+            }
+            else if (MaxOrMin == 2)
+            {
+                //最小值
+                uint16_t miValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.minValue);
+                sprintf(s, "%u", miValue);
+                memcpy(value, s, 10);
+            }
+            else
+                return StatusCode::MAX_OR_MIN_ERROR;
         }
         else
-            return StatusCode::MAX_OR_MIN_ERROR;
+        {
+            if (arrayLen != CurrentZipTemplate.schemas[schemaPos].second.arrayLen)
+                return StatusCode::ARRAYLEN_ERROR;
+            if (MaxOrMin == 0)
+            {
+                //标准值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    uint16_t sValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.standard[i]);
+                    sprintf(s, "%u", sValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else if (MaxOrMin == 1)
+            {
+                //最大值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    uint16_t maValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.max[i]);
+                    sprintf(s, "%u", maValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else if (MaxOrMin == 2)
+            {
+                //最小值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    uint16_t miValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.min[i]);
+                    sprintf(s, "%u", miValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else
+                return StatusCode::MAX_OR_MIN_ERROR;
+        }
     }
     else if (type == ValueType::UDINT)
     {
-        if (MaxOrMin == 0)
+        if (isArray == 0)
         {
-            char s[10];
-            uint32_t sValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
-            sprintf(s, "%d", sValue);
-            memcpy(value, s, 10);
-        }
-        else if (MaxOrMin == 1)
-        {
-            //最大值
-            char ma[10];
-            uint32_t maValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
-            sprintf(ma, "%d", maValue);
-            memcpy(value, ma, 10);
-        }
-        else if (MaxOrMin == 2)
-        {
-            //最小值
-            char mi[10];
-            uint32_t miValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.minValue);
-            sprintf(mi, "%d", miValue);
-            memcpy(value, mi, 10);
+            if (MaxOrMin == 0)
+            {
+                //标准值
+                uint32_t sValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
+                sprintf(s, "%u", sValue);
+                memcpy(value, s, 10);
+            }
+            else if (MaxOrMin == 1)
+            {
+                //最大值
+                uint32_t maValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
+                sprintf(s, "%u", maValue);
+                memcpy(value, s, 10);
+            }
+            else if (MaxOrMin == 2)
+            {
+                //最小值
+                uint32_t miValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.minValue);
+                sprintf(s, "%u", miValue);
+                memcpy(value, s, 10);
+            }
+            else
+                return StatusCode::MAX_OR_MIN_ERROR;
         }
         else
-            return StatusCode::MAX_OR_MIN_ERROR;
+        {
+            if (arrayLen != CurrentZipTemplate.schemas[schemaPos].second.arrayLen)
+                return StatusCode::ARRAYLEN_ERROR;
+            if (MaxOrMin == 0)
+            {
+                //标准值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    uint32_t sValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standard[i]);
+                    sprintf(s, "%u", sValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else if (MaxOrMin == 1)
+            {
+                //最大值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    uint32_t maValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.max[i]);
+                    sprintf(s, "%u", maValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else if (MaxOrMin == 2)
+            {
+                //最小值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    uint32_t miValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.min[i]);
+                    sprintf(s, "%u", miValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else
+                return StatusCode::MAX_OR_MIN_ERROR;
+        }
     }
     else if (type == ValueType::SINT)
     {
-        if (MaxOrMin == 0)
+        if (isArray == 0)
         {
-            char s[10];
-            int8_t sValue = CurrentZipTemplate.schemas[schemaPos].second.standardValue[0];
-            sprintf(s, "%d", sValue);
-            memcpy(value, s, 10);
-        }
-        else if (MaxOrMin == 1)
-        {
-            //最大值
-            char ma[10];
-            int8_t maValue = CurrentZipTemplate.schemas[schemaPos].second.maxValue[0];
-            sprintf(ma, "%d", maValue);
-            memcpy(value, ma, 10);
-        }
-        else if (MaxOrMin == 2)
-        {
-            //最小值
-            char mi[10];
-            int8_t miValue = CurrentZipTemplate.schemas[schemaPos].second.minValue[0];
-            sprintf(mi, "%d", miValue);
-            memcpy(value, mi, 10);
+            if (MaxOrMin == 0)
+            {
+                //标准值
+                int8_t sValue = CurrentZipTemplate.schemas[schemaPos].second.standardValue[0];
+                sprintf(s, "%d", sValue);
+                memcpy(value, s, 10);
+            }
+            else if (MaxOrMin == 1)
+            {
+                //最大值
+                int8_t maValue = CurrentZipTemplate.schemas[schemaPos].second.maxValue[0];
+                sprintf(s, "%d", maValue);
+                memcpy(value, s, 10);
+            }
+            else if (MaxOrMin == 2)
+            {
+                //最小值
+                int8_t miValue = CurrentZipTemplate.schemas[schemaPos].second.minValue[0];
+                sprintf(s, "%d", miValue);
+                memcpy(value, s, 10);
+            }
+            else
+                return StatusCode::MAX_OR_MIN_ERROR;
         }
         else
-            return StatusCode::MAX_OR_MIN_ERROR;
+        {
+            if (arrayLen != CurrentZipTemplate.schemas[schemaPos].second.arrayLen)
+                return StatusCode::ARRAYLEN_ERROR;
+            if (MaxOrMin == 0)
+            {
+                //标准值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    int8_t sValue = CurrentZipTemplate.schemas[schemaPos].second.standard[i][0];
+                    sprintf(s, "%d", sValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else if (MaxOrMin == 1)
+            {
+                //最大值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    int8_t maValue = CurrentZipTemplate.schemas[schemaPos].second.max[i][0];
+                    sprintf(s, "%d", maValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else if (MaxOrMin == 2)
+            {
+                //最小值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    int8_t miValue = CurrentZipTemplate.schemas[schemaPos].second.min[i][0];
+                    sprintf(s, "%d", miValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else
+                return StatusCode::MAX_OR_MIN_ERROR;
+        }
     }
     else if (type == ValueType::INT)
     {
-        if (MaxOrMin == 0)
+        if (isArray == 0)
         {
-            char s[10];
-            int16_t sValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
-            sprintf(s, "%d", sValue);
-            memcpy(value, s, 10);
-        }
-        else if (MaxOrMin == 1)
-        {
-            //最大值
-            char ma[10];
-            int16_t maValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
-            sprintf(ma, "%d", maValue);
-            memcpy(value, ma, 10);
-        }
-        else if (MaxOrMin == 2)
-        {
-            //最小值
-            char mi[10];
-            int16_t miValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.minValue);
-            sprintf(mi, "%d", miValue);
-            memcpy(value, mi, 10);
+            if (MaxOrMin == 0)
+            {
+                //标准值
+                int16_t sValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
+                sprintf(s, "%d", sValue);
+                memcpy(value, s, 10);
+            }
+            else if (MaxOrMin == 1)
+            {
+                //最大值
+                int16_t maValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
+                sprintf(s, "%d", maValue);
+                memcpy(value, s, 10);
+            }
+            else if (MaxOrMin == 2)
+            {
+                //最小值
+                int16_t miValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.minValue);
+                sprintf(s, "%d", miValue);
+                memcpy(value, s, 10);
+            }
+            else
+                return StatusCode::MAX_OR_MIN_ERROR;
         }
         else
-            return StatusCode::MAX_OR_MIN_ERROR;
+        {
+            if (arrayLen != CurrentZipTemplate.schemas[schemaPos].second.arrayLen)
+                return StatusCode::ARRAYLEN_ERROR;
+            if (MaxOrMin == 0)
+            {
+                //标准值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    int16_t sValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.standard[i]);
+                    sprintf(s, "%d", sValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else if (MaxOrMin == 1)
+            {
+                //最大值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    int16_t maValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.max[i]);
+                    sprintf(s, "%d", maValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else if (MaxOrMin == 2)
+            {
+                //最小值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    int16_t miValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.min[i]);
+                    sprintf(s, "%d", miValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else
+                return StatusCode::MAX_OR_MIN_ERROR;
+        }
     }
     else if (type == ValueType::DINT)
     {
-        if (MaxOrMin == 0)
+        if (isArray == 0)
         {
-            char s[10];
-            int32_t sValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
-            sprintf(s, "%d", sValue);
-            memcpy(value, s, 10);
-        }
-        else if (MaxOrMin == 1)
-        {
-            //最大值
-            char ma[10];
-            int32_t maValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
-            sprintf(ma, "%d", maValue);
-            memcpy(value, ma, 10);
-        }
-        else if (MaxOrMin == 2)
-        {
-            //最小值
-            char mi[10];
-            int32_t miValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.minValue);
-            sprintf(mi, "%d", miValue);
-            memcpy(value, mi, 10);
+            if (MaxOrMin == 0)
+            {
+                //标准值
+                int32_t sValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
+                sprintf(s, "%d", sValue);
+                memcpy(value, s, 10);
+            }
+            else if (MaxOrMin == 1)
+            {
+                //最大值
+                int32_t maValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
+                sprintf(s, "%d", maValue);
+                memcpy(value, s, 10);
+            }
+            else if (MaxOrMin == 2)
+            {
+                //最小值
+                int32_t miValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.minValue);
+                sprintf(s, "%d", miValue);
+                memcpy(value, s, 10);
+            }
+            else
+                return StatusCode::MAX_OR_MIN_ERROR;
         }
         else
-            return StatusCode::MAX_OR_MIN_ERROR;
+        {
+            if (arrayLen != CurrentZipTemplate.schemas[schemaPos].second.arrayLen)
+                return StatusCode::ARRAYLEN_ERROR;
+            if (MaxOrMin == 0)
+            {
+                //标准值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    int32_t sValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standard[i]);
+                    sprintf(s, "%d", sValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else if (MaxOrMin == 1)
+            {
+                //最大值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    int32_t maValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.max[i]);
+                    sprintf(s, "%d", maValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else if (MaxOrMin == 2)
+            {
+                //最小值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    int32_t miValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.min[i]);
+                    sprintf(s, "%d", miValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else
+                return StatusCode::MAX_OR_MIN_ERROR;
+        }
     }
     else if (type == ValueType::REAL)
     {
-        if (MaxOrMin == 0)
+        if (isArray == 0)
         {
-            char s[10];
-            float sValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
-            sprintf(s, "%f", sValue);
-            memcpy(value, s, 10);
-        }
-        else if (MaxOrMin == 1)
-        {
-            //最大值
-            char ma[10];
-            float maValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
-            sprintf(ma, "%f", maValue);
-            memcpy(value, ma, 10);
-        }
-        else if (MaxOrMin == 2)
-        {
-            //最小值
-            char mi[10];
-            float miValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.minValue);
-            sprintf(mi, "%f", miValue);
-            memcpy(value, mi, 10);
+            if (MaxOrMin == 0)
+            {
+                //标准值
+                float sValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
+                sprintf(s, "%f", sValue);
+                memcpy(value, s, 10);
+            }
+            else if (MaxOrMin == 1)
+            {
+                //最大值
+                float maValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
+                sprintf(s, "%f", maValue);
+                memcpy(value, s, 10);
+            }
+            else if (MaxOrMin == 2)
+            {
+                //最小值
+                float miValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.minValue);
+                sprintf(s, "%f", miValue);
+                memcpy(value, s, 10);
+            }
+            else
+                return StatusCode::MAX_OR_MIN_ERROR;
         }
         else
-            return StatusCode::MAX_OR_MIN_ERROR;
+        {
+            if (arrayLen != CurrentZipTemplate.schemas[schemaPos].second.arrayLen)
+                return StatusCode::ARRAYLEN_ERROR;
+            if (MaxOrMin == 0)
+            {
+                //标准值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    float sValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.standard[i]);
+                    sprintf(s, "%f", sValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else if (MaxOrMin == 1)
+            {
+                //最大值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    float maValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.max[i]);
+                    sprintf(s, "%f", maValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else if (MaxOrMin == 2)
+            {
+                //最小值
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    float miValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.min[i]);
+                    sprintf(s, "%f", miValue);
+                    strcat(value, s);
+                    if (i != arrayLen - 1)
+                        strcat(value, " ");
+                }
+            }
+            else
+                return StatusCode::MAX_OR_MIN_ERROR;
+        }
     }
     else if (type == ValueType::IMAGE)
     {
@@ -777,6 +1148,7 @@ int getValueStringByValueType(char *value, ValueType::ValueType type, int schema
     }
     else
         return StatusCode::UNKNOWN_TYPE;
+    delete[] s;
     return 0;
 }
 
@@ -797,6 +1169,27 @@ int checkQueryNodeParam(struct DB_QueryNodeParams *params)
 
 // int main()
 // {
-//     cout<< checkInputValue("BOOL", "1 0 1 0 1 2",1,6) <<endl;
+//     string standard = "100 200 300 400 500";
+//     string max = "110 210 310 410 510";
+//     string min = "90 190 290 390 490";
+//     checkValueRange("UDINT",standard,max,min,1,5);
+//     // cout<< checkInputValue("BOOL", "1 0 1 0 1 2",1,6) <<endl;
+//     // DB_LoadZipSchema("arrTest");
+//     // int t;
+//     // for (int i = 0; i < CurrentZipTemplate.schemas[1].second.arrayLen; i++)
+//     // {
+//     //     char s[10];
+//     //     uint8_t sValue = CurrentZipTemplate.schemas[1].second.standard[i][0];
+//     //     sprintf(s, "%d", sValue);
+//     //     cout << s[0] << endl;
+//     // }
+//     // char *ss = new char[100];
+//     // getValueStringByValueType(ss, ValueType::UDINT, 0, 0, 1, 5);
+//     // for (int i = 0; i < 12; i++)
+//     //     cout << ss[i];
+//     // cout << endl;
+//     // string test = ss;
+//     // cout << test << endl;
+//     // delete[] ss;
 //     return 0;
 // }
