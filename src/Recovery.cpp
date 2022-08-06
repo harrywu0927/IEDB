@@ -151,7 +151,7 @@ int BackupHelper::DataRecovery(string path)
                 {
                     delete[] uncompressed;
                     delete[] compressed;
-                    throw err;
+                    throw iedb_err(err);
                 }
                 FILE *pack;
                 if (!(pack = fopen(path.c_str(), "wb")))
@@ -181,10 +181,10 @@ int BackupHelper::DataRecovery(string path)
         // spdlog::critical("bad alloc when uncompressing");
         logger.critical("bad alloc when uncompressing");
     }
-    catch (int &e)
+    catch (iedb_err &e)
     {
         // spdlog::error("Error occured when uncompressing: code{}", e);
-        logger.error("Error occured when uncompressing: code{}", e);
+        logger.error("Error occured when uncompressing: code{}", e.what());
     }
     catch (const std::exception &e)
     {
@@ -296,7 +296,7 @@ int BackupHelper::RecoverAll(string path)
                 {
                     delete[] uncompressed;
                     delete[] compressed;
-                    throw err;
+                    throw iedb_err(err);
                 }
                 FILE *pack;
                 if (!(pack = fopen(string(pakPath).c_str(), "wb")))
@@ -319,11 +319,11 @@ int BackupHelper::RecoverAll(string path)
         // spdlog::critical("Memory allocation failed when compressing data!");
         logger.critical("Memory allocation failed when compressing data!");
     }
-    catch (int &e)
+    catch (iedb_err &e)
     {
         // spdlog::error("Error occured when uncompressing: code{}", e);
-        logger.error("Error occured when uncompressing: code{}", e);
-        return e;
+        logger.error("Error occured when uncompressing: code{}", e.what());
+        return e.code;
     }
     catch (const std::exception &e)
     {

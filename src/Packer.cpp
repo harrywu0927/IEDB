@@ -2,8 +2,8 @@
  * @file Packer.cpp
  * @author your name (you@domain.com)
  * @brief
- * @version 0.8.5
- * @date 2022-06-15
+ * @version 0.9.1
+ * @date Last modified in 2022-08-06
  *
  * @copyright Copyright (c) 2022
  *
@@ -40,10 +40,11 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
 {
     IOBusy = true;
     packMutex.lock();
-    if (TemplateManager::CheckTemplate(pathToLine) != 0)
-        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    int err = 0;
+    if ((err = TemplateManager::CheckTemplate(pathToLine)) != 0)
+        return err;
     if (filesWithTime.size() < 1)
-        return -1;
+        return StatusCode::DATAFILE_NOT_FOUND;
     //升序排序
     sort(filesWithTime.begin(), filesWithTime.end(),
          [](pair<string, long> iter1, pair<string, long> iter2) -> bool
@@ -61,6 +62,8 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
     long temBytes = CurrentTemplate.GetTotalBytes();
     int MAXSIZE = 2048 * 10240; // 20MB
     char *packBuffer = (char *)malloc(MAXSIZE);
+    if (packBuffer == NULL)
+        throw bad_alloc();
     memset(packBuffer, 0, MAXSIZE);
     DB_DataBuffer buffer;
     //写入包头
@@ -79,15 +82,9 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
         memcpy(packBuffer + cur, &file.second, 8);
         cur += 8;
         char fileID[20] = {0};
-        string tmp = file.first;
-        vector<string> vec = DataType::splitWithStl(tmp, "/");
-        string str;
-        if (vec.size() > 0)
-            str = DataType::splitWithStl(vec[vec.size() - 1], "_")[0];
-        else
-            str = DataType::splitWithStl(tmp, "_")[0];
-        while (str[0] == '/') //去除‘/’
-            str.erase(str.begin());
+        string str = DataType::splitWithStl(fs::path(file.first).stem(), "_")[0];
+        // while (str[0] == '/') //去除‘/’
+        //     str.erase(str.begin());
         memcpy(fileID, str.c_str(), str.length() <= 20 ? str.length() : 20);
         memcpy(packBuffer + cur, fileID, 20);
         cur += 20;
@@ -160,21 +157,6 @@ int Packer::RePack(string pathToLine, int packThres)
     packsWithTime = packManager.allPacks[pathToLine];
     // readPakFilesList(pathToLine, packs);
     struct stat fileInfo;
-    // for (auto &pack : packs)
-    // {
-    //     string tmp = pack;
-    //     while (tmp.back() == '/')
-    //         tmp.pop_back();
-    //     vector<string> vec = DataType::StringSplit(const_cast<char *>(tmp.c_str()), "/");
-    //     string packName = vec[vec.size() - 1];
-    //     vector<string> timespan = DataType::StringSplit(const_cast<char *>(packName.c_str()), "-");
-    //     if (timespan.size() > 0)
-    //     {
-    //         long start = atol(timespan[0].c_str());
-    //         long end = atol(timespan[1].c_str());
-    //         packsWithTime.push_back(make_tuple(pack, start, end));
-    //     }
-    // }
     // sort by time_asc
     sort(packsWithTime.begin(), packsWithTime.end(),
          [](pair<string, tuple<long, long>> iter1, pair<string, tuple<long, long>> iter2) -> bool
@@ -285,7 +267,7 @@ PackFileReader::PackFileReader(string pathFilePath)
     if (err != 0)
     {
         errorCode = err;
-        throw err;
+        throw iedb_err(err);
     }
     if (buffer.bufferMalloced)
     {
@@ -298,7 +280,7 @@ PackFileReader::PackFileReader(string pathFilePath)
     else
     {
         packBuffer = NULL;
-        throw err;
+        throw iedb_err(err);
     }
 }
 
@@ -311,7 +293,7 @@ PackFileReader::PackFileReader(string pathFilePath)
 PackFileReader::PackFileReader(char *buffer, long length, bool freeit)
 {
     if (buffer == nullptr || buffer == NULL)
-        throw StatusCode::DATAFILE_NOT_FOUND;
+        throw iedb_err(StatusCode::DATAFILE_NOT_FOUND);
     char tempName[20] = {0};
     memcpy(tempName, buffer + 4, 20);
     // TemplateManager::CheckTemplate(tempName);
@@ -345,7 +327,7 @@ long PackFileReader::Next(int &readLength, long &timestamp, string &fileID, int 
 {
     memcpy(&timestamp, packBuffer + curPos, 8);
     curPos += 8;
-    char fid[20] = {0};
+    char fid[21] = {0}; //多留一个0作为结束位
     memcpy(fid, packBuffer + curPos, 20);
     curPos += 20;
     fileID = fid;
@@ -373,7 +355,7 @@ long PackFileReader::Next(int &readLength, long &timestamp, string &fileID, int 
         break;
     }
     default:
-        throw StatusCode::UNKNWON_DATAFILE;
+        throw iedb_err(StatusCode::UNKNWON_DATAFILE);
     }
     if (buffer != nullptr)
     {
@@ -425,7 +407,7 @@ long PackFileReader::Next(int &readLength, long &timestamp, int &zipType, char *
         break;
     }
     default:
-        throw StatusCode::UNKNWON_DATAFILE;
+        throw iedb_err(StatusCode::UNKNWON_DATAFILE);
     }
     if (buffer != nullptr)
     {
@@ -452,7 +434,7 @@ long PackFileReader::Next(int &readLength, long &timestamp, int &zipType, char *
 long PackFileReader::Next(int &readLength, string &fileID, int &zipType, char **buffer, char *completeZiped)
 {
     curPos += 8;
-    char fid[20] = {0};
+    char fid[21] = {0};
     memcpy(fid, packBuffer + curPos, 20);
     curPos += 20;
     fileID = fid;
@@ -480,7 +462,8 @@ long PackFileReader::Next(int &readLength, string &fileID, int &zipType, char **
         break;
     }
     default:
-        throw StatusCode::UNKNWON_DATAFILE;
+        // cerr << "datapos:" << dataPos << " ziptype :" << zipType << " readLength:" << readLength << " fileid:" << fid << "\n";
+        throw iedb_err(StatusCode::UNKNWON_DATAFILE);
     }
     if (buffer != nullptr)
     {
@@ -517,11 +500,10 @@ void PackFileReader::Skip(int num)
         int ztype = (int)packBuffer[curPos++]; //压缩情况
         if (ztype != 1)
         {
-            int len = *(int *)(packBuffer + curPos);
-            curPos += 4 + len;
+            curPos += 4 + *(int *)(packBuffer + curPos);
         }
         else if (ztype != 2 && ztype != 0)
-            throw StatusCode::UNKNWON_DATAFILE;
+            throw iedb_err(StatusCode::DATAFILE_MODIFIED);
     }
 }
 

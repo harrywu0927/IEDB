@@ -27,11 +27,13 @@ BackupHelper::BackupHelper()
             }
         }
         logger = Logger("backuplog");
-        // logger = spdlog::get("backuplog.log");
-        // if (logger == nullptr)
-        //     logger = spdlog::rotating_logger_mt("backup_logger", "backuplog.log", 1024 * 1024 * 5, 1);
-        // logger.info("Backup initilization succeed");
+// logger = spdlog::get("backuplog.log");
+// if (logger == nullptr)
+//     logger = spdlog::rotating_logger_mt("backup_logger", "backuplog.log", 1024 * 1024 * 5, 1);
+// logger.info("Backup initilization succeed");
+#ifdef DEBUG
         spdlog::info("Backup initilization succeed");
+#endif
     }
     catch (fs::filesystem_error &e)
     {
@@ -94,7 +96,7 @@ int WritePacks(vector<string> &paks, FILE *file)
             Byte outprops[5];
             if ((err = LzmaCompress(compressedBuffer, &compressedLen, pakBuffer, paklen, outprops, &outpropsSize, 5, 1 << 24, 3, 0, 2, 3, 2)) != 0)
             {
-                throw err;
+                throw iedb_err(err);
             }
             /* Write the props parameters which is needed when uncompressing */
             fwrite(outprops, LZMA_PROPS_SIZE, 1, file);
@@ -111,12 +113,12 @@ int WritePacks(vector<string> &paks, FILE *file)
             // spdlog::critical("Memory allocation failed when compressing data!");
             throw e;
         }
-        catch (int &e)
+        catch (iedb_err &e)
         {
             fclose(pakfile);
             delete[] writeBuffer;
             delete[] readBuffer;
-            backupHelper.logger.error("Failed to uncompress data, error code {}", e);
+            backupHelper.logger.error("Failed to uncompress data, error code {}", e.code);
             // spdlog::error("Error occured when uncompressing: code{}", e);
             throw e;
         }
@@ -209,9 +211,13 @@ int BackupHelper::CheckDataToUpdate(unordered_map<string, vector<string>> &files
             }
         }
     }
+    catch (fs::filesystem_error &e)
+    {
+        logger.error("Error:{}", e.what());
+    }
     catch (const std::exception &e)
     {
-        std::cerr << e.what() << '\n';
+        // std::cerr << e.what() << '\n';
         logger.error("Error when checking data to update: {}", e.what());
     }
     return 0;
@@ -249,11 +255,10 @@ int BackupHelper::CreateBackup(string path)
         logger.info("Backup {}.bak completed in {}/{}.\nCheckpoint at {}", timestamp, backupPath, tmp, ctime(&timestamp));
         lastBackupTime[path] = timestamp;
     }
-    catch (int &e)
+    catch (iedb_err &e)
     {
         fclose(file);
         throw e;
-        return e;
     }
     catch (const std::exception &e)
     {
@@ -316,7 +321,7 @@ int BackupHelper::BackupUpdate()
                 logger.info("Backup {}.bak completed in {}. Checkpoint at {}", t, latestBak, ctime(&t));
                 lastBackupTime[line.first] = t;
             }
-            catch (int &e)
+            catch (iedb_err &e)
             {
                 fclose(file);
                 throw e;
@@ -400,11 +405,11 @@ int BackupHelper::BackupUpdate()
             logger.info("Backup {}.bak update completed in {}. Checkpoint at {}", nowTime, line.first, ctime(&nowTime));
             lastBackupTime[line.first] = nowTime;
         }
-        catch (int &e)
+        catch (iedb_err &e)
         {
             fclose(file);
-            throw e;
-            return e;
+            RuntimeLogger.error("Error occured when updating backup : {}", e.what());
+            return e.code;
         }
         catch (const std::exception &e)
         {

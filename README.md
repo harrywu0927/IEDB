@@ -5,7 +5,7 @@
 
 ## Dependency
 ### For Linux(Ubuntu18.04 or later):
-```sudo apt install python3.8-dev openssl```
+```sudo apt install python3.8-dev openssl libssl-dev```
 #### 为python3.8安装numpy、pandas、sklearn、matplotlib:
 若不使用Anaconda：
 

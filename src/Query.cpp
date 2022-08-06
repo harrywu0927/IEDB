@@ -961,7 +961,6 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 			//此处可能会分配多余的空间，但最多在两个包的可接受大小内
 			// int size = Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos;
-			// cout << "memory size alloced: " << size << "\n";
 			rawBuff = (char *)malloc(Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos);
 			if (rawBuff == NULL)
 			{
@@ -1085,6 +1084,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 			{
 				ReZipBuff(&buff, (int &)len, params->pathToLine);
 			}
+			CheckFile(CurrentTemplate, buff, len);
 			if (Ext_Params.hasIMG)
 				err = DataExtraction(mallocedMemory, Ext_Params, params, cur, file.second, buff);
 			else
@@ -2245,6 +2245,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 			{
 				ReZipBuff(&buff, (int &)len, params->pathToLine);
 			}
+			CheckFile(CurrentTemplate, buff, len);
 			if (Ext_Params.hasIMG)
 				err = DataExtraction(mallocedMemory, Ext_Params, params, cur, file.second, buff);
 			else
@@ -2469,7 +2470,6 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		IOBusy = false;
 		return err;
 	}
-	cout << "check complete\n";
 	string pathToLine = params->pathToLine;
 	string fileid = params->fileID;
 	string fileidEnd = params->fileIDend == NULL ? "" : params->fileIDend;
@@ -2634,7 +2634,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 					{
 						ReZipBuff(&buff, (int &)len, params->pathToLine);
 					}
-
+					CheckFile(CurrentTemplate, buff, len);
 					//获取数据的偏移量和字节数
 					// long bytes = 0, pos = 0;		 //单个变量
 					vector<long> posList, bytesList; //多个变量
@@ -2864,6 +2864,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 							{
 								ReZipBuff(&buff, (int &)len, params->pathToLine);
 							}
+							CheckFile(CurrentTemplate, buff, len);
 							if (Ext_Params.hasIMG)
 								err = DataExtraction(mallocedMemory, Ext_Params, params, cur, file.second, buff);
 							else
@@ -3097,7 +3098,10 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 						break;
 					auto vec = DataType::splitWithStl(fs::path(file.first).stem(), "_");
 					if (vec.size() == 0)
+					{
+						RuntimeLogger.error("Unexpected file name format detected : {}", file.first);
 						continue;
+					}
 					if (firstIndexFound || vec[0] == fileid)
 					{
 						firstIndexFound = true;
@@ -3109,6 +3113,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 						{
 							ReZipBuff(&buff, (int &)len, params->pathToLine);
 						}
+						CheckFile(CurrentTemplate, buff, len);
 						if (Ext_Params.hasIMG)
 							err = DataExtraction(mallocedMemory, Ext_Params, params, cur, file.second, buff);
 						else
@@ -3195,8 +3200,8 @@ int main()
 	// Py_Initialize();
 	DataTypeConverter converter;
 	DB_QueryParams params;
-	params.pathToLine = "JinfeiTem";
-	params.fileID = "62";
+	params.pathToLine = "JinfeiSeven";
+	params.fileID = "1527133";
 	// params.fileIDend = "300000";
 	params.fileIDend = NULL;
 	char code[10];
@@ -3213,7 +3218,7 @@ int main()
 	code[9] = (char)0;
 	params.pathCode = code;
 	// params.valueName = "S1ON,S1OFF";
-	params.valueName = "A1RTem";
+	params.valueName = "S1ON";
 	params.start = 1553728593562;
 	params.end = 1751908603642;
 	// params.end = 1651894834176;
@@ -3224,7 +3229,7 @@ int main()
 	params.compareVariable = "S1ON";
 	params.queryType = FILEID;
 	params.byPath = 0;
-	params.queryNums = 1;
+	params.queryNums = 100;
 	DB_DataBuffer buffer;
 	buffer.savePath = "/";
 	// cout << settings("Pack_Mode") << endl;
@@ -3234,7 +3239,7 @@ int main()
 	auto startTime = std::chrono::system_clock::now();
 	// char zeros[10] = {0};
 	// memcpy(params.pathCode, zeros, 10);
-	cout<<DB_QueryByFileID(&buffer, &params);
+	cout << DB_QueryByFileID(&buffer, &params);
 	// return 0;
 	// DB_QueryLastRecords(&buffer, &params);
 	// DB_QueryByTimespan_Single(&buffer, &params);

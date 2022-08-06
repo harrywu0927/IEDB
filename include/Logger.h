@@ -6,6 +6,8 @@
 #include <string>
 #include <spdlog/fmt/fmt.h>
 
+#define DEBUG
+
 using namespace std;
 template <typename... Args>
 using format_string_t = fmt::format_string<Args...>;
@@ -27,35 +29,45 @@ public:
     void info(format_string_t<Args...> fmt, Args &&...args)
     {
         logger->info(fmt, std::forward<Args>(args)...);
+#ifdef DEBUG
         spdlog::info(fmt, std::forward<Args>(args)...);
+#endif
     }
 
     template <typename... Args>
     void warn(format_string_t<Args...> fmt, Args &&...args)
     {
         logger->warn(fmt, std::forward<Args>(args)...);
+#ifdef DEBUG
         spdlog::warn(fmt, std::forward<Args>(args)...);
+#endif
     }
 
     template <typename... Args>
     void error(format_string_t<Args...> fmt, Args &&...args)
     {
         logger->error(fmt, std::forward<Args>(args)...);
+#ifdef DEBUG
         spdlog::error(fmt, std::forward<Args>(args)...);
+#endif
     }
 
     template <typename... Args>
     void critical(format_string_t<Args...> fmt, Args &&...args)
     {
         logger->critical(fmt, std::forward<Args>(args)...);
+#ifdef DEBUG
         spdlog::critical(fmt, std::forward<Args>(args)...);
+#endif
     }
 
     template <typename... Args>
     void debug(format_string_t<Args...> fmt, Args &&...args)
     {
         logger->debug(fmt, std::forward<Args>(args)...);
+#ifdef DEBUG
         spdlog::debug(fmt, std::forward<Args>(args)...);
+#endif
     }
 };
 

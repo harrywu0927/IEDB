@@ -28,7 +28,7 @@ int get_file_size_time(const char *filename, pair<long, long> *s_t)
     if (!fs::exists(file))
     {
         cout << "Error: file " << file << " does not exist\n";
-        throw 2;
+        throw iedb_err(2);
     }
     if (fs::is_regular_file(file))
     {
@@ -67,7 +67,7 @@ int readFileList_FS(const char *basePath, vector<string> *files)
     catch (const std::exception &e)
     {
         // RuntimeLogger.error("Error when reading files: {}", e.what());
-        throw errno;
+        throw iedb_err(errno);
     }
     return 0;
 }
@@ -95,14 +95,21 @@ queue<string> InitFileQueue()
                  return iter1.second.second < iter2.second.second;
              });
     }
-    catch (int &e)
+    catch (iedb_err &e)
     {
-        RuntimeLogger.critical("Error occured when initializing file list : {}", strerror(e));
+        RuntimeLogger.critical("Error occured when initializing file list : {}", e.what());
+        exit(0);
+    }
+    catch (fs::filesystem_error &e)
+    {
+        RuntimeLogger.critical("File system error occured when initializing file list : {}", e.what());
         exit(0);
     }
     catch (const std::exception &e)
     {
-        std::cerr << e.what() << '\n';
+        RuntimeLogger.critical("Error:{}", e.what());
+        exit(0);
+        // std::cerr << e.what() << '\n';
     }
 
     queue<string> que;
@@ -124,10 +131,14 @@ int DB_GetFileLengthByPath(char path[], long *length)
     {
         len = fs::file_size(filepath);
     }
+    catch (fs::filesystem_error &e)
+    {
+        RuntimeLogger.critical("Error when getting file length: {}. File {}", e.what(), filepath);
+    }
     catch (const std::exception &e)
     {
         RuntimeLogger.error("Error when getting file length: {}. File {}", e.what(), filepath);
-        throw int(errno);
+        throw iedb_err(errno);
     }
 
     *length = len;
@@ -139,7 +150,7 @@ int DB_GetFileLengthByFilePtr(long fileptr, long *length)
     if (fseek(fp, 0, SEEK_END) != 0)
     {
         RuntimeLogger.error("Error when getting file length: {}", strerror(errno));
-        throw int(errno);
+        throw iedb_err(errno);
         return errno;
     }
     long len = ftell(fp);
@@ -165,6 +176,7 @@ bool LoopMode(char buf[], long length)
             }
             else
             {
+                RuntimeLogger.error("Failed to remove file {} : {}", file, strerror(errno));
             }
         }
         if (availableSpace >= needSpace)
@@ -217,7 +229,7 @@ int DB_Write(long fp, char *buf, long length)
         if (fwrite(buf, length, 1, file) != 1)
         {
             RuntimeLogger.critical("Error when writing: {}", strerror(errno));
-            throw(int) errno;
+            throw iedb_err(errno);
             return errno;
         }
         return 0;
@@ -410,7 +422,7 @@ int DB_CreateDirectory(char path[])
     {
         fs::create_directories(dirpath);
     }
-    catch (const std::exception &e)
+    catch (fs::filesystem_error &e)
     {
         RuntimeLogger.error("Failed to create directory {} : {}", path, e.what());
         return errno;

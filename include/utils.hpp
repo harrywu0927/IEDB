@@ -53,6 +53,8 @@ namespace fs = std::filesystem;
 
 #define PACK_MAX_SIZE 1024 * 1024 * 5
 
+#define DEBUG
+
 namespace StatusCode
 {
     enum StatusCode
@@ -516,21 +518,11 @@ class TemplateManager
 {
 private:
 public:
-    static void AddTemplate(Template &tem)
-    {
-    }
-    static void ModifyMaxTemplates(int n)
-    {
-        maxTemplates = n;
-    }
     //将模版设为当前模版
     static int SetTemplate(const char *path)
     {
         vector<string> files;
         string pathToLine = path;
-        // while (pathToLine.back() != '/')
-        //     pathToLine.pop_back();
-        // pathToLine.pop_back();
         readFileList(pathToLine, files);
         string temPath = "";
         for (string &file : files) //找到带有后缀tem的文件
@@ -540,13 +532,6 @@ public:
                 temPath = file;
                 break;
             }
-            // string s = file;
-            // vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
-            // if (vec[vec.size() - 1].find("tem") != string::npos && vec[vec.size() - 1].find("ziptem") == string::npos)
-            // {
-            //     temPath = file;
-            //     break;
-            // }
         }
         if (temPath == "")
             return StatusCode::SCHEMA_FILE_NOT_FOUND;
@@ -634,13 +619,6 @@ class ZipTemplateManager
 {
 private:
 public:
-    static void AddZipTemplate(ZipTemplate &tem)
-    {
-    }
-    static void ModifyMaxZipTemplates(int n)
-    {
-        maxTemplates = n;
-    }
     //将模版设为当前模版
     static int SetZipTemplate(const char *path)
     {
@@ -739,7 +717,6 @@ public:
             dataTypes.push_back(type);
         }
         ZipTemplate tem(dataName, dataTypes, path);
-        AddZipTemplate(tem);
         CurrentZipTemplate = tem;
         return 0;
     }
@@ -842,8 +819,6 @@ public:
         return 0;
     }
 };
-
-// static char Label[100] = "./";
 
 //负责数据文件的打包，打包后的数据将存为一个文件，文件名为时间段.pak，
 //格式为数据包头 + 每8字节时间戳，接20字节文件ID，接1字节表示是否为压缩文件(1:完全压缩，2:不完全压缩，0:非压缩），
@@ -1059,14 +1034,3 @@ public:
      */
     void GetPathcodes(vector<PathCode> &pathCodes);
 };
-
-// class QueryBufferRow : public QueryBufferReader
-// {
-// public:
-//     char *rowBuffer; //起始地址
-//     int recordLength;
-//     int rowIndex; //行号
-//     void *operator[](int)
-//     {
-//     }
-// };

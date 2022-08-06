@@ -21,6 +21,7 @@ using namespace std;
  *  8字节pak文件大小
  *  2字节pak文件路径长度 P
  *  P字节pak文件路径
+ *  20字节压缩后pak的SHA1哈希值
  *  5字节LZMA参数
  *  8字节压缩后大小 C
  *  C字节压缩后文件内容

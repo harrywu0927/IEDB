@@ -7,13 +7,13 @@ int maxTemplates = 20;
 vector<Template> templates;
 int errorCode;
 // int maxThreads = thread::hardware_concurrency();
+Logger RuntimeLogger("runtime");
 FileIDManager fileIDManager;
 neb::CJsonObject settings = FileIDManager::GetSetting();
 queue<string> fileQueue = InitFileQueue();
 unordered_map<string, int> curNum = getDirCurrentFileIDIndex();
 PackManager packManager(atoi(settings("Pack_Cache_Size").c_str()) * 1024);
 BackupHelper backupHelper;
-Logger RuntimeLogger("runtime");
 
 /**
  * @brief 调取在python脚本中定义的函数，并获取返回结果
@@ -293,26 +293,22 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
     dirs.push_back(settings("Filename_Label"));
     readAllDirs(dirs, finalPath);
     // cout<<dirs.size()<<endl;
-    for (auto &d : dirs)
+    try
     {
-        dir = opendir(d.c_str());
-        if (dir == NULL)
-            return map;
-        int max = 0;
-        while ((ptr = readdir(dir)) != NULL)
+        for (auto &d : dirs)
         {
-            if (ptr->d_name[0] == '.')
-                continue;
-            if (ptr->d_type == 8)
+            int max = 0;
+            for (auto const &dir_entry : fs::directory_iterator{d})
             {
-                string fileName = ptr->d_name;
+                if (!fs::is_regular_file(dir_entry))
+                    continue;
+                string fileName = dir_entry.path().filename();
                 string dirWithoutPrefix = d + "/" + fileName;
                 for (int i = 0; i <= settings("Filename_Label").length(); i++)
                 {
                     dirWithoutPrefix.erase(dirWithoutPrefix.begin());
                 }
-
-                if (fileName.find(".pak") != string::npos)
+                if (fs::path(fileName).extension() == ".pak")
                 {
                     PackFileReader packReader(dirWithoutPrefix);
                     if (packReader.packBuffer == NULL)
@@ -324,8 +320,11 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
                     int readLength, zipType;
                     packReader.Next(readLength, fileID, zipType);
                     string startFID = fileID;
-                    packReader.Skip(fileNum - 2);
-                    packReader.Next(readLength, fileID, zipType);
+                    if (fileNum > 1)
+                    {
+                        packReader.Skip(fileNum - 2);
+                        packReader.Next(readLength, fileID, zipType);
+                    }
                     string endFID = fileID;
                     string startNum = "", endNum = "";
                     for (int i = 0; i < startFID.length(); i++)
@@ -348,7 +347,7 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
                     if (max < maxNum)
                         max = maxNum;
                 }
-                else if (fileName.find(".idb") != string::npos)
+                else if (fs::path(fileName).extension() == ".idb")
                 {
                     vector<string> vec = DataType::StringSplit(const_cast<char *>(fileName.c_str()), "_");
                     string num;
@@ -364,19 +363,108 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
                         max = atoi(num.c_str());
                 }
             }
-        }
-        closedir(dir);
-        if (d == settings("Filename_Label"))
-            map["/"] = max;
-        else //去除前缀Label
-        {
-            for (int i = 0; i <= settings("Filename_Label").length(); i++)
+
+            // dir = opendir(d.c_str());
+            // if (dir == NULL)
+            //     return map;
+
+            // while ((ptr = readdir(dir)) != NULL)
+            // {
+            //     if (ptr->d_name[0] == '.')
+            //         continue;
+            //     if (ptr->d_type == 8)
+            //     {
+            //         string fileName = ptr->d_name;
+            //         string dirWithoutPrefix = d + "/" + fileName;
+            //         for (int i = 0; i <= settings("Filename_Label").length(); i++)
+            //         {
+            //             dirWithoutPrefix.erase(dirWithoutPrefix.begin());
+            //         }
+
+            //         if (fileName.find(".pak") != string::npos)
+            //         {
+            //             // cerr << fileName << '\n';
+            //             PackFileReader packReader(dirWithoutPrefix);
+            //             if (packReader.packBuffer == NULL)
+            //                 continue;
+            //             int fileNum;
+            //             string templateName;
+            //             packReader.ReadPackHead(fileNum, templateName);
+            //             string fileID;
+            //             int readLength, zipType;
+            //             packReader.Next(readLength, fileID, zipType);
+            //             string startFID = fileID;
+            //             if (fileNum > 1)
+            //             {
+            //                 packReader.Skip(fileNum - 2);
+            //                 packReader.Next(readLength, fileID, zipType);
+            //             }
+            //             string endFID = fileID;
+            //             string startNum = "", endNum = "";
+            //             for (int i = 0; i < startFID.length(); i++)
+            //             {
+            //                 if (isdigit(startFID[i]))
+            //                 {
+            //                     startNum += startFID[i];
+            //                 }
+            //             }
+            //             for (int i = 0; i < endFID.length(); i++)
+            //             {
+            //                 if (isdigit(endFID[i]))
+            //                 {
+            //                     endNum += endFID[i];
+            //                 }
+            //             }
+            //             int minNum = atoi(startNum.c_str());
+            //             int maxNum = atoi(endNum.c_str());
+            //             fileIDManager.fidIndex[dirWithoutPrefix] = make_tuple(minNum, maxNum >= minNum ? maxNum : minNum);
+            //             if (max < maxNum)
+            //                 max = maxNum;
+            //         }
+            //         else if (fileName.find(".idb") != string::npos)
+            //         {
+            //             vector<string> vec = DataType::StringSplit(const_cast<char *>(fileName.c_str()), "_");
+            //             string num;
+            //             string fileID = vec[0];
+            //             for (int i = 0; i < fileID.length(); i++)
+            //             {
+            //                 if (isdigit(fileID[i]))
+            //                 {
+            //                     num += fileID[i];
+            //                 }
+            //             }
+            //             if (max < atoi(num.c_str()))
+            //                 max = atoi(num.c_str());
+            //         }
+            //     }
+            // }
+            // closedir(dir);
+            if (d == settings("Filename_Label"))
+                map["/"] = max;
+            else //去除前缀Label
             {
-                d.erase(d.begin());
+                for (int i = 0; i <= settings("Filename_Label").length(); i++)
+                {
+                    d.erase(d.begin());
+                }
+                map[d] = max;
             }
-            map[d] = max;
         }
     }
+    catch (iedb_err &e)
+    {
+        // cerr << "Error code " << e.code << "\n";
+        RuntimeLogger.critical("Error occured with code {}: {}", e.code, e.what());
+    }
+    catch (fs::filesystem_error &e)
+    {
+        RuntimeLogger.critical("File system error occured : {}", e.what());
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+
     return map;
 }
 

@@ -290,14 +290,10 @@ pair<char *, long> PackManager::GetPack(string path)
         // RuntimeLogger.critical("Memory ");
         throw e;
     }
-    catch (int &e)
+    catch (iedb_err &e)
     {
-        if (e == StatusCode::MEMORY_INSUFFICIENT)
-        {
-            RuntimeLogger.critical("Memory insufficient when reading pack");
-        }
-        else
-            throw e;
+        RuntimeLogger.critical("Error occured when getting pack {} : {}", path, e.what());
+        throw e;
     }
     catch (const std::exception &e)
     {
@@ -322,7 +318,7 @@ void PackManager::ReadPack(string path)
     spdlog::info("Read pack:{}", buffer.savePath);
     int err = DB_ReadFile(&buffer);
     if (err != 0)
-        throw err;
+        throw iedb_err(err);
     if (buffer.bufferMalloced)
     {
         PackFileReader reader(buffer.buffer, buffer.length);
@@ -331,7 +327,7 @@ void PackManager::ReadPack(string path)
         reader.ReadPackHead(fileNum, templateName);
         if (TemplateManager::CheckTemplate(templateName) != 0 &&
             ZipTemplateManager::CheckZipTemplate(templateName) != 0)
-            throw StatusCode::SCHEMA_FILE_NOT_FOUND;
+            throw iedb_err(StatusCode::SCHEMA_FILE_NOT_FOUND);
         if (!CurrentTemplate.hasImage)
             PutPack(path, {buffer.buffer, buffer.length});
         else
@@ -389,7 +385,7 @@ void PackManager::ReadPack(string path)
                 {
                     int offset = GetZipImgPos(reader.packBuffer + posInPack + 4);
                     if (offset >= readLength)
-                        throw StatusCode::UNKNWON_DATAFILE;
+                        throw iedb_err(StatusCode::DATAFILE_MODIFIED);
                     memcpy(newBuffer + cur, &offset, 4);
                     cur += 4;
                     memcpy(newBuffer + cur, reader.packBuffer + posInPack + 4, offset);
@@ -398,7 +394,7 @@ void PackManager::ReadPack(string path)
                 /* 包内数据异常 */
                 else
                 {
-                    throw StatusCode::UNKNWON_DATAFILE;
+                    throw iedb_err(StatusCode::DATAFILE_MODIFIED);
                 }
                 posInPack += 4 + readLength;
             }
@@ -408,7 +404,7 @@ void PackManager::ReadPack(string path)
     else
     {
         RuntimeLogger.critical("Failed to read pack : {}, Error code {}", path, err);
-        throw err;
+        throw iedb_err(err);
     }
 }
 
