@@ -252,32 +252,19 @@ int DB_ZipFileByFileID_Single(struct DB_ZipParams *params);
 int DB_ReZipFileByFileID_Single(struct DB_ZipParams *params);
 
 //模板相关函数
-int DB_AddNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams);
-
 int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams);
-
-int DB_UpdateNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams);
 
 int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams);
 
-int DB_DeleteNodeToSchema_Override(struct DB_TreeNodeParams *TreeParams);
-
 int DB_DeleteNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams);
-
-int DB_AddNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams);
 
 int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams);
 
-int DB_UpdateNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams);
-
 int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams);
-
-int DB_DeleteNodeToZipSchema_Override(struct DB_ZipNodeParams *ZipParams);
 
 int DB_DeleteNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams);
 
 // python相关
-
 PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer);
 
 PyObject *ConvertToPyList_STAT(DB_DataBuffer *buffer);
