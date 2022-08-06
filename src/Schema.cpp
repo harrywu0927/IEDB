@@ -227,7 +227,8 @@ int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
  * @param TreeParams 标准模板参数
  * @return　0:success,
  *         others: StatusCode
- * @note   新节点参数必须齐全，pathToLine pathcode valueNmae hasTime valueType isArray arrayLen newPath
+ * @note   新节点参数必须齐全，pathToLine pathcode valueNmae hasTime valueType isArray arrayLen
+ *         newpath为空则采用原路径
  *         新文件名称里不能包含数字
  */
 int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
@@ -530,6 +531,30 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
         return StatusCode::ISTS_ERROR;
     }
 
+    //是数组且数组长度为0则采用模板原数组长度
+    if (newTreeParams->isArrary == 1 && newTreeParams->arrayLen == 0)
+    {
+        if (CurrentZipTemplate.schemas[pos].second.isArray)
+            newTreeParams->arrayLen = CurrentZipTemplate.schemas[pos].second.arrayLen;
+        else
+        {
+            cout << "数组长度不能为0" << endl;
+            return StatusCode::ARRAYLEN_ERROR;
+        }
+    }
+
+    //是时序且时序长度为0则采用模板原时序长度
+    if (newTreeParams->isTS == 1 && newTreeParams->tsLen == 0)
+    {
+        if (CurrentZipTemplate.schemas[pos].second.isTimeseries)
+            newTreeParams->tsLen = CurrentZipTemplate.schemas[pos].second.tsLen;
+        else
+        {
+            cout << "时序类型长度不能为0" << endl;
+            return StatusCode::TSLEN_ERROR;
+        }
+    }
+
     //检查是否带时间戳是否合法
     if (newTreeParams->hasTime != 0 && newTreeParams->hasTime != 1)
     {
@@ -684,7 +709,9 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
  * @param newTreeParams 需要修改的信息
  * @return　0:success,
  *         others: StatusCode
- * @note   更新节点参数必须齐全，pathToLine pathcode valueNmae hasTime valueType isArray arrayLen
+ * @note   其中pathcode valueNmae为空时则采用原编码和变量名 
+ *         hasTime valueType isArray isTS必须输入
+ *         arrayLen TsLen为0时默认采用原长度
  *         新文件夹名称里不能包含数字
  */
 int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams)
@@ -773,6 +800,30 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
     {
         cout << "isTs只能为0或1" << endl;
         return StatusCode::ISTS_ERROR;
+    }
+
+    //是数组且数组长度为0则采用模板原数组长度
+    if (newTreeParams->isArrary == 1 && newTreeParams->arrayLen == 0)
+    {
+        if (CurrentZipTemplate.schemas[pos].second.isArray)
+            newTreeParams->arrayLen = CurrentZipTemplate.schemas[pos].second.arrayLen;
+        else
+        {
+            cout << "数组长度不能为0" << endl;
+            return StatusCode::ARRAYLEN_ERROR;
+        }
+    }
+
+    //是时序且时序长度为0则采用模板原时序长度
+    if (newTreeParams->isTS == 1 && newTreeParams->tsLen == 0)
+    {
+        if (CurrentZipTemplate.schemas[pos].second.isTimeseries)
+            newTreeParams->tsLen = CurrentZipTemplate.schemas[pos].second.tsLen;
+        else
+        {
+            cout << "时序类型长度不能为0" << endl;
+            return StatusCode::TSLEN_ERROR;
+        }
     }
 
     //检查是否带时间戳是否合法
@@ -1827,7 +1878,8 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
  * @param ZipParams 压缩模板参数
  * @return　0:success,
  *         others: StatusCode
- * @note   新节点参数必须齐全，pathToLine valueNmae hasTime valueType isArray arrayLen standardValue maxValue minValue newPath
+ * @note   新节点参数必须齐全，pathToLine valueNmae hasTime valueType isArray arrayLen standardValue maxValue minValue
+ *         newpath为空则采用原路径
  *         新文件夹名称里面不能包含数字
  */
 int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
@@ -2700,6 +2752,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
         else
         {
             newZipParams->standardValue = new char[11 * newZipParams->arrayLen];
+            memset(newZipParams->standardValue,0,sizeof(char) * 11 * newZipParams->arrayLen);
             getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }
@@ -2714,7 +2767,8 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
         else
         {
             newZipParams->maxValue = new char[11 * newZipParams->arrayLen];
-            getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0, newZipParams->isArrary, newZipParams->arrayLen);
+            memset(newZipParams->maxValue,0,sizeof(char) * 11 * newZipParams->arrayLen);
+            getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 1, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }
     if (newZipParams->minValue == NULL)
@@ -2728,7 +2782,8 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
         else
         {
             newZipParams->minValue = new char[11 * newZipParams->arrayLen];
-            getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0, newZipParams->isArrary, newZipParams->arrayLen);
+            memset(newZipParams->minValue,0,sizeof(char) * 11 * newZipParams->arrayLen);
+            getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 2, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }
 
@@ -3365,7 +3420,8 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
  * @param newZipParams 需要修改的信息
  * @return　0:success,
  *         others: StatusCode
- * @note   其中newZipParams中 pathToLine为空则默认覆盖原文件,valueNmae为空则使用原变量名,hasTime valueType isArray isTS必须填,
+ * @note   其中newZipParams中 pathToLine为空则默认覆盖原文件,valueNmae为空则使用原变量名,
+ *         hasTime valueType isArray isTS必须输入,
  *         arrayLen和TsLen为0时默认使用原长度,standardValue maxValue minValue为空时默认使用原数值
  *         新文件夹名称里不能包含数字
  */
@@ -3525,7 +3581,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
         else
         {
             newZipParams->standardValue = new char[11 * newZipParams->arrayLen];
-            memset(newZipParams->standardValue,0,sizeof(newZipParams->standardValue));
+            memset(newZipParams->standardValue,0,sizeof(char) * 11 * newZipParams->arrayLen);
             getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }
@@ -3540,7 +3596,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
         else
         {
             newZipParams->maxValue = new char[11 * newZipParams->arrayLen];
-            memset(newZipParams->maxValue,0,sizeof(newZipParams->maxValue));
+            memset(newZipParams->maxValue,0,sizeof(char) * 11 * newZipParams->arrayLen);
             getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 1, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }
@@ -3555,7 +3611,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
         else
         {
             newZipParams->minValue = new char[11 * newZipParams->arrayLen];
-            memset(newZipParams->minValue,0,sizeof(newZipParams->minValue));
+            memset(newZipParams->minValue,0,sizeof(char) * 11 * newZipParams->arrayLen);
             getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 2, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }

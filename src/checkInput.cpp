@@ -54,6 +54,13 @@ int checkInputPathcode(char pathcode[])
     return 0;
 }
 
+/**
+ * @brief 根据数据类型检查输入的数值字符串是否合法
+ * 
+ * @param variableType 数据类型
+ * @param value 数值字符串
+ * @return int 
+ */
 int checkInputSingleValue(int variableType, string value)
 {
     switch (variableType)
@@ -350,6 +357,8 @@ int checkInputSingleValue(int variableType, string value)
  *
  * @param variableType 数据类型
  * @param value 数据值
+ * @param isArray 是否数组
+ * @param arrayLen 数组长度
  * @return int
  */
 int checkInputValue(string variableType, string value, int isArray, int arrayLen)
@@ -381,6 +390,15 @@ int checkInputValue(string variableType, string value, int isArray, int arrayLen
     return err;
 }
 
+/**
+ * @brief 检查数值范围是否合法
+ * 
+ * @param variableType 数据类型
+ * @param standardValue 标准值
+ * @param maxValue 最大值
+ * @param minValue 最小值
+ * @return int 
+ */
 int checkSingleValueRange(int variableType, string standardValue, string maxValue, string minValue)
 {
     switch (variableType)
@@ -492,6 +510,8 @@ int checkSingleValueRange(int variableType, string standardValue, string maxValu
  * @param standardValue 标准值
  * @param maxValue 最大值
  * @param minValue 最小值
+ * @param isArray 是否数组
+ * @param arrayLen 数组长度
  * @return int
  */
 int checkValueRange(string variableType, string standardValue, string maxValue, string minValue, int isArray, int arrayLen)
@@ -536,6 +556,8 @@ int checkValueRange(string variableType, string standardValue, string maxValue, 
  * @param type 数据类型
  * @param schemaPos 模板所在位置
  * @param MaxOrMin 最大值or最小值or标准值
+ * @param isArray 是否数组
+ * @param arrayLen 数组长度
  * @return int
  */
 int getValueStringByValueType(char *value, ValueType::ValueType type, int schemaPos, int MaxOrMin, int isArray, int arrayLen)
@@ -1155,7 +1177,7 @@ int getValueStringByValueType(char *value, ValueType::ValueType type, int schema
 /**
  * @brief 检查查询模板条件
  *
- * @param params
+ * @param params 查询模板参数
  * @return int
  */
 int checkQueryNodeParam(struct DB_QueryNodeParams *params)
