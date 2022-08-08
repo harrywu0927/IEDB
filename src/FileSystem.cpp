@@ -22,6 +22,13 @@ size_t totalSpace = 0;
 
 bool fileOpenLocked = false;
 
+/**
+ * @brief 获得文件的字节数和修改时间
+ * 
+ * @param filename 文件名
+ * @param s_t 字节数和时间戳
+ * @return int 
+ */
 int get_file_size_time(const char *filename, pair<long, long> *s_t)
 {
     fs::path file = filename;
@@ -120,6 +127,13 @@ queue<string> InitFileQueue()
     return que;
 }
 
+/**
+ * @brief 通过文件名获得文件大小
+ * 
+ * @param path 文件路径
+ * @param length 文件大小
+ * @return int 
+ */
 int DB_GetFileLengthByPath(char path[], long *length)
 {
     string filepath = settings("Filename_Label");
@@ -144,6 +158,14 @@ int DB_GetFileLengthByPath(char path[], long *length)
     *length = len;
     return 0;
 }
+
+/**
+ * @brief 通过文件句柄获得文件大小
+ * 
+ * @param fileptr 文件句柄
+ * @param length 文件大小
+ * @return int 
+ */
 int DB_GetFileLengthByFilePtr(long fileptr, long *length)
 {
     FILE *fp = (FILE *)fileptr;
@@ -205,6 +227,14 @@ bool LimitMode(char buf[], long length)
     return true;
 }
 
+/**
+ * @brief 通过文件句柄写文件
+ * 
+ * @param fp 文件句柄
+ * @param buf 写入的数据
+ * @param length 写入的长度
+ * @return int 
+ */
 int DB_Write(long fp, char *buf, long length)
 {
     FILE *file = (FILE *)fp;
@@ -240,6 +270,14 @@ int DB_Write(long fp, char *buf, long length)
     }
 }
 
+/**
+ * @brief 打开文件
+ * 
+ * @param path 文件路径及名称
+ * @param mode 打开模式
+ * @param fptr 文件句柄
+ * @return int 
+ */
 int DB_Open(char path[], char mode[], long *fptr)
 {
     if (settings("FileOverFlowMode") == "limit" && fileOpenLocked)
@@ -288,6 +326,12 @@ int DB_Open(char path[], char mode[], long *fptr)
     return 0;
 }
 
+/**
+ * @brief 关闭文件
+ * 
+ * @param fp 文件句柄
+ * @return int 
+ */
 int DB_Close(long fp)
 {
     FILE *file = (FILE *)fp;
@@ -301,6 +345,12 @@ int DB_Close(long fp)
     return fclose(file) == 0 ? 0 : errno;
 }
 
+/**
+ * @brief 删除文件
+ * 
+ * @param path 文件路径
+ * @return int 
+ */
 int DB_DeleteFile(char path[])
 {
     string filepath = settings("Filename_Label");
@@ -311,6 +361,14 @@ int DB_DeleteFile(char path[])
     // cout<<"Delete file "<<path<<"size:"<<GetFileLengthByPath(path)<<endl;
     return remove(filepath.c_str()) == 0 ? 0 : errno;
 }
+
+/**
+ * @brief 读文件
+ * 
+ * @param fptr 文件句柄
+ * @param buf 读出的数据
+ * @return int 
+ */
 int DB_Read(long fptr, char buf[])
 {
     FILE *fp = (FILE *)fptr;

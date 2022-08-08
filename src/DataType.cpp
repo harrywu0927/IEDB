@@ -11,6 +11,13 @@
 
 #include <utils.hpp>
 
+/**
+ * @brief 分割字符串
+ *
+ * @param srcstr 原字符串
+ * @param str 通过什么字符分割
+ * @return vector<string> 分割后的字符串
+ */
 vector<string> DataType::StringSplit(char srcstr[], const char *str)
 {
     const char *d = str;
@@ -26,6 +33,13 @@ vector<string> DataType::StringSplit(char srcstr[], const char *str)
     return res;
 }
 
+/**
+ * @brief 分割字符串
+ *
+ * @param str 原字符串
+ * @param pattern 通过什么字符分割
+ * @return vector<string> 分割后的字符串
+ */
 vector<string> DataType::splitWithStl(const string &str, const string &pattern)
 {
     vector<string> resVec;
@@ -51,6 +65,12 @@ vector<string> DataType::splitWithStl(const string &str, const string &pattern)
     return resVec;
 }
 
+/**
+ * @brief 通过数据类型字符串判断数据类型
+ *
+ * @param vType 数据类型字符串
+ * @return ValueType::ValueType
+ */
 ValueType::ValueType DataType::JudgeValueType(string vType)
 {
     if (vType == "INT")
@@ -153,6 +173,12 @@ string DataType::JudgeValueTypeByNum(int &vType)
     return "UNKNOWN";
 }
 
+/**
+ * @brief 获得相应数据类型的字节大小
+ *
+ * @param type 数据类型
+ * @return int
+ */
 int DataType::GetValueBytes(ValueType::ValueType &type)
 {
     switch (type)
@@ -193,6 +219,13 @@ int DataType::GetValueBytes(ValueType::ValueType &type)
     }
 }
 
+/**
+ * @brief 通过字符串返回数据类型,是否数组、数组大小、是否时序等信息
+ *
+ * @param dataType 字符串
+ * @param type DataType类
+ * @return int
+ */
 int DataType::GetDataTypeFromStr(char dataType[], DataType &type)
 {
     string dtype = dataType;
@@ -259,6 +292,17 @@ int DataType::GetDataTypeFromStr(char dataType[], DataType &type)
     return StatusCode::UNKNOWN_TYPE;
 }
 
+/**
+ * @brief 根据指定的数据类型比较两个字节数据值的大小，暂不支持数组的比较。
+ * @param type        数据类型
+ * @param compared    被比较的值
+ * @param toCompare   要比较的字符串字面值，如"123"，则值就为123
+ *
+ * @return 1:        compared > toCompare,
+ *         0:        compared = toCompare,
+ *         -1:       compared < toCompare
+ * @note
+ */
 int DataType::CompareValue(DataType &type, char *compared, const char *toCompare)
 {
     if (type.isArray == 1)
@@ -333,6 +377,17 @@ int DataType::CompareValue(DataType &type, char *compared, const char *toCompare
     }
 }
 
+/**
+ * @brief 根据指定的数据类型比较两个字节数据值的大小，暂不支持数组的比较。
+ * @param type        数据类型
+ * @param compared    被比较的值
+ * @param toCompare   要比较的值
+ *
+ * @return 1:        compared > toCompare,
+ *         0:        compared = toCompare,
+ *         -1:       compared < toCompare
+ * @note
+ */
 int DataType::CompareValueInBytes(DataType &type, char *compared, const char *toCompare)
 {
     if (type.isArray == 1)
@@ -398,8 +453,8 @@ int DataType::CompareValueInBytes(DataType &type, char *compared, const char *to
     }
 }
 
-/** 获取此数据类型所占的总字节数,包含时间
- * @brief
+/**
+ * @brief 获取此数据类型所占的总字节数,包含时间
  *
  * @param type
  * @return int

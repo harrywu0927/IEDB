@@ -146,8 +146,7 @@ extern neb::CJsonObject settings;
 
 extern queue<string> fileQueue;
 
-//获取某一目录下的所有文件
-//不递归子文件夹
+//获取文件相关函数
 void readFileList(string path, vector<string> &files);
 
 void readIDBFilesList(string path, vector<string> &files);
@@ -180,6 +179,7 @@ void readAllDirs(vector<string> &dirs, string basePath);
 
 void readFiles(vector<string> &paths, string path, string extension, bool recursive = false);
 
+//其他函数
 long getMilliTime();
 
 void removeFilenameLabel(string &path);
@@ -345,6 +345,7 @@ public:
     }
 };
 
+//管理模板中的数据类型等信息
 class DataType
 {
 public:

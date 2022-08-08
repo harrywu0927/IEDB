@@ -1541,6 +1541,13 @@ long Template::GetBytesByCode(char *pathCode)
     return total;
 }
 
+/**
+ * @brief 通过变量名获得编码
+ * 
+ * @param name 变量名
+ * @param pathCode 编码
+ * @return int 
+ */
 int Template::GetCodeByName(const char *name, vector<PathCode> &pathCode)
 {
     for (auto &schema : this->schemas)
@@ -1554,6 +1561,13 @@ int Template::GetCodeByName(const char *name, vector<PathCode> &pathCode)
     return StatusCode::UNKNOWN_VARIABLE_NAME;
 }
 
+/**
+ * @brief 通过变量名获得编码
+ * 
+ * @param name 变量名
+ * @param pathCode 编码
+ * @return int 
+ */
 int Template::GetCodeByName(const char *name, PathCode &pathCode)
 {
     for (auto &schema : this->schemas)
@@ -1640,6 +1654,11 @@ int TemplateManager::UnsetTemplate(string path)
     return 0;
 }
 
+/**
+ * @brief 通过压缩模板获得文件总长度（不包括图片大小）
+ * 
+ * @return long 
+ */
 long ZipTemplate::GetTotalBytes()
 {
     long total = 0;

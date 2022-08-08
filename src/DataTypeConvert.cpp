@@ -4,6 +4,12 @@
 using namespace std;
 
 //将大端存储方式的字符数组转换为指定类型的数值
+/**
+ * @brief 将大端存储方式的字符数组转换为2字节有符号整数
+ *
+ * @param str
+ * @return short
+ */
 short DataTypeConverter::ToInt16(void *str)
 {
     short value = 0;
@@ -28,6 +34,13 @@ short DataTypeConverter::ToInt16(void *str)
 
     // return value;
 }
+
+/**
+ * @brief 将大端存储方式的字符数组转换为2字节无符号整数
+ *
+ * @param str
+ * @return short
+ */
 uint16_t DataTypeConverter::ToUInt16(void *str)
 {
     uint16_t value = 0;
@@ -51,6 +64,13 @@ uint16_t DataTypeConverter::ToUInt16(void *str)
     // value |= str[1];
     // return value;
 }
+
+/**
+ * @brief 将大端存储方式的字符数组转换为4字节有符号整数
+ *
+ * @param str
+ * @return short
+ */
 int DataTypeConverter::ToInt32(void *str)
 {
     int value = 0;
@@ -71,6 +91,13 @@ int DataTypeConverter::ToInt32(void *str)
     // }
     // return value;
 }
+
+/**
+ * @brief 将大端存储方式的字符数组转换为4字节无符号整数
+ *
+ * @param str
+ * @return short
+ */
 uint32_t DataTypeConverter::ToUInt32(void *str)
 {
     uint32_t value = 0;
@@ -91,6 +118,13 @@ uint32_t DataTypeConverter::ToUInt32(void *str)
     // }
     // return value;
 }
+
+/**
+ * @brief 将大端存储方式的字符数组转换为4字节浮点数
+ *
+ * @param str
+ * @return short
+ */
 float DataTypeConverter::ToFloat(void *str)
 {
     float floatVariable;
@@ -113,6 +147,12 @@ float DataTypeConverter::ToFloat(void *str)
     return floatVariable;
 }
 
+/**
+ * @brief 将大端存储方式的字符数组转换为8字节无符号整数
+ *
+ * @param str
+ * @return short
+ */
 uint64_t DataTypeConverter::ToLong64(void *str)
 {
     uint64_t value = 0;
@@ -135,6 +175,12 @@ uint64_t DataTypeConverter::ToLong64(void *str)
 }
 
 //将小端存储方式的字符数组转换为指定类型数值
+/**
+ * @brief 将小端存储方式的字符数组转换为2字节有符号整数
+ *
+ * @param str
+ * @return short
+ */
 short DataTypeConverter::ToInt16_m(void *str)
 {
     short value = 0;
@@ -158,6 +204,13 @@ short DataTypeConverter::ToInt16_m(void *str)
     // // value |= str[0];
     // return value;
 }
+
+/**
+ * @brief 将小端存储方式的字符数组转换为2字节无符号整数
+ *
+ * @param str
+ * @return short
+ */
 uint16_t DataTypeConverter::ToUInt16_m(void *str)
 {
     uint16_t value = 0;
@@ -181,6 +234,13 @@ uint16_t DataTypeConverter::ToUInt16_m(void *str)
     // // value |= str[0];
     // return value;
 }
+
+/**
+ * @brief 将小端存储方式的字符数组转换为4字节有符号整数
+ *
+ * @param str
+ * @return short
+ */
 int DataTypeConverter::ToInt32_m(void *str)
 {
     int value = 0;
@@ -201,6 +261,13 @@ int DataTypeConverter::ToInt32_m(void *str)
     // }
     // return value;
 }
+
+/**
+ * @brief 将小端存储方式的字符数组转换为4字节无符号整数
+ *
+ * @param str
+ * @return short
+ */
 uint32_t DataTypeConverter::ToUInt32_m(void *str)
 {
     uint32_t value = 0;
@@ -221,6 +288,13 @@ uint32_t DataTypeConverter::ToUInt32_m(void *str)
     // }
     // return value;
 }
+
+/**
+ * @brief 将小端存储方式的字符数组转换为4字节浮点数
+ *
+ * @param str
+ * @return short
+ */
 float DataTypeConverter::ToFloat_m(void *str)
 {
     float floatVariable;
@@ -243,6 +317,12 @@ float DataTypeConverter::ToFloat_m(void *str)
     return floatVariable;
 }
 
+/**
+ * @brief 将小端存储方式的字符数组转换为8字节无符号整数
+ *
+ * @param str
+ * @return short
+ */
 uint64_t DataTypeConverter::ToLong64_m(void *str)
 {
     uint64_t value = 0;
@@ -265,6 +345,12 @@ uint64_t DataTypeConverter::ToLong64_m(void *str)
 }
 
 //将指定类型的数值转换为大端存储方式的字符数组
+/**
+ * @brief 将2字节有符号整数转换为对应的大端存储字符数组
+ *
+ * @param num 2字节有符号整数
+ * @param buff
+ */
 void DataTypeConverter::ToInt16Buff(short num, char *buff)
 {
     char IntValue[2] = {0};
@@ -277,6 +363,12 @@ void DataTypeConverter::ToInt16Buff(short num, char *buff)
     memcpy(buff, IntValue, 2);
 }
 
+/**
+ * @brief 将2字节无符号整数转换为对应的大端存储字符数组
+ *
+ * @param num 2字节无符号整数
+ * @param buff
+ */
 void DataTypeConverter::ToUInt16Buff(uint16_t num, char *buff)
 {
     char UIntValue[2] = {0};
@@ -289,6 +381,12 @@ void DataTypeConverter::ToUInt16Buff(uint16_t num, char *buff)
     memcpy(buff, UIntValue, 2);
 }
 
+/**
+ * @brief 将4字节有符号整数转换为对应的大端存储字符数组
+ *
+ * @param num 4字节有符号整数
+ * @param buff
+ */
 void DataTypeConverter::ToInt32Buff(int num, char *buff)
 {
     char DIntValue[4] = {0};
@@ -301,6 +399,12 @@ void DataTypeConverter::ToInt32Buff(int num, char *buff)
     memcpy(buff, DIntValue, 4);
 }
 
+/**
+ * @brief 将4字节无符号整数转换为对应的大端存储字符数组
+ *
+ * @param num 4字节无符号整数
+ * @param buff
+ */
 void DataTypeConverter::ToUInt32Buff(uint32_t num, char *buff)
 {
     char UDintValue[4] = {0};
@@ -313,6 +417,12 @@ void DataTypeConverter::ToUInt32Buff(uint32_t num, char *buff)
     memcpy(buff, UDintValue, 4);
 }
 
+/**
+ * @brief 将4字节浮点数转换为对应的大端存储字符数组
+ *
+ * @param num 4字节浮点数
+ * @param buff
+ */
 void DataTypeConverter::ToFloatBuff(float num, char *buff)
 {
     char RealValue[4] = {0};
@@ -326,6 +436,12 @@ void DataTypeConverter::ToFloatBuff(float num, char *buff)
     memcpy(buff, RealValue, 4);
 }
 
+/**
+ * @brief 将8字节无符号整数转换为对应的大端存储字符数组
+ *
+ * @param num 8字节有符号整数
+ * @param buff
+ */
 void DataTypeConverter::ToLong64Buff(uint64_t num, char *buff)
 {
     char LongValue[8] = {0};
@@ -339,6 +455,12 @@ void DataTypeConverter::ToLong64Buff(uint64_t num, char *buff)
 }
 
 //将指定类型的数值转换为小端存储方式的字符数组
+/**
+ * @brief 将2字节有符号整数转换为对应的小端存储字符数组
+ *
+ * @param num 2字节有符号整数
+ * @param buff
+ */
 void DataTypeConverter::ToInt16Buff_m(short num, char *buff)
 {
     char IntValue[2] = {0};
@@ -351,6 +473,12 @@ void DataTypeConverter::ToInt16Buff_m(short num, char *buff)
     memcpy(buff, IntValue, 2);
 }
 
+/**
+ * @brief 将2字节无符号整数转换为对应的小端存储字符数组
+ *
+ * @param num 2字节无符号整数
+ * @param buff
+ */
 void DataTypeConverter::ToUInt16Buff_m(uint16_t num, char *buff)
 {
     char UIntValue[2] = {0};
@@ -363,6 +491,12 @@ void DataTypeConverter::ToUInt16Buff_m(uint16_t num, char *buff)
     memcpy(buff, UIntValue, 2);
 }
 
+/**
+ * @brief 将4字节有符号整数转换为对应的小端存储字符数组
+ *
+ * @param num 4字节有符号整数
+ * @param buff
+ */
 void DataTypeConverter::ToInt32Buff_m(int num, char *buff)
 {
     char DIntValue[4] = {0};
@@ -375,6 +509,12 @@ void DataTypeConverter::ToInt32Buff_m(int num, char *buff)
     memcpy(buff, DIntValue, 4);
 }
 
+/**
+ * @brief 将4字节无符号整数转换为对应的小端存储字符数组
+ *
+ * @param num 4字节无符号整数
+ * @param buff
+ */
 void DataTypeConverter::ToUInt32Buff_m(uint32_t num, char *buff)
 {
     char UDintValue[4] = {0};
@@ -387,6 +527,12 @@ void DataTypeConverter::ToUInt32Buff_m(uint32_t num, char *buff)
     memcpy(buff, UDintValue, 4);
 }
 
+/**
+ * @brief 将4字节浮点数转换为对应的小端存储字符数组
+ *
+ * @param num 4字节浮点数
+ * @param buff
+ */
 void DataTypeConverter::ToFloatBuff_m(float num, char *buff)
 {
     char RealValue[4] = {0};
@@ -400,6 +546,12 @@ void DataTypeConverter::ToFloatBuff_m(float num, char *buff)
     memcpy(buff, RealValue, 4);
 }
 
+/**
+ * @brief 将8字节无符号整数转换为对应的小端存储字符数组
+ *
+ * @param num 8字节无符号整数
+ * @param buff
+ */
 void DataTypeConverter::ToLong64Buff_m(uint64_t num, char *buff)
 {
     char LongValue[8] = {0};

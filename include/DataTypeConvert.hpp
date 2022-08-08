@@ -10,6 +10,7 @@ class DataTypeConverter
 private:
 public:
     bool isBigEndian;
+    //检查电脑大小端
     void CheckBigEndian()
     {
         static int chk = 0x0201; // used to distinguish CPU's type (BigEndian or LittleEndian)

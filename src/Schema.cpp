@@ -3570,6 +3570,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     }
 
     int s_new = 0, max_new = 0, min_new = 0; //用于标志是否申请了空间
+    //如果新节点的标准值、最大值、最小值输入为空，则采用原数值
     if (newZipParams->standardValue == NULL)
     {
         s_new = 1;
