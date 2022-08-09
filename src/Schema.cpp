@@ -117,6 +117,14 @@ int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
         return StatusCode::ISTS_ERROR;
     }
 
+    //如果不是数组类型则将数组长度置为0
+    if (TreeParams->isArrary == 0)
+        TreeParams->arrayLen = 0;
+
+    //如果不是时序类型则将时序长度置为0
+    if (TreeParams->isTS == 0)
+        TreeParams->tsLen = 0;
+
     //检查是否带时间戳是否合法
     if (TreeParams->hasTime != 0 && TreeParams->hasTime != 1)
     {
@@ -320,6 +328,14 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
         cout << "isTs只能为0或1" << endl;
         return StatusCode::ISTS_ERROR;
     }
+
+    //如果不是数组类型则将数组长度置为0
+    if (TreeParams->isArrary == 0)
+        TreeParams->arrayLen = 0;
+
+    //如果不是时序类型则将时序长度置为0
+    if (TreeParams->isTS == 0)
+        TreeParams->tsLen = 0;
 
     //检查是否带时间戳是否合法
     if (TreeParams->hasTime != 0 && TreeParams->hasTime != 1)
@@ -531,6 +547,14 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
         return StatusCode::ISTS_ERROR;
     }
 
+    //如果不是数组类型则将数组长度置为0
+    if (newTreeParams->isArrary == 0)
+        newTreeParams->arrayLen = 0;
+
+    //如果不是时序类型则将时序长度置为0
+    if (newTreeParams->isTS == 0)
+        newTreeParams->tsLen = 0;
+
     //是数组且数组长度为0则采用模板原数组长度
     if (newTreeParams->isArrary == 1 && newTreeParams->arrayLen == 0)
     {
@@ -709,7 +733,7 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
  * @param newTreeParams 需要修改的信息
  * @return　0:success,
  *         others: StatusCode
- * @note   其中pathcode valueNmae为空时则采用原编码和变量名 
+ * @note   其中pathcode valueNmae为空时则采用原编码和变量名
  *         hasTime valueType isArray isTS必须输入
  *         arrayLen TsLen为0时默认采用原长度
  *         新文件夹名称里不能包含数字
@@ -801,6 +825,14 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
         cout << "isTs只能为0或1" << endl;
         return StatusCode::ISTS_ERROR;
     }
+
+    //如果不是数组类型则将数组长度置为0
+    if (newTreeParams->isArrary == 0)
+        newTreeParams->arrayLen = 0;
+
+    //如果不是时序类型则将时序长度置为0
+    if (newTreeParams->isTS == 0)
+        newTreeParams->tsLen = 0;
 
     //是数组且数组长度为0则采用模板原数组长度
     if (newTreeParams->isArrary == 1 && newTreeParams->arrayLen == 0)
@@ -2696,6 +2728,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
     }
 
     writefront_len = readbuf_pos; //用于最后定位被更新模板结点的之前节点的位置
+
     //用于最后定位被更新模板结点之后的节点的位置
     if (CurrentZipTemplate.schemas[pos].second.isArray)
     {
@@ -2752,7 +2785,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
         else
         {
             newZipParams->standardValue = new char[11 * newZipParams->arrayLen];
-            memset(newZipParams->standardValue,0,sizeof(char) * 11 * newZipParams->arrayLen);
+            memset(newZipParams->standardValue, 0, sizeof(char) * 11 * newZipParams->arrayLen);
             getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }
@@ -2767,7 +2800,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
         else
         {
             newZipParams->maxValue = new char[11 * newZipParams->arrayLen];
-            memset(newZipParams->maxValue,0,sizeof(char) * 11 * newZipParams->arrayLen);
+            memset(newZipParams->maxValue, 0, sizeof(char) * 11 * newZipParams->arrayLen);
             getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 1, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }
@@ -2782,7 +2815,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
         else
         {
             newZipParams->minValue = new char[11 * newZipParams->arrayLen];
-            memset(newZipParams->minValue,0,sizeof(char) * 11 * newZipParams->arrayLen);
+            memset(newZipParams->minValue, 0, sizeof(char) * 11 * newZipParams->arrayLen);
             getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 2, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }
@@ -3525,6 +3558,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     }
 
     writefront_len = readbuf_pos; //用于最后定位被更新模板结点的之前节点的位置
+    
     //用于最后定位被更新模板结点之后的节点的位置
     if (CurrentZipTemplate.schemas[pos].second.isArray)
     {
@@ -3582,7 +3616,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
         else
         {
             newZipParams->standardValue = new char[11 * newZipParams->arrayLen];
-            memset(newZipParams->standardValue,0,sizeof(char) * 11 * newZipParams->arrayLen);
+            memset(newZipParams->standardValue, 0, sizeof(char) * 11 * newZipParams->arrayLen);
             getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }
@@ -3597,7 +3631,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
         else
         {
             newZipParams->maxValue = new char[11 * newZipParams->arrayLen];
-            memset(newZipParams->maxValue,0,sizeof(char) * 11 * newZipParams->arrayLen);
+            memset(newZipParams->maxValue, 0, sizeof(char) * 11 * newZipParams->arrayLen);
             getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 1, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }
@@ -3612,7 +3646,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
         else
         {
             newZipParams->minValue = new char[11 * newZipParams->arrayLen];
-            memset(newZipParams->minValue,0,sizeof(char) * 11 * newZipParams->arrayLen);
+            memset(newZipParams->minValue, 0, sizeof(char) * 11 * newZipParams->arrayLen);
             getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 2, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }

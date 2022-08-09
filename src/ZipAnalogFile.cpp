@@ -1,7 +1,17 @@
 #include "../include/utils.hpp"
 using namespace std;
 
+void addAnalogZipPos(int schemaPos, char *writebuff, long &writebuff_pos);
+void addAnalogZipType(int ziptype, char *writebuff, long &writebuff_pos);
+void addAnalogEndFlag(char *writebuff, long &writebuff_pos);
+int IsAnalogTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType);
+void IsAnalogArrayZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos);
 int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos);
+void addAnalogStandardValue(int schemaPos, char *writebuff, long &writebuff_pos, int DataType);
+void addAnalogTsTime(int schemaPos, uint64_t startTime, char *writebuff, long &writebuff_pos, int tsPos);
+int IsAnalogTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType);
+int IsAnalogArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos);
+int IsNotAnalogArrayAndTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType);
 int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writebuff_pos);
 int DB_ZipAnalogFile_thread(vector<pair<string, long>> selectFiles, uint16_t begin, uint16_t num, const char *pathToLine);
 int DB_ReZipAnalogFile_thread(vector<pair<string, long>> selectFiles, uint16_t begin, uint16_t num, const char *pathToLine);

@@ -1,7 +1,16 @@
 #include "../include/utils.hpp"
 using namespace std;
 
+void addZipPos(int schemaPos, char *writebuff, long &writebuff_pos);
+void addEndFlag(char *writebuff, long &writebuff_pos);
+void addZipType(int ziptype, char *writebuff, long &writebuff_pos);
+int IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType);
+void IsArrayZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos);
 int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos);
+void addStandardValue(int schemaPos, char *writebuff, long &writebuff_pos, int DataType);
+void addTsTime(int schemaPos, uint64_t startTime, char *writebuff, long &writebuff_pos, int tsPos);
+int IsArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos);
+int IsNotArrayAndTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType);
 int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_pos);
 int DB_ZipFile_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine);
 int DB_ReZipFile_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine);

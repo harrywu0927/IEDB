@@ -1,7 +1,16 @@
 #include "../include/utils.hpp"
 using namespace std;
 
+void addSwitchZipPos(int schemaPos, char *writebuff, long &writebuff_pos);
+void addSwitchZipType(int ziptype, char *writebuff, long &writebuff_pos);
+int IsSwitchTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType);
+void IsSwitchArrayZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos);
 int ZipSwitchBuf(char *readbuff, char *writebuff, long &writebuff_pos);
+void addSwitchStandardValue(int schemaPos, char *writebuff, long &writebuff_pos, int DataType);
+void addSwitchTsTime(int schemaPos, uint64_t startTime, char *writebuff, long &writebuff_pos, int tsPos);
+int IsSwitchTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType);
+int IsSwitchArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos);
+int IsNotSwitchArrayAndTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType);
 int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writebuff_pos);
 int DB_ZipSwitchFile_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine);
 int DB_ReZipSwitchFile_thread(vector<pair<string, long>> selectedFiles, uint16_t begin, uint16_t num, const char *pathToLine);
