@@ -277,6 +277,7 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 
     long len;
     DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
+    //模板每条记录默认71字节，其中30字节变量名，30字节类型，10字节编码，1字节是否带时间戳
     char readBuf[len + 71];
     long readbuf_pos = 0;
     DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
