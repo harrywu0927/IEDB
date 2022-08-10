@@ -277,6 +277,7 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 
     long len;
     DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
+    //模板每条记录默认71字节，其中30字节变量名，30字节类型，10字节编码，1字节是否带时间戳
     char readBuf[len + 71];
     long readbuf_pos = 0;
     DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
@@ -466,18 +467,20 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
     int err;
     if (TreeParams->pathToLine == NULL)
         return StatusCode::EMPTY_PATH_TO_LINE;
-    //如果更新节点的编码、新路径都为空，则保持原状态
-    if (newTreeParams->pathCode == NULL)
-        newTreeParams->pathCode = TreeParams->pathCode;
+    if (TreeParams->valueName == NULL)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
+
+    //如果更新节点的变量名、新路径为空，则保持原状态
     if (newTreeParams->pathToLine == NULL)
         newTreeParams->pathToLine = TreeParams->pathToLine;
+    if (newTreeParams->valueName == NULL)
+        newTreeParams->valueName = TreeParams->valueName;
 
-    //检查更新后路径编码输入是否合法
-    char inputPathCode[10] = {0};
-    memcpy(inputPathCode, newTreeParams->pathCode, 10);
-    err = checkInputPathcode(inputPathCode);
+    //检查变量名是否合法
+    string variableName = newTreeParams->valueName;
+    err = checkInputVaribaleName(variableName);
     if (err != 0)
-        return err;
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
 
     vector<string> files;
     readFileList(TreeParams->pathToLine, files);
@@ -502,28 +505,21 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
     DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
 
     long pos = -1;                      //用于定位是修改模板的第几条
-    for (long i = 0; i < len / 71; i++) //寻找是否有相同编码
+    for (long i = 0; i < len / 71; i++) //寻找是否有相同变量名
     {
-        readbuf_pos += 61;
-        char existPathCode[10];
-        memcpy(existPathCode, readBuf + readbuf_pos, 10);
-        int j = 0;
-        for (j = 0; j < 10; j++)
+        char existValueName[30];
+        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        if (strcmp(TreeParams->valueName, existValueName) == 0)
         {
-            if (TreeParams->pathCode[j] != existPathCode[j])
-                break;
-        }
-        if (j == 10)
-        {
-            pos = i;
+            pos = i; //记录这条记录的位置
             break;
         }
-        readbuf_pos += 10;
+        readbuf_pos += 71;
     }
     if (pos == -1)
     {
-        cout << "未找到编码！" << endl;
-        return StatusCode::UNKNOWN_PATHCODE;
+        cout << "未找到变量名！" << endl;
+        return StatusCode::UNKNOWN_VARIABLE_NAME;
     }
 
     //检查数据类型是否合法
@@ -586,19 +582,18 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
         return StatusCode::HASTIME_ERROR;
     }
 
-    //如果变量名为空，则保持原状态，否则使用新变量名，并检查变量名是否合法
-    string variableName;
-    if (newTreeParams->valueName == NULL)
+    //如果编码为空，则保持原状态，否则使用新编码，并检查编码是否合法
+    char inputPathCode[10] = {0};
+    if (newTreeParams->pathCode == NULL)
     {
-        newTreeParams->valueName = readBuf + pos * 71;
-        // memcpy(newTreeParams->valueName,readBuf+pos*71,30);
-        variableName = newTreeParams->valueName;
+        memcpy(newTreeParams->pathCode, readBuf + 71 * pos + 61, 10);
+        memcpy(inputPathCode, newTreeParams->pathCode, 10);
     }
     else
-        variableName = newTreeParams->valueName;
-    err = checkInputVaribaleName(variableName);
+        memcpy(inputPathCode, newTreeParams->pathCode, 10);
+    err = checkInputPathcode(inputPathCode);
     if (err != 0)
-        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
+        return StatusCode::PATHCODE_CHECK_ERROR;
 
     readbuf_pos = 0;
     for (long i = 0; i < len / 71; i++) //寻找模板是否有与更新参数相同的变量名或者编码
@@ -727,7 +722,7 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
 }
 
 /**
- * @brief 修改标准模板里的树节点,根据编码进行定位和修改，可以指定新的文件夹存储修改后的模板
+ * @brief 修改标准模板里的树节点,根据变量名进行定位和修改，可以指定新的文件夹存储修改后的模板
  *
  * @param TreeParams 需要修改的节点
  * @param newTreeParams 需要修改的信息
@@ -744,19 +739,20 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
 
     if (TreeParams->pathToLine == NULL)
         return StatusCode::EMPTY_PATH_TO_LINE;
+    if (TreeParams->valueName == NULL)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
 
-    //如果更新节点的编码、新路径为空，则保持原状态
+    //如果更新节点的变量名、新路径为空，则保持原状态
     if (newTreeParams->pathToLine == NULL)
         newTreeParams->pathToLine = TreeParams->pathToLine;
-    if (newTreeParams->pathCode == NULL)
-        newTreeParams->pathCode = TreeParams->pathCode;
+    if (newTreeParams->valueName == NULL)
+        newTreeParams->valueName = TreeParams->valueName;
 
-    //检查更新后路径编码输入是否合法
-    char inputPathCode[10] = {0};
-    memcpy(inputPathCode, newTreeParams->pathCode, 10);
-    err = checkInputPathcode(inputPathCode);
+    //检查变量名是否合法
+    string variableName = newTreeParams->valueName;
+    err = checkInputVaribaleName(variableName);
     if (err != 0)
-        return StatusCode::PATHCODE_CHECK_ERROR;
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
 
     vector<string> files;
     readFileList(TreeParams->pathToLine, files);
@@ -781,28 +777,21 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
     DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
 
     long pos = -1;                      //用于定位是修改模板的第几条
-    for (long i = 0; i < len / 71; i++) //寻找是否有相同编码
+    for (long i = 0; i < len / 71; i++) //寻找是否有相同变量名
     {
-        readbuf_pos += 61;
-        char existPathCode[10];
-        memcpy(existPathCode, readBuf + readbuf_pos, 10);
-        int j = 0;
-        for (j = 0; j < 10; j++)
+        char existValueName[30];
+        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        if (strcmp(TreeParams->valueName, existValueName) == 0)
         {
-            if (TreeParams->pathCode[j] != existPathCode[j])
-                break;
-        }
-        if (j == 10)
-        {
-            pos = i;
+            pos = i; //记录这条记录的位置
             break;
         }
-        readbuf_pos += 10;
+        readbuf_pos += 71;
     }
     if (pos == -1)
     {
-        cout << "未找到编码！" << endl;
-        return StatusCode::UNKNOWN_PATHCODE;
+        cout << "未找到变量名！" << endl;
+        return StatusCode::UNKNOWN_VARIABLE_NAME;
     }
 
     //检查数据类型是否合法
@@ -865,18 +854,18 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
         return StatusCode::HASTIME_ERROR;
     }
 
-    //如果变量名为空，则保持原状态，否则使用新变量名，并检查变量名是否合法
-    string variableName;
-    if (newTreeParams->valueName == NULL)
+    //如果编码为空，则保持原状态，否则使用新编码，并检查编码是否合法
+    char inputPathCode[10] = {0};
+    if (newTreeParams->pathCode == NULL)
     {
-        newTreeParams->valueName = readBuf + pos * 71;
-        variableName = newTreeParams->valueName;
+        memcpy(newTreeParams->pathCode, readBuf + 71 * pos + 61, 10);
+        memcpy(inputPathCode, newTreeParams->pathCode, 10);
     }
     else
-        variableName = newTreeParams->valueName;
-    err = checkInputVaribaleName(variableName);
+        memcpy(inputPathCode, newTreeParams->pathCode, 10);
+    err = checkInputPathcode(inputPathCode);
     if (err != 0)
-        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
+        return StatusCode::PATHCODE_CHECK_ERROR;
 
     readbuf_pos = 0;
     for (long i = 0; i < len / 71; i++) //寻找模板是否有与更新参数相同的变量名或者编码
@@ -1028,6 +1017,8 @@ int DB_DeleteNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
     int err;
     if (TreeParams->pathToLine == NULL)
         return StatusCode::EMPTY_PATH_TO_LINE;
+    if(TreeParams->valueName == NULL)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
     vector<string> files;
     readFileList(TreeParams->pathToLine, files);
     string temPath = "";
@@ -1050,29 +1041,22 @@ int DB_DeleteNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
     long readbuf_pos = 0;
     DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
 
-    long pos = -1;                      //记录删除节点在第几条
-    for (long i = 0; i < len / 71; i++) //寻找是否有相同的编码
+    long pos = -1;                      //用于定位是修改模板的第几条
+    for (long i = 0; i < len / 71; i++) //寻找是否有相同变量名
     {
-        readbuf_pos += 61;
-        char existPathCode[10];
-        memcpy(existPathCode, readBuf + readbuf_pos, 10);
-        int j = 0;
-        for (j = 0; j < 10; j++)
+        char existValueName[30];
+        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        if (strcmp(TreeParams->valueName, existValueName) == 0)
         {
-            if (TreeParams->pathCode[j] != existPathCode[j])
-                break;
-        }
-        if (j == 10)
-        {
-            pos = i;
+            pos = i; //记录这条记录的位置
             break;
         }
-        readbuf_pos += 10;
+        readbuf_pos += 71;
     }
     if (pos == -1)
     {
-        cout << "未找到编码！" << endl;
-        return StatusCode::UNKNOWN_PATHCODE;
+        cout << "未找到变量名！" << endl;
+        return StatusCode::UNKNOWN_VARIABLE_NAME;
     }
 
     char writeBuf[len - 71];
@@ -1104,7 +1088,7 @@ int DB_DeleteNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
 }
 
 /**
- * @brief 删除标准模板中已存在的节点,根据编码进行定位和删除，可以指定新文件夹存储修改后的模板
+ * @brief 删除标准模板中已存在的节点,根据变量名进行定位和删除，可以指定新文件夹存储修改后的模板
  *
  * @param TreeParams 标准模板参数
  * @return　0:success,
@@ -1117,7 +1101,8 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 
     if (TreeParams->pathToLine == NULL)
         return StatusCode::EMPTY_PATH_TO_LINE;
-
+    if(TreeParams->valueName == NULL)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
     vector<string> files;
     readFileList(TreeParams->pathToLine, files);
     string temPath = "";
@@ -1140,36 +1125,28 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
     long readbuf_pos = 0;
     DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
 
-    long pos = -1;                      //记录删除节点在第几条
-    for (long i = 0; i < len / 71; i++) //寻找是否有相同的编码
+    long pos = -1;                      //用于定位是修改模板的第几条
+    for (long i = 0; i < len / 71; i++) //寻找是否有相同变量名
     {
-        readbuf_pos += 61;
-        char existPathCode[10];
-        memcpy(existPathCode, readBuf + readbuf_pos, 10);
-        int j = 0;
-        for (j = 0; j < 10; j++)
+        char existValueName[30];
+        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        if (strcmp(TreeParams->valueName, existValueName) == 0)
         {
-            if (TreeParams->pathCode[j] != existPathCode[j])
-                break;
-        }
-        if (j == 10)
-        {
-            pos = i;
+            pos = i; //记录这条记录的位置
             break;
         }
-        readbuf_pos += 10;
+        readbuf_pos += 71;
     }
     if (pos == -1)
     {
-        cout << "未找到编码！" << endl;
-        return StatusCode::UNKNOWN_PATHCODE;
+        cout << "未找到变量名！" << endl;
+        return StatusCode::UNKNOWN_VARIABLE_NAME;
     }
 
     char writeBuf[len - 71];
     memcpy(writeBuf, readBuf, pos * 71);                                       //拷贝要被删除的记录之前的记录
     memcpy(writeBuf + pos * 71, readBuf + pos * 71 + 71, len - pos * 71 - 71); //拷贝要被删除的记录之后的记录
 
-    //创建新的.tem文件，根据当前已存在的模板文件进行编号
     long fp;
     if (TreeParams->newPath == NULL)
         TreeParams->newPath = TreeParams->pathToLine;
@@ -3558,7 +3535,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     }
 
     writefront_len = readbuf_pos; //用于最后定位被更新模板结点的之前节点的位置
-    
+
     //用于最后定位被更新模板结点之后的节点的位置
     if (CurrentZipTemplate.schemas[pos].second.isArray)
     {
