@@ -1017,6 +1017,8 @@ int DB_DeleteNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
     int err;
     if (TreeParams->pathToLine == NULL)
         return StatusCode::EMPTY_PATH_TO_LINE;
+    if(TreeParams->valueName == NULL)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
     vector<string> files;
     readFileList(TreeParams->pathToLine, files);
     string temPath = "";
@@ -1086,7 +1088,7 @@ int DB_DeleteNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
 }
 
 /**
- * @brief 删除标准模板中已存在的节点,根据编码进行定位和删除，可以指定新文件夹存储修改后的模板
+ * @brief 删除标准模板中已存在的节点,根据变量名进行定位和删除，可以指定新文件夹存储修改后的模板
  *
  * @param TreeParams 标准模板参数
  * @return　0:success,
@@ -1099,7 +1101,8 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 
     if (TreeParams->pathToLine == NULL)
         return StatusCode::EMPTY_PATH_TO_LINE;
-
+    if(TreeParams->valueName == NULL)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
     vector<string> files;
     readFileList(TreeParams->pathToLine, files);
     string temPath = "";
@@ -1144,7 +1147,6 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
     memcpy(writeBuf, readBuf, pos * 71);                                       //拷贝要被删除的记录之前的记录
     memcpy(writeBuf + pos * 71, readBuf + pos * 71 + 71, len - pos * 71 - 71); //拷贝要被删除的记录之后的记录
 
-    //创建新的.tem文件，根据当前已存在的模板文件进行编号
     long fp;
     if (TreeParams->newPath == NULL)
         TreeParams->newPath = TreeParams->pathToLine;
