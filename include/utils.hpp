@@ -514,7 +514,6 @@ extern int maxTemplates;
 extern vector<Template> templates;
 
 //模版的管理
-//内存中可同时存在若干数量的模版以提升存取效率，可按照LRU策略管理模版
 class TemplateManager
 {
 private:

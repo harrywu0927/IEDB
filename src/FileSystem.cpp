@@ -21,13 +21,12 @@ long availableSpace = 1024 * 1024 * 100;
 size_t totalSpace = 0;
 
 bool fileOpenLocked = false;
-
 /**
- * @brief 获得文件的字节数和修改时间
- * 
- * @param filename 文件名
- * @param s_t 字节数和时间戳
- * @return int 
+ * @brief 获取文件的大小和最后写入时间
+ *
+ * @param filename
+ * @param s_t
+ * @return int
  */
 int get_file_size_time(const char *filename, pair<long, long> *s_t)
 {
@@ -45,22 +44,23 @@ int get_file_size_time(const char *filename, pair<long, long> *s_t)
 
     return 0;
 }
-
+/**
+ * @brief 获取磁盘空间
+ *
+ */
 void getDiskSpaces()
 {
-    // struct statvfs diskInfo;
-    // statvfs("./", &diskInfo);
-    // availableSpace = diskInfo.f_bavail * diskInfo.f_frsize - 1024 * 1024 * 5; //可用空间
-    // if (availableSpace < 0)
-    //     availableSpace = 0;
-    // totalSpace = diskInfo.f_frsize * diskInfo.f_blocks; //总空间
-
     auto spaceInfo = fs::space("./");
     availableSpace = spaceInfo.available - 1024 * 1024 * 5;
     totalSpace = spaceInfo.capacity;
-    // #endif
 }
-
+/**
+ * @brief 递归读取文件列表
+ *
+ * @param basePath
+ * @param files
+ * @return int
+ */
 int readFileList_FS(const char *basePath, vector<string> *files)
 {
     try
@@ -78,7 +78,11 @@ int readFileList_FS(const char *basePath, vector<string> *files)
     }
     return 0;
 }
-
+/**
+ * @brief 初始化文件队列
+ *
+ * @return queue<string>
+ */
 queue<string> InitFileQueue()
 {
     vector<string> files;
@@ -129,10 +133,10 @@ queue<string> InitFileQueue()
 
 /**
  * @brief 通过文件名获得文件大小
- * 
+ *
  * @param path 文件路径
  * @param length 文件大小
- * @return int 
+ * @return int
  */
 int DB_GetFileLengthByPath(char path[], long *length)
 {
@@ -161,10 +165,10 @@ int DB_GetFileLengthByPath(char path[], long *length)
 
 /**
  * @brief 通过文件句柄获得文件大小
- * 
+ *
  * @param fileptr 文件句柄
  * @param length 文件大小
- * @return int 
+ * @return int
  */
 int DB_GetFileLengthByFilePtr(long fileptr, long *length)
 {
@@ -180,6 +184,14 @@ int DB_GetFileLengthByFilePtr(long fileptr, long *length)
     *length = len;
     return 0;
 }
+/**
+ * @brief 循环写，当磁盘满时，删除文件队列中最早的文件直至有足够空间
+ *
+ * @param buf
+ * @param length
+ * @return true
+ * @return false
+ */
 bool LoopMode(char buf[], long length)
 {
     long needSpace = length + 1;
@@ -210,6 +222,14 @@ bool LoopMode(char buf[], long length)
     }
     return false;
 }
+/**
+ * @brief 使用容量大于95%，不允许写入
+ *
+ * @param buf
+ * @param length
+ * @return true
+ * @return false
+ */
 bool LimitMode(char buf[], long length)
 {
     size_t dataSize = length + 1;
@@ -217,7 +237,7 @@ bool LimitMode(char buf[], long length)
     size_t total = totalSpace >> 20;
     double usage = 1 - (double)avail / (double)total;
     // printf("Disk usage: %.2f%%\n", usage * 100);
-    if (usage >= 0.7) //已使用70%以上空间
+    if (usage >= 0.95) //已使用95%以上空间
     {
         // return false;
         printf("Disk usage:%.2f%%\n", usage * 100);
@@ -229,11 +249,11 @@ bool LimitMode(char buf[], long length)
 
 /**
  * @brief 通过文件句柄写文件
- * 
+ *
  * @param fp 文件句柄
  * @param buf 写入的数据
  * @param length 写入的长度
- * @return int 
+ * @return int
  */
 int DB_Write(long fp, char *buf, long length)
 {
@@ -272,11 +292,11 @@ int DB_Write(long fp, char *buf, long length)
 
 /**
  * @brief 打开文件
- * 
+ *
  * @param path 文件路径及名称
  * @param mode 打开模式
  * @param fptr 文件句柄
- * @return int 
+ * @return int
  */
 int DB_Open(char path[], char mode[], long *fptr)
 {
@@ -328,9 +348,9 @@ int DB_Open(char path[], char mode[], long *fptr)
 
 /**
  * @brief 关闭文件
- * 
+ *
  * @param fp 文件句柄
- * @return int 
+ * @return int
  */
 int DB_Close(long fp)
 {
@@ -347,9 +367,9 @@ int DB_Close(long fp)
 
 /**
  * @brief 删除文件
- * 
+ *
  * @param path 文件路径
- * @return int 
+ * @return int
  */
 int DB_DeleteFile(char path[])
 {
@@ -364,10 +384,10 @@ int DB_DeleteFile(char path[])
 
 /**
  * @brief 读文件
- * 
+ *
  * @param fptr 文件句柄
  * @param buf 读出的数据
- * @return int 
+ * @return int
  */
 int DB_Read(long fptr, char buf[])
 {
@@ -487,6 +507,12 @@ int DB_CreateDirectory(char path[])
     }
     return 0;
 }
+/**
+ * @brief 删除文件夹
+ *
+ * @param path
+ * @return int
+ */
 int DB_DeleteDirectory(char path[])
 {
     struct stat statbuf;

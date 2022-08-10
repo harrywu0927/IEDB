@@ -67,8 +67,16 @@ void checkSettings()
 int main()
 {
     unsigned char mdbuf[20];
-    const unsigned char d[] = "123456";
-    cout << SHA1(d, 6, mdbuf) << endl;
+    const unsigned char d1[] = "123456789012";
+    cout << SHA1(d1, 12, mdbuf) << endl;
+    SHA_CTX c;
+    SHA1_Init(&c);
+    for (int i = 0; i < 4; i++)
+    {
+        SHA1_Update(&c, d1 + i * 3, 3);
+    }
+    cout << SHA1_Final(mdbuf, &c) << endl;
+
     return 0;
     DB_ZipNodeParams param;
     param.pathToLine = "arrTest";

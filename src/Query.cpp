@@ -978,6 +978,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 	catch (iedb_err &e)
 	{
 		RuntimeLogger.critical(e.what());
+		return e.code;
 	}
 	catch (const std::exception &e)
 	{
@@ -2157,17 +2158,14 @@ int PackProcess_New(DB_QueryParams *params, atomic<long> *cur, atomic<int> *inde
  */
 int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
-	IOBusy = true;
 	int check = CheckQueryParams(params);
 	if (check != 0)
 	{
-		IOBusy = false;
 		return check;
 	}
 	//确认当前模版
 	if (TemplateManager::CheckTemplate(params->pathToLine) != 0 && ZipTemplateManager::CheckZipTemplate(params->pathToLine) != 0)
 	{
-		IOBusy = false;
 		return StatusCode::SCHEMA_FILE_NOT_FOUND;
 	}
 
@@ -2178,9 +2176,9 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 		CurrentTemplate.GetAllPathsByCode(params->pathCode, Ext_Params.pathCodes);
 	if (err != 0)
 	{
-		IOBusy = false;
 		return err;
 	}
+	IOBusy = true;
 	vector<pair<string, long>> selectedFiles;
 
 	//获取每个数据文件，并带有时间戳
@@ -2219,11 +2217,13 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 	catch (bad_alloc &e)
 	{
 		IOBusy = false;
+		RuntimeLogger.critical("Bad allocation");
 		return StatusCode::MEMORY_INSUFFICIENT;
 	}
 	catch (iedb_err &e)
 	{
 		RuntimeLogger.critical(e.what());
+		return e.code;
 	}
 	catch (const std::exception &e)
 	{
@@ -2741,11 +2741,13 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			catch (bad_alloc &e)
 			{
 				IOBusy = false;
+				RuntimeLogger.critical("Bad allocation");
 				return StatusCode::MEMORY_INSUFFICIENT;
 			}
 			catch (iedb_err &e)
 			{
 				RuntimeLogger.critical(e.what());
+				return e.code;
 			}
 			catch (const std::exception &e)
 			{
@@ -2985,6 +2987,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		catch (iedb_err &e)
 		{
 			RuntimeLogger.critical(e.what());
+			return e.code;
 		}
 		catch (const std::exception &e)
 		{
@@ -3195,70 +3198,70 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 	IOBusy = false;
 	return StatusCode::DATAFILE_NOT_FOUND;
 }
-int main()
-{
-	// Py_Initialize();
-	DataTypeConverter converter;
-	DB_QueryParams params;
-	params.pathToLine = "JinfeiSeven";
-	params.fileID = "1527133";
-	// params.fileIDend = "300000";
-	params.fileIDend = NULL;
-	char code[10];
-	code[0] = (char)0;
-	code[1] = (char)0;
-	code[2] = (char)0;
-	code[3] = (char)0;
-	code[4] = 0;
-	// code[4] = 'R';
-	code[5] = (char)0;
-	code[6] = 0;
-	code[7] = (char)0;
-	code[8] = (char)0;
-	code[9] = (char)0;
-	params.pathCode = code;
-	// params.valueName = "S1ON,S1OFF";
-	params.valueName = "S1ON";
-	params.start = 1553728593562;
-	params.end = 1751908603642;
-	// params.end = 1651894834176;
-	params.order = ODR_NONE;
-	params.sortVariable = "S1ON";
-	params.compareType = CMP_NONE;
-	params.compareValue = "100";
-	params.compareVariable = "S1ON";
-	params.queryType = FILEID;
-	params.byPath = 0;
-	params.queryNums = 100;
-	DB_DataBuffer buffer;
-	buffer.savePath = "/";
-	// cout << settings("Pack_Mode") << endl;
-	// vector<pair<string, long>> files;
-	// readDataFilesWithTimestamps("", files);
-	// Packer::Pack("/",files);
-	auto startTime = std::chrono::system_clock::now();
-	// char zeros[10] = {0};
-	// memcpy(params.pathCode, zeros, 10);
-	cout << DB_QueryByFileID(&buffer, &params);
-	// return 0;
-	// DB_QueryLastRecords(&buffer, &params);
-	// DB_QueryByTimespan_Single(&buffer, &params);
-	auto endTime = std::chrono::system_clock::now();
-	// free(buffer.buffer);
-	std::cout << "第一次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+// int main()
+// {
+// 	// Py_Initialize();
+// 	DataTypeConverter converter;
+// 	DB_QueryParams params;
+// 	params.pathToLine = "JinfeiSeven";
+// 	params.fileID = "1527133";
+// 	// params.fileIDend = "300000";
+// 	params.fileIDend = NULL;
+// 	char code[10];
+// 	code[0] = (char)0;
+// 	code[1] = (char)0;
+// 	code[2] = (char)0;
+// 	code[3] = (char)0;
+// 	code[4] = 0;
+// 	// code[4] = 'R';
+// 	code[5] = (char)0;
+// 	code[6] = 0;
+// 	code[7] = (char)0;
+// 	code[8] = (char)0;
+// 	code[9] = (char)0;
+// 	params.pathCode = code;
+// 	// params.valueName = "S1ON,S1OFF";
+// 	params.valueName = "S1ON";
+// 	params.start = 1553728593562;
+// 	params.end = 1751908603642;
+// 	// params.end = 1651894834176;
+// 	params.order = ODR_NONE;
+// 	params.sortVariable = "S1ON";
+// 	params.compareType = CMP_NONE;
+// 	params.compareValue = "100";
+// 	params.compareVariable = "S1ON";
+// 	params.queryType = FILEID;
+// 	params.byPath = 0;
+// 	params.queryNums = 100;
+// 	DB_DataBuffer buffer;
+// 	buffer.savePath = "/";
+// 	// cout << settings("Pack_Mode") << endl;
+// 	// vector<pair<string, long>> files;
+// 	// readDataFilesWithTimestamps("", files);
+// 	// Packer::Pack("/",files);
+// 	auto startTime = std::chrono::system_clock::now();
+// 	// char zeros[10] = {0};
+// 	// memcpy(params.pathCode, zeros, 10);
+// 	cout << DB_QueryByFileID(&buffer, &params);
+// 	// return 0;
+// 	// DB_QueryLastRecords(&buffer, &params);
+// 	// DB_QueryByTimespan_Single(&buffer, &params);
+// 	auto endTime = std::chrono::system_clock::now();
+// 	// free(buffer.buffer);
+// 	std::cout << "第一次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
 
-	if (buffer.bufferMalloced)
-	{
-		cout << buffer.length << endl;
-		for (int i = 0; i < 50; i++)
-		{
-			cout << (int)*(char *)(buffer.buffer + i) << " ";
-			if (i % 11 == 0)
-				cout << endl;
-		}
+// 	if (buffer.bufferMalloced)
+// 	{
+// 		cout << buffer.length << endl;
+// 		for (int i = 0; i < 50; i++)
+// 		{
+// 			cout << (int)*(char *)(buffer.buffer + i) << " ";
+// 			if (i % 11 == 0)
+// 				cout << endl;
+// 		}
 
-		free(buffer.buffer);
-	}
-	// buffer.buffer = NULL;
-	return 0;
-}
+// 		free(buffer.buffer);
+// 	}
+// 	// buffer.buffer = NULL;
+// 	return 0;
+// }

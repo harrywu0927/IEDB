@@ -21,11 +21,10 @@ using namespace std;
  *  8字节pak文件大小
  *  2字节pak文件路径长度 P
  *  P字节pak文件路径
- *  20字节压缩后pak的SHA1哈希值
  *  5字节LZMA参数
  *  8字节压缩后大小 C
  *  C字节压缩后文件内容
- *
+ *  20字节压缩后pak的SHA1哈希值
  */
 class BackupHelper
 {
@@ -45,7 +44,9 @@ public:
     int CheckDataToUpdate(unordered_map<string, vector<string>> &files);
     int DataRecovery(string path);
     int RecoverAll(string path);
-    int BakRestoration(FILE *file, size_t &pos, size_t bodyPos = 0);
+    int BakRestoration(FILE *file, size_t &pos, size_t bodyPos = 0) noexcept;
+    void ComputeSHA1(size_t size, FILE *file, Byte *sha1);
+    void CheckBackup(FILE *file, size_t filesize, long filenum);
     int ReadBakHead(FILE *file, long &timestamp, long &fileNum, string &path)
     {
         char h[18];
