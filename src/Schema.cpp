@@ -13,7 +13,7 @@ ZipTemplate CurrentZipTemplate;
  */
 int DB_LoadZipSchema(const char *path)
 {
-    if(path == NULL)
+    if (path == NULL)
         return StatusCode::EMPTY_PATH_TO_LINE;
     return ZipTemplateManager::SetZipTemplate(path);
 }
@@ -27,7 +27,7 @@ int DB_LoadZipSchema(const char *path)
  */
 int DB_UnloadZipSchema(const char *pathToUnset)
 {
-    if(pathToUnset == NULL)
+    if (pathToUnset == NULL)
         return StatusCode::EMPTY_PATH_TO_LINE;
     return ZipTemplateManager::UnsetZipTemplate(pathToUnset);
 }
@@ -39,12 +39,16 @@ int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
     if (TreeParams->pathToLine == NULL)
         return StatusCode::EMPTY_PATH_TO_LINE;
     //检查变量名输入是否合法
+    if (TreeParams->valueName == NULL)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
     string variableName = TreeParams->valueName;
     err = checkInputVaribaleName(variableName);
     if (err != 0)
         return StatusCode::VARIABLE_NAME_CHECK_ERROR;
 
     //检查路径编码输入是否合法
+    if (TreeParams->pathCode == NULL)
+        return StatusCode::PATHCODE_CHECK_ERROR;
     char inputPathCode[10] = {0};
     memcpy(inputPathCode, TreeParams->pathCode, 10);
     err = checkInputPathcode(inputPathCode);
@@ -251,12 +255,16 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
         return StatusCode::EMPTY_PATH_TO_LINE;
 
     //检查变量名输入是否合法
+    if (TreeParams->valueName == NULL)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
     string variableName = TreeParams->valueName;
     err = checkInputVaribaleName(variableName);
     if (err != 0)
         return StatusCode::VARIABLE_NAME_CHECK_ERROR;
 
     //检查路径编码输入是否合法
+    if (TreeParams->pathCode == NULL)
+        return StatusCode::PATHCODE_CHECK_ERROR;
     char inputPathCode[10] = {0};
     memcpy(inputPathCode, TreeParams->pathCode, 10);
     err = checkInputPathcode(inputPathCode);
@@ -502,6 +510,11 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
     if (temPath == "")
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
 
+    //加载模板
+    err = DB_LoadSchema(TreeParams->pathToLine);
+    if (err)
+        return err;
+
     long len;
     DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
     char readBuf[len];
@@ -558,8 +571,8 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
     //是数组且数组长度为0则采用模板原数组长度
     if (newTreeParams->isArrary == 1 && newTreeParams->arrayLen == 0)
     {
-        if (CurrentZipTemplate.schemas[pos].second.isArray)
-            newTreeParams->arrayLen = CurrentZipTemplate.schemas[pos].second.arrayLen;
+        if (CurrentTemplate.schemas[pos].second.isArray)
+            newTreeParams->arrayLen = CurrentTemplate.schemas[pos].second.arrayLen;
         else
         {
             cout << "数组长度不能为0" << endl;
@@ -570,8 +583,8 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
     //是时序且时序长度为0则采用模板原时序长度
     if (newTreeParams->isTS == 1 && newTreeParams->tsLen == 0)
     {
-        if (CurrentZipTemplate.schemas[pos].second.isTimeseries)
-            newTreeParams->tsLen = CurrentZipTemplate.schemas[pos].second.tsLen;
+        if (CurrentTemplate.schemas[pos].second.isTimeseries)
+            newTreeParams->tsLen = CurrentTemplate.schemas[pos].second.tsLen;
         else
         {
             cout << "时序类型长度不能为0" << endl;
@@ -590,8 +603,7 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
     char inputPathCode[10] = {0};
     if (newTreeParams->pathCode == NULL)
     {
-        memcpy(newTreeParams->pathCode, readBuf + 71 * pos + 61, 10);
-        memcpy(inputPathCode, newTreeParams->pathCode, 10);
+        memcpy(inputPathCode, readBuf + 71 * pos + 61, 10);
     }
     else
         memcpy(inputPathCode, newTreeParams->pathCode, 10);
@@ -616,7 +628,7 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
         int j = 0;
         for (j = 0; j < 10; j++)
         {
-            if (newTreeParams->pathCode[j] != existPathCode[j])
+            if (inputPathCode[j] != existPathCode[j])
                 break;
         }
         if (j == 10 && i != pos)
@@ -694,7 +706,7 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
         hasTime[0] = readBuf[71 * pos + 60];
     else
         hasTime[0] = (char)newTreeParams->hasTime;
-    memcpy(pathCode, newTreeParams->pathCode, 10);
+    memcpy(pathCode, inputPathCode, 10);
 
     //将所有参数传入readBuf中，以覆盖写的方式写入已有模板文件中
     memcpy(readBuf + 71 * pos, valueNmae, 30);
@@ -774,6 +786,11 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
     if (temPath == "")
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
 
+    //加载模板
+    err = DB_LoadSchema(TreeParams->pathToLine);
+    if (err)
+        return err;
+
     long len;
     DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
     char readBuf[len];
@@ -830,8 +847,8 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
     //是数组且数组长度为0则采用模板原数组长度
     if (newTreeParams->isArrary == 1 && newTreeParams->arrayLen == 0)
     {
-        if (CurrentZipTemplate.schemas[pos].second.isArray)
-            newTreeParams->arrayLen = CurrentZipTemplate.schemas[pos].second.arrayLen;
+        if (CurrentTemplate.schemas[pos].second.isArray)
+            newTreeParams->arrayLen = CurrentTemplate.schemas[pos].second.arrayLen;
         else
         {
             cout << "数组长度不能为0" << endl;
@@ -842,8 +859,8 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
     //是时序且时序长度为0则采用模板原时序长度
     if (newTreeParams->isTS == 1 && newTreeParams->tsLen == 0)
     {
-        if (CurrentZipTemplate.schemas[pos].second.isTimeseries)
-            newTreeParams->tsLen = CurrentZipTemplate.schemas[pos].second.tsLen;
+        if (CurrentTemplate.schemas[pos].second.isTimeseries)
+            newTreeParams->tsLen = CurrentTemplate.schemas[pos].second.tsLen;
         else
         {
             cout << "时序类型长度不能为0" << endl;
@@ -862,8 +879,7 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
     char inputPathCode[10] = {0};
     if (newTreeParams->pathCode == NULL)
     {
-        memcpy(newTreeParams->pathCode, readBuf + 71 * pos + 61, 10);
-        memcpy(inputPathCode, newTreeParams->pathCode, 10);
+        memcpy(inputPathCode, readBuf + 71 * pos + 61, 10);
     }
     else
         memcpy(inputPathCode, newTreeParams->pathCode, 10);
@@ -888,7 +904,7 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
         int j = 0;
         for (j = 0; j < 10; j++)
         {
-            if (newTreeParams->pathCode[j] != existPathCode[j])
+            if (inputPathCode[j] != existPathCode[j])
                 break;
         }
         if (j == 10 && i != pos)
@@ -966,7 +982,7 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
         hasTime[0] = readBuf[71 * pos + 60];
     else
         hasTime[0] = (char)newTreeParams->hasTime;
-    memcpy(pathCode, newTreeParams->pathCode, 10);
+    memcpy(pathCode, inputPathCode, 10);
 
     //将所有参数传入readBuf中，以覆盖写的方式写入已有模板文件中
     memcpy(readBuf + 71 * pos, valueNmae, 30);
@@ -1021,7 +1037,7 @@ int DB_DeleteNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
     int err;
     if (TreeParams->pathToLine == NULL)
         return StatusCode::EMPTY_PATH_TO_LINE;
-    if(TreeParams->valueName == NULL)
+    if (TreeParams->valueName == NULL)
         return StatusCode::VARIABLE_NAME_CHECK_ERROR;
     vector<string> files;
     readFileList(TreeParams->pathToLine, files);
@@ -1105,7 +1121,7 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 
     if (TreeParams->pathToLine == NULL)
         return StatusCode::EMPTY_PATH_TO_LINE;
-    if(TreeParams->valueName == NULL)
+    if (TreeParams->valueName == NULL)
         return StatusCode::VARIABLE_NAME_CHECK_ERROR;
     vector<string> files;
     readFileList(TreeParams->pathToLine, files);
@@ -1207,6 +1223,8 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
     }
 
     //检查变量名输入是否合法
+    if (ZipParams->valueName == NULL)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
     string variableName = ZipParams->valueName;
     err = checkInputVaribaleName(variableName);
     if (err != 0)
@@ -1242,6 +1260,8 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
         ZipParams->tsLen = 0;
 
     //检测标准值输入是否合法
+    if (ZipParams->standardValue == NULL)
+        return StatusCode::STANDARD_CHECK_ERROR;
     string stringStandardValue = ZipParams->standardValue;
     err = checkInputValue(DataType::JudgeValueTypeByNum(ZipParams->valueType), stringStandardValue, ZipParams->isArrary, ZipParams->arrayLen);
     if (err != 0)
@@ -1252,6 +1272,8 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
 
     //检测最大值输入是否合法
     string stringMaxValue = ZipParams->maxValue;
+    if (ZipParams->maxValue == NULL)
+        return StatusCode::MAX_CHECK_ERROR;
     err = checkInputValue(DataType::JudgeValueTypeByNum(ZipParams->valueType), stringMaxValue, ZipParams->isArrary, ZipParams->arrayLen);
     if (err != 0)
     {
@@ -1260,6 +1282,8 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
     }
 
     //检测最小值输入是否合法
+    if (ZipParams->minValue == NULL)
+        return StatusCode::MIN_CHECK_ERROR;
     string stringMinValue = ZipParams->minValue;
     err = checkInputValue(DataType::JudgeValueTypeByNum(ZipParams->valueType), stringMinValue, ZipParams->isArrary, ZipParams->arrayLen);
     if (err != 0)
@@ -1913,6 +1937,8 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
     }
 
     //检查变量名输入是否合法
+    if (ZipParams->valueName == NULL)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
     string variableName = ZipParams->valueName;
     err = checkInputVaribaleName(variableName);
     if (err != 0)
@@ -1948,6 +1974,8 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
         ZipParams->tsLen = 0;
 
     //检测标准值输入是否合法
+    if (ZipParams->standardValue == NULL)
+        return StatusCode::STANDARD_CHECK_ERROR;
     string stringStandardValue = ZipParams->standardValue;
     err = checkInputValue(DataType::JudgeValueTypeByNum(ZipParams->valueType), stringStandardValue, ZipParams->isArrary, ZipParams->arrayLen);
     if (err != 0)
@@ -1958,6 +1986,8 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 
     //检测最大值输入是否合法
     string stringMaxValue = ZipParams->maxValue;
+    if (ZipParams->maxValue == NULL)
+        return StatusCode::MAX_CHECK_ERROR;
     err = checkInputValue(DataType::JudgeValueTypeByNum(ZipParams->valueType), stringMaxValue, ZipParams->isArrary, ZipParams->arrayLen);
     if (err != 0)
     {
@@ -1966,6 +1996,8 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
     }
 
     //检测最小值输入是否合法
+    if (ZipParams->minValue == NULL)
+        return StatusCode::MIN_CHECK_ERROR;
     string stringMinValue = ZipParams->minValue;
     err = checkInputValue(DataType::JudgeValueTypeByNum(ZipParams->valueType), stringMinValue, ZipParams->isArrary, ZipParams->arrayLen);
     if (err != 0)
@@ -2630,6 +2662,8 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
     }
 
     //检查更新后变量名输入是否合法
+    if (ZipParams->valueName == NULL)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
     string variableName = newZipParams->valueName;
     err = checkInputVaribaleName(variableName);
     if (err != 0)
@@ -3460,6 +3494,8 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     }
 
     //检查更新后变量名输入是否合法
+    if (ZipParams->valueName == NULL)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
     string variableName = newZipParams->valueName;
     err = checkInputVaribaleName(variableName);
     if (err != 0)
@@ -3473,7 +3509,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     }
 
     //检查是否为TS是否合法
-    if (ZipParams->isTS != 0 && ZipParams->isTS != 1)
+    if (newZipParams->isTS != 0 && newZipParams->isTS != 1)
     {
         cout << "isTS只能为0或1" << endl;
         return StatusCode::ISTS_ERROR;
@@ -4287,6 +4323,9 @@ int DB_DeleteNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
     if (ZipParams->newPath == NULL)
         ZipParams->newPath = ZipParams->pathToLine;
 
+    if (ZipParams->valueName == NULL)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
+
     vector<string> files;
     readFileList(ZipParams->pathToLine, files);
     string temPath = "";
@@ -4387,6 +4426,8 @@ int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 
     if (ZipParams->pathToLine == NULL)
         return StatusCode::EMPTY_PATH_TO_LINE;
+    if (ZipParams->valueName == NULL)
+        return StatusCode::VARIABLE_NAME_CHECK_ERROR;
 
     if (ZipParams->newPath == NULL)
         ZipParams->newPath = ZipParams->pathToLine;
@@ -4676,56 +4717,56 @@ int DB_QueryZipNode(struct DB_QueryNodeParams *QueryParams)
     return 0;
 }
 
-// int main()
-// {
-//     DB_TreeNodeParams treeParam;
-//     treeParam.pathToLine = "RbTsImgTest";
-//     // treeParam.valueName = "TestOO";
-//     // treeParam.valueType = 3;
-//     char code[10];
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)1;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     treeParam.pathCode = code;
-//     // treeParam.isArrary = 0;
-//     // treeParam.arrayLen = 6;
-//     // treeParam.isTS = 1;
-//     // treeParam.tsLen = 5;
-//     // treeParam.hasTime = 1;
-//     // treeParam.newPath = "RbTsImgTest";
-//     DB_TreeNodeParams newParam;
-//     newParam.pathToLine = NULL;
-//     newParam.valueName = NULL;
-//     newParam.valueType = 3;
-//     code[0] = (char)0;
-//     code[1] = (char)1;
-//     code[2] = (char)0;
-//     code[3] = (char)1;
-//     code[4] = 0;
-//     code[5] = (char)0;
-//     code[6] = 0;
-//     code[7] = (char)0;
-//     code[8] = (char)0;
-//     code[9] = (char)0;
-//     newParam.pathCode = NULL;
-//     newParam.isArrary = 1;
-//     newParam.arrayLen = 6;
-//     newParam.isTS = 0;
-//     newParam.tsLen = 5;
-//     newParam.hasTime = 1;
-//     newParam.newPath = NULL;
-//     // DB_AddNodeToSchema(&treeParam);
-//     DB_UpdateNodeToSchema(&treeParam, &newParam);
-//     // DB_DeleteNodeToSchema(&treeParam);
-//     return 0;
-// }
+int main()
+{
+    DB_TreeNodeParams treeParam;
+    treeParam.pathToLine = "JinfeiSeven";
+    treeParam.valueName = "S22ON";
+    treeParam.valueType = 0;
+    char code[10];
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)1;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    treeParam.pathCode = NULL;
+    treeParam.isArrary = 0;
+    treeParam.arrayLen = 0;
+    treeParam.isTS = 0;
+    treeParam.tsLen = 0;
+    treeParam.hasTime = 0;
+    treeParam.newPath = NULL;
+    DB_TreeNodeParams newParam;
+    newParam.pathToLine = NULL;
+    newParam.valueName = NULL;
+    newParam.valueType = 3;
+    code[0] = (char)0;
+    code[1] = (char)1;
+    code[2] = (char)0;
+    code[3] = (char)1;
+    code[4] = 0;
+    code[5] = (char)0;
+    code[6] = 0;
+    code[7] = (char)0;
+    code[8] = (char)0;
+    code[9] = (char)0;
+    newParam.pathCode = NULL;
+    newParam.isArrary = 1;
+    newParam.arrayLen = 0;
+    newParam.isTS = 0;
+    newParam.tsLen = 0;
+    newParam.hasTime = 0;
+    newParam.newPath = NULL;
+    // DB_AddNodeToSchema(&treeParam);
+    DB_UpdateNodeToSchema(&treeParam, &newParam);
+    // DB_DeleteNodeToSchema(&treeParam);
+    return 0;
+}
 
 // int main()
 // {
