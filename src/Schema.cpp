@@ -13,6 +13,8 @@ ZipTemplate CurrentZipTemplate;
  */
 int DB_LoadZipSchema(const char *path)
 {
+    if(path == NULL)
+        return StatusCode::EMPTY_PATH_TO_LINE;
     return ZipTemplateManager::SetZipTemplate(path);
 }
 
@@ -25,6 +27,8 @@ int DB_LoadZipSchema(const char *path)
  */
 int DB_UnloadZipSchema(const char *pathToUnset)
 {
+    if(pathToUnset == NULL)
+        return StatusCode::EMPTY_PATH_TO_LINE;
     return ZipTemplateManager::UnsetZipTemplate(pathToUnset);
 }
 

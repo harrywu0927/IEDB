@@ -3205,10 +3205,10 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 // 	// Py_Initialize();
 // 	DataTypeConverter converter;
 // 	DB_QueryParams params;
-// 	params.pathToLine = "JinfeiSixteen";
-// 	params.fileID = "290000";
+// 	params.pathToLine = "JinfeiSeven";
+// 	params.fileID = "1527133";
 // 	// params.fileIDend = "300000";
-// 	params.fileIDend = "290000";
+// 	params.fileIDend = NULL;
 // 	char code[10];
 // 	code[0] = (char)0;
 // 	code[1] = (char)0;
@@ -3234,7 +3234,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 // 	params.compareVariable = "S1ON";
 // 	params.queryType = FILEID;
 // 	params.byPath = 0;
-// 	params.queryNums = 1;
+// 	params.queryNums = 100;
 // 	DB_DataBuffer buffer;
 // 	buffer.savePath = "/";
 // 	// cout << settings("Pack_Mode") << endl;
