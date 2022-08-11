@@ -63,7 +63,7 @@ struct DB_QueryParams
     long start;                      //开始时间
     long end;                        //结束时间
     long queryNums;                  //查询记录条数
-    const char *compareValue;        //比较某个值,当byPath为1时，若选中多个变量，将选择变量名中指出的变量比较数值
+    const char *compareValue;        //比较某个值
     const char *fileID;              //文件ID
     const char *pathToLine;          //到产线层级的路径
     enum DB_CompareType compareType; //比较方式

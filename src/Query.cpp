@@ -402,10 +402,10 @@ int DataExtraction(vector<tuple<char *, long, long, long>> &mallocedMemory, Extr
 
 	if (Qry_params->compareType != CMP_NONE && Ext_Params.compareBytes != 0 && !Ext_Params.typeList[Ext_Params.cmpIndex].isTimeseries && !Ext_Params.typeList[Ext_Params.cmpIndex].isArray) //可比较
 	{
-		char value[Ext_Params.compareBytes]; //值缓存
-		memcpy(value, buff + Ext_Params.posList[Ext_Params.cmpIndex], Ext_Params.compareBytes);
+		// char value[Ext_Params.compareBytes]; //值缓存
+		// memcpy(value, buff + Ext_Params.posList[Ext_Params.cmpIndex], Ext_Params.compareBytes);
 		//根据比较结果决定是否加入结果集
-		int compareRes = DataType::CompareValue(Ext_Params.typeList[Ext_Params.cmpIndex], value, Qry_params->compareValue);
+		int compareRes = DataType::CompareValue(Ext_Params.typeList[Ext_Params.cmpIndex], buff + Ext_Params.posList[Ext_Params.cmpIndex], Qry_params->compareValue);
 		switch (Qry_params->compareType)
 		{
 		case DB_CompareType::GT:
@@ -844,7 +844,7 @@ void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order)
 				 return iter1.second > iter2.second;
 			 });
 		break;
-	default: //其他Order类型延后处理
+	default:
 		break;
 	}
 }
@@ -2804,6 +2804,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 									buff = tempBuff;
 									memcpy(buff, packReader.packBuffer + dataPos, readLength);
 									ReZipBuff(&buff, readLength);
+									CheckFile(CurrentTemplate, buff, readLength);
 									break;
 								}
 								default:
@@ -2905,6 +2906,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 				IOBusy = false;
 				delete[] completeZiped;
 				delete[] tempBuff;
+				cerr << "iedb_err catched\n";
 				RuntimeLogger.critical("Error occured : {}. Query params : {}", e.what(), e.paramInfo(params));
 				return e.code;
 			}
@@ -3203,10 +3205,10 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 // 	// Py_Initialize();
 // 	DataTypeConverter converter;
 // 	DB_QueryParams params;
-// 	params.pathToLine = "JinfeiSeven";
-// 	params.fileID = "1527133";
+// 	params.pathToLine = "JinfeiSixteen";
+// 	params.fileID = "290000";
 // 	// params.fileIDend = "300000";
-// 	params.fileIDend = NULL;
+// 	params.fileIDend = "290000";
 // 	char code[10];
 // 	code[0] = (char)0;
 // 	code[1] = (char)0;
@@ -3232,7 +3234,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 // 	params.compareVariable = "S1ON";
 // 	params.queryType = FILEID;
 // 	params.byPath = 0;
-// 	params.queryNums = 100;
+// 	params.queryNums = 1;
 // 	DB_DataBuffer buffer;
 // 	buffer.savePath = "/";
 // 	// cout << settings("Pack_Mode") << endl;

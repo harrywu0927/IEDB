@@ -232,10 +232,10 @@ bool LoopMode(char buf[], long length)
  */
 bool LimitMode(char buf[], long length)
 {
-    size_t dataSize = length + 1;
-    size_t avail = availableSpace >> 20;
-    size_t total = totalSpace >> 20;
-    double usage = 1 - (double)avail / (double)total;
+    // size_t dataSize = length + 1;
+    // size_t avail = availableSpace >> 20;
+    // size_t total = totalSpace >> 20;
+    double usage = 1 - (double)availableSpace / (double)totalSpace;
     // printf("Disk usage: %.2f%%\n", usage * 100);
     if (usage >= 0.95) //已使用95%以上空间
     {
@@ -258,12 +258,8 @@ bool LimitMode(char buf[], long length)
 int DB_Write(long fp, char *buf, long length)
 {
     FILE *file = (FILE *)fp;
-    // struct statvfs diskInfo;
-    // statvfs("./", &diskInfo);
     getDiskSpaces();
-    // cout<<"available:"<<availableSpace/1024<<"KB\ntotal:"<<totalSpace/1024<<"KB"<<endl;
     bool allowWrite = true;
-    // ReadConfig();   //读取配置
 
     if (settings("FileOverFlowMode") == "loop")
     {
@@ -303,11 +299,11 @@ int DB_Open(char path[], char mode[], long *fptr)
     if (settings("FileOverFlowMode") == "limit" && fileOpenLocked)
     {
         getDiskSpaces();
-        size_t avail = availableSpace >> 20;
-        size_t total = totalSpace >> 20;
-        double usage = 1 - (double)avail / (double)total;
+        // size_t avail = availableSpace >> 20;
+        // size_t total = totalSpace >> 20;
+        double usage = 1 - (double)availableSpace / (double)totalSpace;
         // printf("Disk usage: %.2f%%\n", usage * 100);
-        if (usage >= 0.7) //已使用70%以上空间
+        if (usage >= 0.95) //已使用70%以上空间
         {
             return -1;
         }

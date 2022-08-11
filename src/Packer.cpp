@@ -503,7 +503,10 @@ void PackFileReader::Skip(int num)
             curPos += 4 + *(int *)(packBuffer + curPos);
         }
         else if (ztype != 2 && ztype != 0)
+        {
+            cerr << "skip " << num << "files\n";
             throw iedb_err(StatusCode::DATAFILE_MODIFIED);
+        }
     }
 }
 

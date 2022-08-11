@@ -2,8 +2,8 @@
  * @file Recovery.cpp
  * @author your name (you@domain.com)
  * @brief
- * @version 0.9.0
- * @date Last modification in 2022-08-01
+ * @version 0.9.1
+ * @date Last modification in 2022-08-10
  *
  * @copyright Copyright (c) 2022
  *
@@ -172,7 +172,6 @@ int BackupHelper::DataRecovery(string path)
                 FILE *pack;
                 if (!(pack = fopen(path.c_str(), "wb")))
                 {
-                    fclose(backup);
                     throw iedb_err(errno);
                 }
                 fwrite(uncompressed, 1, pakLen, pack);
@@ -197,6 +196,7 @@ int BackupHelper::DataRecovery(string path)
         if (uncompressed != nullptr)
             delete[] uncompressed;
         logger.critical("bad alloc when uncompressing");
+        fclose(backup);
     }
     catch (iedb_err &e)
     {
@@ -213,6 +213,7 @@ int BackupHelper::DataRecovery(string path)
         {
             logger.error("Failed to recover {} : {}", path, e.what());
         }
+        fclose(backup);
         return e.code;
     }
     catch (const std::exception &e)

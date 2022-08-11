@@ -572,7 +572,6 @@ public:
             pathEncodes.push_back(pathCode);
         }
         Template tem(pathEncodes, dataTypes, path);
-        // AddTemplate(tem);
         CurrentTemplate = tem;
         return 0;
     }

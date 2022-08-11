@@ -263,8 +263,6 @@ int FindImage(char **buff, long &length, string &path, int index, vector<string>
 //获取当前工程根目录下所有产线-已有最大文件ID键值对
 unordered_map<string, int> getDirCurrentFileIDIndex()
 {
-    struct dirent *ptr;
-    DIR *dir;
     string finalPath = settings("Filename_Label");
     unordered_map<string, int> map;
     if (DB_CreateDirectory(const_cast<char *>(finalPath.c_str())))
@@ -305,6 +303,7 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
                     string startFID = fileID;
                     if (fileNum > 1)
                     {
+                        cout << "skipping " << fileName << "\n";
                         packReader.Skip(fileNum - 2);
                         packReader.Next(readLength, fileID, zipType);
                     }
@@ -347,81 +346,6 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
                 }
             }
 
-            // dir = opendir(d.c_str());
-            // if (dir == NULL)
-            //     return map;
-
-            // while ((ptr = readdir(dir)) != NULL)
-            // {
-            //     if (ptr->d_name[0] == '.')
-            //         continue;
-            //     if (ptr->d_type == 8)
-            //     {
-            //         string fileName = ptr->d_name;
-            //         string dirWithoutPrefix = d + "/" + fileName;
-            //         for (int i = 0; i <= settings("Filename_Label").length(); i++)
-            //         {
-            //             dirWithoutPrefix.erase(dirWithoutPrefix.begin());
-            //         }
-
-            //         if (fileName.find(".pak") != string::npos)
-            //         {
-            //             // cerr << fileName << '\n';
-            //             PackFileReader packReader(dirWithoutPrefix);
-            //             if (packReader.packBuffer == NULL)
-            //                 continue;
-            //             int fileNum;
-            //             string templateName;
-            //             packReader.ReadPackHead(fileNum, templateName);
-            //             string fileID;
-            //             int readLength, zipType;
-            //             packReader.Next(readLength, fileID, zipType);
-            //             string startFID = fileID;
-            //             if (fileNum > 1)
-            //             {
-            //                 packReader.Skip(fileNum - 2);
-            //                 packReader.Next(readLength, fileID, zipType);
-            //             }
-            //             string endFID = fileID;
-            //             string startNum = "", endNum = "";
-            //             for (int i = 0; i < startFID.length(); i++)
-            //             {
-            //                 if (isdigit(startFID[i]))
-            //                 {
-            //                     startNum += startFID[i];
-            //                 }
-            //             }
-            //             for (int i = 0; i < endFID.length(); i++)
-            //             {
-            //                 if (isdigit(endFID[i]))
-            //                 {
-            //                     endNum += endFID[i];
-            //                 }
-            //             }
-            //             int minNum = atoi(startNum.c_str());
-            //             int maxNum = atoi(endNum.c_str());
-            //             fileIDManager.fidIndex[dirWithoutPrefix] = make_tuple(minNum, maxNum >= minNum ? maxNum : minNum);
-            //             if (max < maxNum)
-            //                 max = maxNum;
-            //         }
-            //         else if (fileName.find(".idb") != string::npos)
-            //         {
-            //             vector<string> vec = DataType::StringSplit(const_cast<char *>(fileName.c_str()), "_");
-            //             string num;
-            //             string fileID = vec[0];
-            //             for (int i = 0; i < fileID.length(); i++)
-            //             {
-            //                 if (isdigit(fileID[i]))
-            //                 {
-            //                     num += fileID[i];
-            //                 }
-            //             }
-            //             if (max < atoi(num.c_str()))
-            //                 max = atoi(num.c_str());
-            //         }
-            //     }
-            // }
-            // closedir(dir);
             if (d == settings("Filename_Label"))
                 map["/"] = max;
             else //去除前缀Label

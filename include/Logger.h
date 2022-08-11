@@ -24,7 +24,9 @@ public:
         if (logger == nullptr)
             logger = spdlog::rotating_logger_mt(name, name + ".log", 1024 * 1024 * 5, 1);
     }
-    ~Logger(){};
+    ~Logger(){
+        /* flush */
+    };
     template <typename... Args>
     void info(format_string_t<Args...> fmt, Args &&...args)
     {
