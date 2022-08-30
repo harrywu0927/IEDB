@@ -128,7 +128,7 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
 
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += 3;
+                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::UDINT))
@@ -297,7 +297,7 @@ int DB_ZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
 {
     IOBusy = true;
     int err;
-    if(ZipTemPath==NULL || pathToLine==NULL)
+    if (ZipTemPath == NULL || pathToLine == NULL)
         return StatusCode::EMPTY_SAVE_PATH;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
@@ -381,7 +381,7 @@ int DB_ZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
 int DB_ZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
 {
     int err;
-    if(ZipTemPath==NULL || pathToLine==NULL)
+    if (ZipTemPath == NULL || pathToLine == NULL)
         return StatusCode::EMPTY_SAVE_PATH;
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如直接使用单线程
@@ -451,7 +451,7 @@ int DB_ReZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
 {
     IOBusy = true;
     int err = 0;
-    if(ZipTemPath==NULL || pathToLine==NULL)
+    if (ZipTemPath == NULL || pathToLine == NULL)
         return StatusCode::EMPTY_SAVE_PATH;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
@@ -525,7 +525,7 @@ int DB_ReZipSwitchFile_Single(const char *ZipTemPath, const char *pathToLine)
 int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
 {
     int err = 0;
-    if(ZipTemPath==NULL || pathToLine==NULL)
+    if (ZipTemPath == NULL || pathToLine == NULL)
         return StatusCode::EMPTY_SAVE_PATH;
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如使用单线程
@@ -597,7 +597,7 @@ int DB_ReZipSwitchFile(const char *ZipTemPath, const char *pathToLine)
 int DB_ZipRecvSwitchBuff(const char *ZipTemPath, const char *filepath, char *buff, long *buffLength)
 {
     int err = 0;
-    if(ZipTemPath==NULL)
+    if (ZipTemPath == NULL)
         return StatusCode::EMPTY_SAVE_PATH;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)

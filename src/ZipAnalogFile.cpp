@@ -479,7 +479,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += 3;
+                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::UDINT))
@@ -526,7 +526,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += 3;
+                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::USINT))
@@ -573,7 +573,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += 3;
+                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::UINT))
@@ -620,7 +620,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += 3;
+                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::SINT))
@@ -667,7 +667,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += 3;
+                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::INT))
@@ -714,7 +714,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += 3;
+                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::DINT))
@@ -761,7 +761,7 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += 3;
+                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::REAL))
@@ -932,7 +932,7 @@ int DB_ZipAnalogFile_Single(const char *ZipTemPath, const char *pathToLine)
 {
     IOBusy = true;
     int err;
-    if(ZipTemPath==NULL || pathToLine==NULL)
+    if (ZipTemPath == NULL || pathToLine == NULL)
         return StatusCode::EMPTY_SAVE_PATH;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
@@ -1016,7 +1016,7 @@ int DB_ZipAnalogFile_Single(const char *ZipTemPath, const char *pathToLine)
 int DB_ZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
 {
     int err;
-    if(ZipTemPath==NULL || pathToLine==NULL)
+    if (ZipTemPath == NULL || pathToLine == NULL)
         return StatusCode::EMPTY_SAVE_PATH;
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如直接使用单线程
@@ -1086,7 +1086,7 @@ int DB_ReZipAnalogFile_Single(const char *ZipTemPath, const char *pathToLine)
 {
     IOBusy = true;
     int err = 0;
-    if(ZipTemPath==NULL || pathToLine==NULL)
+    if (ZipTemPath == NULL || pathToLine == NULL)
         return StatusCode::EMPTY_SAVE_PATH;
     err = DB_LoadZipSchema(ZipTemPath); //加载压缩模板
     if (err)
@@ -1163,7 +1163,7 @@ int DB_ReZipAnalogFile_Single(const char *ZipTemPath, const char *pathToLine)
 int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
 {
     int err = 0;
-    if(ZipTemPath==NULL || pathToLine==NULL)
+    if (ZipTemPath == NULL || pathToLine == NULL)
         return StatusCode::EMPTY_SAVE_PATH;
     maxThreads = thread::hardware_concurrency();
     if (maxThreads <= 2) //如果内核数小于等于2则不如直接使用单线程
@@ -1232,7 +1232,7 @@ int DB_ReZipAnalogFile(const char *ZipTemPath, const char *pathToLine)
 int DB_ZipRecvAnalogFile(const char *ZipTempPath, const char *filepath, char *buff, long *buffLength)
 {
     int err = 0;
-    if(ZipTempPath==NULL)
+    if (ZipTempPath == NULL)
         return StatusCode::EMPTY_SAVE_PATH;
     err = DB_LoadZipSchema(ZipTempPath); //加载压缩模板
     if (err)
