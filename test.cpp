@@ -66,9 +66,9 @@ void checkSettings()
 
 int main()
 {
-    cout<<DB_LoadZipSchema("ssfsf"); 
+    cout<<DB_ReZipSwitchFile("RobotTsTest","RobotTsTest")<<endl; 
     return 0;
-    unsigned char mdbuf[20];
+    unsigned char mdbuf[20]; 
     const unsigned char d1[] = "123456789012";
     cout << SHA1(d1, 12, mdbuf) << endl;
     SHA_CTX c;

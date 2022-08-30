@@ -1985,9 +1985,9 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
     }
 
     //检测最大值输入是否合法
-    string stringMaxValue = ZipParams->maxValue;
     if (ZipParams->maxValue == NULL)
         return StatusCode::MAX_CHECK_ERROR;
+    string stringMaxValue = ZipParams->maxValue;
     err = checkInputValue(DataType::JudgeValueTypeByNum(ZipParams->valueType), stringMaxValue, ZipParams->isArrary, ZipParams->arrayLen);
     if (err != 0)
     {
@@ -4717,56 +4717,56 @@ int DB_QueryZipNode(struct DB_QueryNodeParams *QueryParams)
     return 0;
 }
 
-int main()
-{
-    DB_TreeNodeParams treeParam;
-    treeParam.pathToLine = "JinfeiSeven";
-    treeParam.valueName = "S22ON";
-    treeParam.valueType = 0;
-    char code[10];
-    code[0] = (char)0;
-    code[1] = (char)1;
-    code[2] = (char)0;
-    code[3] = (char)1;
-    code[4] = 0;
-    code[5] = (char)0;
-    code[6] = 0;
-    code[7] = (char)0;
-    code[8] = (char)0;
-    code[9] = (char)0;
-    treeParam.pathCode = NULL;
-    treeParam.isArrary = 0;
-    treeParam.arrayLen = 0;
-    treeParam.isTS = 0;
-    treeParam.tsLen = 0;
-    treeParam.hasTime = 0;
-    treeParam.newPath = NULL;
-    DB_TreeNodeParams newParam;
-    newParam.pathToLine = NULL;
-    newParam.valueName = NULL;
-    newParam.valueType = 3;
-    code[0] = (char)0;
-    code[1] = (char)1;
-    code[2] = (char)0;
-    code[3] = (char)1;
-    code[4] = 0;
-    code[5] = (char)0;
-    code[6] = 0;
-    code[7] = (char)0;
-    code[8] = (char)0;
-    code[9] = (char)0;
-    newParam.pathCode = NULL;
-    newParam.isArrary = 1;
-    newParam.arrayLen = 0;
-    newParam.isTS = 0;
-    newParam.tsLen = 0;
-    newParam.hasTime = 0;
-    newParam.newPath = NULL;
-    // DB_AddNodeToSchema(&treeParam);
-    DB_UpdateNodeToSchema(&treeParam, &newParam);
-    // DB_DeleteNodeToSchema(&treeParam);
-    return 0;
-}
+// int main()
+// {
+//     DB_TreeNodeParams treeParam;
+//     treeParam.pathToLine = "JinfeiSeven";
+//     treeParam.valueName = "S22ON";
+//     treeParam.valueType = 0;
+//     char code[10];
+//     code[0] = (char)0;
+//     code[1] = (char)1;
+//     code[2] = (char)0;
+//     code[3] = (char)1;
+//     code[4] = 0;
+//     code[5] = (char)0;
+//     code[6] = 0;
+//     code[7] = (char)0;
+//     code[8] = (char)0;
+//     code[9] = (char)0;
+//     treeParam.pathCode = NULL;
+//     treeParam.isArrary = 0;
+//     treeParam.arrayLen = 0;
+//     treeParam.isTS = 0;
+//     treeParam.tsLen = 0;
+//     treeParam.hasTime = 0;
+//     treeParam.newPath = NULL;
+//     DB_TreeNodeParams newParam;
+//     newParam.pathToLine = NULL;
+//     newParam.valueName = "S2ON";
+//     newParam.valueType = 3;
+//     code[0] = (char)0;
+//     code[1] = (char)1;
+//     code[2] = (char)0;
+//     code[3] = (char)1;
+//     code[4] = 0;
+//     code[5] = (char)0;
+//     code[6] = 0;
+//     code[7] = (char)0;
+//     code[8] = (char)0;
+//     code[9] = (char)0;
+//     newParam.pathCode = NULL;
+//     newParam.isArrary = 0;
+//     newParam.arrayLen = 0;
+//     newParam.isTS = 0;
+//     newParam.tsLen = 0;
+//     newParam.hasTime = 0;
+//     newParam.newPath = NULL;
+//     // DB_AddNodeToSchema(&treeParam);
+//     DB_UpdateNodeToSchema(&treeParam, &newParam);
+//     // DB_DeleteNodeToSchema(&treeParam);
+//     return 0;
+// }
 
 // int main()
 // {

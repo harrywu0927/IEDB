@@ -1,391 +1,12 @@
-#include "../include/utils.hpp"
+#include "../include/ZipUtils.h"
 using namespace std;
 
-void addAnalogZipPos(int schemaPos, char *writebuff, long &writebuff_pos);
-void addAnalogZipType(int ziptype, char *writebuff, long &writebuff_pos);
-void addAnalogEndFlag(char *writebuff, long &writebuff_pos);
-int IsAnalogTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType);
-void IsAnalogArrayZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos);
 int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos);
-void addAnalogStandardValue(int schemaPos, char *writebuff, long &writebuff_pos, int DataType);
-void addAnalogTsTime(int schemaPos, uint64_t startTime, char *writebuff, long &writebuff_pos, int tsPos);
-int IsAnalogTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType);
-int IsAnalogArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos);
-int IsNotAnalogArrayAndTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType);
 int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writebuff_pos);
 int DB_ZipAnalogFile_thread(vector<pair<string, long>> selectFiles, uint16_t begin, uint16_t num, const char *pathToLine);
 int DB_ReZipAnalogFile_thread(vector<pair<string, long>> selectFiles, uint16_t begin, uint16_t num, const char *pathToLine);
 
 mutex openAnalogMutex;
-
-/**
- * @brief 添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
- *
- * @param schemaPos 变量在模板的编号
- * @param writebuff 写数据缓冲
- * @param writebuff_pos 写数据偏移量
- */
-void addAnalogZipPos(int schemaPos, char *writebuff, long &writebuff_pos)
-{
-    DataTypeConverter converter;
-    uint16_t posNum = schemaPos;
-    char zipPosNum[2] = {0};
-    converter.ToUInt16Buff(posNum, zipPosNum);
-    memcpy(writebuff + writebuff_pos, zipPosNum, 2);
-    writebuff_pos += 2;
-}
-
-/**
- * @brief 添加上压缩标志
- *
- * @param ziptype 压缩标志
- * @param writebuff 写数据缓冲
- * @param writebuff_pos 写数据偏移量
- */
-void addAnalogZipType(int ziptype, char *writebuff, long &writebuff_pos)
-{
-    switch (ziptype)
-    {
-    case 0:
-    { //只有数据
-        char zipType[1] = {0};
-        zipType[0] = (char)0;
-        memcpy(writebuff + writebuff_pos, zipType, 1);
-        writebuff_pos += 1;
-        break;
-    }
-    case 1:
-    { //只有时间
-        char zipType[1] = {0};
-        zipType[0] = (char)1;
-        memcpy(writebuff + writebuff_pos, zipType, 1);
-        writebuff_pos += 1;
-        break;
-    }
-    case 2:
-    { //既有数据又有时间
-        char zipType[1] = {0};
-        zipType[0] = (char)2;
-        memcpy(writebuff + writebuff_pos, zipType, 1);
-        writebuff_pos += 1;
-        break;
-    }
-    case 3:
-    { //既是时间序列又是数组
-        char zipType[1] = {0};
-        zipType[0] = (char)3;
-        memcpy(writebuff + writebuff_pos, zipType, 1);
-        writebuff_pos += 1;
-        break;
-    }
-    case 4:
-    { //只是时间序列
-        char zipType[1] = {0};
-        zipType[0] = (char)4;
-        memcpy(writebuff + writebuff_pos, zipType, 1);
-        writebuff_pos += 1;
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-/**
- * @brief 当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
- *
- * @param writebuff 写数据缓冲
- * @param writebuff_pos 写数据偏移量
- */
-void addAnalogEndFlag(char *writebuff, long &writebuff_pos)
-{
-    char isTsEnd[1] = {0};
-    isTsEnd[0] = (char)-1;
-    memcpy(writebuff + writebuff_pos, isTsEnd, 1);
-    writebuff_pos += 1;
-}
-
-/**
- * @brief Ts类型压缩
- *
- * @param schemaPos 变量在模板的编号
- * @param writebuff 写数据缓冲
- * @param writebuff_pos 写数据偏移量
- * @param readbuff 读数据缓冲
- * @param readbuff_pos 读数据偏移量
- * @param DataType 数据类型
- * @return int
- */
-int IsAnalogTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType)
-{
-    DataTypeConverter converter;
-    if (CurrentZipTemplate.schemas[schemaPos].second.isArray == true) //既是时间序列又是数组，则不压缩
-    {
-        //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-        addAnalogZipPos(schemaPos, writebuff, writebuff_pos);
-        //既是时间序列又是数组
-        addAnalogZipType(3, writebuff, writebuff_pos);
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8) * CurrentZipTemplate.schemas[schemaPos].second.tsLen);
-        writebuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
-        readbuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
-    }
-    else //只是时间序列类型
-    {
-        //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-        addAnalogZipPos(schemaPos, writebuff, writebuff_pos);
-        //只是时间序列
-        addAnalogZipType(4, writebuff, writebuff_pos);
-        //添加第一个采样的时间戳
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[schemaPos].second.valueBytes, 8);
-        writebuff_pos += 8;
-
-        switch (DataType)
-        {
-        case 3: // UDINT
-        {
-            uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
-            uint32 maxUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
-            uint32 minUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.minValue);
-            for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.tsLen; j++)
-            {
-                // 4个字节,暂定，根据后续情况可能进行更改
-                char value[4] = {0};
-                memcpy(value, readbuff + readbuff_pos, 4);
-                uint32 currentUDintValue = converter.ToUInt32(value);
-
-                if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
-                {
-                    //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
-                    addAnalogZipPos(j, writebuff, writebuff_pos);
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
-                    writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
-                }
-                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8;
-
-                //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
-                if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
-                {
-                    addAnalogEndFlag(writebuff, writebuff_pos);
-                }
-            }
-            break;
-        }
-        case 2: // USINT
-        {
-            char standardUSintValue = CurrentZipTemplate.schemas[schemaPos].second.standardValue[0];
-            char maxUSintValue = CurrentZipTemplate.schemas[schemaPos].second.maxValue[0];
-            char minUSintValue = CurrentZipTemplate.schemas[schemaPos].second.minValue[0];
-            for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.tsLen; j++)
-            {
-                // 1个字节,暂定，根据后续情况可能进行更改
-                char value[1] = {0};
-                memcpy(value, readbuff + readbuff_pos, 1);
-                char currentUSintValue = value[0];
-
-                if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
-                {
-                    //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
-                    addAnalogZipPos(j, writebuff, writebuff_pos);
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
-                    writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
-                }
-                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8;
-
-                //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
-                if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
-                {
-                    addAnalogEndFlag(writebuff, writebuff_pos);
-                }
-            }
-            break;
-        }
-        case 1: // UINT
-        {
-            ushort standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
-            ushort maxUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
-            ushort minUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.minValue);
-            for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.tsLen; j++)
-            {
-                // 2个字节,暂定，根据后续情况可能进行更改
-                char value[2] = {0};
-                memcpy(value, readbuff + readbuff_pos, 2);
-                ushort currentUintValue = converter.ToUInt16(value);
-
-                if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
-                {
-                    //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
-                    addAnalogZipPos(j, writebuff, writebuff_pos);
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
-                    writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
-                }
-                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8;
-
-                //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
-                if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
-                {
-                    addAnalogEndFlag(writebuff, writebuff_pos);
-                }
-            }
-            break;
-        }
-        case 6: // SINT
-        {
-            char standardSintValue = CurrentZipTemplate.schemas[schemaPos].second.standardValue[0];
-            char maxSintValue = CurrentZipTemplate.schemas[schemaPos].second.maxValue[0];
-            char minSintValue = CurrentZipTemplate.schemas[schemaPos].second.minValue[0];
-            for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.tsLen; j++)
-            {
-                // 1个字节,暂定，根据后续情况可能进行更改
-                char value[1] = {0};
-                memcpy(value, readbuff + readbuff_pos, 1);
-                char currentSintValue = value[0];
-
-                if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
-                {
-                    //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
-                    addAnalogZipPos(j, writebuff, writebuff_pos);
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
-                    writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
-                }
-                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8;
-
-                //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
-                if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
-                {
-                    addAnalogEndFlag(writebuff, writebuff_pos);
-                }
-            }
-            break;
-        }
-        case 4: // INT
-        {
-            short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
-            short maxIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
-            short minIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.minValue);
-            for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.tsLen; j++)
-            {
-                // 2个字节,暂定，根据后续情况可能进行更改
-                char value[2] = {0};
-                memcpy(value, readbuff + readbuff_pos, 2);
-                short currentIntValue = converter.ToInt16(value);
-
-                if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
-                {
-                    //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
-                    addAnalogZipPos(j, writebuff, writebuff_pos);
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
-                    writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
-                }
-                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8;
-
-                //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
-                if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
-                {
-                    addAnalogEndFlag(writebuff, writebuff_pos);
-                }
-            }
-            break;
-        }
-        case 7://DINT
-        {
-            int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
-            int maxDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
-            int minDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.minValue);
-            for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.tsLen; j++)
-            {
-                // 4个字节,暂定，根据后续情况可能进行更改
-                char value[4] = {0};
-                memcpy(value, readbuff + readbuff_pos, 4);
-                int currentDintValue = converter.ToInt32(value);
-
-                if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
-                {
-                    //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
-                    addAnalogZipPos(j, writebuff, writebuff_pos);
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
-                    writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
-                }
-                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8;
-
-                //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
-                if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
-                {
-                    addAnalogEndFlag(writebuff, writebuff_pos);
-                }
-            }
-            break;
-        }
-        case 8://REAL
-        {
-            float standardFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
-            float maxFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.maxValue);
-            float minFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.minValue);
-            for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.tsLen; j++)
-            {
-                // 4个字节,暂定，根据后续情况可能进行更改
-                char value[4] = {0};
-                memcpy(value, readbuff + readbuff_pos, 4);
-                float currentRealValue = converter.ToFloat(value);
-
-                if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
-                {
-                    //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
-                    addAnalogZipPos(j, writebuff, writebuff_pos);
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
-                    writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
-                }
-                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8;
-
-                //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
-                if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
-                {
-                    addAnalogEndFlag(writebuff, writebuff_pos);
-                }
-            }
-            break;
-        }
-        default:
-        {
-            return StatusCode::DATA_TYPE_MISMATCH_ERROR;
-            break;
-        }
-        }
-    }
-    return 0;
-}
-
-/**
- * @brief 数组类型压缩
- *
- * @param schemaPos 变量在模板的编号
- * @param writebuff 写数据缓冲
- * @param writebuff_pos 写数据偏移量
- * @param readbuff 读数据缓冲
- * @param readbuff_pos 读数据偏移量
- */
-void IsAnalogArrayZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos)
-{
-    DataTypeConverter converter;
-    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-    addAnalogZipPos(schemaPos, writebuff, writebuff_pos);
-
-    if (CurrentZipTemplate.schemas[schemaPos].second.hasTime == true) //带有时间戳
-    {
-        //既有数据又有时间
-        addAnalogZipType(2, writebuff, writebuff_pos);
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + 8);
-        writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + 8;
-        readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + 8;
-    }
-    else
-    {
-        //只有数据
-        addAnalogZipType(0, writebuff, writebuff_pos);
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen);
-        writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
-        readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
-    }
-}
 
 /**
  * @brief 对readbuff里的数据进行压缩，压缩后数据保存在writebuff里，长度为writebuff_pos
@@ -407,7 +28,7 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
         {
             if (CurrentZipTemplate.schemas[i].second.isTimeseries == true) //是时间序列类型
             {
-                if (IsAnalogTSZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 3))
+                if (ZipUtils::IsTSZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::UDINT))
                 {
                     cout << "存在模拟量以外的类型，请检查模板或者更换功能块" << endl;
                     return StatusCode::DATA_TYPE_MISMATCH_ERROR;
@@ -415,7 +36,7 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
             }
             else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                IsAnalogArrayZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos);
+                ZipUtils::IsArrayZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos);
             }
             else
             {
@@ -430,31 +51,31 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带时间戳
                 {
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                    addAnalogZipPos(i, writebuff, writebuff_pos);
+                    ZipUtils::addZipPos(i, writebuff, writebuff_pos);
                     if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
                     {
                         //既有数据又有时间
-                        addAnalogZipType(2, writebuff, writebuff_pos);
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + 8);
-                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + 8;
+                        ZipUtils::addZipType(DATA_AND_TIME, writebuff, writebuff_pos);
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE);
+                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
                     }
                     else
                     {
                         //只有时间
-                        addAnalogZipType(1, writebuff, writebuff_pos);
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, 8);
-                        writebuff_pos += 8;
+                        ZipUtils::addZipType(ONLY_TIME, writebuff, writebuff_pos);
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, TIMESTAMP_SIZE);
+                        writebuff_pos += TIMESTAMP_SIZE;
                     }
-                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + 8;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
                     if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                        addAnalogZipPos(i, writebuff, writebuff_pos);
+                        ZipUtils::addZipPos(i, writebuff, writebuff_pos);
                         //只有数据
-                        addAnalogZipType(0, writebuff, writebuff_pos);
+                        ZipUtils::addZipType(ONLY_DATA, writebuff, writebuff_pos);
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes);
                         writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
                     }
@@ -466,7 +87,7 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
         {
             if (CurrentZipTemplate.schemas[i].second.isTimeseries == true) //是时间序列类型
             {
-                if (IsAnalogTSZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 2))
+                if (ZipUtils::IsTSZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::USINT))
                 {
                     cout << "存在模拟量以外的类型，请检查模板或者更换功能块" << endl;
                     return StatusCode::DATA_TYPE_MISMATCH_ERROR;
@@ -474,7 +95,7 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
             }
             else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                IsAnalogArrayZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos);
+                ZipUtils::IsArrayZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos);
             }
             else
             {
@@ -489,31 +110,31 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带时间戳
                 {
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                    addAnalogZipPos(i, writebuff, writebuff_pos);
+                    ZipUtils::addZipPos(i, writebuff, writebuff_pos);
                     if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
                     {
                         //既有数据又有时间
-                        addAnalogZipType(2, writebuff, writebuff_pos);
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + 8);
-                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + 8;
+                        ZipUtils::addZipType(DATA_AND_TIME, writebuff, writebuff_pos);
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE);
+                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
                     }
                     else
                     {
                         //只有时间
-                        addAnalogZipType(1, writebuff, writebuff_pos);
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, 8);
-                        writebuff_pos += 8;
+                        ZipUtils::addZipType(ONLY_TIME, writebuff, writebuff_pos);
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, TIMESTAMP_SIZE);
+                        writebuff_pos += TIMESTAMP_SIZE;
                     }
-                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + 8;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
                     if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                        addAnalogZipPos(i, writebuff, writebuff_pos);
+                        ZipUtils::addZipPos(i, writebuff, writebuff_pos);
                         //只有数据
-                        addAnalogZipType(0, writebuff, writebuff_pos);
+                        ZipUtils::addZipType(ONLY_DATA, writebuff, writebuff_pos);
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes);
                         writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
                     }
@@ -525,7 +146,7 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
         {
             if (CurrentZipTemplate.schemas[i].second.isTimeseries == true) //是时间序列类型
             {
-                if (IsAnalogTSZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 1))
+                if (ZipUtils::IsTSZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::UINT))
                 {
                     cout << "存在模拟量以外的类型，请检查模板或者更换功能块" << endl;
                     return StatusCode::DATA_TYPE_MISMATCH_ERROR;
@@ -533,7 +154,7 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
             }
             else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                IsAnalogArrayZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos);
+                ZipUtils::IsArrayZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos);
             }
             else
             {
@@ -548,31 +169,31 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带时间戳
                 {
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                    addAnalogZipPos(i, writebuff, writebuff_pos);
+                    ZipUtils::addZipPos(i, writebuff, writebuff_pos);
                     if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
                     {
                         //既有数据又有时间
-                        addAnalogZipType(2, writebuff, writebuff_pos);
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + 8);
-                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + 8;
+                        ZipUtils::addZipType(DATA_AND_TIME, writebuff, writebuff_pos);
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE);
+                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
                     }
                     else
                     {
                         //只有时间
-                        addAnalogZipType(1, writebuff, writebuff_pos);
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, 8);
-                        writebuff_pos += 8;
+                        ZipUtils::addZipType(ONLY_TIME, writebuff, writebuff_pos);
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, TIMESTAMP_SIZE);
+                        writebuff_pos += TIMESTAMP_SIZE;
                     }
-                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + 8;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
                     if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                        addAnalogZipPos(i, writebuff, writebuff_pos);
+                        ZipUtils::addZipPos(i, writebuff, writebuff_pos);
                         //只有数据
-                        addAnalogZipType(0, writebuff, writebuff_pos);
+                        ZipUtils::addZipType(ONLY_DATA, writebuff, writebuff_pos);
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes);
                         writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
                     }
@@ -584,7 +205,7 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
         {
             if (CurrentZipTemplate.schemas[i].second.isTimeseries == true) //是时间序列类型
             {
-                if (IsAnalogTSZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 6))
+                if (ZipUtils::IsTSZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::SINT))
                 {
                     cout << "存在模拟量以外的类型，请检查模板或者更换功能块" << endl;
                     return StatusCode::DATA_TYPE_MISMATCH_ERROR;
@@ -592,7 +213,7 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
             }
             else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                IsAnalogArrayZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos);
+                ZipUtils::IsArrayZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos);
             }
             else
             {
@@ -607,31 +228,31 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带时间戳
                 {
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                    addAnalogZipPos(i, writebuff, writebuff_pos);
+                    ZipUtils::addZipPos(i, writebuff, writebuff_pos);
                     if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
                     {
                         //既有数据又有时间
-                        addAnalogZipType(2, writebuff, writebuff_pos);
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + 8);
-                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + 8;
+                        ZipUtils::addZipType(DATA_AND_TIME, writebuff, writebuff_pos);
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE);
+                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
                     }
                     else
                     {
                         //只有时间
-                        addAnalogZipType(1, writebuff, writebuff_pos);
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, 8);
-                        writebuff_pos += 8;
+                        ZipUtils::addZipType(ONLY_TIME, writebuff, writebuff_pos);
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, TIMESTAMP_SIZE);
+                        writebuff_pos += TIMESTAMP_SIZE;
                     }
-                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + 8;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
                     if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                        addAnalogZipPos(i, writebuff, writebuff_pos);
+                        ZipUtils::addZipPos(i, writebuff, writebuff_pos);
                         //只有数据
-                        addAnalogZipType(0, writebuff, writebuff_pos);
+                        ZipUtils::addZipType(ONLY_DATA, writebuff, writebuff_pos);
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes);
                         writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
                     }
@@ -643,7 +264,7 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
         {
             if (CurrentZipTemplate.schemas[i].second.isTimeseries == true) //是时间序列类型
             {
-                if (IsAnalogTSZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 4))
+                if (ZipUtils::IsTSZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::INT))
                 {
                     cout << "存在模拟量以外的类型，请检查模板或者更换功能块" << endl;
                     return StatusCode::DATA_TYPE_MISMATCH_ERROR;
@@ -651,7 +272,7 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
             }
             else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                IsAnalogArrayZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos);
+                ZipUtils::IsArrayZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos);
             }
             else
             {
@@ -666,31 +287,31 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带时间戳
                 {
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                    addAnalogZipPos(i, writebuff, writebuff_pos);
+                    ZipUtils::addZipPos(i, writebuff, writebuff_pos);
                     if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
                     {
                         //既有数据又有时间
-                        addAnalogZipType(2, writebuff, writebuff_pos);
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + 8);
-                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + 8;
+                        ZipUtils::addZipType(DATA_AND_TIME, writebuff, writebuff_pos);
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE);
+                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
                     }
                     else
                     {
                         //只有时间
-                        addAnalogZipType(1, writebuff, writebuff_pos);
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, 8);
-                        writebuff_pos += 8;
+                        ZipUtils::addZipType(ONLY_TIME, writebuff, writebuff_pos);
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, TIMESTAMP_SIZE);
+                        writebuff_pos += TIMESTAMP_SIZE;
                     }
-                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + 8;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
                     if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                        addAnalogZipPos(i, writebuff, writebuff_pos);
+                        ZipUtils::addZipPos(i, writebuff, writebuff_pos);
                         //只有数据
-                        addAnalogZipType(0, writebuff, writebuff_pos);
+                        ZipUtils::addZipType(ONLY_DATA, writebuff, writebuff_pos);
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes);
                         writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
                     }
@@ -702,7 +323,7 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
         {
             if (CurrentZipTemplate.schemas[i].second.isTimeseries == true) //是时间序列类型
             {
-                if (IsAnalogTSZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 7))
+                if (ZipUtils::IsTSZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::DINT))
                 {
                     cout << "存在模拟量以外的类型，请检查模板或者更换功能块" << endl;
                     return StatusCode::DATA_TYPE_MISMATCH_ERROR;
@@ -710,7 +331,7 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
             }
             else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                IsAnalogArrayZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos);
+                ZipUtils::IsArrayZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos);
             }
             else
             {
@@ -725,31 +346,31 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带时间戳
                 {
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                    addAnalogZipPos(i, writebuff, writebuff_pos);
+                    ZipUtils::addZipPos(i, writebuff, writebuff_pos);
                     if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
                     {
                         //既有数据又有时间
-                        addAnalogZipType(2, writebuff, writebuff_pos);
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + 8);
-                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + 8;
+                        ZipUtils::addZipType(DATA_AND_TIME, writebuff, writebuff_pos);
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE);
+                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
                     }
                     else
                     {
                         //只有时间
-                        addAnalogZipType(1, writebuff, writebuff_pos);
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, 8);
-                        writebuff_pos += 8;
+                        ZipUtils::addZipType(ONLY_TIME, writebuff, writebuff_pos);
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, TIMESTAMP_SIZE);
+                        writebuff_pos += TIMESTAMP_SIZE;
                     }
-                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + 8;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
                     if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                        addAnalogZipPos(i, writebuff, writebuff_pos);
+                        ZipUtils::addZipPos(i, writebuff, writebuff_pos);
                         //只有数据
-                        addAnalogZipType(0, writebuff, writebuff_pos);
+                        ZipUtils::addZipType(ONLY_DATA, writebuff, writebuff_pos);
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes);
                         writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
                     }
@@ -761,7 +382,7 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
         {
             if (CurrentZipTemplate.schemas[i].second.isTimeseries == true) //是时间序列类型
             {
-                if (IsAnalogTSZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 8))
+                if (ZipUtils::IsTSZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::REAL))
                 {
                     cout << "存在模拟量以外的类型，请检查模板或者更换功能块" << endl;
                     return StatusCode::DATA_TYPE_MISMATCH_ERROR;
@@ -769,7 +390,7 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
             }
             else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                IsAnalogArrayZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos);
+                ZipUtils::IsArrayZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos);
             }
             else
             {
@@ -784,31 +405,31 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                 if (CurrentZipTemplate.schemas[i].second.hasTime == true) //带时间戳
                 {
                     //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                    addAnalogZipPos(i, writebuff, writebuff_pos);
+                    ZipUtils::addZipPos(i, writebuff, writebuff_pos);
                     if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
                     {
                         //既有数据又有时间
-                        addAnalogZipType(2, writebuff, writebuff_pos);
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + 8);
-                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + 8;
+                        ZipUtils::addZipType(DATA_AND_TIME, writebuff, writebuff_pos);
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE);
+                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
                     }
                     else
                     {
                         //只有时间
-                        addAnalogZipType(1, writebuff, writebuff_pos);
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, 8);
-                        writebuff_pos += 8;
+                        ZipUtils::addZipType(ONLY_TIME, writebuff, writebuff_pos);
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, TIMESTAMP_SIZE);
+                        writebuff_pos += TIMESTAMP_SIZE;
                     }
-                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + 8;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
                     if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
                     {
                         //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-                        addAnalogZipPos(i, writebuff, writebuff_pos);
+                        ZipUtils::addZipPos(i, writebuff, writebuff_pos);
                         //只有数据
-                        addAnalogZipType(0, writebuff, writebuff_pos);
+                        ZipUtils::addZipType(ONLY_DATA, writebuff, writebuff_pos);
                         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes);
                         writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
                     }
@@ -821,261 +442,6 @@ int ZipAnalogBuf(char *readbuff, char *writebuff, long &writebuff_pos)
             cout << "存在模拟量以外的类型，请检查模板或者更换功能块" << endl;
             return StatusCode::DATA_TYPE_MISMATCH_ERROR;
         }
-    }
-    return 0;
-}
-
-/**
- * @brief 根据数据类型添加标准值
- *
- * @param schemaPos 变量在模板的编号
- * @param writebuff 写数据缓冲
- * @param writebuff_pos 写数据偏移量
- * @param DataType 数据类型
- */
-void addAnalogStandardValue(int schemaPos, char *writebuff, long &writebuff_pos, int DataType)
-{
-    DataTypeConverter converter;
-    //添加上标准值到writebuff
-    switch (DataType)
-    {
-    case 3: // UDINT
-    {
-        uint32 standardBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
-        char boolTime[4] = {0};
-        converter.ToUInt32Buff(standardBoolTime, boolTime);
-        memcpy(writebuff + writebuff_pos, boolTime, 4); //持续时长
-        writebuff_pos += 4;
-        break;
-    }
-    case 2: // USINT
-    {
-        char StandardUsintValue = CurrentZipTemplate.schemas[schemaPos].second.standardValue[0];
-        char UsintValue[1] = {0};
-        UsintValue[0] = StandardUsintValue;
-        memcpy(writebuff + writebuff_pos, UsintValue, 1); // USINT标准值
-        writebuff_pos += 1;
-        break;
-    }
-    case 1: // UINT
-    {
-        uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
-        char UintValue[2] = {0};
-        converter.ToUInt16Buff(standardUintValue, UintValue);
-        memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
-        writebuff_pos += 2;
-        break;
-    }
-    case 6: // SINT
-    {
-        char StandardSintValue = CurrentZipTemplate.schemas[schemaPos].second.standardValue[0];
-        char SintValue[1] = {0};
-        SintValue[0] = StandardSintValue;
-        memcpy(writebuff + writebuff_pos, SintValue, 1); // SINT标准值
-        writebuff_pos += 1;
-        break;
-    }
-    case 4: // INT
-    {
-        short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
-        char IntValue[2] = {0};
-        converter.ToInt16Buff(standardIntValue, IntValue);
-        memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
-        writebuff_pos += 2;
-        break;
-    }
-    case 7: // DINT
-    {
-        int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
-        char DintValue[4] = {0};
-        converter.ToInt32Buff(standardDintValue, DintValue);
-        memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
-        writebuff_pos += 4;
-        break;
-    }
-    case 8: // REAL
-    {
-        float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.standardValue);
-        char RealValue[4] = {0};
-        converter.ToFloatBuff(standardRealValue, RealValue);
-        memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
-        writebuff_pos += 4;
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-/**
- * @brief 还原Ts类型的时间戳
- *
- * @param schemaPos 变量在模板的编号
- * @param startTime 开始时间
- * @param writebuff 写数据缓冲
- * @param writebuff_pos 写数据偏移量
- * @param tsPos Ts目前所在编号
- */
-void addAnalogTsTime(int schemaPos, uint64_t startTime, char *writebuff, long &writebuff_pos, int tsPos)
-{
-    DataTypeConverter converter;
-    //添加上时间戳
-    uint64_t zipTime = startTime + CurrentZipTemplate.schemas[schemaPos].second.timeseriesSpan * tsPos;
-    char zipTimeBuff[8] = {0};
-    converter.ToLong64Buff(zipTime, zipTimeBuff);
-    memcpy(writebuff + writebuff_pos, zipTimeBuff, 8);
-    writebuff_pos += 8;
-}
-
-/**
- * @brief Ts类型还原
- *
- * @param schemaPos 变量在模板的编号
- * @param writebuff 写数据缓冲
- * @param writebuff_pos 写数据偏移量
- * @param readbuff 读数据缓冲
- * @param readbuff_pos 读数据偏移量
- * @param DataType 数据类型
- * @return int
- */
-int IsAnalogTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType)
-{
-    DataTypeConverter converter;
-    if (readbuff[readbuff_pos - 1] == (char)3) //既是时间序列又是数组
-    {
-        //直接拷贝
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8) * CurrentZipTemplate.schemas[schemaPos].second.tsLen);
-        writebuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
-        readbuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
-    }
-    else if (readbuff[readbuff_pos - 1] == (char)4) //只是时间序列
-    {
-        //先获得第一次采样的时间
-        char time[8];
-        memcpy(time, readbuff + readbuff_pos, 8);
-        uint64_t startTime = converter.ToLong64(time);
-        readbuff_pos += 8;
-
-        for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.tsLen; j++)
-        {
-            if (readbuff[readbuff_pos] == (char)-1) //说明没有未压缩的时间序列了
-            {
-                //将标准值数据拷贝到writebuff
-                addAnalogStandardValue(schemaPos, writebuff, writebuff_pos, DataType);
-                //添加上时间戳
-                addAnalogTsTime(schemaPos, startTime, writebuff, writebuff_pos, j);
-            }
-            else
-            {
-                //对比编号是否等于未压缩的时间序列编号
-                char zipTsPosNum[2] = {0};
-                memcpy(zipTsPosNum, readbuff + readbuff_pos, 2);
-                uint16_t tsPosCmp = converter.ToUInt16(zipTsPosNum);
-
-                if (tsPosCmp == j) //是未压缩时间序列的编号
-                {
-                    //将未压缩的数据拷贝到writebuff
-                    readbuff_pos += 2;
-                    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
-                    readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
-                    writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
-                    //添加上时间戳
-                    addAnalogTsTime(schemaPos, startTime, writebuff, writebuff_pos, j);
-                }
-                else //不是未压缩时间序列的编号
-                {
-                    //将标准值数据拷贝到writebuff
-                    addAnalogStandardValue(schemaPos, writebuff, writebuff_pos, DataType);
-                    //添加上时间戳
-                    addAnalogTsTime(schemaPos, startTime, writebuff, writebuff_pos, j);
-                }
-            }
-            if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1) //时间序列还原结束，readbuff_pos+1跳过0xFF标志
-                readbuff_pos += 1;
-        }
-    }
-    else
-    {
-        cout << "还原类型出错！请检查压缩功能是否有误" << endl;
-        return StatusCode::ZIPTYPE_ERROR;
-    }
-    return 0;
-}
-
-/**
- * @brief 数组类型还原
- *
- * @param schemaPos 变量在模板的编号
- * @param writebuff 写数据缓冲
- * @param writebuff_pos 写数据偏移量
- * @param readbuff 读数据缓冲
- * @param readbuff_pos 读数据偏移量
- * @return int
- */
-int IsAnalogArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos)
-{
-    if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
-    {
-        //直接拷贝
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + 8);
-        writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + 8;
-        readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + 8;
-    }
-    else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
-    {
-        //直接拷贝
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen);
-        writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
-        readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
-    }
-    else
-    {
-        cout << "还原类型出错！请检查压缩功能是否有误" << endl;
-        return StatusCode::ZIPTYPE_ERROR;
-    }
-    return 0;
-}
-
-/**
- * @brief 既不是Ts又不是数组还原
- *
- * @param schemaPos 变量在模板的编号
- * @param writebuff 写数据缓冲
- * @param writebuff_pos 写数据偏移量
- * @param readbuff 读数据缓冲
- * @param readbuff_pos 读数据偏移量
- * @param DataType 数据类型
- * @return int
- */
-int IsNotAnalogArrayAndTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, int DataType)
-{
-    if (readbuff[readbuff_pos - 1] == (char)2) //既有时间又有数据
-    {
-        //直接拷贝
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8);
-        writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8;
-        readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + 8;
-    }
-    else if (readbuff[readbuff_pos - 1] == (char)1) //只有时间
-    {
-        //先添加上标准值到writebuff
-        addAnalogStandardValue(schemaPos, writebuff, writebuff_pos, DataType);
-        //再拷贝时间
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, 8);
-        writebuff_pos += 8;
-        readbuff_pos += 8;
-    }
-    else if (readbuff[readbuff_pos - 1] == (char)0) //只有数据
-    {
-        //直接拷贝
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
-        writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
-        readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
-    }
-    else
-    {
-        cout << "还原类型出错！请检查压缩功能是否有误" << endl;
-        return StatusCode::ZIPTYPE_ERROR;
     }
     return 0;
 }
@@ -1101,45 +467,45 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
             if (len == 0) //表示文件完全压缩
             {
                 //添加上标准值到writebuff
-                addAnalogStandardValue(i, writebuff, writebuff_pos, 3);
+                ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::UDINT);
             }
             else //文件未完全压缩
             {
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[2] = {0};
-                    memcpy(zipPosNum, readbuff + readbuff_pos, 2);
+                    char zipPosNum[ZIPPOS_SIZE] = {0};
+                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
-                            if (IsAnalogTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 3))
+                            if (ZipUtils::IsTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::UDINT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            if (IsAnalogArrayReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (ZipUtils::IsArrayReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else
                         {
-                            if (IsNotAnalogArrayAndTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 3))
+                            if (ZipUtils::IsNotArrayAndTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::UDINT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                     }
                     else //不是未压缩的编号
                     {
                         //将标准值数据拷贝到writebuff
-                        addAnalogStandardValue(i, writebuff, writebuff_pos, 3);
+                        ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::UDINT);
                     }
                 }
                 else //没有未压缩的数据了
                 {
                     //将标准值数据拷贝到writebuff
-                    addAnalogStandardValue(i, writebuff, writebuff_pos, 3);
+                    ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::UDINT);
                 }
             }
         }
@@ -1148,45 +514,45 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
             if (len == 0) //表示文件完全压缩
             {
                 //添加上标准值到writebuff
-                addAnalogStandardValue(i, writebuff, writebuff_pos, 2);
+                ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::USINT);
             }
             else //文件未完全压缩
             {
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[2] = {0};
-                    memcpy(zipPosNum, readbuff + readbuff_pos, 2);
+                    char zipPosNum[ZIPPOS_SIZE] = {0};
+                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
-                            if (IsAnalogTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 2))
+                            if (ZipUtils::IsTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::USINT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            if (IsAnalogArrayReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (ZipUtils::IsArrayReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else
                         {
-                            if (IsNotAnalogArrayAndTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 2))
+                            if (ZipUtils::IsNotArrayAndTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::USINT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                     }
                     else //不是未压缩的编号
                     {
                         //将标准值数据拷贝到writebuff
-                        addAnalogStandardValue(i, writebuff, writebuff_pos, 2);
+                        ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::USINT);
                     }
                 }
                 else //没有未压缩的数据了
                 {
                     //将标准值数据拷贝到writebuff
-                    addAnalogStandardValue(i, writebuff, writebuff_pos, 2);
+                    ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::USINT);
                 }
             }
         }
@@ -1195,45 +561,45 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
             if (len == 0) //表示文件完全压缩
             {
                 //添加上标准值到writebuff
-                addAnalogStandardValue(i, writebuff, writebuff_pos, 1);
+                ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::UINT);
             }
             else //文件未完全压缩
             {
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[2] = {0};
-                    memcpy(zipPosNum, readbuff + readbuff_pos, 2);
+                    char zipPosNum[ZIPPOS_SIZE] = {0};
+                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
-                            if (IsAnalogTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 1))
+                            if (ZipUtils::IsTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::UINT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            if (IsAnalogArrayReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (ZipUtils::IsArrayReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else
                         {
-                            if (IsNotAnalogArrayAndTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 1))
+                            if (ZipUtils::IsNotArrayAndTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::UINT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                     }
                     else //不是未压缩的编号
                     {
                         //添加上标准值到writebuff
-                        addAnalogStandardValue(i, writebuff, writebuff_pos, 1);
+                        ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::UINT);
                     }
                 }
                 else //没有未压缩的数据了
                 {
                     //添加上标准值到writebuff
-                    addAnalogStandardValue(i, writebuff, writebuff_pos, 1);
+                    ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::UINT);
                 }
             }
         }
@@ -1242,45 +608,45 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
             if (len == 0) //表示文件完全压缩
             {
                 //添加上标准值到writebuff
-                addAnalogStandardValue(i, writebuff, writebuff_pos, 6);
+                ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::SINT);
             }
             else //文件未完全压缩
             {
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[2] = {0};
-                    memcpy(zipPosNum, readbuff + readbuff_pos, 2);
+                    char zipPosNum[ZIPPOS_SIZE] = {0};
+                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
-                            if (IsAnalogTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 6))
+                            if (ZipUtils::IsTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::SINT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            if (IsAnalogArrayReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (ZipUtils::IsArrayReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else
                         {
-                            if (IsNotAnalogArrayAndTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 6))
+                            if (ZipUtils::IsNotArrayAndTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::SINT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                     }
                     else //不是未压缩的编号
                     {
                         //添加上标准值到writebuff
-                        addAnalogStandardValue(i, writebuff, writebuff_pos, 6);
+                        ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::SINT);
                     }
                 }
                 else //没有未压缩的数据了
                 {
                     //添加上标准值到writebuff
-                    addAnalogStandardValue(i, writebuff, writebuff_pos, 6);
+                    ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::SINT);
                 }
             }
         }
@@ -1289,45 +655,45 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
             if (len == 0) //表示文件完全压缩
             {
                 //添加上标准值到writebuff
-                addAnalogStandardValue(i, writebuff, writebuff_pos, 4);
+                ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::INT);
             }
             else //文件未完全压缩
             {
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[2] = {0};
-                    memcpy(zipPosNum, readbuff + readbuff_pos, 2);
+                    char zipPosNum[ZIPPOS_SIZE] = {0};
+                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
-                            if (IsAnalogTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 4))
+                            if (ZipUtils::IsTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::INT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            if (IsAnalogArrayReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (ZipUtils::IsArrayReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else
                         {
-                            if (IsNotAnalogArrayAndTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 4))
+                            if (ZipUtils::IsNotArrayAndTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::INT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                     }
                     else //不是未压缩的编号
                     {
                         //添加上标准值到writebuff
-                        addAnalogStandardValue(i, writebuff, writebuff_pos, 4);
+                        ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::INT);
                     }
                 }
                 else //没有未压缩的数据了
                 {
                     //添加上标准值到writebuff
-                    addAnalogStandardValue(i, writebuff, writebuff_pos, 4);
+                    ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::INT);
                 }
             }
         }
@@ -1336,45 +702,45 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
             if (len == 0) //表示文件完全压缩
             {
                 //添加上标准值到writebuff
-                addAnalogStandardValue(i, writebuff, writebuff_pos, 7);
+                ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::DINT);
             }
             else //文件未完全压缩
             {
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[2] = {0};
-                    memcpy(zipPosNum, readbuff + readbuff_pos, 2);
+                    char zipPosNum[ZIPPOS_SIZE] = {0};
+                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
-                            if (IsAnalogTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 7))
+                            if (ZipUtils::IsTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::DINT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            if (IsAnalogArrayReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (ZipUtils::IsArrayReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else
                         {
-                            if (IsNotAnalogArrayAndTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 7))
+                            if (ZipUtils::IsNotArrayAndTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::DINT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                     }
                     else //不是未压缩的编号
                     {
                         //添加上标准值到writebuff
-                        addAnalogStandardValue(i, writebuff, writebuff_pos, 7);
+                        ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::DINT);
                     }
                 }
                 else //没有未压缩的数据了
                 {
                     //添加上标准值到writebuff
-                    addAnalogStandardValue(i, writebuff, writebuff_pos, 7);
+                    ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::DINT);
                 }
             }
         }
@@ -1383,45 +749,45 @@ int ReZipAnalogBuf(char *readbuff, const long len, char *writebuff, long &writeb
             if (len == 0) //表示文件完全压缩
             {
                 //添加上标准值到writebuff
-                addAnalogStandardValue(i, writebuff, writebuff_pos, 8);
+                ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::REAL);
             }
             else //文件未完全压缩
             {
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[2] = {0};
-                    memcpy(zipPosNum, readbuff + readbuff_pos, 2);
+                    char zipPosNum[ZIPPOS_SIZE] = {0};
+                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
                     if (posCmp == i) //是未压缩数据的编号
                     {
                         readbuff_pos += 3;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
-                            if (IsAnalogTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 8))
+                            if (ZipUtils::IsTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::REAL))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            if (IsAnalogArrayReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (ZipUtils::IsArrayReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else
                         {
-                            if (IsNotAnalogArrayAndTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, 8))
+                            if (ZipUtils::IsNotArrayAndTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::REAL))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                     }
                     else //不是未压缩的编号
                     {
                         //添加上标准值到writebuff
-                        addAnalogStandardValue(i, writebuff, writebuff_pos, 8);
+                        ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::REAL);
                     }
                 }
                 else //没有未压缩的数据了
                 {
                     //添加上标准值到writebuff
-                    addAnalogStandardValue(i, writebuff, writebuff_pos, 8);
+                    ZipUtils::addStandardValue(i, writebuff, writebuff_pos, ValueType::REAL);
                 }
             }
         }
