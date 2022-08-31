@@ -192,8 +192,6 @@ void getMemoryUsage(long &total, long &available);
 
 int CheckQueryParams(DB_QueryParams *params);
 
-int CheckZipParams(DB_ZipParams *params);
-
 int ReZipBuff(char **buff, int &buffLength, const char *pathToLine = nullptr);
 
 long GetZipImgPos(char *buff);
@@ -216,19 +214,6 @@ int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params);
 
 int DB_QueryWholeFile_Single(DB_DataBuffer *buffer, DB_QueryParams *params);
 
-//模板相关函数
-int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams);
-
-int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNodeParams *newTreeParams);
-
-int DB_DeleteNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams);
-
-int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams);
-
-int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNodeParams *newZipParams);
-
-int DB_DeleteNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams);
-
 // python相关
 PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer);
 
@@ -237,23 +222,6 @@ PyObject *ConvertToPyList_STAT(DB_DataBuffer *buffer);
 PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcName, const char *path = "./");
 
 PyObject *PythonCall(const char *moduleName, const char *funcName, const char *path, int num, ...);
-
-//检查模板相关输入
-int checkInputVaribaleName(string variableName);
-
-int checkInputPathcode(char pathcode[]);
-
-int checkInputSingleValue(int variableType, string value);
-
-int checkInputValue(string variableType, string value, int isArray, int arrayLen);
-
-int checkSingleValueRange(int variableType, string standardValue, string maxValue, string minValue);
-
-int checkValueRange(string variableType, string standardValue, string maxValue, string minValue, int isArray, int arrayLen);
-
-int checkQueryNodeParam(struct DB_QueryNodeParams *params);
-
-int getValueStringByValueType(char *value, ValueType::ValueType type, int schemaPos, int MaxOrMin, int isArray, int arrayLen);
 
 //根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);

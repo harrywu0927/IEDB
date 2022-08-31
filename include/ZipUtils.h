@@ -2,10 +2,10 @@
 
 using namespace std;
 
-#define TIMESTAMP_SIZE 8
-#define ZIPPOS_SIZE 2
-#define ENDFLAG_SIZE 1
-#define ZIPTYPE_SIZE 1
+#define ZIP_TIMESTAMP_SIZE 8
+#define ZIP_ZIPPOS_SIZE 2
+#define ZIP_ENDFLAG_SIZE 1
+#define ZIP_ZIPTYPE_SIZE 1
 
 enum ZipType
 {
@@ -15,6 +15,8 @@ enum ZipType
     TS_AND_ARRAY,  //既是时序又是数组
     ONLY_TS,       //只是时序
 };
+
+int CheckZipParams(DB_ZipParams *params);
 
 class ZipUtils
 {

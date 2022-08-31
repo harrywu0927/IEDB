@@ -53,17 +53,17 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
                     {
                         //既有数据又有时间
                         ZipUtils::addZipType(DATA_AND_TIME, *writebuff, writebuff_pos);
-                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE);
-                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                     else
                     {
                         //只有时间
                         ZipUtils::addZipType(ONLY_TIME, *writebuff, writebuff_pos);
-                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, TIMESTAMP_SIZE);
-                        writebuff_pos += TIMESTAMP_SIZE;
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += ZIP_TIMESTAMP_SIZE;
                     }
-                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
@@ -112,17 +112,17 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
                     {
                         //既有数据又有时间
                         ZipUtils::addZipType(DATA_AND_TIME, *writebuff, writebuff_pos);
-                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE);
-                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                     else
                     {
                         //只有时间
                         ZipUtils::addZipType(ONLY_TIME, *writebuff, writebuff_pos);
-                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, TIMESTAMP_SIZE);
-                        writebuff_pos += TIMESTAMP_SIZE;
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += ZIP_TIMESTAMP_SIZE;
                     }
-                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
@@ -171,17 +171,17 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
                     {
                         //既有数据又有时间
                         ZipUtils::addZipType(DATA_AND_TIME, *writebuff, writebuff_pos);
-                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE);
-                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                     else
                     {
                         //只有时间
                         ZipUtils::addZipType(ONLY_TIME, *writebuff, writebuff_pos);
-                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, TIMESTAMP_SIZE);
-                        writebuff_pos += TIMESTAMP_SIZE;
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += ZIP_TIMESTAMP_SIZE;
                     }
-                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
@@ -230,17 +230,17 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
                     {
                         //既有数据又有时间
                         ZipUtils::addZipType(DATA_AND_TIME, *writebuff, writebuff_pos);
-                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE);
-                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                     else
                     {
                         //只有时间
                         ZipUtils::addZipType(ONLY_TIME, *writebuff, writebuff_pos);
-                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, TIMESTAMP_SIZE);
-                        writebuff_pos += TIMESTAMP_SIZE;
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += ZIP_TIMESTAMP_SIZE;
                     }
-                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
@@ -289,17 +289,17 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
                     {
                         //既有数据又有时间
                         ZipUtils::addZipType(DATA_AND_TIME, *writebuff, writebuff_pos);
-                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE);
-                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                     else
                     {
                         //只有时间
                         ZipUtils::addZipType(ONLY_TIME, *writebuff, writebuff_pos);
-                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, TIMESTAMP_SIZE);
-                        writebuff_pos += TIMESTAMP_SIZE;
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += ZIP_TIMESTAMP_SIZE;
                     }
-                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
@@ -348,17 +348,17 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
                     {
                         //既有数据又有时间
                         ZipUtils::addZipType(DATA_AND_TIME, *writebuff, writebuff_pos);
-                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE);
-                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                     else
                     {
                         //只有时间
                         ZipUtils::addZipType(ONLY_TIME, *writebuff, writebuff_pos);
-                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, TIMESTAMP_SIZE);
-                        writebuff_pos += TIMESTAMP_SIZE;
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += ZIP_TIMESTAMP_SIZE;
                     }
-                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
@@ -407,17 +407,17 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
                     {
                         //既有数据又有时间
                         ZipUtils::addZipType(DATA_AND_TIME, *writebuff, writebuff_pos);
-                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE);
-                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                     else
                     {
                         //只有时间
                         ZipUtils::addZipType(ONLY_TIME, *writebuff, writebuff_pos);
-                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, TIMESTAMP_SIZE);
-                        writebuff_pos += TIMESTAMP_SIZE;
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += ZIP_TIMESTAMP_SIZE;
                     }
-                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
@@ -466,17 +466,17 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
                     {
                         //既有数据又有时间
                         ZipUtils::addZipType(DATA_AND_TIME, *writebuff, writebuff_pos);
-                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE);
-                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                     else
                     {
                         //只有时间
                         ZipUtils::addZipType(ONLY_TIME, *writebuff, writebuff_pos);
-                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, TIMESTAMP_SIZE);
-                        writebuff_pos += TIMESTAMP_SIZE;
+                        memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += ZIP_TIMESTAMP_SIZE;
                     }
-                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
@@ -527,9 +527,9 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
                 readbuff_pos += 6;
                 writebuff_pos += 6;
 
-                memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, imageSize + TIMESTAMP_SIZE);
-                writebuff_pos += imageSize + TIMESTAMP_SIZE;
-                readbuff_pos += imageSize + TIMESTAMP_SIZE;
+                memcpy(*writebuff + writebuff_pos, readbuff + readbuff_pos, imageSize + ZIP_TIMESTAMP_SIZE);
+                writebuff_pos += imageSize + ZIP_TIMESTAMP_SIZE;
+                readbuff_pos += imageSize + ZIP_TIMESTAMP_SIZE;
             }
             else
             {
@@ -582,13 +582,13 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[ZIPPOS_SIZE] = {0};
-                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
+                    char zipPosNum[ZIP_ZIPPOS_SIZE] = {0};
+                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIP_ZIPPOS_SIZE);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
 
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
+                        readbuff_pos += ZIP_ZIPPOS_SIZE + ZIP_ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::BOOL))
@@ -630,13 +630,13 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[ZIPPOS_SIZE] = {0};
-                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
+                    char zipPosNum[ZIP_ZIPPOS_SIZE] = {0};
+                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIP_ZIPPOS_SIZE);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
 
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
+                        readbuff_pos += ZIP_ZIPPOS_SIZE + ZIP_ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::UDINT))
@@ -678,13 +678,13 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[ZIPPOS_SIZE] = {0};
-                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
+                    char zipPosNum[ZIP_ZIPPOS_SIZE] = {0};
+                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIP_ZIPPOS_SIZE);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
 
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
+                        readbuff_pos += ZIP_ZIPPOS_SIZE + ZIP_ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::USINT))
@@ -726,13 +726,13 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[ZIPPOS_SIZE] = {0};
-                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
+                    char zipPosNum[ZIP_ZIPPOS_SIZE] = {0};
+                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIP_ZIPPOS_SIZE);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
 
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
+                        readbuff_pos += ZIP_ZIPPOS_SIZE + ZIP_ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::UINT))
@@ -774,13 +774,13 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[ZIPPOS_SIZE] = {0};
-                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
+                    char zipPosNum[ZIP_ZIPPOS_SIZE] = {0};
+                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIP_ZIPPOS_SIZE);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
 
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
+                        readbuff_pos += ZIP_ZIPPOS_SIZE + ZIP_ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::SINT))
@@ -822,13 +822,13 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[ZIPPOS_SIZE] = {0};
-                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
+                    char zipPosNum[ZIP_ZIPPOS_SIZE] = {0};
+                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIP_ZIPPOS_SIZE);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
 
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
+                        readbuff_pos += ZIP_ZIPPOS_SIZE + ZIP_ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::INT))
@@ -870,13 +870,13 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[ZIPPOS_SIZE] = {0};
-                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
+                    char zipPosNum[ZIP_ZIPPOS_SIZE] = {0};
+                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIP_ZIPPOS_SIZE);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
 
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
+                        readbuff_pos += ZIP_ZIPPOS_SIZE + ZIP_ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::DINT))
@@ -918,13 +918,13 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[ZIPPOS_SIZE] = {0};
-                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
+                    char zipPosNum[ZIP_ZIPPOS_SIZE] = {0};
+                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIP_ZIPPOS_SIZE);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
 
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
+                        readbuff_pos += ZIP_ZIPPOS_SIZE + ZIP_ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::REAL))
@@ -963,7 +963,7 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
 
             if (posCmp == i) //是未压缩数据的编号
             {
-                readbuff_pos += ZIPPOS_SIZE;
+                readbuff_pos += ZIP_ZIPPOS_SIZE;
                 //暂定图片之前有2字节的长度，2字节的宽度和2字节的通道
                 char length[2] = {0};
                 memcpy(length, readbuff + readbuff_pos + 1, 2);

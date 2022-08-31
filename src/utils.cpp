@@ -1,4 +1,4 @@
-#include <utils.hpp>
+#include "ZipUtils.h"
 #include <BackupHelper.h>
 unordered_map<string, int> getDirCurrentFileIDIndex();
 long getMilliTime();
@@ -615,61 +615,6 @@ int getBufferDataPos(vector<DataType> &typeList, int num)
 }
 
 /**
- * @brief 在进行压缩操作前，检查输入的压缩参数是否合法
- * @param params        压缩请求参数
- *
- * @return  0:success,
- *          others: StatusCode
- * @note
- */
-int CheckZipParams(DB_ZipParams *params)
-{
-    if (params->pathToLine == NULL)
-    {
-        return StatusCode::EMPTY_PATH_TO_LINE;
-    }
-    switch (params->ZipType)
-    {
-    case TIME_SPAN:
-    {
-        if ((params->start == 0 && params->end == 0) || params->start > params->end)
-        {
-            return StatusCode::INVALID_TIMESPAN;
-        }
-        else if (params->end == 0)
-        {
-            params->end = getMilliTime();
-        }
-        break;
-    }
-    case PATH_TO_LINE:
-    {
-        if (params->pathToLine == 0)
-        {
-            return StatusCode::EMPTY_PATH_TO_LINE;
-        }
-        break;
-    }
-    case FILE_ID:
-    {
-        if (params->fileID == NULL)
-        {
-            return StatusCode::NO_FILEID;
-        }
-        else if (params->zipNums < 0 && params->EID == NULL)
-            return StatusCode::ZIPNUM_ERROR;
-        else if (params->zipNums > 1 && params->EID != NULL)
-            return StatusCode::ZIPNUM_AND_EID_ERROR;
-        break;
-    }
-    default:
-        return StatusCode::NO_ZIP_TYPE;
-        break;
-    }
-    return 0;
-}
-
-/**
  * @brief 根据压缩模版判断数据是否正常
  *
  * @param readbuff 数据缓存
@@ -708,7 +653,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                         if (standardBool != readbuff[readbuff_pos])
                             return false;
                         else
-                            readbuff_pos += 9;
+                            readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                 }
             }
@@ -725,14 +670,14 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                     if (standardBool != readbuff[readbuff_pos])
                         return false;
                     else
-                        readbuff_pos += 9;
+                        readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
                     if (standardBool != readbuff[readbuff_pos])
                         return false;
                     else
-                        readbuff_pos += 1;
+                        readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
                 }
             }
         }
@@ -759,7 +704,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                         if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
                             return false;
                         else
-                            readbuff_pos += 9;
+                            readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                 }
             }
@@ -782,14 +727,14 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                     if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
                         return false;
                     else
-                        readbuff_pos += 9;
+                        readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
                     if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
                         return false;
                     else
-                        readbuff_pos += 1;
+                        readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
                 }
             }
         }
@@ -816,7 +761,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                         if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
                             return false;
                         else
-                            readbuff_pos += 10;
+                            readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                 }
             }
@@ -839,14 +784,14 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                     if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
                         return false;
                     else
-                        readbuff_pos += 10;
+                        readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
                     if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
                         return false;
                     else
-                        readbuff_pos += 2;
+                        readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
                 }
             }
         }
@@ -874,7 +819,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                         if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
                             return false;
                         else
-                            readbuff_pos += 12;
+                            readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                 }
             }
@@ -897,14 +842,14 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                     if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
                         return false;
                     else
-                        readbuff_pos += 12;
+                        readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
                     if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
                         return false;
                     else
-                        readbuff_pos += 4;
+                        readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
                 }
             }
         }
@@ -931,7 +876,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                         if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
                             return false;
                         else
-                            readbuff_pos += 9;
+                            readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                 }
             }
@@ -954,14 +899,14 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                     if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
                         return false;
                     else
-                        readbuff_pos += 9;
+                        readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
                     if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
                         return false;
                     else
-                        readbuff_pos += 1;
+                        readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
                 }
             }
         }
@@ -988,7 +933,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                         if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
                             return false;
                         else
-                            readbuff_pos += 10;
+                            readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                 }
             }
@@ -1011,14 +956,14 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                     if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
                         return false;
                     else
-                        readbuff_pos += 10;
+                        readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
                     if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
                         return false;
                     else
-                        readbuff_pos += 2;
+                        readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
                 }
             }
         }
@@ -1045,7 +990,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                         if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
                             return false;
                         else
-                            readbuff_pos += 12;
+                            readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                 }
             }
@@ -1068,14 +1013,14 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                     if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
                         return false;
                     else
-                        readbuff_pos += 12;
+                        readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
                     if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
                         return false;
                     else
-                        readbuff_pos += 4;
+                        readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
                 }
             }
         }
@@ -1102,7 +1047,7 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                         if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
                             return false;
                         else
-                            readbuff_pos += 12;
+                            readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                 }
             }
@@ -1125,14 +1070,14 @@ bool IsNormalIDBFile(char *readbuff, const char *pathToLine)
                     if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
                         return false;
                     else
-                        readbuff_pos += 12;
+                        readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
                     if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
                         return false;
                     else
-                        readbuff_pos += 4;
+                        readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes;
                 }
             }
         }

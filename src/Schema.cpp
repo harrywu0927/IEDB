@@ -1,4 +1,4 @@
-#include "../include/utils.hpp"
+#include "../include/SchemaUtils.h"
 using namespace std;
 
 vector<ZipTemplate> ZipTemplates;
@@ -49,8 +49,8 @@ int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
     //检查路径编码输入是否合法
     if (TreeParams->pathCode == NULL)
         return StatusCode::PATHCODE_CHECK_ERROR;
-    char inputPathCode[10] = {0};
-    memcpy(inputPathCode, TreeParams->pathCode, 10);
+    char inputPathCode[SCHEMA_PATHCODE_LENGTH] = {0};
+    memcpy(inputPathCode, TreeParams->pathCode, SCHEMA_PATHCODE_LENGTH);
     err = checkInputPathcode(inputPathCode);
     if (err != 0)
         return StatusCode::PATHCODE_CHECK_ERROR;
@@ -73,35 +73,35 @@ int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
 
     long len;
     DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
-    char readBuf[len + 71];
+    char readBuf[len + SCHEMA_SINGLE_NODE_LENGTH];
     long readbuf_pos = 0;
     DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
 
-    for (long i = 0; i < len / 71; i++) //寻找是否有相同的变量名或者编码
+    for (long i = 0; i < len / SCHEMA_SINGLE_NODE_LENGTH; i++) //寻找是否有相同的变量名或者编码
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(TreeParams->valueName, existValueName) == 0)
         {
             cout << "存在相同的变量名" << endl;
             return StatusCode::VARIABLE_NAME_EXIST;
         }
-        readbuf_pos += 61;
+        readbuf_pos += SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH;
 
-        char existPathCode[10];
-        memcpy(existPathCode, readBuf + readbuf_pos, 10);
+        char existPathCode[SCHEMA_PATHCODE_LENGTH];
+        memcpy(existPathCode, readBuf + readbuf_pos, SCHEMA_PATHCODE_LENGTH);
         int j = 0;
-        for (j = 0; j < 10; j++)
+        for (j = 0; j < SCHEMA_PATHCODE_LENGTH; j++)
         {
             if (TreeParams->pathCode[j] != existPathCode[j])
                 break;
         }
-        if (j == 10)
+        if (j == SCHEMA_PATHCODE_LENGTH)
         {
             cout << "存在相同的编码" << endl;
             return StatusCode::PATHCODE_EXIST;
         }
-        readbuf_pos += 10;
+        readbuf_pos += SCHEMA_PATHCODE_LENGTH;
     }
 
     //检查数据类型是否合法
@@ -140,7 +140,7 @@ int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
         return StatusCode::HASTIME_ERROR;
     }
 
-    char valueNmae[30], hasTime[1], pathCode[10], valueType[30]; //先初始化为0
+    char valueNmae[SCHEMA_VARIABLENAME_LENGTH], hasTime[SCHEMA_HASTIME_LENGTH], pathCode[SCHEMA_PATHCODE_LENGTH], valueType[SCHEMA_DATATYPE_LENGTH]; //先初始化为0
     memset(valueNmae, 0, sizeof(valueNmae));
     memset(valueType, 0, sizeof(valueType));
     memset(pathCode, 0, sizeof(pathCode));
@@ -205,14 +205,14 @@ int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
 
     strcpy(valueNmae, TreeParams->valueName);
     hasTime[0] = (char)TreeParams->hasTime;
-    memcpy(pathCode, TreeParams->pathCode, 10);
+    memcpy(pathCode, TreeParams->pathCode, SCHEMA_PATHCODE_LENGTH);
 
     char writeBuf[71]; //将所有参数传入writeBuf中，已追加写的方式写入已有模板文件中
-    memcpy(writeBuf, valueNmae, 30);
-    memcpy(writeBuf + 30, valueType, 30);
-    memcpy(writeBuf + 60, hasTime, 1);
-    memcpy(writeBuf + 61, pathCode, 10);
-    memcpy(readBuf + len, writeBuf, 71);
+    memcpy(writeBuf, valueNmae, SCHEMA_VARIABLENAME_LENGTH);
+    memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH, valueType, SCHEMA_DATATYPE_LENGTH);
+    memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH, hasTime, SCHEMA_HASTIME_LENGTH);
+    memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH, pathCode, SCHEMA_PATHCODE_LENGTH);
+    memcpy(readBuf + len, writeBuf, SCHEMA_SINGLE_NODE_LENGTH);
 
     //创建一个新的模板文件,根据当前已存在模板数量进行编号
     long fp;
@@ -227,7 +227,7 @@ int DB_AddNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
     err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
-        err = DB_Write(fp, readBuf, len + 71);
+        err = DB_Write(fp, readBuf, len + SCHEMA_SINGLE_NODE_LENGTH);
 
         if (err == 0)
         {
@@ -265,8 +265,8 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
     //检查路径编码输入是否合法
     if (TreeParams->pathCode == NULL)
         return StatusCode::PATHCODE_CHECK_ERROR;
-    char inputPathCode[10] = {0};
-    memcpy(inputPathCode, TreeParams->pathCode, 10);
+    char inputPathCode[SCHEMA_PATHCODE_LENGTH] = {0};
+    memcpy(inputPathCode, TreeParams->pathCode, SCHEMA_PATHCODE_LENGTH);
     err = checkInputPathcode(inputPathCode);
     if (err != 0)
         return StatusCode::PATHCODE_CHECK_ERROR;
@@ -290,35 +290,35 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
     long len;
     DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
     //模板每条记录默认71字节，其中30字节变量名，30字节类型，10字节编码，1字节是否带时间戳
-    char readBuf[len + 71];
+    char readBuf[len + SCHEMA_SINGLE_NODE_LENGTH];
     long readbuf_pos = 0;
     DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
 
-    for (long i = 0; i < len / 71; i++) //寻找是否有相同的变量名或者编码
+    for (long i = 0; i < len / SCHEMA_SINGLE_NODE_LENGTH; i++) //寻找是否有相同的变量名或者编码
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(TreeParams->valueName, existValueName) == 0)
         {
             cout << "存在相同的变量名" << endl;
             return StatusCode::VARIABLE_NAME_EXIST;
         }
-        readbuf_pos += 61;
+        readbuf_pos += SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH;
 
-        char existPathCode[10];
-        memcpy(existPathCode, readBuf + readbuf_pos, 10);
+        char existPathCode[SCHEMA_PATHCODE_LENGTH];
+        memcpy(existPathCode, readBuf + readbuf_pos, SCHEMA_PATHCODE_LENGTH);
         int j = 0;
-        for (j = 0; j < 10; j++)
+        for (j = 0; j < SCHEMA_PATHCODE_LENGTH; j++)
         {
             if (TreeParams->pathCode[j] != existPathCode[j])
                 break;
         }
-        if (j == 10)
+        if (j == SCHEMA_PATHCODE_LENGTH)
         {
             cout << "存在相同的编码" << endl;
             return StatusCode::PATHCODE_EXIST;
         }
-        readbuf_pos += 10;
+        readbuf_pos += SCHEMA_PATHCODE_LENGTH;
     }
 
     //检查数据类型是否合法
@@ -357,7 +357,7 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
         return StatusCode::HASTIME_ERROR;
     }
 
-    char valueNmae[30], hasTime[1], pathCode[10], valueType[30]; //先初始化为0
+    char valueNmae[SCHEMA_VARIABLENAME_LENGTH], hasTime[SCHEMA_HASTIME_LENGTH], pathCode[SCHEMA_PATHCODE_LENGTH], valueType[SCHEMA_DATATYPE_LENGTH]; //先初始化为0
     memset(valueNmae, 0, sizeof(valueNmae));
     memset(valueType, 0, sizeof(valueType));
     memset(pathCode, 0, sizeof(pathCode));
@@ -422,14 +422,14 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
 
     strcpy(valueNmae, TreeParams->valueName);
     hasTime[0] = (char)TreeParams->hasTime;
-    memcpy(pathCode, TreeParams->pathCode, 10);
+    memcpy(pathCode, TreeParams->pathCode, SCHEMA_PATHCODE_LENGTH);
 
-    char writeBuf[71]; //将所有参数传入writeBuf中，已追加写的方式写入已有模板文件中
-    memcpy(writeBuf, valueNmae, 30);
-    memcpy(writeBuf + 30, valueType, 30);
-    memcpy(writeBuf + 60, hasTime, 1);
-    memcpy(writeBuf + 61, pathCode, 10);
-    memcpy(readBuf + len, writeBuf, 71);
+    char writeBuf[SCHEMA_SINGLE_NODE_LENGTH]; //将所有参数传入writeBuf中，已追加写的方式写入已有模板文件中
+    memcpy(writeBuf, valueNmae, SCHEMA_VARIABLENAME_LENGTH);
+    memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH, valueType, SCHEMA_DATATYPE_LENGTH);
+    memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH, hasTime, SCHEMA_HASTIME_LENGTH);
+    memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH, pathCode, SCHEMA_PATHCODE_LENGTH);
+    memcpy(readBuf + len, writeBuf, SCHEMA_SINGLE_NODE_LENGTH);
 
     long fp;
     char mode[3] = {'w', 'b', '+'};
@@ -463,7 +463,7 @@ int DB_AddNodeToSchema(struct DB_TreeNodeParams *TreeParams)
     err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
-        err = DB_Write(fp, readBuf, len + 71);
+        err = DB_Write(fp, readBuf, len + SCHEMA_SINGLE_NODE_LENGTH);
 
         if (err == 0)
         {
@@ -521,17 +521,17 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
     long readbuf_pos = 0;
     DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
 
-    long pos = -1;                      //用于定位是修改模板的第几条
-    for (long i = 0; i < len / 71; i++) //寻找是否有相同变量名
+    long pos = -1;                                             //用于定位是修改模板的第几条
+    for (long i = 0; i < len / SCHEMA_SINGLE_NODE_LENGTH; i++) //寻找是否有相同变量名
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(TreeParams->valueName, existValueName) == 0)
         {
             pos = i; //记录这条记录的位置
             break;
         }
-        readbuf_pos += 71;
+        readbuf_pos += SCHEMA_SINGLE_NODE_LENGTH;
     }
     if (pos == -1)
     {
@@ -600,46 +600,46 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
     }
 
     //如果编码为空，则保持原状态，否则使用新编码，并检查编码是否合法
-    char inputPathCode[10] = {0};
+    char inputPathCode[SCHEMA_PATHCODE_LENGTH] = {0};
     if (newTreeParams->pathCode == NULL)
     {
-        memcpy(inputPathCode, readBuf + 71 * pos + 61, 10);
+        memcpy(inputPathCode, readBuf + SCHEMA_SINGLE_NODE_LENGTH * pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH, SCHEMA_PATHCODE_LENGTH);
     }
     else
-        memcpy(inputPathCode, newTreeParams->pathCode, 10);
+        memcpy(inputPathCode, newTreeParams->pathCode, SCHEMA_PATHCODE_LENGTH);
     err = checkInputPathcode(inputPathCode);
     if (err != 0)
         return StatusCode::PATHCODE_CHECK_ERROR;
 
     readbuf_pos = 0;
-    for (long i = 0; i < len / 71; i++) //寻找模板是否有与更新参数相同的变量名或者编码
+    for (long i = 0; i < len / SCHEMA_SINGLE_NODE_LENGTH; i++) //寻找模板是否有与更新参数相同的变量名或者编码
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(newTreeParams->valueName, existValueName) == 0 && i != pos)
         {
             cout << "更新参数存在模板已有的变量名" << endl;
             return StatusCode::VARIABLE_NAME_EXIST;
         }
-        readbuf_pos += 61;
+        readbuf_pos += SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH;
 
-        char existPathCode[10];
-        memcpy(existPathCode, readBuf + readbuf_pos, 10);
+        char existPathCode[SCHEMA_PATHCODE_LENGTH];
+        memcpy(existPathCode, readBuf + readbuf_pos, SCHEMA_PATHCODE_LENGTH);
         int j = 0;
-        for (j = 0; j < 10; j++)
+        for (j = 0; j < SCHEMA_PATHCODE_LENGTH; j++)
         {
             if (inputPathCode[j] != existPathCode[j])
                 break;
         }
-        if (j == 10 && i != pos)
+        if (j == SCHEMA_PATHCODE_LENGTH && i != pos)
         {
             cout << "更新参数存在模板已有的编码" << endl;
             return StatusCode::PATHCODE_EXIST;
         }
-        readbuf_pos += 10;
+        readbuf_pos += SCHEMA_PATHCODE_LENGTH;
     }
 
-    char valueNmae[30], hasTime[1], pathCode[10], valueType[30]; //先初始化为0
+    char valueNmae[SCHEMA_VARIABLENAME_LENGTH], hasTime[SCHEMA_HASTIME_LENGTH], pathCode[SCHEMA_PATHCODE_LENGTH], valueType[SCHEMA_DATATYPE_LENGTH]; //先初始化为0
     memset(valueNmae, 0, sizeof(valueNmae));
     memset(valueType, 0, sizeof(valueType));
     memset(pathCode, 0, sizeof(pathCode));
@@ -703,16 +703,16 @@ int DB_UpdateNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams, struct 
 
     strcpy(valueNmae, newTreeParams->valueName);
     if (newTreeParams->hasTime == -1)
-        hasTime[0] = readBuf[71 * pos + 60];
+        hasTime[0] = readBuf[SCHEMA_SINGLE_NODE_LENGTH * pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH];
     else
         hasTime[0] = (char)newTreeParams->hasTime;
-    memcpy(pathCode, inputPathCode, 10);
+    memcpy(pathCode, inputPathCode, SCHEMA_PATHCODE_LENGTH);
 
     //将所有参数传入readBuf中，以覆盖写的方式写入已有模板文件中
-    memcpy(readBuf + 71 * pos, valueNmae, 30);
-    memcpy(readBuf + 71 * pos + 30, valueType, 30);
-    memcpy(readBuf + 71 * pos + 60, hasTime, 1);
-    memcpy(readBuf + 71 * pos + 61, pathCode, 10);
+    memcpy(readBuf + SCHEMA_SINGLE_NODE_LENGTH * pos, valueNmae, SCHEMA_VARIABLENAME_LENGTH);
+    memcpy(readBuf + SCHEMA_SINGLE_NODE_LENGTH * pos + SCHEMA_VARIABLENAME_LENGTH, valueType, SCHEMA_DATATYPE_LENGTH);
+    memcpy(readBuf + SCHEMA_SINGLE_NODE_LENGTH * pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH, hasTime, SCHEMA_HASTIME_LENGTH);
+    memcpy(readBuf + SCHEMA_SINGLE_NODE_LENGTH * pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH, pathCode, SCHEMA_PATHCODE_LENGTH);
 
     //创建一个新的.tem文件，根据当前已存在的模板数量进行编号
     long fp;
@@ -797,17 +797,17 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
     long readbuf_pos = 0;
     DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
 
-    long pos = -1;                      //用于定位是修改模板的第几条
-    for (long i = 0; i < len / 71; i++) //寻找是否有相同变量名
+    long pos = -1;                                             //用于定位是修改模板的第几条
+    for (long i = 0; i < len / SCHEMA_SINGLE_NODE_LENGTH; i++) //寻找是否有相同变量名
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(TreeParams->valueName, existValueName) == 0)
         {
             pos = i; //记录这条记录的位置
             break;
         }
-        readbuf_pos += 71;
+        readbuf_pos += SCHEMA_SINGLE_NODE_LENGTH;
     }
     if (pos == -1)
     {
@@ -876,46 +876,46 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
     }
 
     //如果编码为空，则保持原状态，否则使用新编码，并检查编码是否合法
-    char inputPathCode[10] = {0};
+    char inputPathCode[SCHEMA_PATHCODE_LENGTH] = {0};
     if (newTreeParams->pathCode == NULL)
     {
-        memcpy(inputPathCode, readBuf + 71 * pos + 61, 10);
+        memcpy(inputPathCode, readBuf + SCHEMA_SINGLE_NODE_LENGTH * pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH, SCHEMA_PATHCODE_LENGTH);
     }
     else
-        memcpy(inputPathCode, newTreeParams->pathCode, 10);
+        memcpy(inputPathCode, newTreeParams->pathCode, SCHEMA_PATHCODE_LENGTH);
     err = checkInputPathcode(inputPathCode);
     if (err != 0)
         return StatusCode::PATHCODE_CHECK_ERROR;
 
     readbuf_pos = 0;
-    for (long i = 0; i < len / 71; i++) //寻找模板是否有与更新参数相同的变量名或者编码
+    for (long i = 0; i < len / SCHEMA_SINGLE_NODE_LENGTH; i++) //寻找模板是否有与更新参数相同的变量名或者编码
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(newTreeParams->valueName, existValueName) == 0 && i != pos)
         {
             cout << "更新参数存在模板已有的变量名" << endl;
             return StatusCode::VARIABLE_NAME_EXIST;
         }
-        readbuf_pos += 61;
+        readbuf_pos += SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH;
 
-        char existPathCode[10];
-        memcpy(existPathCode, readBuf + readbuf_pos, 10);
+        char existPathCode[SCHEMA_PATHCODE_LENGTH];
+        memcpy(existPathCode, readBuf + readbuf_pos, SCHEMA_PATHCODE_LENGTH);
         int j = 0;
-        for (j = 0; j < 10; j++)
+        for (j = 0; j < SCHEMA_PATHCODE_LENGTH; j++)
         {
             if (inputPathCode[j] != existPathCode[j])
                 break;
         }
-        if (j == 10 && i != pos)
+        if (j == SCHEMA_PATHCODE_LENGTH && i != pos)
         {
             cout << "更新参数存在模板已有的编码" << endl;
             return StatusCode::PATHCODE_EXIST;
         }
-        readbuf_pos += 10;
+        readbuf_pos += SCHEMA_PATHCODE_LENGTH;
     }
 
-    char valueNmae[30], hasTime[1], pathCode[10], valueType[30]; //先初始化为0
+    char valueNmae[SCHEMA_VARIABLENAME_LENGTH], hasTime[SCHEMA_HASTIME_LENGTH], pathCode[SCHEMA_PATHCODE_LENGTH], valueType[SCHEMA_DATATYPE_LENGTH]; //先初始化为0
     memset(valueNmae, 0, sizeof(valueNmae));
     memset(valueType, 0, sizeof(valueType));
     memset(pathCode, 0, sizeof(pathCode));
@@ -979,16 +979,16 @@ int DB_UpdateNodeToSchema(struct DB_TreeNodeParams *TreeParams, struct DB_TreeNo
 
     strcpy(valueNmae, newTreeParams->valueName);
     if (newTreeParams->hasTime == -1)
-        hasTime[0] = readBuf[71 * pos + 60];
+        hasTime[0] = readBuf[SCHEMA_SINGLE_NODE_LENGTH * pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH];
     else
         hasTime[0] = (char)newTreeParams->hasTime;
-    memcpy(pathCode, inputPathCode, 10);
+    memcpy(pathCode, inputPathCode, SCHEMA_PATHCODE_LENGTH);
 
     //将所有参数传入readBuf中，以覆盖写的方式写入已有模板文件中
-    memcpy(readBuf + 71 * pos, valueNmae, 30);
-    memcpy(readBuf + 71 * pos + 30, valueType, 30);
-    memcpy(readBuf + 71 * pos + 60, hasTime, 1);
-    memcpy(readBuf + 71 * pos + 61, pathCode, 10);
+    memcpy(readBuf + SCHEMA_SINGLE_NODE_LENGTH * pos, valueNmae, SCHEMA_VARIABLENAME_LENGTH);
+    memcpy(readBuf + SCHEMA_SINGLE_NODE_LENGTH * pos + SCHEMA_VARIABLENAME_LENGTH, valueType, SCHEMA_DATATYPE_LENGTH);
+    memcpy(readBuf + SCHEMA_SINGLE_NODE_LENGTH * pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH, hasTime, SCHEMA_HASTIME_LENGTH);
+    memcpy(readBuf + SCHEMA_SINGLE_NODE_LENGTH * pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH, pathCode, SCHEMA_PATHCODE_LENGTH);
 
     //创建一个新的文件夹来存放修改后的模板
     long fp;
@@ -1061,17 +1061,17 @@ int DB_DeleteNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
     long readbuf_pos = 0;
     DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
 
-    long pos = -1;                      //用于定位是修改模板的第几条
-    for (long i = 0; i < len / 71; i++) //寻找是否有相同变量名
+    long pos = -1;                                             //用于定位是修改模板的第几条
+    for (long i = 0; i < len / SCHEMA_SINGLE_NODE_LENGTH; i++) //寻找是否有相同变量名
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(TreeParams->valueName, existValueName) == 0)
         {
             pos = i; //记录这条记录的位置
             break;
         }
-        readbuf_pos += 71;
+        readbuf_pos += SCHEMA_SINGLE_NODE_LENGTH;
     }
     if (pos == -1)
     {
@@ -1079,9 +1079,9 @@ int DB_DeleteNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
         return StatusCode::UNKNOWN_VARIABLE_NAME;
     }
 
-    char writeBuf[len - 71];
-    memcpy(writeBuf, readBuf, pos * 71);                                       //拷贝要被删除的记录之前的记录
-    memcpy(writeBuf + pos * 71, readBuf + pos * 71 + 71, len - pos * 71 - 71); //拷贝要被删除的记录之后的记录
+    char writeBuf[len - SCHEMA_SINGLE_NODE_LENGTH];
+    memcpy(writeBuf, readBuf, pos * SCHEMA_SINGLE_NODE_LENGTH);                                                                                                                                   //拷贝要被删除的记录之前的记录
+    memcpy(writeBuf + pos * SCHEMA_SINGLE_NODE_LENGTH, readBuf + pos * SCHEMA_SINGLE_NODE_LENGTH + SCHEMA_SINGLE_NODE_LENGTH, len - pos * SCHEMA_SINGLE_NODE_LENGTH - SCHEMA_SINGLE_NODE_LENGTH); //拷贝要被删除的记录之后的记录
 
     //创建新的.tem文件，根据当前已存在的模板文件进行编号
     long fp;
@@ -1096,8 +1096,8 @@ int DB_DeleteNodeToSchema_MultiTem(struct DB_TreeNodeParams *TreeParams)
     err = DB_Open(const_cast<char *>(temPath.c_str()), mode, &fp);
     if (err == 0)
     {
-        if (len - 71 != 0)
-            err = DB_Write(fp, writeBuf, len - 71);
+        if (len - SCHEMA_SINGLE_NODE_LENGTH != 0)
+            err = DB_Write(fp, writeBuf, len - SCHEMA_SINGLE_NODE_LENGTH);
 
         if (err == 0)
         {
@@ -1145,17 +1145,17 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
     long readbuf_pos = 0;
     DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
 
-    long pos = -1;                      //用于定位是修改模板的第几条
-    for (long i = 0; i < len / 71; i++) //寻找是否有相同变量名
+    long pos = -1;                                             //用于定位是修改模板的第几条
+    for (long i = 0; i < len / SCHEMA_SINGLE_NODE_LENGTH; i++) //寻找是否有相同变量名
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(TreeParams->valueName, existValueName) == 0)
         {
             pos = i; //记录这条记录的位置
             break;
         }
-        readbuf_pos += 71;
+        readbuf_pos += SCHEMA_SINGLE_NODE_LENGTH;
     }
     if (pos == -1)
     {
@@ -1163,9 +1163,9 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
         return StatusCode::UNKNOWN_VARIABLE_NAME;
     }
 
-    char writeBuf[len - 71];
-    memcpy(writeBuf, readBuf, pos * 71);                                       //拷贝要被删除的记录之前的记录
-    memcpy(writeBuf + pos * 71, readBuf + pos * 71 + 71, len - pos * 71 - 71); //拷贝要被删除的记录之后的记录
+    char writeBuf[len - SCHEMA_SINGLE_NODE_LENGTH];
+    memcpy(writeBuf, readBuf, pos * SCHEMA_SINGLE_NODE_LENGTH);                                                                                                                                   //拷贝要被删除的记录之前的记录
+    memcpy(writeBuf + pos * SCHEMA_SINGLE_NODE_LENGTH, readBuf + pos * SCHEMA_SINGLE_NODE_LENGTH + SCHEMA_SINGLE_NODE_LENGTH, len - pos * SCHEMA_SINGLE_NODE_LENGTH - SCHEMA_SINGLE_NODE_LENGTH); //拷贝要被删除的记录之后的记录
 
     long fp;
     if (TreeParams->newPath == NULL)
@@ -1199,7 +1199,7 @@ int DB_DeleteNodeToSchema(struct DB_TreeNodeParams *TreeParams)
     if (err == 0)
     {
         if (len - 71 != 0)
-            err = DB_Write(fp, writeBuf, len - 71);
+            err = DB_Write(fp, writeBuf, len - SCHEMA_SINGLE_NODE_LENGTH);
 
         if (err == 0)
         {
@@ -1319,28 +1319,30 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
 
     long len;
     DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
-    char readBuf[len + 80 + 15 * ZipParams->arrayLen];
+    char readBuf[len + SCHEMA_SINGLE_ZIPNODE_LENGTH + (SCHEMA_MAXVALUE_LENGTH + SCHEMA_MINVALUE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH) * ZipParams->arrayLen];
     long readbuf_pos = 0;
     DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
     DataTypeConverter converter;
 
     for (long i = 0; i < CurrentZipTemplate.schemas.size(); i++) //寻找是否有相同的变量名
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(ZipParams->valueName, existValueName) == 0)
         {
             cout << "存在相同的变量名" << endl;
             return StatusCode::VARIABLE_NAME_EXIST;
         }
         if (CurrentZipTemplate.schemas[i].second.isArray)
-            readbuf_pos += 65 + CurrentZipTemplate.schemas[i].second.arrayLen * 5 * 3;
+            readbuf_pos += SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + CurrentZipTemplate.schemas[i].second.arrayLen * SCHEMA_STANDARDVALUE_LENGTH * 3;
         else
-            readbuf_pos += 80;
+            readbuf_pos += SCHEMA_SINGLE_ZIPNODE_LENGTH;
     }
 
     //先初始化为0
-    char valueNmae[30], valueType[30], standardValue[5 * ZipParams->arrayLen + 5], maxValue[5 * ZipParams->arrayLen + 5], minValue[5 * ZipParams->arrayLen + 5], hasTime[1], timeseriesSpan[4];
+    char valueNmae[SCHEMA_VARIABLENAME_LENGTH], valueType[SCHEMA_DATATYPE_LENGTH],
+        standardValue[SCHEMA_STANDARDVALUE_LENGTH * ZipParams->arrayLen + SCHEMA_STANDARDVALUE_LENGTH], maxValue[SCHEMA_MAXVALUE_LENGTH * ZipParams->arrayLen + SCHEMA_MAXVALUE_LENGTH],
+        minValue[SCHEMA_MINVALUE_LENGTH * ZipParams->arrayLen + SCHEMA_MINVALUE_LENGTH], hasTime[SCHEMA_HASTIME_LENGTH], timeseriesSpan[SCHEMA_TIMESERIES_SPAN_LENGTH];
     memset(valueNmae, 0, sizeof(valueNmae));
     memset(valueType, 0, sizeof(valueType));
     memset(standardValue, 0, sizeof(standardValue));
@@ -1461,7 +1463,7 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
                 mi[0] = miValue;
                 memcpy(minValue + valuePos, mi, 1);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -1514,7 +1516,7 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
                 mi[0] = miValue;
                 memcpy(minValue + valuePos, mi, 1);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -1567,7 +1569,7 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
                 converter.ToUInt16Buff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 2);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -1620,7 +1622,7 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
                 converter.ToUInt32Buff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 4);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -1673,7 +1675,7 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
                 mi[0] = miValue;
                 memcpy(minValue + valuePos, mi, 1);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -1726,7 +1728,7 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
                 converter.ToInt16Buff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 2);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -1779,7 +1781,7 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
                 converter.ToInt32Buff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 4);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -1832,7 +1834,7 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
                 converter.ToFloatBuff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 4);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -1859,28 +1861,28 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
     else
         return StatusCode::UNKNOWN_TYPE;
 
-    char writeBuf[80 + 15 * ZipParams->arrayLen]; //将所有参数传入writeBuf中，已追加写的方式写入已有模板文件中
+    char writeBuf[SCHEMA_SINGLE_ZIPNODE_LENGTH + (SCHEMA_MAXVALUE_LENGTH * 3) * ZipParams->arrayLen]; //将所有参数传入writeBuf中，已追加写的方式写入已有模板文件中
     if (ZipParams->isArrary == 0)
     {
-        memcpy(writeBuf, valueNmae, 30);
-        memcpy(writeBuf + 30, valueType, 30);
-        memcpy(writeBuf + 60, standardValue, 5);
-        memcpy(writeBuf + 65, maxValue, 5);
-        memcpy(writeBuf + 70, minValue, 5);
-        memcpy(writeBuf + 75, hasTime, 1);
-        memcpy(writeBuf + 76, timeseriesSpan, 4);
+        memcpy(writeBuf, valueNmae, SCHEMA_VARIABLENAME_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH, valueType, SCHEMA_DATATYPE_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH, standardValue, SCHEMA_STANDARDVALUE_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH, maxValue, SCHEMA_MAXVALUE_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH + SCHEMA_MAXVALUE_LENGTH, minValue, SCHEMA_MINVALUE_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH + SCHEMA_MAXVALUE_LENGTH + SCHEMA_MINVALUE_LENGTH, hasTime, SCHEMA_HASTIME_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH + SCHEMA_MAXVALUE_LENGTH + SCHEMA_MINVALUE_LENGTH + SCHEMA_HASTIME_LENGTH, timeseriesSpan, SCHEMA_TIMESERIES_SPAN_LENGTH);
         memcpy(readBuf + len, writeBuf, 80);
     }
     else
     {
-        memcpy(writeBuf, valueNmae, 30);
-        memcpy(writeBuf + 30, valueType, 30);
-        memcpy(writeBuf + 60, standardValue, 5 * ZipParams->arrayLen);
-        memcpy(writeBuf + 60 + 5 * ZipParams->arrayLen, maxValue, 5 * ZipParams->arrayLen);
-        memcpy(writeBuf + 60 + 10 * ZipParams->arrayLen, minValue, 5 * ZipParams->arrayLen);
-        memcpy(writeBuf + 60 + 15 * ZipParams->arrayLen, hasTime, 1);
-        memcpy(writeBuf + 61 + 15 * ZipParams->arrayLen, timeseriesSpan, 4);
-        memcpy(readBuf + len, writeBuf, 65 + 15 * ZipParams->arrayLen);
+        memcpy(writeBuf, valueNmae, SCHEMA_VARIABLENAME_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH, valueType, SCHEMA_DATATYPE_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH, standardValue, SCHEMA_STANDARDVALUE_LENGTH * ZipParams->arrayLen);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * ZipParams->arrayLen, maxValue, SCHEMA_MAXVALUE_LENGTH * ZipParams->arrayLen);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * 2 * ZipParams->arrayLen, minValue, SCHEMA_MINVALUE_LENGTH * ZipParams->arrayLen);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * 3 * ZipParams->arrayLen, hasTime, SCHEMA_HASTIME_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * 3 * ZipParams->arrayLen, timeseriesSpan, SCHEMA_TIMESERIES_SPAN_LENGTH);
+        memcpy(readBuf + len, writeBuf, SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * 3 * ZipParams->arrayLen);
     }
 
     //创建一个新的.ziptem文件，根据当前已存在的压缩模板数量进行编号
@@ -1897,9 +1899,9 @@ int DB_AddNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
     if (err == 0)
     {
         if (ZipParams->isArrary == 0)
-            err = DB_Write(fp, readBuf, len + 80);
+            err = DB_Write(fp, readBuf, len + SCHEMA_SINGLE_ZIPNODE_LENGTH);
         else
-            err = DB_Write(fp, readBuf, len + 65 + 15 * ZipParams->arrayLen);
+            err = DB_Write(fp, readBuf, len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * 3 * ZipParams->arrayLen);
 
         if (err == 0)
         {
@@ -2033,28 +2035,30 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
 
     long len;
     DB_GetFileLengthByPath(const_cast<char *>(temPath.c_str()), &len);
-    char readBuf[len + 80 + 15 * ZipParams->arrayLen];
+    char readBuf[len + SCHEMA_SINGLE_ZIPNODE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * 3 * ZipParams->arrayLen];
     long readbuf_pos = 0;
     DB_OpenAndRead(const_cast<char *>(temPath.c_str()), readBuf);
     DataTypeConverter converter;
 
     for (long i = 0; i < CurrentZipTemplate.schemas.size(); i++) //寻找是否有相同的变量名
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(ZipParams->valueName, existValueName) == 0)
         {
             cout << "存在相同的变量名" << endl;
             return StatusCode::VARIABLE_NAME_EXIST;
         }
         if (CurrentZipTemplate.schemas[i].second.isArray)
-            readbuf_pos += 65 + CurrentZipTemplate.schemas[i].second.arrayLen * 5 * 3;
+            readbuf_pos += SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + CurrentZipTemplate.schemas[i].second.arrayLen * SCHEMA_STANDARDVALUE_LENGTH * 3;
         else
-            readbuf_pos += 80;
+            readbuf_pos += SCHEMA_SINGLE_ZIPNODE_LENGTH;
     }
 
     //先初始化为0
-    char valueNmae[30], valueType[30], standardValue[5 * ZipParams->arrayLen + 5], maxValue[5 * ZipParams->arrayLen + 5], minValue[5 * ZipParams->arrayLen + 5], hasTime[1], timeseriesSpan[4];
+    char valueNmae[SCHEMA_VARIABLENAME_LENGTH], valueType[SCHEMA_DATATYPE_LENGTH], standardValue[SCHEMA_STANDARDVALUE_LENGTH * ZipParams->arrayLen + SCHEMA_STANDARDVALUE_LENGTH],
+        maxValue[SCHEMA_MAXVALUE_LENGTH * ZipParams->arrayLen + SCHEMA_MAXVALUE_LENGTH], minValue[SCHEMA_MINVALUE_LENGTH * ZipParams->arrayLen + SCHEMA_MINVALUE_LENGTH],
+        hasTime[SCHEMA_HASTIME_LENGTH], timeseriesSpan[SCHEMA_TIMESERIES_SPAN_LENGTH];
     memset(valueNmae, 0, sizeof(valueNmae));
     memset(valueType, 0, sizeof(valueType));
     memset(standardValue, 0, sizeof(standardValue));
@@ -2175,7 +2179,7 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
                 mi[0] = miValue;
                 memcpy(minValue + valuePos, mi, 1);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -2228,7 +2232,7 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
                 mi[0] = miValue;
                 memcpy(minValue + valuePos, mi, 1);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -2281,7 +2285,7 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
                 converter.ToUInt16Buff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 2);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -2334,7 +2338,7 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
                 converter.ToUInt32Buff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 4);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -2387,7 +2391,7 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
                 mi[0] = miValue;
                 memcpy(minValue + valuePos, mi, 1);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -2440,7 +2444,7 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
                 converter.ToInt16Buff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 2);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -2493,7 +2497,7 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
                 converter.ToInt32Buff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 4);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -2546,7 +2550,7 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
                 converter.ToFloatBuff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 4);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -2573,28 +2577,28 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
     else
         return StatusCode::UNKNOWN_TYPE;
 
-    char writeBuf[80 + 15 * ZipParams->arrayLen]; //将所有参数传入writeBuf中，已追加写的方式写入已有模板文件中
+    char writeBuf[SCHEMA_SINGLE_ZIPNODE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * 3 * ZipParams->arrayLen]; //将所有参数传入writeBuf中，已追加写的方式写入已有模板文件中
     if (ZipParams->isArrary == 0)
     {
-        memcpy(writeBuf, valueNmae, 30);
-        memcpy(writeBuf + 30, valueType, 30);
-        memcpy(writeBuf + 60, standardValue, 5);
-        memcpy(writeBuf + 65, maxValue, 5);
-        memcpy(writeBuf + 70, minValue, 5);
-        memcpy(writeBuf + 75, hasTime, 1);
-        memcpy(writeBuf + 76, timeseriesSpan, 4);
-        memcpy(readBuf + len, writeBuf, 80);
+        memcpy(writeBuf, valueNmae, SCHEMA_VARIABLENAME_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH, valueType, SCHEMA_DATATYPE_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH, standardValue, SCHEMA_STANDARDVALUE_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH, maxValue, SCHEMA_MAXVALUE_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH + SCHEMA_MAXVALUE_LENGTH, minValue, SCHEMA_MINVALUE_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH + SCHEMA_MAXVALUE_LENGTH + SCHEMA_MINVALUE_LENGTH, hasTime, SCHEMA_HASTIME_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH + SCHEMA_MAXVALUE_LENGTH + SCHEMA_MINVALUE_LENGTH + SCHEMA_HASTIME_LENGTH, timeseriesSpan, SCHEMA_TIMESERIES_SPAN_LENGTH);
+        memcpy(readBuf + len, writeBuf, SCHEMA_SINGLE_ZIPNODE_LENGTH);
     }
     else
     {
-        memcpy(writeBuf, valueNmae, 30);
-        memcpy(writeBuf + 30, valueType, 30);
-        memcpy(writeBuf + 60, standardValue, 5 * ZipParams->arrayLen);
-        memcpy(writeBuf + 60 + 5 * ZipParams->arrayLen, maxValue, 5 * ZipParams->arrayLen);
-        memcpy(writeBuf + 60 + 10 * ZipParams->arrayLen, minValue, 5 * ZipParams->arrayLen);
-        memcpy(writeBuf + 60 + 15 * ZipParams->arrayLen, hasTime, 1);
-        memcpy(writeBuf + 61 + 15 * ZipParams->arrayLen, timeseriesSpan, 4);
-        memcpy(readBuf + len, writeBuf, 65 + 15 * ZipParams->arrayLen);
+        memcpy(writeBuf, valueNmae, SCHEMA_VARIABLENAME_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH, valueType, SCHEMA_DATATYPE_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH, standardValue, SCHEMA_STANDARDVALUE_LENGTH * ZipParams->arrayLen);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * ZipParams->arrayLen, maxValue, SCHEMA_MAXVALUE_LENGTH * ZipParams->arrayLen);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * 2 * ZipParams->arrayLen, minValue, SCHEMA_MINVALUE_LENGTH * ZipParams->arrayLen);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * 3 * ZipParams->arrayLen, hasTime, SCHEMA_HASTIME_LENGTH);
+        memcpy(writeBuf + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * 3 * ZipParams->arrayLen, timeseriesSpan, SCHEMA_TIMESERIES_SPAN_LENGTH);
+        memcpy(readBuf + len, writeBuf, SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * 3 * ZipParams->arrayLen);
     }
 
     //创建一个新的.ziptem文件，根据当前已存在的压缩模板数量进行编号
@@ -2630,9 +2634,9 @@ int DB_AddNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
     if (err == 0)
     {
         if (ZipParams->isArrary == 0)
-            err = DB_Write(fp, readBuf, len + 80);
+            err = DB_Write(fp, readBuf, len + SCHEMA_SINGLE_ZIPNODE_LENGTH);
         else
-            err = DB_Write(fp, readBuf, len + 65 + 15 * ZipParams->arrayLen);
+            err = DB_Write(fp, readBuf, len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * 3 * ZipParams->arrayLen);
         if (err == 0)
         {
             err = DB_Close(fp);
@@ -2724,17 +2728,17 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
     long pos = -1;                                               //用于定位是修改模板的第几条
     for (long i = 0; i < CurrentZipTemplate.schemas.size(); i++) //寻找是否有相同变量名
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(ZipParams->valueName, existValueName) == 0)
         {
             pos = i; //记录这条记录的位置
             break;
         }
         if (CurrentZipTemplate.schemas[i].second.isArray)
-            readbuf_pos += 65 + 3 * 5 * CurrentZipTemplate.schemas[i].second.arrayLen;
+            readbuf_pos += SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[i].second.arrayLen;
         else
-            readbuf_pos += 80;
+            readbuf_pos += SCHEMA_SINGLE_ZIPNODE_LENGTH;
     }
     if (pos == -1)
     {
@@ -2747,13 +2751,13 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
     //用于最后定位被更新模板结点之后的节点的位置
     if (CurrentZipTemplate.schemas[pos].second.isArray)
     {
-        writeafter_pos = readbuf_pos + 65 + 15 * CurrentZipTemplate.schemas[pos].second.arrayLen;
-        writeafter_len = len - readbuf_pos - 65 - 15 * CurrentZipTemplate.schemas[pos].second.arrayLen;
+        writeafter_pos = readbuf_pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[pos].second.arrayLen;
+        writeafter_len = len - readbuf_pos - (SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH) - 3 * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[pos].second.arrayLen;
     }
     else
     {
-        writeafter_pos = readbuf_pos + 80;
-        writeafter_len = len - readbuf_pos - 80;
+        writeafter_pos = readbuf_pos + SCHEMA_SINGLE_ZIPNODE_LENGTH;
+        writeafter_len = len - readbuf_pos - SCHEMA_SINGLE_ZIPNODE_LENGTH;
     }
 
     //如果不是数组类型则将数组长度置为0
@@ -2794,14 +2798,14 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
         s_new = 1;
         if (newZipParams->isArrary == 0)
         {
-            newZipParams->standardValue = new char[10];
-            getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0, newZipParams->isArrary, newZipParams->arrayLen);
+            newZipParams->standardValue = new char[VALUE_STRING_LENGTH];
+            getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, MaxOrMin::STANDARD, newZipParams->isArrary, newZipParams->arrayLen);
         }
         else
         {
-            newZipParams->standardValue = new char[11 * newZipParams->arrayLen];
-            memset(newZipParams->standardValue, 0, sizeof(char) * 11 * newZipParams->arrayLen);
-            getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0, newZipParams->isArrary, newZipParams->arrayLen);
+            newZipParams->standardValue = new char[(VALUE_STRING_LENGTH + 1) * newZipParams->arrayLen];
+            memset(newZipParams->standardValue, 0, sizeof(char) * (VALUE_STRING_LENGTH + 1) * newZipParams->arrayLen);
+            getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, MaxOrMin::STANDARD, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }
     if (newZipParams->maxValue == NULL)
@@ -2809,14 +2813,14 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
         max_new = 1;
         if (newZipParams->isArrary == 0)
         {
-            newZipParams->maxValue = new char[10];
-            getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 1, newZipParams->isArrary, newZipParams->arrayLen);
+            newZipParams->maxValue = new char[VALUE_STRING_LENGTH];
+            getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, MaxOrMin::MAX, newZipParams->isArrary, newZipParams->arrayLen);
         }
         else
         {
-            newZipParams->maxValue = new char[11 * newZipParams->arrayLen];
-            memset(newZipParams->maxValue, 0, sizeof(char) * 11 * newZipParams->arrayLen);
-            getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 1, newZipParams->isArrary, newZipParams->arrayLen);
+            newZipParams->maxValue = new char[(VALUE_STRING_LENGTH + 1) * newZipParams->arrayLen];
+            memset(newZipParams->maxValue, 0, sizeof(char) * (VALUE_STRING_LENGTH + 1) * newZipParams->arrayLen);
+            getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, MaxOrMin::MAX, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }
     if (newZipParams->minValue == NULL)
@@ -2824,14 +2828,14 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
         min_new = 1;
         if (newZipParams->isArrary == 0)
         {
-            newZipParams->minValue = new char[10];
-            getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 2, newZipParams->isArrary, newZipParams->arrayLen);
+            newZipParams->minValue = new char[VALUE_STRING_LENGTH];
+            getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, MaxOrMin::MIN, newZipParams->isArrary, newZipParams->arrayLen);
         }
         else
         {
-            newZipParams->minValue = new char[11 * newZipParams->arrayLen];
-            memset(newZipParams->minValue, 0, sizeof(char) * 11 * newZipParams->arrayLen);
-            getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 2, newZipParams->isArrary, newZipParams->arrayLen);
+            newZipParams->minValue = new char[(VALUE_STRING_LENGTH + 1) * newZipParams->arrayLen];
+            memset(newZipParams->minValue, 0, sizeof(char) * (VALUE_STRING_LENGTH + 1) * newZipParams->arrayLen);
+            getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, MaxOrMin::MIN, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }
 
@@ -2870,20 +2874,22 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
     readbuf_pos = 0;
     for (long i = 0; i < CurrentZipTemplate.schemas.size(); i++) //寻找模板是否有与更新参数相同的变量名
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(newZipParams->valueName, existValueName) == 0 && i != pos)
         {
             cout << "更新参数存在模板已有的变量名" << endl;
             return StatusCode::VARIABLE_NAME_EXIST;
         }
         if (CurrentZipTemplate.schemas[i].second.isArray)
-            readbuf_pos += 65 + 3 * 5 * CurrentZipTemplate.schemas[i].second.arrayLen;
+            readbuf_pos += SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[i].second.arrayLen;
         else
-            readbuf_pos += 80;
+            readbuf_pos += SCHEMA_SINGLE_ZIPNODE_LENGTH;
     }
 
-    char valueNmae[30], valueType[30], standardValue[5 * newZipParams->arrayLen + 5], maxValue[5 * newZipParams->arrayLen + 5], minValue[5 * newZipParams->arrayLen + 5], hasTime[1], timeseriesSpan[4];
+    char valueNmae[SCHEMA_VARIABLENAME_LENGTH], valueType[SCHEMA_DATATYPE_LENGTH], standardValue[SCHEMA_STANDARDVALUE_LENGTH * newZipParams->arrayLen + SCHEMA_STANDARDVALUE_LENGTH],
+        maxValue[SCHEMA_MAXVALUE_LENGTH * newZipParams->arrayLen + SCHEMA_MAXVALUE_LENGTH], minValue[SCHEMA_MINVALUE_LENGTH * newZipParams->arrayLen + SCHEMA_MINVALUE_LENGTH],
+        hasTime[SCHEMA_HASTIME_LENGTH], timeseriesSpan[SCHEMA_TIMESERIES_SPAN_LENGTH];
     memset(valueNmae, 0, sizeof(valueNmae));
     memset(valueType, 0, sizeof(valueType));
     memset(standardValue, 0, sizeof(standardValue));
@@ -3004,7 +3010,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
                 mi[0] = miValue;
                 memcpy(minValue + valuePos, mi, 1);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -3057,7 +3063,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
                 mi[0] = miValue;
                 memcpy(minValue + valuePos, mi, 1);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -3110,7 +3116,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
                 converter.ToUInt16Buff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 2);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -3163,7 +3169,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
                 converter.ToUInt32Buff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 4);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -3216,7 +3222,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
                 mi[0] = miValue;
                 memcpy(minValue + valuePos, mi, 1);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -3269,7 +3275,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
                 converter.ToInt16Buff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 2);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -3322,7 +3328,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
                 converter.ToInt32Buff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 4);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -3375,7 +3381,7 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
                 converter.ToFloatBuff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 4);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -3402,35 +3408,35 @@ int DB_UpdateNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams, str
     else
         return StatusCode::UNKNOWN_TYPE;
 
-    char *writebuf = new char[len + newZipParams->arrayLen * 15];
+    char *writebuf = new char[len + newZipParams->arrayLen * 3 * SCHEMA_STANDARDVALUE_LENGTH];
     //将所有参数传入writeBuf中，已覆盖写的方式写入已有模板文件中
     memcpy(writebuf, readBuf, writefront_len);
-    memcpy(writebuf + writefront_len, valueNmae, 30);
-    memcpy(writebuf + writefront_len + 30, valueType, 30);
+    memcpy(writebuf + writefront_len, valueNmae, SCHEMA_VARIABLENAME_LENGTH);
+    memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH, valueType, SCHEMA_DATATYPE_LENGTH);
     if (newZipParams->isArrary == 0)
     {
-        memcpy(writebuf + writefront_len + 60, standardValue, 5);
-        memcpy(writebuf + writefront_len + 65, maxValue, 5);
-        memcpy(writebuf + writefront_len + 70, minValue, 5);
-        memcpy(writebuf + writefront_len + 75, hasTime, 1);
-        memcpy(writebuf + writefront_len + 76, timeseriesSpan, 4);
-        memcpy(writebuf + writefront_len + 80, readBuf + writeafter_pos, writeafter_len);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH, standardValue, SCHEMA_STANDARDVALUE_LENGTH);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH, maxValue, SCHEMA_MAXVALUE_LENGTH);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH + SCHEMA_MAXVALUE_LENGTH, minValue, SCHEMA_MINVALUE_LENGTH);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH + SCHEMA_MAXVALUE_LENGTH + SCHEMA_MINVALUE_LENGTH, hasTime, SCHEMA_HASTIME_LENGTH);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH + SCHEMA_MAXVALUE_LENGTH + SCHEMA_MINVALUE_LENGTH + SCHEMA_HASTIME_LENGTH, timeseriesSpan, SCHEMA_TIMESERIES_SPAN_LENGTH);
+        memcpy(writebuf + writefront_len + SCHEMA_SINGLE_ZIPNODE_LENGTH, readBuf + writeafter_pos, writeafter_len);
     }
     else
     {
-        memcpy(writebuf + writefront_len + 60, standardValue, 5 * newZipParams->arrayLen);
-        memcpy(writebuf + writefront_len + 60 + 5 * newZipParams->arrayLen, maxValue, 5 * newZipParams->arrayLen);
-        memcpy(writebuf + writefront_len + 60 + 10 * newZipParams->arrayLen, minValue, 5 * newZipParams->arrayLen);
-        memcpy(writebuf + writefront_len + 60 + 15 * newZipParams->arrayLen, hasTime, 1);
-        memcpy(writebuf + writefront_len + 61 + 15 * newZipParams->arrayLen, timeseriesSpan, 4);
-        memcpy(writebuf + writefront_len + 65 + 15 * newZipParams->arrayLen, readBuf + writeafter_pos, writeafter_len);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH, standardValue, SCHEMA_STANDARDVALUE_LENGTH * newZipParams->arrayLen);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * newZipParams->arrayLen, maxValue, SCHEMA_MAXVALUE_LENGTH * newZipParams->arrayLen);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + 2 * SCHEMA_STANDARDVALUE_LENGTH * newZipParams->arrayLen, minValue, SCHEMA_MINVALUE_LENGTH * newZipParams->arrayLen);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * newZipParams->arrayLen, hasTime, SCHEMA_HASTIME_LENGTH);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * newZipParams->arrayLen, timeseriesSpan, SCHEMA_TIMESERIES_SPAN_LENGTH);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * newZipParams->arrayLen, readBuf + writeafter_pos, writeafter_len);
     }
 
     long finalLength = 0;
     if (newZipParams->isArrary == 1)
-        finalLength = writefront_len + writeafter_len + 65 + 15 * newZipParams->arrayLen;
+        finalLength = writefront_len + writeafter_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * newZipParams->arrayLen;
     else
-        finalLength = writefront_len + writeafter_len + 80;
+        finalLength = writefront_len + writeafter_len + SCHEMA_SINGLE_ZIPNODE_LENGTH;
 
     //创建一个新的.ziptem文件，根据当前已存在的压缩模板数量进行编号
     long fp;
@@ -3556,17 +3562,17 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     long pos = -1;                                               //用于定位是修改模板的第几条
     for (long i = 0; i < CurrentZipTemplate.schemas.size(); i++) //寻找是否有相同变量名
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(ZipParams->valueName, existValueName) == 0)
         {
             pos = i; //记录这条记录的位置
             break;
         }
         if (CurrentZipTemplate.schemas[i].second.isArray)
-            readbuf_pos += 65 + 3 * 5 * CurrentZipTemplate.schemas[i].second.arrayLen;
+            readbuf_pos += SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[i].second.arrayLen;
         else
-            readbuf_pos += 80;
+            readbuf_pos += SCHEMA_SINGLE_ZIPNODE_LENGTH;
     }
     if (pos == -1)
     {
@@ -3579,13 +3585,13 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     //用于最后定位被更新模板结点之后的节点的位置
     if (CurrentZipTemplate.schemas[pos].second.isArray)
     {
-        writeafter_pos = readbuf_pos + 65 + 15 * CurrentZipTemplate.schemas[pos].second.arrayLen;
-        writeafter_len = len - readbuf_pos - 65 - 15 * CurrentZipTemplate.schemas[pos].second.arrayLen;
+        writeafter_pos = readbuf_pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[pos].second.arrayLen;
+        writeafter_len = len - readbuf_pos - (SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH) - 3 * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[pos].second.arrayLen;
     }
     else
     {
-        writeafter_pos = readbuf_pos + 80;
-        writeafter_len = len - readbuf_pos - 80;
+        writeafter_pos = readbuf_pos + SCHEMA_SINGLE_ZIPNODE_LENGTH;
+        writeafter_len = len - readbuf_pos - SCHEMA_SINGLE_ZIPNODE_LENGTH;
     }
 
     //如果不是数组类型则将数组长度置为0
@@ -3627,14 +3633,14 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
         s_new = 1;
         if (newZipParams->isArrary == 0)
         {
-            newZipParams->standardValue = new char[10];
-            getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0, newZipParams->isArrary, newZipParams->arrayLen);
+            newZipParams->standardValue = new char[VALUE_STRING_LENGTH];
+            getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, MaxOrMin::STANDARD, newZipParams->isArrary, newZipParams->arrayLen);
         }
         else
         {
-            newZipParams->standardValue = new char[11 * newZipParams->arrayLen];
-            memset(newZipParams->standardValue, 0, sizeof(char) * 11 * newZipParams->arrayLen);
-            getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 0, newZipParams->isArrary, newZipParams->arrayLen);
+            newZipParams->standardValue = new char[(VALUE_STRING_LENGTH + 1) * newZipParams->arrayLen];
+            memset(newZipParams->standardValue, 0, sizeof(char) * (VALUE_STRING_LENGTH + 1) * newZipParams->arrayLen);
+            getValueStringByValueType(newZipParams->standardValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, MaxOrMin::STANDARD, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }
     if (newZipParams->maxValue == NULL)
@@ -3642,14 +3648,14 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
         max_new = 1;
         if (newZipParams->isArrary == 0)
         {
-            newZipParams->maxValue = new char[10];
-            getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 1, newZipParams->isArrary, newZipParams->arrayLen);
+            newZipParams->maxValue = new char[VALUE_STRING_LENGTH];
+            getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, MaxOrMin::MAX, newZipParams->isArrary, newZipParams->arrayLen);
         }
         else
         {
-            newZipParams->maxValue = new char[11 * newZipParams->arrayLen];
-            memset(newZipParams->maxValue, 0, sizeof(char) * 11 * newZipParams->arrayLen);
-            getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 1, newZipParams->isArrary, newZipParams->arrayLen);
+            newZipParams->maxValue = new char[(VALUE_STRING_LENGTH + 1) * newZipParams->arrayLen];
+            memset(newZipParams->maxValue, 0, sizeof(char) * (VALUE_STRING_LENGTH + 1) * newZipParams->arrayLen);
+            getValueStringByValueType(newZipParams->maxValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, MaxOrMin::MAX, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }
     if (newZipParams->minValue == NULL)
@@ -3657,14 +3663,14 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
         min_new = 1;
         if (newZipParams->isArrary == 0)
         {
-            newZipParams->minValue = new char[10];
-            getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 2, newZipParams->isArrary, newZipParams->arrayLen);
+            newZipParams->minValue = new char[VALUE_STRING_LENGTH];
+            getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, MaxOrMin::MIN, newZipParams->isArrary, newZipParams->arrayLen);
         }
         else
         {
-            newZipParams->minValue = new char[11 * newZipParams->arrayLen];
-            memset(newZipParams->minValue, 0, sizeof(char) * 11 * newZipParams->arrayLen);
-            getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, 2, newZipParams->isArrary, newZipParams->arrayLen);
+            newZipParams->minValue = new char[(VALUE_STRING_LENGTH + 1) * newZipParams->arrayLen];
+            memset(newZipParams->minValue, 0, sizeof(char) * (VALUE_STRING_LENGTH + 1) * newZipParams->arrayLen);
+            getValueStringByValueType(newZipParams->minValue, CurrentZipTemplate.schemas[pos].second.valueType, pos, MaxOrMin::MIN, newZipParams->isArrary, newZipParams->arrayLen);
         }
     }
 
@@ -3703,20 +3709,22 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     readbuf_pos = 0;
     for (long i = 0; i < CurrentZipTemplate.schemas.size(); i++) //寻找模板是否有与更新参数相同的变量名
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(newZipParams->valueName, existValueName) == 0 && i != pos)
         {
             cout << "更新参数存在模板已有的变量名" << endl;
             return StatusCode::VARIABLE_NAME_EXIST;
         }
         if (CurrentZipTemplate.schemas[i].second.isArray)
-            readbuf_pos += 65 + 3 * 5 * CurrentZipTemplate.schemas[i].second.arrayLen;
+            readbuf_pos += SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[i].second.arrayLen;
         else
-            readbuf_pos += 80;
+            readbuf_pos += SCHEMA_SINGLE_ZIPNODE_LENGTH;
     }
 
-    char valueNmae[30], valueType[30], standardValue[5 * newZipParams->arrayLen + 5], maxValue[5 * newZipParams->arrayLen + 5], minValue[5 * newZipParams->arrayLen + 5], hasTime[1], timeseriesSpan[4];
+    char valueNmae[SCHEMA_VARIABLENAME_LENGTH], valueType[SCHEMA_DATATYPE_LENGTH], standardValue[SCHEMA_STANDARDVALUE_LENGTH * newZipParams->arrayLen + SCHEMA_STANDARDVALUE_LENGTH],
+        maxValue[SCHEMA_MAXVALUE_LENGTH * newZipParams->arrayLen + SCHEMA_MAXVALUE_LENGTH], minValue[SCHEMA_MINVALUE_LENGTH * newZipParams->arrayLen + SCHEMA_MINVALUE_LENGTH],
+        hasTime[SCHEMA_HASTIME_LENGTH], timeseriesSpan[SCHEMA_TIMESERIES_SPAN_LENGTH];
     memset(valueNmae, 0, sizeof(valueNmae));
     memset(valueType, 0, sizeof(valueType));
     memset(standardValue, 0, sizeof(standardValue));
@@ -3837,7 +3845,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
                 mi[0] = miValue;
                 memcpy(minValue + valuePos, mi, 1);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -3890,7 +3898,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
                 mi[0] = miValue;
                 memcpy(minValue + valuePos, mi, 1);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -3943,7 +3951,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
                 converter.ToUInt16Buff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 2);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -3996,7 +4004,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
                 converter.ToUInt32Buff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 4);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -4049,7 +4057,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
                 mi[0] = miValue;
                 memcpy(minValue + valuePos, mi, 1);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -4102,7 +4110,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
                 converter.ToInt16Buff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 2);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -4155,7 +4163,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
                 converter.ToInt32Buff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 4);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -4208,7 +4216,7 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
                 converter.ToFloatBuff_m(miValue, mi);
                 memcpy(minValue + valuePos, mi, 4);
 
-                valuePos += 5;
+                valuePos += SCHEMA_STANDARDVALUE_LENGTH;
             }
         }
     }
@@ -4235,35 +4243,35 @@ int DB_UpdateNodeToZipSchema(struct DB_ZipNodeParams *ZipParams, struct DB_ZipNo
     else
         return StatusCode::UNKNOWN_TYPE;
 
-    char *writebuf = new char[len + newZipParams->arrayLen * 15];
+    char *writebuf = new char[len + newZipParams->arrayLen * 3 * SCHEMA_STANDARDVALUE_LENGTH];
     //将所有参数传入writeBuf中，已覆盖写的方式写入已有模板文件中
     memcpy(writebuf, readBuf, writefront_len);
-    memcpy(writebuf + writefront_len, valueNmae, 30);
-    memcpy(writebuf + writefront_len + 30, valueType, 30);
+    memcpy(writebuf + writefront_len, valueNmae, SCHEMA_VARIABLENAME_LENGTH);
+    memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH, valueType, SCHEMA_DATATYPE_LENGTH);
     if (newZipParams->isArrary == 0)
     {
-        memcpy(writebuf + writefront_len + 60, standardValue, 5);
-        memcpy(writebuf + writefront_len + 65, maxValue, 5);
-        memcpy(writebuf + writefront_len + 70, minValue, 5);
-        memcpy(writebuf + writefront_len + 75, hasTime, 1);
-        memcpy(writebuf + writefront_len + 76, timeseriesSpan, 4);
-        memcpy(writebuf + writefront_len + 80, readBuf + writeafter_pos, writeafter_len);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH, standardValue, SCHEMA_STANDARDVALUE_LENGTH);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH, maxValue, SCHEMA_MAXVALUE_LENGTH);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH + SCHEMA_MAXVALUE_LENGTH, minValue, SCHEMA_MINVALUE_LENGTH);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH + SCHEMA_MAXVALUE_LENGTH + SCHEMA_MINVALUE_LENGTH, hasTime, SCHEMA_HASTIME_LENGTH);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH + SCHEMA_MAXVALUE_LENGTH + SCHEMA_MINVALUE_LENGTH + SCHEMA_HASTIME_LENGTH, timeseriesSpan, SCHEMA_TIMESERIES_SPAN_LENGTH);
+        memcpy(writebuf + writefront_len + SCHEMA_SINGLE_ZIPNODE_LENGTH, readBuf + writeafter_pos, writeafter_len);
     }
     else
     {
-        memcpy(writebuf + writefront_len + 60, standardValue, 5 * newZipParams->arrayLen);
-        memcpy(writebuf + writefront_len + 60 + 5 * newZipParams->arrayLen, maxValue, 5 * newZipParams->arrayLen);
-        memcpy(writebuf + writefront_len + 60 + 10 * newZipParams->arrayLen, minValue, 5 * newZipParams->arrayLen);
-        memcpy(writebuf + writefront_len + 60 + 15 * newZipParams->arrayLen, hasTime, 1);
-        memcpy(writebuf + writefront_len + 61 + 15 * newZipParams->arrayLen, timeseriesSpan, 4);
-        memcpy(writebuf + writefront_len + 65 + 15 * newZipParams->arrayLen, readBuf + writeafter_pos, writeafter_len);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH, standardValue, SCHEMA_STANDARDVALUE_LENGTH * newZipParams->arrayLen);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * newZipParams->arrayLen, maxValue, 5 * newZipParams->arrayLen);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + 2 * SCHEMA_STANDARDVALUE_LENGTH * newZipParams->arrayLen, minValue, 5 * newZipParams->arrayLen);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * newZipParams->arrayLen, hasTime, 1);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * newZipParams->arrayLen, timeseriesSpan, 4);
+        memcpy(writebuf + writefront_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * newZipParams->arrayLen, readBuf + writeafter_pos, writeafter_len);
     }
 
     long finalLength = 0;
     if (newZipParams->isArrary == 1)
-        finalLength = writefront_len + writeafter_len + 65 + 15 * newZipParams->arrayLen;
+        finalLength = writefront_len + writeafter_len + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * newZipParams->arrayLen;
     else
-        finalLength = writefront_len + writeafter_len + 80;
+        finalLength = writefront_len + writeafter_len + SCHEMA_SINGLE_ZIPNODE_LENGTH;
 
     //创建一个新的.ziptem文件，根据当前已存在的压缩模板数量进行编号
     long fp;
@@ -4355,17 +4363,17 @@ int DB_DeleteNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
     long pos = -1;                                               //记录删除节点在第几条
     for (long i = 0; i < CurrentZipTemplate.schemas.size(); i++) //寻找是否有相同的变量名
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(ZipParams->valueName, existValueName) == 0)
         {
             pos = i; //记录这条记录的位置
             break;
         }
         if (CurrentZipTemplate.schemas[i].second.isArray)
-            readbuf_pos += 65 + 3 * 5 * CurrentZipTemplate.schemas[i].second.arrayLen;
+            readbuf_pos += SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[i].second.arrayLen;
         else
-            readbuf_pos += 80;
+            readbuf_pos += SCHEMA_SINGLE_ZIPNODE_LENGTH;
     }
     if (pos == -1)
     {
@@ -4373,14 +4381,15 @@ int DB_DeleteNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
         return StatusCode::UNKNOWN_VARIABLE_NAME;
     }
 
-    char writeBuf[len - 80];
+    char writeBuf[len - SCHEMA_SINGLE_ZIPNODE_LENGTH];
     //拷贝要被删除的记录之前的记录
     memcpy(writeBuf, readBuf, readbuf_pos);
     //拷贝要被删除的记录之后的记录
     if (CurrentZipTemplate.schemas[pos].second.isArray)
-        memcpy(writeBuf + readbuf_pos, readBuf + readbuf_pos + 65 + 15 * CurrentZipTemplate.schemas[pos].second.arrayLen, len - readbuf_pos - 65 - 15 * CurrentZipTemplate.schemas[pos].second.arrayLen);
+        memcpy(writeBuf + readbuf_pos, readBuf + readbuf_pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[pos].second.arrayLen,
+               len - readbuf_pos - (SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH) - 3 * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[pos].second.arrayLen);
     else
-        memcpy(writeBuf + readbuf_pos, readBuf + readbuf_pos + 80, len - readbuf_pos - 80);
+        memcpy(writeBuf + readbuf_pos, readBuf + readbuf_pos + SCHEMA_SINGLE_ZIPNODE_LENGTH, len - readbuf_pos - SCHEMA_SINGLE_ZIPNODE_LENGTH);
 
     //创建新的.ziptem文件，根据当前已存在的压缩模板数量进行编号
     long fp;
@@ -4397,13 +4406,13 @@ int DB_DeleteNodeToZipSchema_MultiZiptem(struct DB_ZipNodeParams *ZipParams)
     {
         if (CurrentZipTemplate.schemas[pos].second.isArray)
         {
-            if ((len - 65 - CurrentZipTemplate.schemas[pos].second.arrayLen * 15) != 0)
-                err = DB_Write(fp, writeBuf, len - 65 - CurrentZipTemplate.schemas[pos].second.arrayLen * 15);
+            if ((len - (SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH) - CurrentZipTemplate.schemas[pos].second.arrayLen * SCHEMA_STANDARDVALUE_LENGTH * 3) != 0)
+                err = DB_Write(fp, writeBuf, len - (SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH) - CurrentZipTemplate.schemas[pos].second.arrayLen * SCHEMA_STANDARDVALUE_LENGTH * 3);
         }
         else
         {
-            if ((len - 80) != 0)
-                err = DB_Write(fp, writeBuf, len - 80);
+            if ((len - SCHEMA_SINGLE_ZIPNODE_LENGTH) != 0)
+                err = DB_Write(fp, writeBuf, len - SCHEMA_SINGLE_ZIPNODE_LENGTH);
         }
 
         if (err == 0)
@@ -4461,17 +4470,17 @@ int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
     long pos = -1;                                               //记录删除节点在第几条
     for (long i = 0; i < CurrentZipTemplate.schemas.size(); i++) //寻找是否有相同的变量名
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(ZipParams->valueName, existValueName) == 0)
         {
             pos = i; //记录这条记录的位置
             break;
         }
         if (CurrentZipTemplate.schemas[i].second.isArray)
-            readbuf_pos += 65 + 3 * 5 * CurrentZipTemplate.schemas[i].second.arrayLen;
+            readbuf_pos += SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[i].second.arrayLen;
         else
-            readbuf_pos += 80;
+            readbuf_pos += SCHEMA_SINGLE_ZIPNODE_LENGTH;
     }
     if (pos == -1)
     {
@@ -4479,14 +4488,15 @@ int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
         return StatusCode::UNKNOWN_VARIABLE_NAME;
     }
 
-    char writeBuf[len - 80];
+    char writeBuf[len - SCHEMA_SINGLE_ZIPNODE_LENGTH];
     //拷贝要被删除的记录之前的记录
     memcpy(writeBuf, readBuf, readbuf_pos);
     //拷贝要被删除的记录之后的记录
     if (CurrentZipTemplate.schemas[pos].second.isArray)
-        memcpy(writeBuf + readbuf_pos, readBuf + readbuf_pos + 65 + 15 * CurrentZipTemplate.schemas[pos].second.arrayLen, len - readbuf_pos - 65 - 15 * CurrentZipTemplate.schemas[pos].second.arrayLen);
+        memcpy(writeBuf + readbuf_pos, readBuf + readbuf_pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[pos].second.arrayLen,
+               len - readbuf_pos - (SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH) - 3 * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[pos].second.arrayLen);
     else
-        memcpy(writeBuf + readbuf_pos, readBuf + readbuf_pos + 80, len - readbuf_pos - 80);
+        memcpy(writeBuf + readbuf_pos, readBuf + readbuf_pos + SCHEMA_SINGLE_ZIPNODE_LENGTH, len - readbuf_pos - SCHEMA_SINGLE_ZIPNODE_LENGTH);
 
     //创建新的文件夹存放修改后的压缩模板
     long fp;
@@ -4520,13 +4530,13 @@ int DB_DeleteNodeToZipSchema(struct DB_ZipNodeParams *ZipParams)
     {
         if (CurrentZipTemplate.schemas[pos].second.isArray)
         {
-            if ((len - 65 - CurrentZipTemplate.schemas[pos].second.arrayLen * 15) != 0)
-                err = DB_Write(fp, writeBuf, len - 65 - CurrentZipTemplate.schemas[pos].second.arrayLen * 15);
+            if ((len - (SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH) - CurrentZipTemplate.schemas[pos].second.arrayLen * SCHEMA_STANDARDVALUE_LENGTH * 3) != 0)
+                err = DB_Write(fp, writeBuf, len - (SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH) - CurrentZipTemplate.schemas[pos].second.arrayLen * SCHEMA_STANDARDVALUE_LENGTH * 3);
         }
         else
         {
-            if ((len - 80) != 0)
-                err = DB_Write(fp, writeBuf, len - 80);
+            if ((len - SCHEMA_SINGLE_ZIPNODE_LENGTH) != 0)
+                err = DB_Write(fp, writeBuf, len - SCHEMA_SINGLE_ZIPNODE_LENGTH);
         }
         if (err == 0)
             err = DB_Close(fp);
@@ -4575,17 +4585,17 @@ int DB_QueryNode(struct DB_QueryNodeParams *QueryParams)
     if (err != 0)
         return err;
 
-    long pos = -1;                      //用于定位是修改模板的第几条
-    for (long i = 0; i < len / 71; i++) //寻找是否有相同变量名
+    long pos = -1;                                             //用于定位是修改模板的第几条
+    for (long i = 0; i < len / SCHEMA_SINGLE_NODE_LENGTH; i++) //寻找是否有相同变量名
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(QueryParams->valueName, existValueName) == 0)
         {
             pos = i; //记录这条记录的位置
             break;
         }
-        readbuf_pos += 71;
+        readbuf_pos += SCHEMA_SINGLE_NODE_LENGTH;
     }
     if (pos == -1)
     {
@@ -4606,8 +4616,8 @@ int DB_QueryNode(struct DB_QueryNodeParams *QueryParams)
         QueryParams->tsLen = 0;
     QueryParams->hasTime = CurrentTemplate.schemas[pos].second.hasTime;
     QueryParams->valueType = CurrentTemplate.schemas[pos].second.valueType;
-    char *pathcode = (char *)malloc(sizeof(char) * 10);
-    memcpy(pathcode, readBuf + pos * 71 + 61, 10);
+    char *pathcode = (char *)malloc(sizeof(char) * SCHEMA_PATHCODE_LENGTH);
+    memcpy(pathcode, readBuf + pos * SCHEMA_SINGLE_NODE_LENGTH + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH, SCHEMA_PATHCODE_LENGTH);
     QueryParams->pathcode = pathcode;
     return 0;
 }
@@ -4656,8 +4666,8 @@ int DB_QueryZipNode(struct DB_QueryNodeParams *QueryParams)
     long pos = -1;                                               //用于定位是修改模板的第几条
     for (long i = 0; i < CurrentZipTemplate.schemas.size(); i++) //寻找是否有相同变量名
     {
-        char existValueName[30];
-        memcpy(existValueName, readBuf + readbuf_pos, 30);
+        char existValueName[SCHEMA_VARIABLENAME_LENGTH];
+        memcpy(existValueName, readBuf + readbuf_pos, SCHEMA_VARIABLENAME_LENGTH);
         if (strcmp(QueryParams->valueName, existValueName) == 0)
         {
             pos = i; //记录这条记录的位置
@@ -4665,9 +4675,9 @@ int DB_QueryZipNode(struct DB_QueryNodeParams *QueryParams)
         }
 
         if (CurrentZipTemplate.schemas[i].second.isArray)
-            readbuf_pos += 65 + 3 * 5 * CurrentZipTemplate.schemas[i].second.arrayLen;
+            readbuf_pos += SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_HASTIME_LENGTH + SCHEMA_TIMESERIES_SPAN_LENGTH + 3 * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[i].second.arrayLen;
         else
-            readbuf_pos += 80;
+            readbuf_pos += SCHEMA_SINGLE_ZIPNODE_LENGTH;
     }
     if (pos == -1)
     {
@@ -4692,26 +4702,26 @@ int DB_QueryZipNode(struct DB_QueryNodeParams *QueryParams)
 
     if (CurrentZipTemplate.schemas[pos].second.isArray)
     {
-        char *standValue = (char *)malloc(sizeof(char) * 5 * CurrentZipTemplate.schemas[pos].second.arrayLen);
-        memcpy(standValue, readBuf + readbuf_pos + 60, 5 * CurrentZipTemplate.schemas[pos].second.arrayLen);
+        char *standValue = (char *)malloc(sizeof(char) * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[pos].second.arrayLen);
+        memcpy(standValue, readBuf + readbuf_pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH, SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[pos].second.arrayLen);
         QueryParams->standardValue = standValue;
-        char *maxValue = (char *)malloc(sizeof(char) * 5 * CurrentZipTemplate.schemas[pos].second.arrayLen);
-        memcpy(maxValue, readBuf + readbuf_pos + 60 + 5 * CurrentZipTemplate.schemas[pos].second.arrayLen, 5 * CurrentZipTemplate.schemas[pos].second.arrayLen);
+        char *maxValue = (char *)malloc(sizeof(char) * SCHEMA_MAXVALUE_LENGTH * CurrentZipTemplate.schemas[pos].second.arrayLen);
+        memcpy(maxValue, readBuf + readbuf_pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[pos].second.arrayLen, SCHEMA_MAXVALUE_LENGTH * CurrentZipTemplate.schemas[pos].second.arrayLen);
         QueryParams->maxValue = maxValue;
-        char *minValue = (char *)malloc(sizeof(char) * 5 * CurrentZipTemplate.schemas[pos].second.arrayLen);
-        memcpy(minValue, readBuf + readbuf_pos + 60 + 10 * CurrentZipTemplate.schemas[pos].second.arrayLen, 5 * CurrentZipTemplate.schemas[pos].second.arrayLen);
+        char *minValue = (char *)malloc(sizeof(char) * SCHEMA_MINVALUE_LENGTH * CurrentZipTemplate.schemas[pos].second.arrayLen);
+        memcpy(minValue, readBuf + readbuf_pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + 2 * SCHEMA_STANDARDVALUE_LENGTH * CurrentZipTemplate.schemas[pos].second.arrayLen, SCHEMA_MINVALUE_LENGTH * CurrentZipTemplate.schemas[pos].second.arrayLen);
         QueryParams->minValue = minValue;
     }
     else
     {
-        char *standValue = (char *)malloc(sizeof(char) * 5);
-        memcpy(standValue, readBuf + readbuf_pos + 60, 5);
+        char *standValue = (char *)malloc(sizeof(char) * SCHEMA_STANDARDVALUE_LENGTH);
+        memcpy(standValue, readBuf + readbuf_pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH, SCHEMA_STANDARDVALUE_LENGTH);
         QueryParams->standardValue = standValue;
-        char *maxValue = (char *)malloc(sizeof(char) * 5);
-        memcpy(maxValue, readBuf + readbuf_pos + 65, 5);
+        char *maxValue = (char *)malloc(sizeof(char) * SCHEMA_MAXVALUE_LENGTH);
+        memcpy(maxValue, readBuf + readbuf_pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH, SCHEMA_MAXVALUE_LENGTH);
         QueryParams->maxValue = maxValue;
-        char *minValue = (char *)malloc(sizeof(char) * 5);
-        memcpy(minValue, readBuf + readbuf_pos + 70, 5);
+        char *minValue = (char *)malloc(sizeof(char) * SCHEMA_MINVALUE_LENGTH);
+        memcpy(minValue, readBuf + readbuf_pos + SCHEMA_VARIABLENAME_LENGTH + SCHEMA_DATATYPE_LENGTH + SCHEMA_STANDARDVALUE_LENGTH + SCHEMA_MAXVALUE_LENGTH, SCHEMA_MINVALUE_LENGTH);
         QueryParams->minValue = minValue;
     }
     return 0;

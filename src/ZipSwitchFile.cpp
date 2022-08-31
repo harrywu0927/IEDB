@@ -57,17 +57,17 @@ int ZipSwitchBuf(char *readbuff, char *writebuff, long &writebuff_pos)
                     {
                         //既有数据又有时间
                         ZipUtils::addZipType(DATA_AND_TIME, writebuff, writebuff_pos);
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE);
-                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                     }
                     else
                     {
                         //只有时间
                         ZipUtils::addZipType(ONLY_TIME, writebuff, writebuff_pos);
-                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, TIMESTAMP_SIZE);
-                        writebuff_pos += TIMESTAMP_SIZE;
+                        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[i].second.valueBytes, ZIP_TIMESTAMP_SIZE);
+                        writebuff_pos += ZIP_TIMESTAMP_SIZE;
                     }
-                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + TIMESTAMP_SIZE;
+                    readbuff_pos += CurrentZipTemplate.schemas[i].second.valueBytes + ZIP_TIMESTAMP_SIZE;
                 }
                 else //不带时间戳
                 {
@@ -122,13 +122,13 @@ int ReZipSwitchBuf(char *readbuff, const long len, char *writebuff, long &writeb
                 if (readbuff_pos < len) //还有未压缩的数据
                 {
                     //对比编号是否等于当前模板所在条数
-                    char zipPosNum[ZIPPOS_SIZE] = {0};
-                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
+                    char zipPosNum[ZIP_ZIPPOS_SIZE] = {0};
+                    memcpy(zipPosNum, readbuff + readbuff_pos, ZIP_ZIPPOS_SIZE);
                     uint16_t posCmp = converter.ToUInt16(zipPosNum);
 
                     if (posCmp == i) //是未压缩数据的编号
                     {
-                        readbuff_pos += ZIPPOS_SIZE + ZIPTYPE_SIZE;
+                        readbuff_pos += ZIP_ZIPPOS_SIZE + ZIP_ZIPTYPE_SIZE;
                         if (CurrentZipTemplate.schemas[i].second.isTimeseries == true)
                         {
                             if (ZipUtils::IsTSReZip(i, writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::UDINT))

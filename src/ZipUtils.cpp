@@ -13,10 +13,10 @@ void ZipUtils::addZipPos(int schemaPos, char *writebuff, long &writebuff_pos)
 {
     DataTypeConverter converter;
     uint16_t posNum = schemaPos;
-    char zipPosNum[ZIPPOS_SIZE] = {0};
+    char zipPosNum[ZIP_ZIPPOS_SIZE] = {0};
     converter.ToUInt16Buff(posNum, zipPosNum);
-    memcpy(writebuff + writebuff_pos, zipPosNum, ZIPPOS_SIZE);
-    writebuff_pos += ZIPPOS_SIZE;
+    memcpy(writebuff + writebuff_pos, zipPosNum, ZIP_ZIPPOS_SIZE);
+    writebuff_pos += ZIP_ZIPPOS_SIZE;
 }
 
 /**
@@ -27,10 +27,10 @@ void ZipUtils::addZipPos(int schemaPos, char *writebuff, long &writebuff_pos)
  */
 void ZipUtils::addEndFlag(char *writebuff, long &writebuff_pos)
 {
-    char isTsEnd[ENDFLAG_SIZE] = {0};
+    char isTsEnd[ZIP_ENDFLAG_SIZE] = {0};
     isTsEnd[0] = (char)-1;
-    memcpy(writebuff + writebuff_pos, isTsEnd, ENDFLAG_SIZE);
-    writebuff_pos += ENDFLAG_SIZE;
+    memcpy(writebuff + writebuff_pos, isTsEnd, ZIP_ENDFLAG_SIZE);
+    writebuff_pos += ZIP_ENDFLAG_SIZE;
 }
 
 /**
@@ -46,42 +46,42 @@ void ZipUtils::addZipType(ZipType ziptype, char *writebuff, long &writebuff_pos)
     {
     case ONLY_DATA:
     { //只有数据
-        char zipType[ZIPTYPE_SIZE] = {0};
+        char zipType[ZIP_ZIPTYPE_SIZE] = {0};
         zipType[0] = (char)ONLY_DATA;
-        memcpy(writebuff + writebuff_pos, zipType, ZIPTYPE_SIZE);
-        writebuff_pos += ZIPTYPE_SIZE;
+        memcpy(writebuff + writebuff_pos, zipType, ZIP_ZIPTYPE_SIZE);
+        writebuff_pos += ZIP_ZIPTYPE_SIZE;
         break;
     }
     case ONLY_TIME:
     { //只有时间
-        char zipType[ZIPTYPE_SIZE] = {0};
+        char zipType[ZIP_ZIPTYPE_SIZE] = {0};
         zipType[0] = (char)ONLY_TIME;
-        memcpy(writebuff + writebuff_pos, zipType, ZIPTYPE_SIZE);
-        writebuff_pos += ZIPTYPE_SIZE;
+        memcpy(writebuff + writebuff_pos, zipType, ZIP_ZIPTYPE_SIZE);
+        writebuff_pos += ZIP_ZIPTYPE_SIZE;
         break;
     }
     case DATA_AND_TIME:
     { //既有数据又有时间
-        char zipType[ZIPTYPE_SIZE] = {0};
+        char zipType[ZIP_ZIPTYPE_SIZE] = {0};
         zipType[0] = (char)DATA_AND_TIME;
-        memcpy(writebuff + writebuff_pos, zipType, ZIPTYPE_SIZE);
-        writebuff_pos += ZIPTYPE_SIZE;
+        memcpy(writebuff + writebuff_pos, zipType, ZIP_ZIPTYPE_SIZE);
+        writebuff_pos += ZIP_ZIPTYPE_SIZE;
         break;
     }
     case TS_AND_ARRAY:
     { //既是时间序列又是数组
-        char zipType[ZIPTYPE_SIZE] = {0};
+        char zipType[ZIP_ZIPTYPE_SIZE] = {0};
         zipType[0] = (char)TS_AND_ARRAY;
-        memcpy(writebuff + writebuff_pos, zipType, ZIPTYPE_SIZE);
-        writebuff_pos += ZIPTYPE_SIZE;
+        memcpy(writebuff + writebuff_pos, zipType, ZIP_ZIPTYPE_SIZE);
+        writebuff_pos += ZIP_ZIPTYPE_SIZE;
         break;
     }
     case ONLY_TS:
     { //只是时间序列
-        char zipType[ZIPTYPE_SIZE] = {0};
+        char zipType[ZIP_ZIPTYPE_SIZE] = {0};
         zipType[0] = (char)ONLY_TS;
-        memcpy(writebuff + writebuff_pos, zipType, ZIPTYPE_SIZE);
-        writebuff_pos += ZIPTYPE_SIZE;
+        memcpy(writebuff + writebuff_pos, zipType, ZIP_ZIPTYPE_SIZE);
+        writebuff_pos += ZIP_ZIPTYPE_SIZE;
         break;
     }
     default:
@@ -109,9 +109,9 @@ int ZipUtils::IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char 
         ZipUtils::addZipPos(schemaPos, writebuff, writebuff_pos);
         //既是时间序列又是数组
         ZipUtils::addZipType(TS_AND_ARRAY, writebuff, writebuff_pos);
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen);
-        writebuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
-        readbuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
+        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen);
+        writebuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
+        readbuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
     }
     else //只是时间序列类型
     {
@@ -120,8 +120,8 @@ int ZipUtils::IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char 
         //只是时间序列
         ZipUtils::addZipType(ONLY_TS, writebuff, writebuff_pos);
         //添加第一个采样的时间戳
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[schemaPos].second.valueBytes, TIMESTAMP_SIZE);
-        writebuff_pos += TIMESTAMP_SIZE;
+        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[schemaPos].second.valueBytes, ZIP_TIMESTAMP_SIZE);
+        writebuff_pos += ZIP_TIMESTAMP_SIZE;
 
         switch (DataType)
         {
@@ -144,7 +144,7 @@ int ZipUtils::IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char 
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
                     writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
                 }
-                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE;
+                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE;
 
                 //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
                 if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
@@ -173,7 +173,7 @@ int ZipUtils::IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char 
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
                     writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
                 }
-                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE;
+                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE;
 
                 //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
                 if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
@@ -202,7 +202,7 @@ int ZipUtils::IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char 
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
                     writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
                 }
-                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE;
+                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE;
 
                 //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
                 if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
@@ -231,7 +231,7 @@ int ZipUtils::IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char 
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
                     writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
                 }
-                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE;
+                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE;
 
                 //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
                 if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
@@ -260,7 +260,7 @@ int ZipUtils::IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char 
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
                     writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
                 }
-                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE;
+                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE;
 
                 //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
                 if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
@@ -289,7 +289,7 @@ int ZipUtils::IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char 
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
                     writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
                 }
-                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE;
+                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE;
 
                 //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
                 if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
@@ -318,7 +318,7 @@ int ZipUtils::IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char 
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
                     writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
                 }
-                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE;
+                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE;
 
                 //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
                 if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
@@ -340,7 +340,7 @@ int ZipUtils::IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char 
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
                     writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
                 }
-                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE;
+                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE;
 
                 //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
                 if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
@@ -379,9 +379,9 @@ void ZipUtils::IsArrayZip(int schemaPos, char *writebuff, long &writebuff_pos, c
     {
         //既有数据又有时间
         ZipUtils::addZipType(DATA_AND_TIME, writebuff, writebuff_pos);
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + TIMESTAMP_SIZE);
-        writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + TIMESTAMP_SIZE;
-        readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + TIMESTAMP_SIZE;
+        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE);
+        writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
+        readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
     }
     else
     {
@@ -497,10 +497,10 @@ void ZipUtils::addTsTime(int schemaPos, uint64_t startTime, char *writebuff, lon
     DataTypeConverter converter;
     //添加上时间戳
     uint64_t zipTime = startTime + CurrentZipTemplate.schemas[schemaPos].second.timeseriesSpan * tsPos;
-    char zipTimeBuff[TIMESTAMP_SIZE] = {0};
+    char zipTimeBuff[ZIP_TIMESTAMP_SIZE] = {0};
     converter.ToLong64Buff(zipTime, zipTimeBuff);
-    memcpy(writebuff + writebuff_pos, zipTimeBuff, TIMESTAMP_SIZE);
-    writebuff_pos += TIMESTAMP_SIZE;
+    memcpy(writebuff + writebuff_pos, zipTimeBuff, ZIP_TIMESTAMP_SIZE);
+    writebuff_pos += ZIP_TIMESTAMP_SIZE;
 }
 
 /**
@@ -519,17 +519,17 @@ int ZipUtils::IsTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, cha
     if (readbuff[readbuff_pos - 1] == (char)TS_AND_ARRAY) //既是时间序列又是数组
     {
         //直接拷贝
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen);
-        writebuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
-        readbuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
+        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen);
+        writebuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
+        readbuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
     }
     else if (readbuff[readbuff_pos - 1] == (char)ONLY_TS) //只是时间序列
     {
         //先获得第一次采样的时间
-        char time[TIMESTAMP_SIZE];
-        memcpy(time, readbuff + readbuff_pos, TIMESTAMP_SIZE);
+        char time[ZIP_TIMESTAMP_SIZE];
+        memcpy(time, readbuff + readbuff_pos, ZIP_TIMESTAMP_SIZE);
         uint64_t startTime = converter.ToLong64(time);
-        readbuff_pos += TIMESTAMP_SIZE;
+        readbuff_pos += ZIP_TIMESTAMP_SIZE;
 
         for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.tsLen; j++)
         {
@@ -543,14 +543,14 @@ int ZipUtils::IsTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, cha
             else
             {
                 //对比编号是否等于未压缩的时间序列编号
-                char zipTsPosNum[ZIPPOS_SIZE] = {0};
-                memcpy(zipTsPosNum, readbuff + readbuff_pos, ZIPPOS_SIZE);
+                char zipTsPosNum[ZIP_ZIPPOS_SIZE] = {0};
+                memcpy(zipTsPosNum, readbuff + readbuff_pos, ZIP_ZIPPOS_SIZE);
                 uint16_t tsPosCmp = converter.ToUInt16(zipTsPosNum);
 
                 if (tsPosCmp == j) //是未压缩时间序列的编号
                 {
                     //将未压缩的数据拷贝到writebuff
-                    readbuff_pos += ZIPPOS_SIZE;
+                    readbuff_pos += ZIP_ZIPPOS_SIZE;
                     memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes);
                     readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
                     writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
@@ -592,9 +592,9 @@ int ZipUtils::IsArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, 
     if (readbuff[readbuff_pos - 1] == (char)DATA_AND_TIME) //既有时间又有数据
     {
         //直接拷贝
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + TIMESTAMP_SIZE);
-        writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + TIMESTAMP_SIZE;
-        readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + TIMESTAMP_SIZE;
+        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE);
+        writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
+        readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
     }
     else if (readbuff[readbuff_pos - 1] == (char)ONLY_DATA) //只有数据
     {
@@ -626,18 +626,18 @@ int ZipUtils::IsNotArrayAndTSReZip(int schemaPos, char *writebuff, long &writebu
     if (readbuff[readbuff_pos - 1] == (char)DATA_AND_TIME) //既有时间又有数据
     {
         //直接拷贝
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE);
-        writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE;
-        readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + TIMESTAMP_SIZE;
+        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE);
+        writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE;
+        readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE;
     }
     else if (readbuff[readbuff_pos - 1] == (char)ONLY_TIME) //只有时间
     {
         //先添加上标准值到writebuff
         ZipUtils::addStandardValue(schemaPos, writebuff, writebuff_pos, DataType);
         //再拷贝时间
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, TIMESTAMP_SIZE);
-        writebuff_pos += TIMESTAMP_SIZE;
-        readbuff_pos += TIMESTAMP_SIZE;
+        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, ZIP_TIMESTAMP_SIZE);
+        writebuff_pos += ZIP_TIMESTAMP_SIZE;
+        readbuff_pos += ZIP_TIMESTAMP_SIZE;
     }
     else if (readbuff[readbuff_pos - 1] == (char)ONLY_DATA) //只有数据
     {
@@ -650,6 +650,61 @@ int ZipUtils::IsNotArrayAndTSReZip(int schemaPos, char *writebuff, long &writebu
     {
         cout << "还原类型出错！请检查压缩功能是否有误" << endl;
         return StatusCode::ZIPTYPE_ERROR;
+    }
+    return 0;
+}
+
+/**
+ * @brief 在进行压缩操作前，检查输入的压缩参数是否合法
+ * @param params        压缩请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note
+ */
+int CheckZipParams(DB_ZipParams *params)
+{
+    if (params->pathToLine == NULL)
+    {
+        return StatusCode::EMPTY_PATH_TO_LINE;
+    }
+    switch (params->ZipType)
+    {
+    case TIME_SPAN:
+    {
+        if ((params->start == 0 && params->end == 0) || params->start > params->end)
+        {
+            return StatusCode::INVALID_TIMESPAN;
+        }
+        else if (params->end == 0)
+        {
+            params->end = getMilliTime();
+        }
+        break;
+    }
+    case PATH_TO_LINE:
+    {
+        if (params->pathToLine == 0)
+        {
+            return StatusCode::EMPTY_PATH_TO_LINE;
+        }
+        break;
+    }
+    case FILE_ID:
+    {
+        if (params->fileID == NULL)
+        {
+            return StatusCode::NO_FILEID;
+        }
+        else if (params->zipNums < 0 && params->EID == NULL)
+            return StatusCode::ZIPNUM_ERROR;
+        else if (params->zipNums > 1 && params->EID != NULL)
+            return StatusCode::ZIPNUM_AND_EID_ERROR;
+        break;
+    }
+    default:
+        return StatusCode::NO_ZIP_TYPE;
+        break;
     }
     return 0;
 }
