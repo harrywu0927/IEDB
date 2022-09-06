@@ -978,11 +978,13 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 	catch (iedb_err &e)
 	{
 		RuntimeLogger.critical(e.what());
+		IOBusy = false;
 		return e.code;
 	}
 	catch (const std::exception &e)
 	{
 		RuntimeLogger.critical("Unexpected error occured:{}", e.what());
+		IOBusy = false;
 		return -1;
 	}
 
@@ -2223,11 +2225,13 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 	catch (iedb_err &e)
 	{
 		RuntimeLogger.critical(e.what());
+		IOBusy = false;
 		return e.code;
 	}
 	catch (const std::exception &e)
 	{
 		RuntimeLogger.critical("Unexpected error occured:{}", e.what());
+		IOBusy = false;
 		return -1;
 	}
 	char *completeZiped = nullptr;
@@ -2320,10 +2324,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 					{
 						buff = tempBuff;
 						memcpy(buff, packReader.packBuffer + dataPos, readLength);
-						// if (buff == nullptr || buff == NULL)
-						// 	cerr << "buff null!" << endl;
 						ReZipBuff(&buff, readLength);
-						// tempBuff = buff;
 						break;
 					}
 					default:
@@ -2344,8 +2345,6 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 						newBuffer = new char[readLength + len];
 						memcpy(newBuffer, buff, zipType == 1 ? CurrentTemplate.totalBytes : readLength);
 						memcpy(newBuffer + readLength, img, len);
-						// if (zipType == 2)
-						// 	delete[] buff;
 						buff = newBuffer;
 						err = DataExtraction(mallocedMemory, Ext_Params, params, cur, timestamp, buff);
 					}
@@ -2354,8 +2353,6 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 						err = DataExtraction_NonIMG(rawBuff, mallocedMemory, Ext_Params, params, cur, buff, timestamp);
 					}
 
-					// if (zipType == 2 || Ext_Params.hasIMG)
-					// 	delete[] buff;
 					if (err == 0)
 						selectedNum++;
 					else if (err > 0)
@@ -2747,11 +2744,13 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			catch (iedb_err &e)
 			{
 				RuntimeLogger.critical(e.what());
+				IOBusy = false;
 				return e.code;
 			}
 			catch (const std::exception &e)
 			{
 				RuntimeLogger.critical("Unexpected error occured:{}", e.what());
+				IOBusy = false;
 				return -1;
 			}
 			char *completeZiped = nullptr;
@@ -2989,11 +2988,13 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		catch (iedb_err &e)
 		{
 			RuntimeLogger.critical(e.what());
+			IOBusy = false;
 			return e.code;
 		}
 		catch (const std::exception &e)
 		{
 			RuntimeLogger.critical("Unexpected error occured:{}", e.what());
+			IOBusy = false;
 			return -1;
 		}
 		char *completeZiped = nullptr;

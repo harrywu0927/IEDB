@@ -3,6 +3,15 @@
 
 int maxThreads = thread::hardware_concurrency();
 
+/**
+ * @brief 解析缓冲区头
+ *
+ * @param typeList 数据类型列表
+ * @param pos 数据区起始位置
+ * @param recordLength 每条记录的长度
+ * @param buffer 缓冲区
+ * @return int
+ */
 int ParseBufferHead(vector<DataType> &typeList, int &pos, int &recordLength, char *buffer)
 {
     // Reconstruct the info of each value
@@ -647,6 +656,7 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
     }
     free(buffer->buffer);
     buffer->buffer = NULL;
+    //重写缓冲区头
     for (int i = 0; i < typeList.size(); i++)
     {
         if (typeList[i].valueType != ValueType::REAL)

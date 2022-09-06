@@ -105,6 +105,7 @@ void BackupHelper::CheckBackup(FILE *file, size_t filesize, long filenum)
             if (std::ftell(file) + compressedSize > filesize)
             {
                 /* File pointer exceeds the end of file */
+                fseek(file, lastPos, SEEK_SET);
                 throw iedb_err(StatusCode::DATAFILE_MODIFIED);
             }
             Byte sha1[20];
@@ -114,11 +115,17 @@ void BackupHelper::CheckBackup(FILE *file, size_t filesize, long filenum)
             std::fread(sha1_backup, 1, 20, file);
             if (memcmp(sha1, sha1_backup, 20) != 0)
             {
+                fseek(file, lastPos, SEEK_SET);
                 throw iedb_err(StatusCode::DATAFILE_MODIFIED);
             }
 
             curPos = ftell(file);
             scanedFile++;
+        }
+        if (filenum != scanedFile)
+        {
+            logger.error("Backup file's pack number is not equal to the packs actually scanned.");
+            throw iedb_err(StatusCode::DATAFILE_MODIFIED);
         }
     }
     catch (bad_alloc &e)
@@ -276,7 +283,7 @@ int BackupHelper::ChangeBackupPath(string path)
         backupPath = path;
     }
     else
-        logger.error("Faile to change backup path to {}, error code : {}", path, err);
+        logger.error("Failed to change backup path to {}, error code : {}", path, err);
 
     return err;
 }
@@ -435,7 +442,7 @@ int BackupHelper::BackupUpdate()
                 std::cerr << e.what() << '\n';
             }
             fclose(file);
-            return 0;
+            continue;
         }
         /* Check file */
         FILE *file;
@@ -465,9 +472,16 @@ int BackupHelper::BackupUpdate()
         }
         catch (bad_alloc &e)
         {
+            fclose(file);
+            throw e;
         }
         catch (iedb_err &e)
         {
+            if (e.code != StatusCode::DATAFILE_MODIFIED)
+            {
+                fclose(file);
+                throw e;
+            }
         }
         catch (const std::exception &e)
         {

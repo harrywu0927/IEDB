@@ -1,6 +1,5 @@
 #include <utils.hpp>
-
-using namespace std;
+#include <Insert.hpp>
 
 void *checkSettings(void *ptr);
 pthread_t timer; //计时器，另开一个新的线程
@@ -8,6 +7,7 @@ thread autoPackManager;
 int timerStarted = false;
 bool IOBusy = false;
 int RepackThreshold = 0;
+InsertBuffer insertBuffer;
 void *checkTime(void *ptr)
 {
     timerStarted = true;
@@ -30,14 +30,14 @@ void *checkTime(void *ptr)
         {
             vector<string> dirs;
             readAllDirs(dirs, settings("Filename_Label"));
-            cout << "Start packing..." << endl;
+            cout << "Start packing...\n";
             for (auto &dir : dirs)
             {
-                cout << "Packing " << dir << endl;
+                cout << "Packing " << dir << '\n';
                 removeFilenameLabel(dir);
                 DB_Pack(dir.c_str(), 0, 0);
             }
-            cout << "Pack complete" << endl;
+            cout << "Pack complete\n";
         }
         sleep(interval / 1000);
         // sleep_until
@@ -363,6 +363,7 @@ int checkNovelty(DB_DataBuffer *buffer)
     Py_XDECREF(mymodule);
     return StatusCode::PYTHON_SCRIPT_NOT_FOUND;
 }
+
 /**
  * @brief 将一个缓冲区中的一条数据(文件)存放在指定路径下，以文件ID+时间的方式命名
  * @param buffer    数据缓冲区
@@ -408,78 +409,79 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int zip)
                 zip = 0;
         }
     }
-    string savepath = buffer->savePath;
-    if (savepath == "")
-    {
-        IOBusy = 0;
-        return StatusCode::EMPTY_SAVE_PATH;
-    }
-    long fp;
-    long curtime = getMilliTime();
-    time_t time = curtime / 1000;
-    struct tm *dateTime = localtime(&time);
-    string fileID = FileIDManager::GetFileID(buffer->savePath) + "_";
-    string finalPath = "";
-    finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000));
-    char mode[2] = {'a', 'b'};
-    if (zip == 0)
-    {
-        finalPath.append(".idb");
-        int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
-        if (err == 0)
-        {
-            err = DB_Write(fp, buffer->buffer, buffer->length);
-            if (err == 0)
-            {
-                IOBusy = 0;
-                return DB_Close(fp);
-            }
-        }
-        IOBusy = 0;
-        return err;
-    }
-    else
-    {
-        finalPath.append(".idbzip");
-        if (buffer->buffer[0] == 0) //数据未压缩
-        {
-            int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
-            if (err == 0)
-            {
-                err = DB_Write(fp, buffer->buffer + 1, buffer->length - 1);
-                if (err == 0)
-                {
-                    IOBusy = 0;
-                    return DB_Close(fp);
-                }
-            }
-            IOBusy = 0;
-            return err;
-        }
-        else if (buffer->buffer[0] == 1) //数据完全压缩
-        {
+    insertBuffer.write(buffer, zip);
+    // string savepath = buffer->savePath;
+    // if (savepath == "")
+    // {
+    //     IOBusy = 0;
+    //     return StatusCode::EMPTY_SAVE_PATH;
+    // }
+    // long fp;
+    // long curtime = getMilliTime();
+    // time_t time = curtime / 1000;
+    // struct tm *dateTime = localtime(&time);
+    // string fileID = FileIDManager::GetFileID(buffer->savePath) + "_";
+    // string finalPath = "";
+    // finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000));
+    // char mode[2] = {'a', 'b'};
+    // if (zip == 0)
+    // {
+    //     finalPath.append(".idb");
+    //     int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
+    //     if (err == 0)
+    //     {
+    //         err = DB_Write(fp, buffer->buffer, buffer->length);
+    //         if (err == 0)
+    //         {
+    //             IOBusy = 0;
+    //             return DB_Close(fp);
+    //         }
+    //     }
+    //     IOBusy = 0;
+    //     return err;
+    // }
+    // else
+    // {
+    //     finalPath.append(".idbzip");
+    //     if (buffer->buffer[0] == 0) //数据未压缩
+    //     {
+    //         int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
+    //         if (err == 0)
+    //         {
+    //             err = DB_Write(fp, buffer->buffer + 1, buffer->length - 1);
+    //             if (err == 0)
+    //             {
+    //                 IOBusy = 0;
+    //                 return DB_Close(fp);
+    //             }
+    //         }
+    //         IOBusy = 0;
+    //         return err;
+    //     }
+    //     else if (buffer->buffer[0] == 1) //数据完全压缩
+    //     {
 
-            int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
-            err = DB_Close(fp);
-            IOBusy = 0;
-            return err;
-        }
-        else if (buffer->buffer[0] == 2) //数据未完全压缩
-        {
-            int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
-            if (err == 0)
-            {
-                err = DB_Write(fp, buffer->buffer + 1, buffer->length - 1);
-                if (err == 0)
-                {
-                    IOBusy = 0;
-                    return DB_Close(fp);
-                }
-            }
-            IOBusy = 0;
-            return err;
-        }
-    }
+    //         int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
+    //         err = DB_Close(fp);
+    //         IOBusy = 0;
+    //         return err;
+    //     }
+    //     else if (buffer->buffer[0] == 2) //数据未完全压缩
+    //     {
+    //         int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
+    //         if (err == 0)
+    //         {
+    //             err = DB_Write(fp, buffer->buffer + 1, buffer->length - 1);
+    //             if (err == 0)
+    //             {
+    //                 IOBusy = 0;
+    //                 return DB_Close(fp);
+    //             }
+    //         }
+    //         IOBusy = 0;
+    //         return err;
+    //     }
+    // }
     IOBusy = 0;
     return errCode;
 }
