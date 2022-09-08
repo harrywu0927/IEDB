@@ -176,6 +176,7 @@ vector<pair<char *, long>> PackManager::GetPackByIDs(string pathToLine, string f
             startNum += fileID[i];
         }
     }
+    /* 计算起始和结束ID */
     int start = atoi(startNum.c_str());
     int end = start + num;
     vector<pair<char *, long>> res;
@@ -448,11 +449,21 @@ void PackManager::UpdatePack(string path, string newPath, long start, long end)
         {
             it->first = newPath;
             it->second = make_tuple(start, end);
+            sort(allPacks[pathToLine].begin(), allPacks[pathToLine].end(), [](pair<string, tuple<long, long>> iter1, pair<string, tuple<long, long>> iter2) -> bool
+                 { return get<0>(iter1.second) < get<0>(iter2.second); });
             return;
         }
     }
 }
 
+/**
+ * @brief 增加包索引信息
+ *
+ * @param pathToLine 二级路径
+ * @param path  包路径
+ * @param start 开始时间
+ * @param end 结束时间
+ */
 void PackManager::AddPack(string &pathToLine, string &path, long &start, long &end)
 {
     allPacks[pathToLine].push_back({path, make_tuple(start, end)});

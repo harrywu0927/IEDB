@@ -66,6 +66,7 @@ void checkSettings()
 
 int main()
 {
+<<<<<<< Updated upstream
     cout << DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest") << endl;
     return 0;
     unsigned char mdbuf[20];
@@ -79,6 +80,23 @@ int main()
     }
     cout << SHA1_Final(mdbuf, &c) << endl;
 
+=======
+    // unsigned char mdbuf[20];
+    // const unsigned char d1[] = "123456789012";
+    // cout << SHA1(d1, 12, mdbuf) << endl;
+    // SHA_CTX c;
+    // SHA1_Init(&c);
+    // for (int i = 0; i < 4; i++)
+    // {
+    //     SHA1_Update(&c, d1 + i * 3, 3);
+    // }
+    // cout << SHA1_Final(mdbuf, &c) << endl;
+    auto startTime = std::chrono::system_clock::now();
+    char *a = new char[5];
+    delete[] a;
+    auto endTime = std::chrono::system_clock::now();
+    std::cout << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+>>>>>>> Stashed changes
     return 0;
     DB_ZipNodeParams param;
     param.pathToLine = "arrTest";

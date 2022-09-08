@@ -1,3 +1,6 @@
+#ifndef _LOGGER_H
+#define _LOGGER_H
+#endif
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/common.h>
@@ -9,6 +12,7 @@
 #define DEBUG
 
 using namespace std;
+#pragma once
 template <typename... Args>
 using format_string_t = fmt::format_string<Args...>;
 class Logger

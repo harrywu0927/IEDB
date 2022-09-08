@@ -93,7 +93,7 @@ bool CanDelete(DB_QueryParams *params, char *buffer)
  *          others: StatusCode
  * @note  删除包中文件后需要修改此包总文件数，重新打包，修改包文件名
  */
-int DB_DeleteRecords(DB_QueryParams *params)
+int DB_DeleteRecords_Old(DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -1018,7 +1018,7 @@ int DB_DeleteRecords(DB_QueryParams *params)
  *          others: StatusCode
  * @note  删除包中文件后需要修改此包总文件数，重新打包，修改包文件名
  */
-int DB_DeleteRecords_New(DB_QueryParams *params)
+int DB_DeleteRecords(DB_QueryParams *params)
 {
     int check = CheckQueryParams(params);
     if (check != 0)
@@ -1195,8 +1195,6 @@ int DB_DeleteRecords_New(DB_QueryParams *params)
                 string templateName;
                 packReader.ReadPackHead(fileNum, templateName);
                 int deleteNum = 0;
-                //一次分配一整个pak长度的空间，避免频繁分配影响性能
-                // shared_ptr<char> newPack = make_shared<char>(packReader.GetPackLength());
                 char *newPack = new char[packReader.GetPackLength()];
                 long cur = 4;
                 memcpy(newPack + cur, templateName.c_str(), templateName.length() <= 20 ? templateName.length() : 20);
@@ -1458,8 +1456,6 @@ int DB_DeleteRecords_New(DB_QueryParams *params)
                 string templateName;
                 packReader.ReadPackHead(fileNum, templateName);
                 int deleteNum = 0; //此包中已删除文件
-                //一次分配一整个pak长度的空间，避免频繁分配影响性能
-                // shared_ptr<char> newPack = make_shared<char>(packReader.GetPackLength());
                 char *newPack = new char[packReader.GetPackLength()];
                 long cur = 4;
                 memcpy(newPack + cur, templateName.c_str(), templateName.length() <= 20 ? templateName.length() : 20);

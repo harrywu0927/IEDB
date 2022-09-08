@@ -83,8 +83,6 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
         cur += 8;
         char fileID[20] = {0};
         string str = DataType::splitWithStl(fs::path(file.first).stem(), "_")[0];
-        // while (str[0] == '/') //去除‘/’
-        //     str.erase(str.begin());
         memcpy(fileID, str.c_str(), str.length() <= 20 ? str.length() : 20);
         memcpy(packBuffer + cur, fileID, 20);
         cur += 20;
@@ -504,7 +502,7 @@ void PackFileReader::Skip(int num)
         }
         else if (ztype != 2 && ztype != 0)
         {
-            cerr << "skip " << num << "files\n";
+            // cerr << "skip " << num << "files\n";
             throw iedb_err(StatusCode::DATAFILE_MODIFIED);
         }
     }

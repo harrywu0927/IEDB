@@ -1,3 +1,13 @@
+/******************************************
+ * @file BackupHelper.h
+ * @author your name (you@domain.com)
+ * @brief
+ * @version 0.9.1
+ * @date Last Modification in 2022-08-10
+ *
+ * @copyright Copyright (c) 2022
+ *
+ ******************************************/
 #ifndef _BACKUP_HELPER_H
 #define _BACKUP_HELPER_H
 #endif
@@ -34,7 +44,6 @@ private:
     unordered_map<string, time_t> lastBackupTime;
 
 public:
-    // shared_ptr<spdlog::logger> logger;
     Logger logger;
     BackupHelper();
     ~BackupHelper() {}
