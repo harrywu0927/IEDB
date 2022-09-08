@@ -105,13 +105,18 @@ int ZipUtils::IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char 
     DataTypeConverter converter;
     if (CurrentZipTemplate.schemas[schemaPos].second.isArray == true) //既是时间序列又是数组，则不压缩
     {
-        //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
-        ZipUtils::addZipPos(schemaPos, writebuff, writebuff_pos);
-        //既是时间序列又是数组
-        ZipUtils::addZipType(TS_AND_ARRAY, writebuff, writebuff_pos);
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen);
-        writebuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
-        readbuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
+        // //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+        // ZipUtils::addZipPos(schemaPos, writebuff, writebuff_pos);
+        // //既是时间序列又是数组
+        // ZipUtils::addZipType(TS_AND_ARRAY, writebuff, writebuff_pos);
+        // memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen);
+        // writebuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
+        // readbuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
+        if (ZipUtils::IsTsAndArrayZip(schemaPos, writebuff, writebuff_pos, readbuff, readbuff_pos, DataType))
+        {
+            cout << "存在未知的数据类型，请检查模板或者更换功能块" << endl;
+            return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+        }
     }
     else //只是时间序列类型
     {
@@ -393,6 +398,563 @@ void ZipUtils::IsArrayZip(int schemaPos, char *writebuff, long &writebuff_pos, c
     }
 }
 
+int ZipUtils::IsArrayZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, ValueType::ValueType DataType)
+{
+    DataTypeConverter converter;
+    bool canZip = true;               //标记最后结果是否可压缩
+    long readArrayPos = readbuff_pos; //用于遍历数组值
+
+    //循环对比每个数组值，都符合要求才压缩
+    switch (DataType)
+    {
+    case ValueType::BOOL:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; i++)
+        {
+            char standardBool = CurrentZipTemplate.schemas[schemaPos].second.standard[i][0];
+            // 1个字节,暂定，根据后续情况可能进行更改
+            char value[1] = {0};
+            memcpy(value, readbuff + readArrayPos, 1);
+            char currentBoolValue = value[0];
+            if (standardBool != currentBoolValue)
+            {
+                canZip = false;
+                break;
+            }
+            else
+                readArrayPos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+        }
+        break;
+    }
+    case ValueType::USINT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; i++)
+        {
+            char standardUSintValue = CurrentZipTemplate.schemas[schemaPos].second.standard[i][0];
+            char maxUSintValue = CurrentZipTemplate.schemas[schemaPos].second.max[i][0];
+            char minUSintValue = CurrentZipTemplate.schemas[schemaPos].second.min[i][0];
+            // 1个字节,暂定，根据后续情况可能进行更改
+            char value[1] = {0};
+            memcpy(value, readbuff + readArrayPos, 1);
+            char currentUSintValue = value[0];
+            if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
+            {
+                canZip = false;
+                break;
+            }
+            else
+                readArrayPos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+        }
+        break;
+    }
+    case ValueType::UINT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; i++)
+        {
+            ushort standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.standard[i]);
+            ushort maxUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.max[i]);
+            ushort minUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.min[i]);
+            // 2个字节,暂定，根据后续情况可能进行更改
+            char value[2] = {0};
+            memcpy(value, readbuff + readArrayPos, 2);
+            ushort currentUintValue = converter.ToUInt16(value);
+            if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
+            {
+                canZip = false;
+                break;
+            }
+            else
+                readArrayPos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+        }
+        break;
+    }
+    case ValueType::UDINT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; i++)
+        {
+            uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standard[i]);
+            uint32 maxUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.max[i]);
+            uint32 minUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.min[i]);
+            // 4个字节,暂定，根据后续情况可能进行更改
+            char value[4] = {0};
+            memcpy(value, readbuff + readArrayPos, 4);
+            uint32 currentUDintValue = converter.ToUInt32(value);
+            if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
+            {
+                canZip = false;
+                break;
+            }
+            else
+                readArrayPos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+        }
+    }
+    case ValueType::SINT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; i++)
+        {
+            char standardSintValue = CurrentZipTemplate.schemas[schemaPos].second.standard[i][0];
+            char maxSintValue = CurrentZipTemplate.schemas[schemaPos].second.max[i][0];
+            char minSintValue = CurrentZipTemplate.schemas[schemaPos].second.min[i][0];
+            // 1个字节,暂定，根据后续情况可能进行更改
+            char value[1] = {0};
+            memcpy(value, readbuff + readArrayPos, 1);
+            char currentSintValue = value[0];
+            if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
+            {
+                canZip = false;
+                break;
+            }
+            else
+                readArrayPos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+        }
+        break;
+    }
+    case ValueType::INT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; i++)
+        {
+            short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.standard[i]);
+            short maxIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.max[i]);
+            short minIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.min[i]);
+            // 2个字节,暂定，根据后续情况可能进行更改
+            char value[2] = {0};
+            memcpy(value, readbuff + readArrayPos, 2);
+            short currentIntValue = converter.ToInt16(value);
+            if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
+            {
+                canZip = false;
+                break;
+            }
+            else
+                readArrayPos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+        }
+        break;
+    }
+    case ValueType::DINT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; i++)
+        {
+            int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standard[i]);
+            int maxDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.max[i]);
+            int minDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.min[i]);
+            // 4个字节,暂定，根据后续情况可能进行更改
+            char value[4] = {0};
+            memcpy(value, readbuff + readArrayPos, 4);
+            int currentDintValue = converter.ToInt32(value);
+            if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
+            {
+                canZip = false;
+                break;
+            }
+            else
+                readArrayPos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+        }
+        break;
+    }
+    case ValueType::REAL:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; i++)
+        {
+            float standardFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.standard[i]);
+            float maxFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.max[i]);
+            float minFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.min[i]);
+            // 4个字节,暂定，根据后续情况可能进行更改
+            char value[4] = {0};
+            memcpy(value, readbuff + readArrayPos, 4);
+            float currentRealValue = converter.ToFloat(value);
+            if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
+            {
+                canZip = false;
+                break;
+            }
+            else
+                readArrayPos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+        }
+        break;
+    }
+    default:
+        return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+    }
+
+    //根据上面的结果判断是否可压缩
+    if (canZip)
+    {
+        if (CurrentZipTemplate.schemas[schemaPos].second.hasTime == true) //带有时间戳
+        {
+            //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+            ZipUtils::addZipPos(schemaPos, writebuff, writebuff_pos);
+            //只有时间
+            ZipUtils::addZipType(ONLY_TIME, writebuff, writebuff_pos);
+            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen, ZIP_TIMESTAMP_SIZE);
+            writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
+            readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
+        }
+        else
+        {
+            writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+            readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+        }
+    }
+    else
+    {
+        //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+        ZipUtils::addZipPos(schemaPos, writebuff, writebuff_pos);
+        if (CurrentZipTemplate.schemas[schemaPos].second.hasTime == true) //带有时间戳
+        {
+            //既有数据又有时间
+            ZipUtils::addZipType(DATA_AND_TIME, writebuff, writebuff_pos);
+            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE);
+            writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
+            readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
+        }
+        else
+        {
+            //只有数据
+            ZipUtils::addZipType(ONLY_DATA, writebuff, writebuff_pos);
+            memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen);
+            writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+            readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+        }
+    }
+    return 0;
+}
+
+int ZipUtils::IsTsAndArrayZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, ValueType::ValueType DataType)
+{
+    DataTypeConverter converter;
+    long readArrayPos = readbuff_pos;
+    bool canZip = true;
+
+    //添加编号方便知道未压缩的变量是哪个，按照模板的顺序，从0开始，2个字节
+    ZipUtils::addZipPos(schemaPos, writebuff, writebuff_pos);
+    //既是时间序列又是数组
+    ZipUtils::addZipType(TS_AND_ARRAY, writebuff, writebuff_pos);
+
+    //添加第一个采样的时间戳
+    memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos + CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen, ZIP_TIMESTAMP_SIZE);
+    writebuff_pos += ZIP_TIMESTAMP_SIZE;
+
+    switch (DataType)
+    {
+    case ValueType::BOOL:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.tsLen; i++)
+        {
+            for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; j++)
+            {
+                char standardBool = CurrentZipTemplate.schemas[schemaPos].second.standard[j][0];
+                // 1个字节,暂定，根据后续情况可能进行更改
+                char value[1] = {0};
+                memcpy(value, readbuff + readArrayPos, 1);
+                char currentBoolValue = value[0];
+                if (standardBool != currentBoolValue)
+                {
+                    canZip = false;
+                    break;
+                }
+                else
+                    readArrayPos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+            }
+
+            if (!canZip)
+            {
+                //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
+                ZipUtils::addZipPos(i, writebuff, writebuff_pos);
+                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen);
+                writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+            }
+            readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
+
+            //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
+            if (i == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
+            {
+                ZipUtils::addEndFlag(writebuff, writebuff_pos);
+            }
+        }
+        break;
+    }
+    case ValueType::USINT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.tsLen; i++)
+        {
+            for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; j++)
+            {
+                char standardUSintValue = CurrentZipTemplate.schemas[schemaPos].second.standard[j][0];
+                char maxUSintValue = CurrentZipTemplate.schemas[schemaPos].second.max[j][0];
+                char minUSintValue = CurrentZipTemplate.schemas[schemaPos].second.min[j][0];
+                // 1个字节,暂定，根据后续情况可能进行更改
+                char value[1] = {0};
+                memcpy(value, readbuff + readArrayPos, 1);
+                char currentUSintValue = value[0];
+                if (currentUSintValue != standardUSintValue && (currentUSintValue < minUSintValue || currentUSintValue > maxUSintValue))
+                {
+                    canZip = false;
+                    break;
+                }
+                else
+                    readArrayPos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+            }
+
+            if (!canZip)
+            {
+                //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
+                ZipUtils::addZipPos(i, writebuff, writebuff_pos);
+                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen);
+                writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+            }
+            readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
+
+            //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
+            if (i == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
+            {
+                ZipUtils::addEndFlag(writebuff, writebuff_pos);
+            }
+        }
+        break;
+    }
+    case ValueType::UINT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.tsLen; i++)
+        {
+            for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; j++)
+            {
+                ushort standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.standard[j]);
+                ushort maxUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.max[j]);
+                ushort minUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.min[j]);
+                // 2个字节,暂定，根据后续情况可能进行更改
+                char value[2] = {0};
+                memcpy(value, readbuff + readArrayPos, 2);
+                ushort currentUintValue = converter.ToUInt16(value);
+                if (currentUintValue != standardUintValue && (currentUintValue < minUintValue || currentUintValue > maxUintValue))
+                {
+                    canZip = false;
+                    break;
+                }
+                else
+                    readArrayPos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+            }
+
+            if (!canZip)
+            {
+                //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
+                ZipUtils::addZipPos(i, writebuff, writebuff_pos);
+                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen);
+                writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+            }
+            readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
+
+            //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
+            if (i == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
+            {
+                ZipUtils::addEndFlag(writebuff, writebuff_pos);
+            }
+        }
+        break;
+    }
+    case ValueType::UDINT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.tsLen; i++)
+        {
+            for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; j++)
+            {
+                uint32 standardUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standard[j]);
+                uint32 maxUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.max[j]);
+                uint32 minUDintValue = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.min[j]);
+                // 4个字节,暂定，根据后续情况可能进行更改
+                char value[4] = {0};
+                memcpy(value, readbuff + readArrayPos, 4);
+                uint32 currentUDintValue = converter.ToUInt32(value);
+                if (currentUDintValue != standardUDintValue && (currentUDintValue < minUDintValue || currentUDintValue > maxUDintValue))
+                {
+                    canZip = false;
+                    break;
+                }
+                else
+                    readArrayPos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+            }
+
+            if (!canZip)
+            {
+                //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
+                ZipUtils::addZipPos(i, writebuff, writebuff_pos);
+                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen);
+                writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+            }
+            readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
+
+            //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
+            if (i == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
+            {
+                ZipUtils::addEndFlag(writebuff, writebuff_pos);
+            }
+        }
+        break;
+    }
+    case ValueType::SINT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.tsLen; i++)
+        {
+            for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; j++)
+            {
+                char standardSintValue = CurrentZipTemplate.schemas[schemaPos].second.standard[j][0];
+                char maxSintValue = CurrentZipTemplate.schemas[schemaPos].second.max[j][0];
+                char minSintValue = CurrentZipTemplate.schemas[schemaPos].second.min[j][0];
+                // 1个字节,暂定，根据后续情况可能进行更改
+                char value[1] = {0};
+                memcpy(value, readbuff + readArrayPos, 1);
+                char currentSintValue = value[0];
+                if (currentSintValue != standardSintValue && (currentSintValue < minSintValue || currentSintValue > maxSintValue))
+                {
+                    canZip = false;
+                    break;
+                }
+                else
+                    readArrayPos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+            }
+
+            if (!canZip)
+            {
+                //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
+                ZipUtils::addZipPos(i, writebuff, writebuff_pos);
+                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen);
+                writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+            }
+            readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
+
+            //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
+            if (i == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
+            {
+                ZipUtils::addEndFlag(writebuff, writebuff_pos);
+            }
+        }
+        break;
+    }
+    case ValueType::INT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.tsLen; i++)
+        {
+            for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; j++)
+            {
+                short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.standard[j]);
+                short maxIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.max[j]);
+                short minIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.min[j]);
+                // 2个字节,暂定，根据后续情况可能进行更改
+                char value[2] = {0};
+                memcpy(value, readbuff + readArrayPos, 2);
+                short currentIntValue = converter.ToInt16(value);
+                if (currentIntValue != standardIntValue && (currentIntValue < minIntValue || currentIntValue > maxIntValue))
+                {
+                    canZip = false;
+                    break;
+                }
+                else
+                    readArrayPos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+            }
+
+            if (!canZip)
+            {
+                //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
+                ZipUtils::addZipPos(i, writebuff, writebuff_pos);
+                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen);
+                writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+            }
+            readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
+
+            //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
+            if (i == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
+            {
+                ZipUtils::addEndFlag(writebuff, writebuff_pos);
+            }
+        }
+        break;
+    }
+    case ValueType::DINT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.tsLen; i++)
+        {
+            for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; j++)
+            {
+                int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standard[j]);
+                int maxDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.max[j]);
+                int minDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.min[j]);
+                // 4个字节,暂定，根据后续情况可能进行更改
+                char value[4] = {0};
+                memcpy(value, readbuff + readArrayPos, 4);
+                int currentDintValue = converter.ToInt32(value);
+                if (currentDintValue != standardDintValue && (currentDintValue < minDintValue || currentDintValue > maxDintValue))
+                {
+                    canZip = false;
+                    break;
+                }
+                else
+                    readArrayPos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+            }
+
+            if (!canZip)
+            {
+                //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
+                ZipUtils::addZipPos(i, writebuff, writebuff_pos);
+                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen);
+                writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+            }
+            readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
+
+            //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
+            if (i == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
+            {
+                ZipUtils::addEndFlag(writebuff, writebuff_pos);
+            }
+        }
+        break;
+    }
+    case ValueType::REAL:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.tsLen; i++)
+        {
+            for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; j++)
+            {
+                float standardFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.standard[j]);
+                float maxFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.max[j]);
+                float minFloatValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.min[j]);
+                // 4个字节,暂定，根据后续情况可能进行更改
+                char value[4] = {0};
+                memcpy(value, readbuff + readArrayPos, 4);
+                float currentRealValue = converter.ToFloat(value);
+                if (currentRealValue != standardFloatValue && (currentRealValue < minFloatValue || currentRealValue > maxFloatValue))
+                {
+                    canZip = false;
+                    break;
+                }
+                else
+                    readArrayPos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes;
+            }
+
+            if (!canZip)
+            {
+                //添加编号方便知道未压缩的时间序列是哪个，按照顺序，从0开始，2个字节
+                ZipUtils::addZipPos(i, writebuff, writebuff_pos);
+                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen);
+                writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+            }
+            readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
+
+            //当时间序列全部压缩完之后，添加一个-1 即0xFF，标志时间序列类型压缩结束，以避免还原数据时无法区分时间序列序号与模板序号
+            if (i == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1)
+            {
+                ZipUtils::addEndFlag(writebuff, writebuff_pos);
+            }
+        }
+        break;
+    }
+    default:
+    {
+        return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+        break;
+    }
+    }
+    return 0;
+}
+
 /**
  * @brief 根据数据类型添加标准值
  *
@@ -477,6 +1039,113 @@ void ZipUtils::addStandardValue(int schemaPos, char *writebuff, long &writebuff_
         BoolValue[0] = standardBoolValue;
         memcpy(writebuff + writebuff_pos, BoolValue, 1); // Bool标准值
         writebuff_pos += 1;
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+void ZipUtils::addArrayStandardValue(int schemaPos, char *writebuff, long &writebuff_pos, ValueType::ValueType DataType)
+{
+    DataTypeConverter converter;
+    switch (DataType)
+    {
+    case ValueType::BOOL:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; i++)
+        {
+            char standardBoolValue = CurrentZipTemplate.schemas[schemaPos].second.standard[i][0];
+            char BoolValue[1] = {0};
+            BoolValue[0] = standardBoolValue;
+            memcpy(writebuff + writebuff_pos, BoolValue, 1); // Bool标准值
+            writebuff_pos += 1;
+        }
+        break;
+    }
+    case ValueType::USINT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; i++)
+        {
+            char StandardUsintValue = CurrentZipTemplate.schemas[schemaPos].second.standard[i][0];
+            char UsintValue[1] = {0};
+            UsintValue[0] = StandardUsintValue;
+            memcpy(writebuff + writebuff_pos, UsintValue, 1); // USINT标准值
+            writebuff_pos += 1;
+        }
+        break;
+    }
+    case ValueType::UINT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; i++)
+        {
+            uint16_t standardUintValue = converter.ToUInt16_m(CurrentZipTemplate.schemas[schemaPos].second.standard[i]);
+            char UintValue[2] = {0};
+            converter.ToUInt16Buff(standardUintValue, UintValue);
+            memcpy(writebuff + writebuff_pos, UintValue, 2); // UINT标准值
+            writebuff_pos += 2;
+        }
+        break;
+    }
+    case ValueType::UDINT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; i++)
+        {
+            uint32 standardBoolTime = converter.ToUInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standard[i]);
+            char boolTime[4] = {0};
+            converter.ToUInt32Buff(standardBoolTime, boolTime);
+            memcpy(writebuff + writebuff_pos, boolTime, 4); //持续时长
+            writebuff_pos += 4;
+        }
+        break;
+    }
+    case ValueType::SINT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; i++)
+        {
+            char StandardSintValue = CurrentZipTemplate.schemas[schemaPos].second.standard[i][0];
+            char SintValue[1] = {0};
+            SintValue[0] = StandardSintValue;
+            memcpy(writebuff + writebuff_pos, SintValue, 1); // SINT标准值
+            writebuff_pos += 1;
+        }
+        break;
+    }
+    case ValueType::INT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; i++)
+        {
+            short standardIntValue = converter.ToInt16_m(CurrentZipTemplate.schemas[schemaPos].second.standard[i]);
+            char IntValue[2] = {0};
+            converter.ToInt16Buff(standardIntValue, IntValue);
+            memcpy(writebuff + writebuff_pos, IntValue, 2); // INT标准值
+            writebuff_pos += 2;
+        }
+        break;
+    }
+    case ValueType::DINT:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; i++)
+        {
+            int standardDintValue = converter.ToInt32_m(CurrentZipTemplate.schemas[schemaPos].second.standard[i]);
+            char DintValue[4] = {0};
+            converter.ToInt32Buff(standardDintValue, DintValue);
+            memcpy(writebuff + writebuff_pos, DintValue, 4); // DINT标准值
+            writebuff_pos += 4;
+        }
+        break;
+    }
+    case ValueType::REAL:
+    {
+        for (auto i = 0; i < CurrentZipTemplate.schemas[schemaPos].second.arrayLen; i++)
+        {
+            float standardRealValue = converter.ToFloat_m(CurrentZipTemplate.schemas[schemaPos].second.standard[i]);
+            char RealValue[4] = {0};
+            converter.ToFloatBuff(standardRealValue, RealValue);
+            memcpy(writebuff + writebuff_pos, RealValue, 4); // REAL标准值
+            writebuff_pos += 4;
+        }
+        break;
     }
     default:
         break;
@@ -518,10 +1187,15 @@ int ZipUtils::IsTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, cha
     DataTypeConverter converter;
     if (readbuff[readbuff_pos - 1] == (char)TS_AND_ARRAY) //既是时间序列又是数组
     {
-        //直接拷贝
-        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen);
-        writebuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
-        readbuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
+        // //直接拷贝
+        // memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen);
+        // writebuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
+        // readbuff_pos += (CurrentZipTemplate.schemas[schemaPos].second.arrayLen * CurrentZipTemplate.schemas[schemaPos].second.valueBytes + ZIP_TIMESTAMP_SIZE) * CurrentZipTemplate.schemas[schemaPos].second.tsLen;
+        if (ZipUtils::IsTsAndArrayReZip(schemaPos, writebuff, writebuff_pos, readbuff, readbuff_pos, DataType))
+        {
+            cout << "存在未知的数据类型，请检查模板或者更换功能块" << endl;
+            return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+        }
     }
     else if (readbuff[readbuff_pos - 1] == (char)ONLY_TS) //只是时间序列
     {
@@ -607,6 +1281,88 @@ int ZipUtils::IsArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, 
     {
         cout << "还原类型出错！请检查压缩功能是否有误" << endl;
         return StatusCode::ZIPTYPE_ERROR;
+    }
+    return 0;
+}
+
+int ZipUtils::IsArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, ValueType::ValueType valueType)
+{
+    if (readbuff[readbuff_pos - 1] == (char)DATA_AND_TIME) //既有时间又有数据
+    {
+        //直接拷贝
+        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE);
+        writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
+        readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen + ZIP_TIMESTAMP_SIZE;
+    }
+    else if (readbuff[readbuff_pos - 1] == (char)ONLY_DATA) //只有数据
+    {
+        //直接拷贝
+        memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen);
+        writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+        readbuff_pos +
+            CurrentZipTemplate.schemas[schemaPos].second.valueBytes *CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+    }
+    else if (readbuff[readbuff_pos - 1] == (char)ONLY_TIME) //只有时间戳
+    {
+        //添加数组标准值，然后添加原时间戳
+        addArrayStandardValue(schemaPos, writebuff, writebuff_pos, valueType);
+        memcpy(writebuff, readbuff, ZIP_TIMESTAMP_SIZE);
+        writebuff_pos += ZIP_TIMESTAMP_SIZE;
+        readbuff_pos += ZIP_TIMESTAMP_SIZE;
+    }
+    else
+    {
+        cout << "还原类型出错！请检查压缩功能是否有误" << endl;
+        return StatusCode::ZIPTYPE_ERROR;
+    }
+    return 0;
+}
+
+int ZipUtils::IsTsAndArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, ValueType::ValueType DataType)
+{
+    DataTypeConverter converter;
+    //先获得第一次采样的时间
+    char time[ZIP_TIMESTAMP_SIZE];
+    memcpy(time, readbuff + readbuff_pos, ZIP_TIMESTAMP_SIZE);
+    uint64_t startTime = converter.ToLong64(time);
+    readbuff_pos += ZIP_TIMESTAMP_SIZE;
+
+    for (auto j = 0; j < CurrentZipTemplate.schemas[schemaPos].second.tsLen; j++)
+    {
+        if (readbuff[readbuff_pos] == (char)-1) //说明没有未压缩的时间序列了
+        {
+            //将标准值数据拷贝到writebuff
+            ZipUtils::addArrayStandardValue(schemaPos, writebuff, writebuff_pos, DataType);
+            //添加上时间戳
+            ZipUtils::addTsTime(schemaPos, startTime, writebuff, writebuff_pos, j);
+        }
+        else
+        {
+            //对比编号是否等于未压缩的时间序列编号
+            char zipTsPosNum[ZIP_ZIPPOS_SIZE] = {0};
+            memcpy(zipTsPosNum, readbuff + readbuff_pos, ZIP_ZIPPOS_SIZE);
+            uint16_t tsPosCmp = converter.ToUInt16(zipTsPosNum);
+
+            if (tsPosCmp == j) //是未压缩时间序列的编号
+            {
+                //将未压缩的数据拷贝到writebuff
+                readbuff_pos += ZIP_ZIPPOS_SIZE;
+                memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen);
+                readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+                writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+                //添加上时间戳
+                ZipUtils::addTsTime(schemaPos, startTime, writebuff, writebuff_pos, j);
+            }
+            else //不是未压缩时间序列的编号
+            {
+                //将标准值数据拷贝到writebuff
+                ZipUtils::addArrayStandardValue(schemaPos, writebuff, writebuff_pos, DataType);
+                //添加上时间戳
+                ZipUtils::addTsTime(schemaPos, startTime, writebuff, writebuff_pos, j);
+            }
+        }
+        if (j == CurrentZipTemplate.schemas[schemaPos].second.tsLen - 1) //时间序列还原结束，readbuff_pos+1跳过0xFF标志
+            readbuff_pos += 1;
     }
     return 0;
 }
