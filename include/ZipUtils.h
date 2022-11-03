@@ -27,10 +27,15 @@ public:
     static void addZipType(ZipType ziptype, char *writebuff, long &writebuff_pos);
     static int IsTSZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, ValueType::ValueType DataType);
     static void IsArrayZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos);
+    static int IsArrayZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, ValueType::ValueType DataType);
+    static int IsTsAndArrayZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, ValueType::ValueType DataType);
     static void addStandardValue(int schemaPos, char *writebuff, long &writebuff_pos, ValueType::ValueType DataType);
+    static void addArrayStandardValue(int schemaPos, char *writebuff, long &writebuff_pos, ValueType::ValueType DataType);
     static void addTsTime(int schemaPos, uint64_t startTime, char *writebuff, long &writebuff_pos, int tsPos);
     static int IsTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, ValueType::ValueType DataType);
     static int IsArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos);
+    static int IsArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, ValueType::ValueType DataType);
+    static int IsTsAndArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, ValueType::ValueType DataType);
     static int IsNotArrayAndTSReZip(int schemaPos, char *writebuff, long &writebuff_pos, char *readbuff, long &readbuff_pos, ValueType::ValueType DataType);
 };
 

@@ -35,7 +35,12 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
             }
             else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos);
+                // ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos);
+                if (ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::BOOL))
+                {
+                    cout << "存在未知的数据类型，请检查模板或者更换功能块" << endl;
+                    return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+                }
             }
             else
             {
@@ -92,7 +97,12 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
             }
             else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos);
+                // ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos);
+                if (ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::USINT))
+                {
+                    cout << "存在未知的数据类型，请检查模板或者更换功能块" << endl;
+                    return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+                }
             }
             else
             {
@@ -151,7 +161,12 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
             }
             else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos);
+                // ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos);
+                if (ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::UINT))
+                {
+                    cout << "存在未知的数据类型，请检查模板或者更换功能块" << endl;
+                    return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+                }
             }
             else
             {
@@ -210,7 +225,12 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
             }
             else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos);
+                // ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos);
+                if (ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::UDINT))
+                {
+                    cout << "存在未知的数据类型，请检查模板或者更换功能块" << endl;
+                    return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+                }
             }
             else
             {
@@ -269,14 +289,19 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
             }
             else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos);
+                // ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos);
+                if (ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::SINT))
+                {
+                    cout << "存在未知的数据类型，请检查模板或者更换功能块" << endl;
+                    return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+                }
             }
             else
             {
                 char standardSintValue = CurrentZipTemplate.schemas[i].second.standardValue[0];
                 char maxSintValue = CurrentZipTemplate.schemas[i].second.maxValue[0];
                 char minSintValue = CurrentZipTemplate.schemas[i].second.minValue[0];
-                // 2个字节,暂定，根据后续情况可能进行更改
+                // 1个字节,暂定，根据后续情况可能进行更改
                 char value[1] = {0};
                 memcpy(value, readbuff + readbuff_pos, 1);
                 char currentSintValue = value[0];
@@ -328,7 +353,12 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
             }
             else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos);
+                // ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos);
+                if (ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::INT))
+                {
+                    cout << "存在未知的数据类型，请检查模板或者更换功能块" << endl;
+                    return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+                }
             }
             else
             {
@@ -387,7 +417,12 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
             }
             else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos);
+                // ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos);
+                if (ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::DINT))
+                {
+                    cout << "存在未知的数据类型，请检查模板或者更换功能块" << endl;
+                    return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+                }
             }
             else
             {
@@ -446,7 +481,12 @@ int ZipBuf(char *readbuff, char **writebuff, long &writebuff_pos)
             }
             else if (CurrentZipTemplate.schemas[i].second.isArray == true) //是数组类型则不压缩
             {
-                ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos);
+                // ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos);
+                if (ZipUtils::IsArrayZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::REAL))
+                {
+                    cout << "存在未知的数据类型，请检查模板或者更换功能块" << endl;
+                    return StatusCode::DATA_TYPE_MISMATCH_ERROR;
+                }
             }
             else
             {
@@ -575,7 +615,11 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
             if (len == 0) //表示文件完全压缩
             {
                 //添加上标准值到writebuff
-                ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::BOOL);
+                // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::BOOL);
+                if (CurrentZipTemplate.schemas[i].second.isArray)
+                    ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::BOOL);
+                else
+                    ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::BOOL);
             }
             else //文件未完全压缩
             {
@@ -596,7 +640,8 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                         }
                         else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            // if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::BOOL))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else
@@ -608,13 +653,21 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                     else //不是未压缩的编号
                     {
                         //添加上标准值到writebuff
-                        ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::BOOL);
+                        // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::BOOL);
+                        if (CurrentZipTemplate.schemas[i].second.isArray)
+                            ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::BOOL);
+                        else
+                            ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::BOOL);
                     }
                 }
                 else //没有未压缩的数据了
                 {
                     //添加上标准值到writebuff
-                    ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::BOOL);
+                    // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::BOOL);
+                    if (CurrentZipTemplate.schemas[i].second.isArray)
+                        ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::BOOL);
+                    else
+                        ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::BOOL);
                 }
             }
         }
@@ -623,7 +676,11 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
             if (len == 0) //表示文件完全压缩
             {
                 //添加上标准值到writebuff
-                ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UDINT);
+                // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UDINT);
+                if (CurrentZipTemplate.schemas[i].second.isArray)
+                    ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::UDINT);
+                else
+                    ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UDINT);
             }
             else //文件未完全压缩
             {
@@ -644,7 +701,8 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                         }
                         else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            // if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::UDINT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else
@@ -656,13 +714,21 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                     else //不是未压缩的编号
                     {
                         //添加上标准值到writebuff
-                        ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UDINT);
+                        // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UDINT);
+                        if (CurrentZipTemplate.schemas[i].second.isArray)
+                            ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::UDINT);
+                        else
+                            ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UDINT);
                     }
                 }
                 else //没有未压缩的数据了
                 {
                     //添加上标准值到writebuff
-                    ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UDINT);
+                    // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UDINT);
+                    if (CurrentZipTemplate.schemas[i].second.isArray)
+                        ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::UDINT);
+                    else
+                        ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UDINT);
                 }
             }
         }
@@ -671,7 +737,11 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
             if (len == 0) //表示文件完全压缩
             {
                 //添加上标准值到writebuff
-                ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::USINT);
+                // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::USINT);
+                if (CurrentZipTemplate.schemas[i].second.isArray)
+                    ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::USINT);
+                else
+                    ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::USINT);
             }
             else //文件未完全压缩
             {
@@ -692,7 +762,8 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                         }
                         else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            // if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::USINT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else
@@ -704,13 +775,21 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                     else //不是未压缩的编号
                     {
                         //添加上标准值到writebuff
-                        ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::USINT);
+                        // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::USINT);
+                        if (CurrentZipTemplate.schemas[i].second.isArray)
+                            ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::USINT);
+                        else
+                            ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::USINT);
                     }
                 }
                 else //没有未压缩的数据了
                 {
                     //添加上标准值到writebuff
-                    ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::USINT);
+                    // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::USINT);
+                    if (CurrentZipTemplate.schemas[i].second.isArray)
+                        ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::USINT);
+                    else
+                        ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::USINT);
                 }
             }
         }
@@ -719,7 +798,11 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
             if (len == 0) //表示文件完全压缩
             {
                 //添加上标准值到writebuff
-                ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UINT);
+                // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UINT);
+                if (CurrentZipTemplate.schemas[i].second.isArray)
+                    ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::UINT);
+                else
+                    ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UINT);
             }
             else //文件未完全压缩
             {
@@ -740,7 +823,8 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                         }
                         else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            // if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::UINT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else
@@ -752,13 +836,21 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                     else //不是未压缩的编号
                     {
                         //添加上标准值到writebuff
-                        ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UINT);
+                        // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UINT);
+                        if (CurrentZipTemplate.schemas[i].second.isArray)
+                            ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::UINT);
+                        else
+                            ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UINT);
                     }
                 }
                 else //没有未压缩的数据了
                 {
                     //添加上标准值到writebuff
-                    ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UINT);
+                    // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UINT);
+                    if (CurrentZipTemplate.schemas[i].second.isArray)
+                        ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::UINT);
+                    else
+                        ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::UINT);
                 }
             }
         }
@@ -767,7 +859,11 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
             if (len == 0) //表示文件完全压缩
             {
                 //添加上标准值到writebuff
-                ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::SINT);
+                // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::SINT);
+                if (CurrentZipTemplate.schemas[i].second.isArray)
+                    ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::SINT);
+                else
+                    ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::SINT);
             }
             else //文件未完全压缩
             {
@@ -788,7 +884,8 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                         }
                         else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            // if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::SINT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else
@@ -800,13 +897,21 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                     else //不是未压缩的编号
                     {
                         //添加上标准值到writebuff
-                        ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::SINT);
+                        // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::SINT);
+                        if (CurrentZipTemplate.schemas[i].second.isArray)
+                            ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::SINT);
+                        else
+                            ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::SINT);
                     }
                 }
                 else //没有未压缩的数据了
                 {
                     //添加上标准值到writebuff
-                    ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::SINT);
+                    // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::SINT);
+                    if (CurrentZipTemplate.schemas[i].second.isArray)
+                        ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::SINT);
+                    else
+                        ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::SINT);
                 }
             }
         }
@@ -815,7 +920,11 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
             if (len == 0) //表示文件完全压缩
             {
                 //添加上标准值到writebuff
-                ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::INT);
+                // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::INT);
+                if (CurrentZipTemplate.schemas[i].second.isArray)
+                    ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::INT);
+                else
+                    ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::INT);
             }
             else //文件未完全压缩
             {
@@ -836,7 +945,8 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                         }
                         else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            // if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::INT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else
@@ -848,13 +958,21 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                     else //不是未压缩的编号
                     {
                         //添加上标准值到writebuff
-                        ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::INT);
+                        // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::INT);
+                        if (CurrentZipTemplate.schemas[i].second.isArray)
+                            ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::INT);
+                        else
+                            ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::INT);
                     }
                 }
                 else //没有未压缩的数据了
                 {
                     //添加上标准值到writebuff
-                    ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::INT);
+                    // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::INT);
+                    if (CurrentZipTemplate.schemas[i].second.isArray)
+                        ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::INT);
+                    else
+                        ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::INT);
                 }
             }
         }
@@ -863,7 +981,11 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
             if (len == 0) //表示文件完全压缩
             {
                 //添加上标准值到writebuff
-                ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
+                // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
+                if (CurrentZipTemplate.schemas[i].second.isArray)
+                    ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
+                else
+                    ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
             }
             else //文件未完全压缩
             {
@@ -884,7 +1006,8 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                         }
                         else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            // if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::DINT))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else
@@ -896,13 +1019,21 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                     else //不是未压缩的编号
                     {
                         //添加上标准值到writebuff
-                        ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
+                        // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
+                        if (CurrentZipTemplate.schemas[i].second.isArray)
+                            ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
+                        else
+                            ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
                     }
                 }
                 else //没有未压缩的数据了
                 {
                     //添加上标准值到writebuff
-                    ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
+                    // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
+                    if (CurrentZipTemplate.schemas[i].second.isArray)
+                        ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
+                    else
+                        ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
                 }
             }
         }
@@ -911,7 +1042,11 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
             if (len == 0) //表示文件完全压缩
             {
                 //添加上标准值到writebuff
-                ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::REAL);
+                // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::REAL);
+                if (CurrentZipTemplate.schemas[i].second.isArray)
+                    ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
+                else
+                    ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
             }
             else //文件未完全压缩
             {
@@ -932,7 +1067,8 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                         }
                         else if (CurrentZipTemplate.schemas[i].second.isArray == true)
                         {
-                            if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            // if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos))
+                            if (ZipUtils::IsArrayReZip(i, *writebuff, writebuff_pos, readbuff, readbuff_pos, ValueType::REAL))
                                 return StatusCode::ZIPTYPE_ERROR;
                         }
                         else
@@ -944,13 +1080,21 @@ int ReZipBuf(char *readbuff, const long len, char **writebuff, long &writebuff_p
                     else //不是未压缩的编号
                     {
                         //添加上标准值到writebuff
-                        ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::REAL);
+                        // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::REAL);
+                        if (CurrentZipTemplate.schemas[i].second.isArray)
+                            ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
+                        else
+                            ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
                     }
                 }
                 else //没有未压缩的数据了
                 {
                     //添加上标准值到writebuff
-                    ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::REAL);
+                    // ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::REAL);
+                    if (CurrentZipTemplate.schemas[i].second.isArray)
+                        ZipUtils::addArrayStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
+                    else
+                        ZipUtils::addStandardValue(i, *writebuff, writebuff_pos, ValueType::DINT);
                 }
             }
         }
