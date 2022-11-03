@@ -381,14 +381,14 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int zip)
     //     pthread_create(&settingsWatcher, NULL, checkSettings, NULL);
     //     settingsWatcherStarted = true;
     // }
-    // if (!timerStarted && settings("Pack_Mode") == "timed")
-    // {
-    //     int ret = pthread_create(&timer, NULL, checkTime, NULL);
-    //     if (ret != 0)
-    //     {
-    //         cout << "pthread_create error: error_code=" << ret << endl;
-    //     }
-    // }
+    if (!timerStarted && settings("Pack_Mode") == "timed")
+    {
+        int ret = pthread_create(&timer, NULL, checkTime, NULL);
+        if (ret != 0)
+        {
+            cout << "pthread_create error: error_code=" << ret << endl;
+        }
+    }
     // else if (settings("Pack_Mode") == "auto")
     // {
     //     autoPackManager = thread(autoPacker);
@@ -409,100 +409,98 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int zip)
                 zip = 0;
         }
     }
-    insertBuffer.write(buffer, zip);
-    // string savepath = buffer->savePath;
-    // if (savepath == "")
-    // {
-    //     IOBusy = 0;
-    //     return StatusCode::EMPTY_SAVE_PATH;
-    // }
-    // long fp;
-    // long curtime = getMilliTime();
-    // time_t time = curtime / 1000;
-    // struct tm *dateTime = localtime(&time);
-    // string fileID = FileIDManager::GetFileID(buffer->savePath) + "_";
-    // string finalPath = "";
-    // finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000));
-    // char mode[2] = {'a', 'b'};
-    // if (zip == 0)
-    // {
-    //     finalPath.append(".idb");
-    //     int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
-    //     if (err == 0)
-    //     {
-    //         err = DB_Write(fp, buffer->buffer, buffer->length);
-    //         if (err == 0)
-    //         {
-    //             IOBusy = 0;
-    //             return DB_Close(fp);
-    //         }
-    //     }
-    //     IOBusy = 0;
-    //     return err;
-    // }
-    // else
-    // {
-    //     finalPath.append(".idbzip");
-    //     if (buffer->buffer[0] == 0) //数据未压缩
-    //     {
-    //         int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
-    //         if (err == 0)
-    //         {
-    //             err = DB_Write(fp, buffer->buffer + 1, buffer->length - 1);
-    //             if (err == 0)
-    //             {
-    //                 IOBusy = 0;
-    //                 return DB_Close(fp);
-    //             }
-    //         }
-    //         IOBusy = 0;
-    //         return err;
-    //     }
-    //     else if (buffer->buffer[0] == 1) //数据完全压缩
-    //     {
 
-    //         int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
-    //         err = DB_Close(fp);
-    //         IOBusy = 0;
-    //         return err;
-    //     }
-    //     else if (buffer->buffer[0] == 2) //数据未完全压缩
-    //     {
-    //         int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
-    //         if (err == 0)
-    //         {
-    //             err = DB_Write(fp, buffer->buffer + 1, buffer->length - 1);
-    //             if (err == 0)
-    //             {
-    //                 IOBusy = 0;
-    //                 return DB_Close(fp);
-    //             }
-    //         }
-    //         IOBusy = 0;
-    //         return err;
-    //     }
-    // }
+    string savepath = buffer->savePath;
+    if (savepath == "")
+    {
+        IOBusy = 0;
+        return StatusCode::EMPTY_SAVE_PATH;
+    }
+    long fp;
+    long curtime = getMilliTime();
+    time_t time = curtime / 1000;
+    struct tm *dateTime = localtime(&time);
+    string fileID = FileIDManager::GetFileID(buffer->savePath) + "_";
+    string finalPath = "";
+    finalPath = finalPath.append(buffer->savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000));
+
+    // insertBuffer.write(buffer, zip, finalPath);
+    char mode[2] = {'a', 'b'};
+    if (zip == 0)
+    {
+        finalPath.append(".idb");
+        int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
+        if (err == 0)
+        {
+            err = DB_Write(fp, buffer->buffer, buffer->length);
+            if (err == 0)
+            {
+                IOBusy = 0;
+                return DB_Close(fp);
+            }
+        }
+        IOBusy = 0;
+        return err;
+    }
+    else
+    {
+        finalPath.append(".idbzip");
+        if (buffer->buffer[0] == 0) //数据未压缩
+        {
+            int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
+            if (err == 0)
+            {
+                err = DB_Write(fp, buffer->buffer + 1, buffer->length - 1);
+                if (err == 0)
+                {
+                    IOBusy = 0;
+                    return DB_Close(fp);
+                }
+            }
+            IOBusy = 0;
+            return err;
+        }
+        else if (buffer->buffer[0] == 1) //数据完全压缩
+        {
+
+            int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
+            err = DB_Close(fp);
+            IOBusy = 0;
+            return err;
+        }
+        else if (buffer->buffer[0] == 2) //数据未完全压缩
+        {
+            int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
+            if (err == 0)
+            {
+                err = DB_Write(fp, buffer->buffer + 1, buffer->length - 1);
+                if (err == 0)
+                {
+                    IOBusy = 0;
+                    return DB_Close(fp);
+                }
+            }
+            IOBusy = 0;
+            return err;
+        }
+    }
     IOBusy = 0;
     return errCode;
 }
 
-// int main()
-// {
-//     DB_DataBuffer buffer;
-//     vector<string> files;
-//     readDataFiles("JinfeiSeven", files);
-//     for (int i = 0; i < 1000; i++)
-//     {
-//         buffer.savePath = files[rand() % files.size()].c_str();
-//         DB_ReadFile(&buffer);
-//         buffer.savePath = "JinfeiSeven";
-//         if (DB_InsertRecord(&buffer, 0) != 0)
-//             cout << "warning" << endl;
-//         free(buffer.buffer);
-//     }
+int main()
+{
+    DB_DataBuffer buffer;
+    char data[] = {'1', 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '2'};
+    buffer.buffer = data;
+    buffer.length = 20;
+    buffer.savePath = "testdata";
+    for (int i = 0; i < 40; i++)
+    {
+    }
 
-//     return 0;
-// }
+    return 0;
+}
 
 // int main()
 // {

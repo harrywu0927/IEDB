@@ -68,7 +68,6 @@ PackManager::PackManager(long memcap) //初始化allPacks
     }
 
     memCapacity = memcap;
-    // cout << "memcapacity:" << memcap << endl;
 }
 
 /**
@@ -293,7 +292,7 @@ pair<char *, long> PackManager::GetPack(string path)
     }
     catch (iedb_err &e)
     {
-        RuntimeLogger.critical("Error occured when getting pack {} : {}", path, e.what());
+        RuntimeLogger.critical("Error occured when reading pack {} : {}", path, e.what());
         throw e;
     }
     catch (const std::exception &e)

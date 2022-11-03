@@ -716,8 +716,6 @@ int DB_DeleteRecords_Old(DB_QueryParams *params)
                 packReader.ReadPackHead(fileNum, templateName);
                 TemplateManager::CheckTemplate(templateName);
                 int deleteNum = 0; //此包中已删除文件
-                //一次分配一整个pak长度的空间，避免频繁分配影响性能
-                // shared_ptr<char> newPack = make_shared<char>(packReader.GetPackLength());
                 char *newPack = new char[packReader.GetPackLength()];
                 long cur = 4;
                 memcpy(newPack + cur, templateName.c_str(), templateName.length() <= 20 ? templateName.length() : 20);

@@ -526,15 +526,15 @@ int DB_Backup(const char *path)
     return backupHelper.CreateBackup(path);
 }
 
-int main()
-{
-    // BackupHelper helper;
-    // backupHelper.CreateBackup("testIEDB/JinfeiSixteen");
-    FILE *file = fopen("testIEDB_Backup/JinfeiSixteen/1660033849.bak", "rb");
-    size_t filesize = fs::file_size("testIEDB_Backup/JinfeiSixteen/1660033849.bak");
-    long filenum, timestamp;
-    string path;
-    backupHelper.ReadBakHead(file, timestamp, filenum, path);
-    backupHelper.CheckBackup(file, filesize, filenum);
-    return 0;
-}
+// int main()
+// {
+//     // BackupHelper helper;
+//     // backupHelper.CreateBackup("testIEDB/JinfeiSixteen");
+//     FILE *file = fopen("testIEDB_Backup/JinfeiSixteen/1660033849.bak", "rb");
+//     size_t filesize = fs::file_size("testIEDB_Backup/JinfeiSixteen/1660033849.bak");
+//     long filenum, timestamp;
+//     string path;
+//     backupHelper.ReadBakHead(file, timestamp, filenum, path);
+//     backupHelper.CheckBackup(file, filesize, filenum);
+//     return 0;
+// }

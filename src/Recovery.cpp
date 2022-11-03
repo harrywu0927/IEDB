@@ -21,6 +21,7 @@
  */
 int BackupHelper::BakRestoration(FILE *file, size_t &pos, size_t bodyPos) noexcept
 {
+
     return 0;
 }
 
@@ -78,8 +79,8 @@ int BackupHelper::DataRecovery(string path)
 
     fseek(backup, -10, SEEK_END);
     long pos = ftell(backup);
-    char check[11] = {0};
-    fread(check, 10, 1, backup);
+    // char check[11] = {0};
+    // fread(check, 10, 1, backup);
     fseek(backup, 0, SEEK_SET);
     if (ReadBakHead(backup, timestamp, filenum, bakpath) == -1)
         return StatusCode::UNKNWON_DATAFILE;

@@ -1020,7 +1020,6 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 				char *buff = nullptr, *img = nullptr;
 				long timestamp;
 				int zipType, readLength;
-				// long dataPos = packReader.Next(readLength, timestamp, zipType, &buff, completeZiped);
 				long dataPos = packReader.Next(readLength, timestamp, zipType);
 				if (timestamp < params->start || timestamp > params->end) //在时间区间外
 					continue;

@@ -211,7 +211,7 @@ int FindImage(char **buff, long &length, string &path, int index, const char *va
  * @param length 数据长度
  * @param path 文件路径
  * @param index 包内节拍位序
- * @param valueName 变量名
+ * @param names 变量名
  * @return int
  */
 int FindImage(char **buff, long &length, string &path, int index, vector<string> &names)
@@ -303,7 +303,7 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
                     string startFID = fileID;
                     if (fileNum > 1)
                     {
-                        cout << "skipping " << fileName << "\n";
+                        // cout << "skipping " << fileName << "\n";
                         packReader.Skip(fileNum - 2);
                         packReader.Next(readLength, fileID, zipType);
                     }

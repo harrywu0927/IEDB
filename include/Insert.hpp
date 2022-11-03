@@ -6,7 +6,15 @@
 #include <future>
 #include <Logger.h>
 using namespace std;
-#define InsertBufferLimit 1024 * 1024 * 4
+#define InsertBufferLimit 100
+
+struct Rhythm
+{
+    char *data;
+    int length;
+    string savePath;
+    bool zip;
+};
 
 /**
  * @brief 插入缓冲
@@ -18,7 +26,7 @@ class InsertBuffer
 {
 private:
     int size;
-    list<pair<DB_DataBuffer, bool>> buffer[2];
+    list<Rhythm> buffer[2];
     int switcher;
     int error;
 
@@ -31,21 +39,21 @@ public:
     }
     ~InsertBuffer() {}
     int flush(int switcher);
-    int write(DB_DataBuffer *buffer, bool zip);
+    int write(DB_DataBuffer *buffer, bool zip, string savePath);
 };
 extern InsertBuffer insertBuffer;
 
-int InsertBuffer::write(DB_DataBuffer *data, bool zip)
+int InsertBuffer::write(DB_DataBuffer *data, bool zip, string savePath)
 {
-    DB_DataBuffer temp;
+    Rhythm rhythm;
     if (data->length != 0)
     {
-        temp.buffer = new char[data->length];
-        memcpy(temp.buffer, data->buffer, data->length);
+        rhythm.data = new char[data->length];
+        memcpy(rhythm.data, data->buffer, data->length);
     }
-    temp.length = data->length;
-    temp.savePath = data->savePath;
-    buffer[switcher].push_back({temp, zip});
+    rhythm.length = data->length;
+    rhythm.savePath = savePath;
+    buffer[switcher].push_back(rhythm);
     size += data->length;
     if (size >= InsertBufferLimit)
     {
@@ -62,29 +70,29 @@ int InsertBuffer::flush(int switcher)
         while (!buffer[switcher].empty())
         {
             auto item = buffer[switcher].front();
-            string savepath = item.first.savePath;
-            if (savepath == "")
-            {
-                throw iedb_err(StatusCode::EMPTY_SAVE_PATH);
-            }
+            // string savepath = item.savePath;
+            // if (savepath == "")
+            // {
+            //     throw iedb_err(StatusCode::EMPTY_SAVE_PATH);
+            // }
             long fp;
-            long curtime = getMilliTime();
-            time_t time = curtime / 1000;
-            struct tm *dateTime = localtime(&time);
-            string fileID = FileIDManager::GetFileID(item.first.savePath) + "_";
-            string finalPath = "";
-            finalPath = finalPath.append(item.first.savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000));
+            // long curtime = getMilliTime();
+            // time_t time = curtime / 1000;
+            // struct tm *dateTime = localtime(&time);
+            // string fileID = FileIDManager::GetFileID(item.savePath) + "_";
+            // string finalPath = "";
+            // finalPath = finalPath.append(item.savePath).append("/").append(fileID).append(to_string(1900 + dateTime->tm_year)).append("-").append(to_string(1 + dateTime->tm_mon)).append("-").append(to_string(dateTime->tm_mday)).append("-").append(to_string(dateTime->tm_hour)).append("-").append(to_string(dateTime->tm_min)).append("-").append(to_string(dateTime->tm_sec)).append("-").append(to_string(curtime % 1000));
             char mode[2] = {'w', 'b'};
-            if (item.second == true)
+            if (item.zip == true)
             {
-                finalPath.append(".idbzip");
-                if (item.first.buffer[0] == 0) //数据未压缩
+                item.savePath.append(".idbzip");
+                if (item.data[0] == 0) //数据未压缩
                 {
-                    int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
+                    int err = DB_Open(const_cast<char *>(item.savePath.c_str()), mode, &fp);
                     if (err == 0)
                     {
-                        err = DB_Write(fp, item.first.buffer + 1, item.first.length - 1);
-                        delete[] item.first.buffer;
+                        err = DB_Write(fp, item.data + 1, item.length - 1);
+                        delete[] item.data;
                         if (err == 0)
                         {
                             DB_Close(fp);
@@ -96,14 +104,14 @@ int InsertBuffer::flush(int switcher)
                     }
                     else
                     {
-                        delete[] item.first.buffer;
+                        delete[] item.data;
                         throw iedb_err(err);
                     }
                 }
-                else if (item.first.buffer[0] == 1) //数据完全压缩
+                else if (item.data[0] == 1) //数据完全压缩
                 {
 
-                    int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
+                    int err = DB_Open(const_cast<char *>(item.savePath.c_str()), mode, &fp);
                     if (err == 0)
                     {
                         DB_Close(fp);
@@ -113,13 +121,13 @@ int InsertBuffer::flush(int switcher)
                         throw iedb_err(err);
                     }
                 }
-                else if (item.first.buffer[0] == 2) //数据未完全压缩
+                else if (item.data[0] == 2) //数据未完全压缩
                 {
-                    int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
+                    int err = DB_Open(const_cast<char *>(item.savePath.c_str()), mode, &fp);
                     if (err == 0)
                     {
-                        err = DB_Write(fp, item.first.buffer + 1, item.first.length - 1);
-                        delete[] item.first.buffer;
+                        err = DB_Write(fp, item.data + 1, item.length - 1);
+                        delete[] item.data;
                         if (err == 0)
                         {
                             DB_Close(fp);
@@ -131,19 +139,19 @@ int InsertBuffer::flush(int switcher)
                     }
                     else
                     {
-                        delete[] item.first.buffer;
+                        delete[] item.data;
                         throw iedb_err(err);
                     }
                 }
             }
             else
             {
-                finalPath.append(".idb");
-                int err = DB_Open(const_cast<char *>(finalPath.c_str()), mode, &fp);
+                item.savePath.append(".idb");
+                int err = DB_Open(const_cast<char *>(item.savePath.c_str()), mode, &fp);
                 if (err == 0)
                 {
-                    err = DB_Write(fp, item.first.buffer, item.first.length);
-                    delete[] item.first.buffer;
+                    err = DB_Write(fp, item.data, item.length);
+                    delete[] item.data;
                     if (err == 0)
                     {
                         DB_Close(fp);
@@ -155,7 +163,7 @@ int InsertBuffer::flush(int switcher)
                 }
                 else
                 {
-                    delete[] item.first.buffer;
+                    delete[] item.data;
                     throw iedb_err(err);
                 }
             }

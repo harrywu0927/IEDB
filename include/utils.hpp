@@ -210,10 +210,6 @@ queue<string> InitFileQueue();
 
 int DB_QueryByTimespan_Single(DB_DataBuffer *buffer, DB_QueryParams *params);
 
-// int DB_QueryWholeFile_MultiThread(DB_DataBuffer *buffer, DB_QueryParams *params);
-
-int DB_QueryWholeFile_Single(DB_DataBuffer *buffer, DB_QueryParams *params);
-
 // python相关
 PyObject *ConvertToPyList_ML(DB_DataBuffer *buffer);
 
@@ -810,8 +806,8 @@ class PackManager
 private:
     long memUsed; //已占用内存大小
     long memCapacity;
-    list<pair<string, pair<char *, long>>> packsInMem; //当前内存中的pack文件路径-内存地址、长度
-    unordered_map<string, list<pair<string, pair<char *, long>>>::iterator> key2pos;
+    list<pair<string, pair<char *, long>>> packsInMem;                               //当前内存中的pack文件路径(key)-内存地址、长度(value)
+    unordered_map<string, list<pair<string, pair<char *, long>>>::iterator> key2pos; // key到双向链表packsInMem中对应value的映射
 
 public:
     PackManager(long memcap); //初始化allPacks
@@ -855,7 +851,6 @@ extern PackManager packManager;
 
 //产线文件夹命名规范统一为 xxxx/yyy
 extern unordered_map<string, int> curNum; //记录每个产线文件夹当前已有idb文件数
-// extern unordered_map<string, bool> filesListRead; //记录每个产线文件夹是否已读取过文件列表
 //文件ID管理
 //根据总体目录结构发放文件ID
 class FileIDManager

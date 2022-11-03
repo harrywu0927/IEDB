@@ -298,7 +298,7 @@ int STAT_Process(DB_DataBuffer *buffer, STAT_Type type)
             {
                 item = PyList_GetItem(ret, i); //根据下标取出python列表中的元素
                 val = PyFloat_AsDouble(item);  //转换为c类型的数据
-                cout << val << " ";
+                // cout << val << " ";
                 memcpy(newBuffer + startPos + i * 8, &val, 8);
             }
             Py_XDECREF(pFunc);
