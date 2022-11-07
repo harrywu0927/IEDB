@@ -2,7 +2,7 @@
 
 /**
  * @brief 获取所有子文件夹
- * 
+ *
  * @param dirs 获得的子文件夹
  * @param basePath 根目录
  */
@@ -24,7 +24,7 @@ void readAllDirs(vector<string> &dirs, string basePath)
 
 /**
  * @brief 通过文件后缀获得相应的文件
- * 
+ *
  * @param paths 获得的文件
  * @param path 路径
  * @param extension 后缀名
@@ -71,7 +71,7 @@ void readFiles(vector<string> &paths, string path, string extension, bool recurs
 
 /**
  * @brief 获取某一目录下的所有文件 不递归子文件夹
- * 
+ *
  * @param path 文件路径
  * @param files 获得的文件
  */
@@ -98,7 +98,7 @@ void readFileList(string path, vector<string> &files)
 
 /**
  * @brief 获取.idb文件
- * 
+ *
  * @param path 文件路径
  * @param files 获得的.idb文件
  */
@@ -131,7 +131,7 @@ void readIDBFilesList(string path, vector<string> &files)
 
 /**
  * @brief 获取.idbzip文件
- * 
+ *
  * @param path 文件路径
  * @param files 获得的.idbzip文件
  */
@@ -164,7 +164,7 @@ void readIDBZIPFilesList(string path, vector<string> &files)
 
 /**
  * @brief 获取.tem文件
- * 
+ *
  * @param path 文件路径
  * @param files 获得的.tem文件
  */
@@ -193,7 +193,7 @@ void readTEMFilesList(string path, vector<string> &files)
 
 /**
  * @brief 获取.ziptem文件
- * 
+ *
  * @param path 文件路径
  * @param files 获得的.ziptem文件
  */
@@ -248,7 +248,7 @@ void readDataFilesWithTimestamps(string path, vector<pair<string, long>> &filesW
                 if (file.extension() == ".idbzip" || file.extension() == ".idb")
                 {
                     string tmp = file.stem();
-                    vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[1].c_str()), "-");
+                    vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_").back().c_str()), "-");
                     if (time.size() == 0)
                     {
                         continue;
@@ -331,7 +331,7 @@ void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWi
                 if (file.extension() == ".idb")
                 {
                     string tmp = file.stem();
-                    vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[1].c_str()), "-");
+                    vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_").back().c_str()), "-");
                     if (time.size() == 0)
                     {
                         continue;
@@ -383,7 +383,7 @@ void readIDBZIPFilesWithTimestamps(string path, vector<pair<string, long>> &file
                 if (file.extension() == ".idbzip")
                 {
                     string tmp = file.stem();
-                    vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[1].c_str()), "-");
+                    vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_").back().c_str()), "-");
                     if (time.size() == 0)
                     {
                         continue;

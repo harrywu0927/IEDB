@@ -197,7 +197,7 @@ bool LoopMode(char buf[], long length)
     long needSpace = length + 1;
     if (needSpace > availableSpace) //空间不足
     {
-        cout << "Need space:" << needSpace / 1024 << "KB Available:" << availableSpace / 1024 << "KB\n";
+        // cout << "Need space:" << needSpace / 1024 << "KB Available:" << availableSpace / 1024 << "KB\n";
 
         while (availableSpace < needSpace && !fileQueue.empty()) //删除文件直至可用容量大于需求容量
         {
@@ -210,7 +210,7 @@ bool LoopMode(char buf[], long length)
             }
             else
             {
-                RuntimeLogger.error("Failed to remove file {} : {}", file, strerror(errno));
+                RuntimeLogger.error("Failed to remove file {} : {}, skipping...", file, strerror(errno));
             }
         }
         if (availableSpace >= needSpace)

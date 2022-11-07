@@ -126,6 +126,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
     fwrite(packBuffer, cur, 1, (FILE *)fp);
     free(packBuffer);
     DB_Close(fp);
+    fileQueue.push(pakPath);
     packManager.allPacks[pathToLine].push_back({pakPath, make_tuple(start, end)});
     packMutex.unlock();
     RuntimeLogger.info("Package {} completed, {} files were packed", packageName, filesNum);
@@ -238,6 +239,7 @@ int Packer::RePack(string pathToLine, int packThres)
             DB_Open(const_cast<char *>(newPackPath.c_str()), mode, &fp);
             fwrite(buffer, pos, 1, (FILE *)fp);
             DB_Close(fp);
+            fileQueue.push(newPackPath);
             packManager.AddPack(pathToLine, newPackPath, newStart, newEnd);
             delete[] buffer;
             lastTemName = "";
