@@ -64,9 +64,29 @@ void checkSettings()
     }
 }
 
+void testInsert(string pathtoline)
+{
+    for (auto const &direntry : fs::recursive_directory_iterator(pathtoline))
+    {
+        FILE *source = fopen(direntry.path().c_str(), "rb");
+        fseek(source, 0, SEEK_END);
+        long length = ftell(source);
+        fseek(source, 0, SEEK_SET);
+        char buf[length];
+        fread(buf, 1, length, source);
+        DB_DataBuffer buffer;
+        buffer.length = length;
+        buffer.savePath = "Robot_UDP";
+        buffer.buffer = buf;
+        DB_InsertRecord(&buffer, 0);
+        sleep(1);
+        break;
+    }
+}
+
 int main()
 {
-    cout << DB_ReZipSwitchFile("RobotTsTest", "RobotTsTest") << endl;
+    testInsert("testIEDB/Robot_UDP");
     return 0;
     unsigned char mdbuf[20];
     const unsigned char d1[] = "123456789012";

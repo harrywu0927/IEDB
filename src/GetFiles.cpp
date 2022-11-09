@@ -13,7 +13,10 @@ void readAllDirs(vector<string> &dirs, string basePath)
         for (auto const &dir_entry : fs::recursive_directory_iterator{basePath})
         {
             if (fs::is_directory(dir_entry))
+            {
                 dirs.push_back(fs::path(basePath) / dir_entry.path().filename().string());
+                cout << dir_entry.path().filename() << endl;
+            }
         }
     }
     catch (const std::exception &e)

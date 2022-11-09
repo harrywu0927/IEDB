@@ -14,8 +14,8 @@ void *checkTime(void *ptr)
     long interval = atol(settings("Pack_Interval").c_str());
     while (1)
     {
-        // cout << "checking settings" << endl;
-        // cout << IOBusy << endl;
+        cout << "checking settings" << endl;
+        cout << timerStarted << endl;
         // while (IOBusy)
         // {
         //     // cout << "iobusy" << endl;
@@ -26,10 +26,15 @@ void *checkTime(void *ptr)
             pthread_exit(NULL);
         long curTime = getMilliTime();
         // cout << "checking settings" << endl;
+        cout << curTime % interval << " " << interval << endl;
+
         if (curTime % interval < interval)
         {
             vector<string> dirs;
+            cout << settings("Filename_Label") << endl;
             readAllDirs(dirs, settings("Filename_Label"));
+            cout << dirs.size() << endl;
+            cout << settings("Filename_Label") << endl;
             cout << "Start packing...\n";
             for (auto &dir : dirs)
             {
@@ -376,11 +381,11 @@ int checkNovelty(DB_DataBuffer *buffer)
  */
 int DB_InsertRecord(DB_DataBuffer *buffer, int zip)
 {
-    // if (!settingsWatcherStarted)
-    // {
-    //     pthread_create(&settingsWatcher, NULL, checkSettings, NULL);
-    //     settingsWatcherStarted = true;
-    // }
+    if (!settingsWatcherStarted)
+    {
+        pthread_create(&settingsWatcher, NULL, checkSettings, NULL);
+        settingsWatcherStarted = true;
+    }
     if (!timerStarted && settings("Pack_Mode") == "timed")
     {
         int ret = pthread_create(&timer, NULL, checkTime, NULL);

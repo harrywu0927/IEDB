@@ -527,7 +527,8 @@ void PackFileReader::ReadPackHead(int &fileNum, string &templateName)
 }
 // int main()
 // {
-//     cout << settings("Filename_Label") << endl;
-//     int err = Packer::RePack("JinfeiSeven");
+//     vector<pair<string, long>> files;
+//     readDataFilesWithTimestamps("Robot_UDP", files);
+//     Packer::Pack("Robot_UDP", files);
 //     return 0;
 // }
