@@ -95,6 +95,10 @@ string FileIDManager::GetFileID(string path)
     //     cout << "now file num :" << curNum[path] << endl;
     // }
     curNum[path]++;
+    if ((settings("Zip_Mode") == "quantitative") && (curNum[path] % atoi(settings("Zip_Num").c_str()) == 0))
+    {
+        DB_ZipFile(const_cast<char *>(path.c_str()),const_cast<char *>(path.c_str()));
+    }
     if ((settings("Pack_Mode") == "quantitative") && (curNum[path] % atoi(settings("Pack_Num").c_str()) == 0))
     {
         Packer packer;

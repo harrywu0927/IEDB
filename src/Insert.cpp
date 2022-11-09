@@ -12,6 +12,7 @@ void *checkTime(void *ptr)
 {
     timerStarted = true;
     long interval = atol(settings("Pack_Interval").c_str());
+    long ZipInterval = atol(settings("Zip_Interval").c_str());
     while (1)
     {
         // cout << "checking settings" << endl;
@@ -20,24 +21,44 @@ void *checkTime(void *ptr)
         // {
         //     // cout << "iobusy" << endl;
         // }
-        if (settings("Pack_Mode") == "auto")
+        if (settings("Pack_Mode") == "auto" && settings("Zip_Mode") == "close")
             return NULL;
         if (timerStarted == false)
             pthread_exit(NULL);
         long curTime = getMilliTime();
-
-        if (curTime % interval < interval)
+        // cout << "checking settings" << endl;
+        if(settings("Zip_Mode") == "timed")
         {
-            vector<string> dirs;
-            readAllDirs(dirs, settings("Filename_Label"));
-            cout << "Start packing...\n";
-            for (auto &dir : dirs)
+            if (curTime % ZipInterval < ZipInterval)
             {
-                cout << "Packing " << dir << '\n';
-                removeFilenameLabel(dir);
-                DB_Pack(dir.c_str(), 0, 0);
+                vector<string> dirs;
+                readAllDirs(dirs, settings("Filename_Label"));
+                cout << "Start Zipping...\n";
+                for (auto &dir : dirs)
+                {
+                    cout << "Zipping " << dir << '\n';
+                    removeFilenameLabel(dir);
+                    DB_ZipFile(dir.c_str(),dir.c_str());
+                }
+                cout << "Zip complete\n";
             }
-            cout << "Pack complete\n";
+        }
+        else if(settings("Pack_Mode") == "timed")
+        {
+            if (curTime % interval < interval)
+            {
+                vector<string> dirs;
+                readAllDirs(dirs, settings("Filename_Label"));
+                cout << "Start packing...\n";
+                cout<<"dir num "<<dirs.size()<<endl;
+                for (auto &dir : dirs)
+                {
+                    cout << "Packing " << dir << '\n';
+                    removeFilenameLabel(dir);
+                    DB_Pack(dir.c_str(), 0, 0);
+                }
+                cout << "Pack complete\n";
+            }
         }
         sleep(interval / 1000);
         // sleep_until
@@ -381,7 +402,7 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int zip)
         pthread_create(&settingsWatcher, NULL, checkSettings, NULL);
         settingsWatcherStarted = true;
     }
-    if (!timerStarted && settings("Pack_Mode") == "timed")
+    if (!timerStarted && (settings("Pack_Mode") == "timed" || settings("Zip_Mode") == "timed"))
     {
         int ret = pthread_create(&timer, NULL, checkTime, NULL);
         if (ret != 0)
@@ -488,19 +509,19 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int zip)
     return errCode;
 }
 
-int main()
-{
-    DB_DataBuffer buffer;
-    char data[] = {'1', 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '2'};
-    buffer.buffer = data;
-    buffer.length = 20;
-    buffer.savePath = "testdata";
-    for (int i = 0; i < 40; i++)
-    {
-    }
+// int main()
+// {
+//     DB_DataBuffer buffer;
+//     char data[] = {'1', 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '2'};
+//     buffer.buffer = data;
+//     buffer.length = 20;
+//     buffer.savePath = "testdata";
+//     for (int i = 0; i < 40; i++)
+//     {
+//     }
 
-    return 0;
-}
+//     return 0;
+// }
 
 // int main()
 // {
