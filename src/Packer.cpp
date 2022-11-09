@@ -24,6 +24,7 @@ int DB_Pack(const char *pathToLine, int num, int packAll)
 {
     vector<pair<string, long>> filesWithTime;
     readDataFilesWithTimestamps(pathToLine, filesWithTime);
+    cout << "size " << filesWithTime.size() << endl;
     return filesWithTime.size() == 0 ? 0 : Packer::Pack(pathToLine, filesWithTime);
 }
 
@@ -42,9 +43,15 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
     packMutex.lock();
     int err = 0;
     if ((err = TemplateManager::CheckTemplate(pathToLine)) != 0)
+    {
+        packMutex.unlock();
         return err;
+    }
     if (filesWithTime.size() < 1)
+    {
+        packMutex.unlock();
         return StatusCode::DATAFILE_NOT_FOUND;
+    }
     //升序排序
     sort(filesWithTime.begin(), filesWithTime.end(),
          [](pair<string, long> iter1, pair<string, long> iter2) -> bool
