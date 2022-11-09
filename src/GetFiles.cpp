@@ -251,7 +251,7 @@ void readDataFilesWithTimestamps(string path, vector<pair<string, long>> &filesW
                 if (file.extension() == ".idbzip" || file.extension() == ".idb")
                 {
                     string tmp = file.stem();
-                    vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_").back().c_str()), "-");
+                    vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[1].c_str()), "-");
                     if (time.size() == 0)
                     {
                         continue;
@@ -334,7 +334,7 @@ void readIDBFilesWithTimestamps(string path, vector<pair<string, long>> &filesWi
                 if (file.extension() == ".idb")
                 {
                     string tmp = file.stem();
-                    vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_").back().c_str()), "-");
+                    vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[1].c_str()), "-");
                     if (time.size() == 0)
                     {
                         continue;
@@ -386,7 +386,7 @@ void readIDBZIPFilesWithTimestamps(string path, vector<pair<string, long>> &file
                 if (file.extension() == ".idbzip")
                 {
                     string tmp = file.stem();
-                    vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_").back().c_str()), "-");
+                    vector<string> time = DataType::StringSplit(const_cast<char *>(DataType::StringSplit(const_cast<char *>(tmp.c_str()), "_")[1].c_str()), "-");
                     if (time.size() == 0)
                     {
                         continue;
