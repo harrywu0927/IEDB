@@ -333,7 +333,7 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
                 {
                     vector<string> vec = DataType::StringSplit(const_cast<char *>(fileName.c_str()), "_");
                     string num;
-                    string fileID = vec[vec.size() - 2];
+                    string fileID = vec[0];
                     for (int i = 0; i < fileID.length(); i++)
                     {
                         if (isdigit(fileID[i]))
