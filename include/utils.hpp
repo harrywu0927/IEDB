@@ -233,7 +233,8 @@ public:
     {
         this->code = code;
     }
-    iedb_err(int code, string content){
+    iedb_err(int code, string content)
+    {
         this->code = code;
         this->content = content;
     }
@@ -788,7 +789,7 @@ public:
 
     long Next(int &readLength, string &fileID, int &zipType, char **buffer = nullptr, char *completeZiped = nullptr);
 
-    void Skip(int num);
+    int Skip(int num);
 
     void ReadPackHead(int &fileNum, string &templateName);
 
