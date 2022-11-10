@@ -114,6 +114,7 @@ namespace StatusCode
         BACKUP_BROKEN = 187,              //备份文件损坏
         ERROR_SID_EID_RANGE = 188,        // SID大于EID
         DATAFILE_MODIFIED = 189,          //文件内容被篡改
+        EMPTY_PAK = 190,
     };
 }
 namespace ValueType
@@ -226,10 +227,15 @@ class iedb_err : exception
 {
 public:
     int code;
+    string content;
     iedb_err(){};
     iedb_err(int code)
     {
         this->code = code;
+    }
+    iedb_err(int code, string content){
+        this->code = code;
+        this->content = content;
     }
     ~iedb_err(){};
     const char *what() const noexcept;

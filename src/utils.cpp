@@ -273,90 +273,90 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
     vector<string> dirs;
     dirs.push_back(settings("Filename_Label"));
     readAllDirs(dirs, finalPath);
-    // cout<<dirs.size()<<endl;
+    cout<<dirs.size()<<endl;
     try
     {
-        for (auto &d : dirs)
+    for (auto &d : dirs)
+    {
+        int max = 0;
+        for (auto const &dir_entry : fs::directory_iterator{d})
         {
-            int max = 0;
-            for (auto const &dir_entry : fs::directory_iterator{d})
+            if (!fs::is_regular_file(dir_entry))
+                continue;
+            string fileName = dir_entry.path().filename();
+            string dirWithoutPrefix = d + "/" + fileName;
+            for (int i = 0; i <= settings("Filename_Label").length(); i++)
             {
-                if (!fs::is_regular_file(dir_entry))
-                    continue;
-                string fileName = dir_entry.path().filename();
-                string dirWithoutPrefix = d + "/" + fileName;
-                for (int i = 0; i <= settings("Filename_Label").length(); i++)
-                {
-                    dirWithoutPrefix.erase(dirWithoutPrefix.begin());
-                }
-                if (fs::path(fileName).extension() == ".pak")
-                {
-                    PackFileReader packReader(dirWithoutPrefix);
-                    if (packReader.packBuffer == NULL)
-                        continue;
-                    int fileNum;
-                    string templateName;
-                    packReader.ReadPackHead(fileNum, templateName);
-                    string fileID;
-                    int readLength, zipType;
-                    packReader.Next(readLength, fileID, zipType);
-                    string startFID = fileID;
-                    if (fileNum > 1)
-                    {
-                        // cout << "skipping " << fileName << "\n";
-                        packReader.Skip(fileNum - 2);
-                        packReader.Next(readLength, fileID, zipType);
-                    }
-                    string endFID = fileID;
-                    string startNum = "", endNum = "";
-                    for (int i = 0; i < startFID.length(); i++)
-                    {
-                        if (isdigit(startFID[i]))
-                        {
-                            startNum += startFID[i];
-                        }
-                    }
-                    for (int i = 0; i < endFID.length(); i++)
-                    {
-                        if (isdigit(endFID[i]))
-                        {
-                            endNum += endFID[i];
-                        }
-                    }
-                    int minNum = atoi(startNum.c_str());
-                    int maxNum = atoi(endNum.c_str());
-                    fileIDManager.fidIndex[dirWithoutPrefix] = make_tuple(minNum, maxNum >= minNum ? maxNum : minNum);
-                    if (max < maxNum)
-                        max = maxNum;
-                }
-                else if (fs::path(fileName).extension() == ".idb")
-                {
-                    vector<string> vec = DataType::StringSplit(const_cast<char *>(fileName.c_str()), "_");
-                    string num;
-                    string fileID = vec[0];
-                    for (int i = 0; i < fileID.length(); i++)
-                    {
-                        if (isdigit(fileID[i]))
-                        {
-                            num += fileID[i];
-                        }
-                    }
-                    if (max < atoi(num.c_str()))
-                        max = atoi(num.c_str());
-                }
+                dirWithoutPrefix.erase(dirWithoutPrefix.begin());
             }
-
-            if (d == settings("Filename_Label"))
-                map["/"] = max;
-            else //去除前缀Label
+            if (fs::path(fileName).extension() == ".pak")
             {
-                for (int i = 0; i <= settings("Filename_Label").length(); i++)
+                PackFileReader packReader(dirWithoutPrefix);
+                if (packReader.packBuffer == NULL)
+                    continue;
+                int fileNum;
+                string templateName;
+                packReader.ReadPackHead(fileNum, templateName);
+                string fileID;
+                int readLength, zipType;
+                packReader.Next(readLength, fileID, zipType);
+                string startFID = fileID;
+                if (fileNum > 1)
                 {
-                    d.erase(d.begin());
+                    cout << "skipping " << fileName << "\n";
+                    packReader.Skip(fileNum - 2);
+                    packReader.Next(readLength, fileID, zipType);
                 }
-                map[d] = max;
+                string endFID = fileID;
+                string startNum = "", endNum = "";
+                for (int i = 0; i < startFID.length(); i++)
+                {
+                    if (isdigit(startFID[i]))
+                    {
+                        startNum += startFID[i];
+                    }
+                }
+                for (int i = 0; i < endFID.length(); i++)
+                {
+                    if (isdigit(endFID[i]))
+                    {
+                        endNum += endFID[i];
+                    }
+                }
+                int minNum = atoi(startNum.c_str());
+                int maxNum = atoi(endNum.c_str());
+                fileIDManager.fidIndex[dirWithoutPrefix] = make_tuple(minNum, maxNum >= minNum ? maxNum : minNum);
+                if (max < maxNum)
+                    max = maxNum;
+            }
+            else if (fs::path(fileName).extension() == ".idb")
+            {
+                vector<string> vec = DataType::StringSplit(const_cast<char *>(fileName.c_str()), "_");
+                string num;
+                string fileID = vec[0];
+                for (int i = 0; i < fileID.length(); i++)
+                {
+                    if (isdigit(fileID[i]))
+                    {
+                        num += fileID[i];
+                    }
+                }
+                if (max < atoi(num.c_str()))
+                    max = atoi(num.c_str());
             }
         }
+
+        if (d == settings("Filename_Label"))
+            map["/"] = max;
+        else //去除前缀Label
+        {
+            for (int i = 0; i <= settings("Filename_Label").length(); i++)
+            {
+                d.erase(d.begin());
+            }
+            map[d] = max;
+        }
+    }
     }
     catch (iedb_err &e)
     {

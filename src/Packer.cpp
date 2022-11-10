@@ -274,6 +274,10 @@ PackFileReader::PackFileReader(string pathFilePath)
     if (err != 0)
     {
         errorCode = err;
+        if(errorCode = 190)
+            {
+                throw iedb_err(err,pathFilePath);
+            }
         throw iedb_err(err);
     }
     if (buffer.bufferMalloced)
@@ -287,6 +291,7 @@ PackFileReader::PackFileReader(string pathFilePath)
     else
     {
         packBuffer = NULL;
+        // cerr<<err<<endl;
         throw iedb_err(err);
     }
 }
@@ -511,7 +516,7 @@ void PackFileReader::Skip(int num)
         }
         else if (ztype != 2 && ztype != 0)
         {
-            // cerr << "skip " << num << "files\n";
+            cerr << "skip " << num << "files\n";
             throw iedb_err(StatusCode::DATAFILE_MODIFIED);
         }
     }

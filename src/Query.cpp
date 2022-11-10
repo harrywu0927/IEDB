@@ -3206,7 +3206,7 @@ int main()
 	DataTypeConverter converter;
 	DB_QueryParams params;
 	params.pathToLine = "JinfeiSeven";
-	params.fileID = "2326993";
+	params.fileID = "1324834";
 	// params.fileIDend = "300000";
 	params.fileIDend = NULL;
 	char code[10];
@@ -3244,7 +3244,7 @@ int main()
 	auto startTime = std::chrono::system_clock::now();
 	// char zeros[10] = {0};
 	// memcpy(params.pathCode, zeros, 10);
-	cout << DB_QueryLastRecords(&buffer, &params);
+	cout << DB_QueryByFileID(&buffer, &params);
 	// return 0;
 	// DB_QueryLastRecords(&buffer, &params);
 	// DB_QueryByTimespan_Single(&buffer, &params);

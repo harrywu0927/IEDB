@@ -24,7 +24,8 @@ unordered_map<int, string> strerr{
     {181, "Image not found in file"},
     {186, "Memory insufficient"},
     {187, "Backup file broken"},
-    {189, "Data file was modified"}};
+    {189, "Data file was modified"},
+    {190, "Empty pack detected"}};
 
 const char *iedb_err::what() const noexcept
 {

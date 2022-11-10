@@ -455,8 +455,9 @@ int DB_ReadFile(DB_DataBuffer *buffer)
     {
         buffer->length = 0;
         buffer->bufferMalloced = 0;
+        // cout<<finalPath<<endl;
         fclose(fp);
-        return 0;
+        return StatusCode::EMPTY_PAK;
     }
     fseek(fp, 0, SEEK_SET);
     char *buf = (char *)malloc(len);

@@ -86,7 +86,7 @@ void testInsert(string pathtoline)
 
 int main()
 {
-    testInsert("testIEDB/Robot_UDP");
+    // testInsert("testIEDB/Robot_UDP");
     return 0;
     unsigned char mdbuf[20];
     const unsigned char d1[] = "123456789012";

@@ -15,7 +15,7 @@ void readAllDirs(vector<string> &dirs, string basePath)
             if (fs::is_directory(dir_entry))
             {
                 dirs.push_back(fs::path(basePath) / dir_entry.path().filename().string());
-                cout << dir_entry.path().filename() << endl;
+                // cout << dir_entry.path().filename() << endl;
             }
         }
     }
