@@ -370,10 +370,12 @@ int BackupHelper::CreateBackup(string path)
     catch (iedb_err &e)
     {
         fclose(file);
+        logger.error("Failed to create backup ,code {} : {}", e.code, e.what());
     }
     catch (const std::exception &e)
     {
         std::cerr << e.what() << '\n';
+        fclose(file);
     }
     fclose(file);
 
@@ -508,7 +510,7 @@ int BackupHelper::BackupUpdate()
         catch (iedb_err &e)
         {
             fclose(file);
-            RuntimeLogger.error("Error occured when updating backup : {}", e.what());
+            logger.error("Error occured when updating backup : {}", e.what());
             return e.code;
         }
         catch (const std::exception &e)

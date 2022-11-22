@@ -55,6 +55,10 @@ namespace fs = std::filesystem;
 
 #define DEBUG
 
+#define QRY_BUFFER_HEAD_ROW 19
+#define PACK_FID_SIZE 20
+#define DATA_TYPE_NUM 10
+
 namespace StatusCode
 {
     enum StatusCode
@@ -189,7 +193,7 @@ void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);
 
 int getMemory(long size, char *mem);
 
-void getMemoryUsage(long &total, long &available);
+// void getMemoryUsage(long &total, long &available);
 
 int CheckQueryParams(DB_QueryParams *params);
 
@@ -891,7 +895,17 @@ public:
     long length;
     int recordLength;
     vector<DataType> typeList;
-    QueryBufferReader() { buffer = NULL; };
+    bool isBigEndian;
+    void CheckBigEndian()
+    {
+        static int chk = 0x0201; // used to distinguish CPU's type (BigEndian or LittleEndian)
+        isBigEndian = (0x01 != *(char *)(&chk));
+    }
+    QueryBufferReader()
+    {
+        buffer = NULL;
+        CheckBigEndian();
+    };
     QueryBufferReader(DB_DataBuffer *buffer, bool freeit = true); //当freeit设置为false时，不会自动清空buffer
     ~QueryBufferReader()
     {

@@ -956,7 +956,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 		if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
 		{
 			char typeNum = Ext_Params.typeList.size(); //数据类型总数
-			char head[(int)typeNum * 19 + 1];
+			char head[(int)typeNum * QRY_BUFFER_HEAD_ROW + 1];
 			startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
 
 			//此处可能会分配多余的空间，但最多在两个包的可接受大小内
@@ -1139,6 +1139,16 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 	delete[] completeZiped;
 	delete[] tempBuff;
+	if (cur == startPos && !Ext_Params.hasIMG)
+	{
+		buffer->buffer = NULL;
+		buffer->length = 0;
+		buffer->bufferMalloced = 0;
+		IOBusy = false;
+		if (rawBuff != nullptr)
+			free(rawBuff);
+		return StatusCode::NO_DATA_QUERIED;
+	}
 	if (params->order != TIME_ASC && params->order != TIME_DSC && params->order != ODR_NONE) //时间排序仅需在拷贝时反向
 		sortResult(mallocedMemory, params, Ext_Params.typeList[Ext_Params.sortIndex]);
 	else if (params->order == ODR_NONE || params->order == TIME_ASC)
@@ -1152,16 +1162,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 			return 0;
 		}
 	}
-	if (cur == startPos && !Ext_Params.hasIMG)
-	{
-		buffer->buffer = NULL;
-		buffer->length = 0;
-		buffer->bufferMalloced = 0;
-		IOBusy = false;
-		if (rawBuff != nullptr)
-			free(rawBuff);
-		return StatusCode::NO_DATA_QUERIED;
-	}
+
 	err = WriteDataToBuffer(mallocedMemory, Ext_Params, params, buffer, cur);
 	if (!Ext_Params.hasIMG)
 		free(rawBuff);
@@ -2165,7 +2166,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 		return check;
 	}
 	//确认当前模版
-	if (TemplateManager::CheckTemplate(params->pathToLine) != 0 && ZipTemplateManager::CheckZipTemplate(params->pathToLine) != 0)
+	if (TemplateManager::CheckTemplate(params->pathToLine) != 0 || ZipTemplateManager::CheckZipTemplate(params->pathToLine) != 0)
 	{
 		return StatusCode::SCHEMA_FILE_NOT_FOUND;
 	}
@@ -2453,7 +2454,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		IOBusy = false;
 		return check;
 	}
-	if (TemplateManager::CheckTemplate(params->pathToLine) != 0 && ZipTemplateManager::CheckZipTemplate(params->pathToLine) != 0)
+	if (TemplateManager::CheckTemplate(params->pathToLine) != 0 || ZipTemplateManager::CheckZipTemplate(params->pathToLine) != 0)
 	{
 		IOBusy = false;
 		return StatusCode::SCHEMA_FILE_NOT_FOUND;
@@ -3205,13 +3206,13 @@ int main()
 	// Py_Initialize();
 	DataTypeConverter converter;
 	DB_QueryParams params;
-	params.pathToLine = "JinfeiSeven";
+	params.pathToLine = "TZ-GUP-Source";
 	params.fileID = "1324834";
 	// params.fileIDend = "300000";
 	params.fileIDend = NULL;
 	char code[10];
 	code[0] = (char)0;
-	code[1] = (char)1;
+	code[1] = (char)0;
 	code[2] = (char)0;
 	code[3] = (char)0;
 	code[4] = 0;
@@ -3224,8 +3225,8 @@ int main()
 	params.pathCode = code;
 	// params.valueName = "S1ON,S1OFF";
 	params.valueName = "S1ON";
-	params.start = 1553728593562;
-	params.end = 1751908603642;
+	params.start = 1667924805000;
+	params.end = 1667935605000;
 	// params.end = 1651894834176;
 	params.order = ODR_NONE;
 	params.sortVariable = "S1ON";
@@ -3233,7 +3234,7 @@ int main()
 	params.compareValue = "100";
 	params.compareVariable = "S1ON";
 	params.queryType = FILEID;
-	params.byPath = 0;
+	params.byPath = 1;
 	params.queryNums = 100;
 	DB_DataBuffer buffer;
 	buffer.savePath = "/";
@@ -3244,7 +3245,7 @@ int main()
 	auto startTime = std::chrono::system_clock::now();
 	// char zeros[10] = {0};
 	// memcpy(params.pathCode, zeros, 10);
-	cout << DB_QueryByFileID(&buffer, &params);
+	cout << DB_QueryByTimespan(&buffer, &params);
 	// return 0;
 	// DB_QueryLastRecords(&buffer, &params);
 	// DB_QueryByTimespan_Single(&buffer, &params);

@@ -109,7 +109,7 @@ queue<string> InitFileQueue()
     catch (iedb_err &e)
     {
         RuntimeLogger.critical("Error occured when initializing file list : {}", e.what());
-        exit(0);
+        // exit(0);
     }
     catch (fs::filesystem_error &e)
     {

@@ -274,7 +274,7 @@ PackFileReader::PackFileReader(string pathFilePath)
     if (err != 0)
     {
         errorCode = err;
-        if (errorCode = 190)
+        if (errorCode == 190)
         {
             throw iedb_err(err, pathFilePath);
         }

@@ -27,7 +27,7 @@ void *checkTime(void *ptr)
             pthread_exit(NULL);
         long curTime = getMilliTime();
         // cout << "checking settings" << endl;
-        if(settings("Zip_Mode") == "timed")
+        if (settings("Zip_Mode") == "timed")
         {
             if (curTime % ZipInterval < ZipInterval)
             {
@@ -38,19 +38,19 @@ void *checkTime(void *ptr)
                 {
                     cout << "Zipping " << dir << '\n';
                     removeFilenameLabel(dir);
-                    DB_ZipFile(dir.c_str(),dir.c_str());
+                    DB_ZipFile(dir.c_str(), dir.c_str());
                 }
                 cout << "Zip complete\n";
             }
         }
-        else if(settings("Pack_Mode") == "timed")
+        else if (settings("Pack_Mode") == "timed")
         {
             if (curTime % interval < interval)
             {
                 vector<string> dirs;
                 readAllDirs(dirs, settings("Filename_Label"));
                 cout << "Start packing...\n";
-                cout<<"dir num "<<dirs.size()<<endl;
+                cout << "dir num " << dirs.size() << endl;
                 for (auto &dir : dirs)
                 {
                     cout << "Packing " << dir << '\n';
@@ -97,8 +97,8 @@ void *checkSettings(void *ptr)
  */
 void autoPacker()
 {
-    long total, available;
-    getMemoryUsage(total, available);
+    // long total, available;
+    // getMemoryUsage(total, available);
     vector<string> dirs;
     readAllDirs(dirs, settings("Filename_Label"));
     vector<int> packNums; //每个文件夹的建议打包数量

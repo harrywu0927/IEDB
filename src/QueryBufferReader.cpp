@@ -1,3 +1,14 @@
+/***************************************
+ * @file QueryBufferReader.cpp
+ * @author your name (you@domain.com)
+ * @brief
+ * @version 0.9.3
+ * @date Last Modified in 2022-11-18
+ *
+ * @copyright Copyright (c) 2022
+ *
+ ***************************************/
+
 #include <utils.hpp>
 
 /**
@@ -8,33 +19,46 @@
  */
 char *QueryBufferReader::operator[](const int &index)
 {
-    int offset = startPos;
-    if (index >= 0 && index < rows)
-    {
-        if (!hasIMG)
-            offset += recordLength * index;
-        else
-        {
-            for (int i = 0; i < index; i++)
-            {
-                for (int j = 0; j < typeList.size(); j++)
-                {
-                    if (typeList[j].valueType != ValueType::IMAGE)
-                        offset += DataType::GetTypeBytes(typeList[j]);
-                    else
-                    {
-                        short length = __builtin_bswap16(*(short *)(buffer + offset));
-                        offset += 2;
-                        short width = __builtin_bswap16(*(short *)(buffer + offset));
-                        offset += 2;
-                        short channels = __builtin_bswap16(*(short *)(buffer + offset));
-                        offset += 2 + length * width * channels;
-                    }
-                }
-            }
-        }
-    }
-    return buffer + offset;
+    return GetRow(index);
+    // int offset = startPos;
+    // if (index >= 0 && index < rows)
+    // {
+    //     if (!hasIMG)
+    //         offset += recordLength * index;
+    //     else
+    //     {
+    //         for (int i = 0; i < index; i++)
+    //         {
+    //             for (int j = 0; j < typeList.size(); j++)
+    //             {
+    //                 if (typeList[j].valueType != ValueType::IMAGE)
+    //                     offset += DataType::GetTypeBytes(typeList[j]);
+    //                 else
+    //                 {
+    //                     if (!isBigEndian)
+    //                     {
+    //                         short length = __builtin_bswap16(*(short *)(buffer + offset));
+    //                         offset += 2;
+    //                         short width = __builtin_bswap16(*(short *)(buffer + offset));
+    //                         offset += 2;
+    //                         short channels = __builtin_bswap16(*(short *)(buffer + offset));
+    //                         offset += 2 + length * width * channels;
+    //                     }
+    //                     else
+    //                     {
+    //                         short length = *(short *)(buffer + offset);
+    //                         offset += 2;
+    //                         short width = *(short *)(buffer + offset);
+    //                         offset += 2;
+    //                         short channels = *(short *)(buffer + offset);
+    //                         offset += 2 + length * width * channels;
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+    // return buffer + offset;
 }
 
 /**
@@ -133,6 +157,7 @@ QueryBufferReader::QueryBufferReader(DB_DataBuffer *buffer, bool freeit)
         }
         Reset();
     }
+    CheckBigEndian();
 }
 
 /**
@@ -156,12 +181,24 @@ char *QueryBufferReader::NextRow()
                 cur += DataType::GetTypeBytes(typeList[j]);
             else
             {
-                short length = __builtin_bswap16(*(short *)(buffer + cur));
-                cur += 2;
-                short width = __builtin_bswap16(*(short *)(buffer + cur));
-                cur += 2;
-                short channels = __builtin_bswap16(*(short *)(buffer + cur));
-                cur += 2 + length * width * channels;
+                if (!isBigEndian)
+                {
+                    short length = __builtin_bswap16(*(short *)(buffer + cur));
+                    cur += 2;
+                    short width = __builtin_bswap16(*(short *)(buffer + cur));
+                    cur += 2;
+                    short channels = __builtin_bswap16(*(short *)(buffer + cur));
+                    cur += 2 + length * width * channels;
+                }
+                else
+                {
+                    short length = *(short *)(buffer + cur);
+                    cur += 2;
+                    short width = *(short *)(buffer + cur);
+                    cur += 2;
+                    short channels = *(short *)(buffer + cur);
+                    cur += 2 + length * width * channels;
+                }
             }
         }
     }
@@ -172,6 +209,7 @@ char *QueryBufferReader::NextRow()
  * @brief When you choose this to read the buffer, it means that you'll read every row in order.
  *  This function is suggested to be called when there is some data with uncertain length like image. It will return the memory address of the row you're going to read and tell you the length. Yet it may cause some speed loss accordingly.
  *
+ * @param rowLength The length of the entire row read this time
  * @return char*
  */
 char *QueryBufferReader::NextRow(int &rowLength)
@@ -192,12 +230,24 @@ char *QueryBufferReader::NextRow(int &rowLength)
             }
             else
             {
-                short length = __builtin_bswap16(*(short *)(buffer + cur + rowlen));
-                rowlen += 2;
-                short width = __builtin_bswap16(*(short *)(buffer + cur + rowlen));
-                rowlen += 2;
-                short channels = __builtin_bswap16(*(short *)(buffer + cur + rowlen));
-                rowlen += 2 + length * width * channels;
+                if (!isBigEndian)
+                {
+                    short length = __builtin_bswap16(*(short *)(buffer + cur + rowlen));
+                    rowlen += 2;
+                    short width = __builtin_bswap16(*(short *)(buffer + cur + rowlen));
+                    rowlen += 2;
+                    short channels = __builtin_bswap16(*(short *)(buffer + cur + rowlen));
+                    rowlen += 2 + length * width * channels;
+                }
+                else
+                {
+                    short length = *(short *)(buffer + cur + rowlen);
+                    rowlen += 2;
+                    short width = *(short *)(buffer + cur + rowlen);
+                    rowlen += 2;
+                    short channels = *(short *)(buffer + cur + rowlen);
+                    rowlen += 2 + length * width * channels;
+                }
             }
         }
         rowLength = rowlen;
@@ -229,12 +279,24 @@ char *QueryBufferReader::GetRow(const int &index)
                         offset += DataType::GetTypeBytes(typeList[j]);
                     else
                     {
-                        short length = __builtin_bswap16(*(short *)(buffer + offset));
-                        offset += 2;
-                        short width = __builtin_bswap16(*(short *)(buffer + offset));
-                        offset += 2;
-                        short channels = __builtin_bswap16(*(short *)(buffer + offset));
-                        offset += 2 + length * width * channels;
+                        if (!isBigEndian)
+                        {
+                            short length = __builtin_bswap16(*(short *)(buffer + offset));
+                            offset += 2;
+                            short width = __builtin_bswap16(*(short *)(buffer + offset));
+                            offset += 2;
+                            short channels = __builtin_bswap16(*(short *)(buffer + offset));
+                            offset += 2 + length * width * channels;
+                        }
+                        else
+                        {
+                            short length = *(short *)(buffer + offset);
+                            offset += 2;
+                            short width = *(short *)(buffer + offset);
+                            offset += 2;
+                            short channels = *(short *)(buffer + offset);
+                            offset += 2 + length * width * channels;
+                        }
                     }
                 }
             }
@@ -270,12 +332,24 @@ char *QueryBufferReader::GetRow(const int &index, int &rowLength)
                     }
                     else
                     {
-                        short length = __builtin_bswap16(*(short *)(buffer + offset + rowlen));
-                        rowlen += 2;
-                        short width = __builtin_bswap16(*(short *)(buffer + offset + rowlen));
-                        rowlen += 2;
-                        short channels = __builtin_bswap16(*(short *)(buffer + offset + rowlen));
-                        rowlen += 2 + length * width * channels;
+                        if (!isBigEndian)
+                        {
+                            short length = __builtin_bswap16(*(short *)(buffer + offset + rowlen));
+                            rowlen += 2;
+                            short width = __builtin_bswap16(*(short *)(buffer + offset + rowlen));
+                            rowlen += 2;
+                            short channels = __builtin_bswap16(*(short *)(buffer + offset + rowlen));
+                            rowlen += 2 + length * width * channels;
+                        }
+                        else
+                        {
+                            short length = *(short *)(buffer + offset + rowlen);
+                            rowlen += 2;
+                            short width = *(short *)(buffer + offset + rowlen);
+                            rowlen += 2;
+                            short channels = *(short *)(buffer + offset + rowlen);
+                            rowlen += 2 + length * width * channels;
+                        }
                     }
                 }
                 offset += rowlen;
@@ -310,12 +384,24 @@ void *QueryBufferReader::FindElement(const int &row, const int &col)
                         offset += DataType::GetTypeBytes(typeList[j]);
                     else
                     {
-                        short length = __builtin_bswap16(*(short *)(buffer + offset));
-                        offset += 2;
-                        short width = __builtin_bswap16(*(short *)(buffer + offset));
-                        offset += 2;
-                        short channels = __builtin_bswap16(*(short *)(buffer + offset));
-                        offset += 2 + length * width * channels;
+                        if (!isBigEndian)
+                        {
+                            short length = __builtin_bswap16(*(short *)(buffer + offset));
+                            offset += 2;
+                            short width = __builtin_bswap16(*(short *)(buffer + offset));
+                            offset += 2;
+                            short channels = __builtin_bswap16(*(short *)(buffer + offset));
+                            offset += 2 + length * width * channels;
+                        }
+                        else
+                        {
+                            short length = *(short *)(buffer + offset);
+                            offset += 2;
+                            short width = *(short *)(buffer + offset);
+                            offset += 2;
+                            short channels = *(short *)(buffer + offset);
+                            offset += 2 + length * width * channels;
+                        }
                     }
                 }
             }
@@ -327,12 +413,24 @@ void *QueryBufferReader::FindElement(const int &row, const int &col)
                 offset += DataType::GetTypeBytes(typeList[i]);
             else
             {
-                short length = __builtin_bswap16(*(short *)(buffer + offset));
-                offset += 2;
-                short width = __builtin_bswap16(*(short *)(buffer + offset));
-                offset += 2;
-                short channels = __builtin_bswap16(*(short *)(buffer + offset));
-                offset += 2 + length * width * channels;
+                if (!isBigEndian)
+                {
+                    short length = __builtin_bswap16(*(short *)(buffer + offset));
+                    offset += 2;
+                    short width = __builtin_bswap16(*(short *)(buffer + offset));
+                    offset += 2;
+                    short channels = __builtin_bswap16(*(short *)(buffer + offset));
+                    offset += 2 + length * width * channels;
+                }
+                else
+                {
+                    short length = *(short *)(buffer + offset);
+                    offset += 2;
+                    short width = *(short *)(buffer + offset);
+                    offset += 2;
+                    short channels = *(short *)(buffer + offset);
+                    offset += 2 + length * width * channels;
+                }
             }
         }
     }
@@ -355,12 +453,24 @@ void *QueryBufferReader::FindElementInRow(const int &index, char *row)
             offset += DataType::GetTypeBytes(typeList[i]);
         else
         {
-            short length = __builtin_bswap16(*(short *)(buffer + offset));
-            offset += 2;
-            short width = __builtin_bswap16(*(short *)(buffer + offset));
-            offset += 2;
-            short channels = __builtin_bswap16(*(short *)(buffer + offset));
-            offset += 2 + length * width * channels;
+            if (!isBigEndian)
+            {
+                short length = __builtin_bswap16(*(short *)(buffer + offset));
+                offset += 2;
+                short width = __builtin_bswap16(*(short *)(buffer + offset));
+                offset += 2;
+                short channels = __builtin_bswap16(*(short *)(buffer + offset));
+                offset += 2 + length * width * channels;
+            }
+            else
+            {
+                short length = *(short *)(buffer + offset);
+                offset += 2;
+                short width = *(short *)(buffer + offset);
+                offset += 2;
+                short channels = *(short *)(buffer + offset);
+                offset += 2 + length * width * channels;
+            }
         }
     }
     return row + offset;

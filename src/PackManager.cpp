@@ -54,7 +54,8 @@ PackManager::PackManager(long memcap) //初始化allPacks
         }
         catch (const std::exception &e)
         {
-            std::cerr << e.what() << '\n';
+            // std::cerr << e.what() << '\n';
+            RuntimeLogger.error("Error occured when initializing pack index : code {} , {}", errno, strerror(errno));
         }
     }
 
@@ -315,7 +316,9 @@ void PackManager::ReadPack(string path)
 {
     DB_DataBuffer buffer;
     buffer.savePath = path.c_str();
+#ifdef DEBUG
     spdlog::info("Read pack:{}", buffer.savePath);
+#endif
     int err = DB_ReadFile(&buffer);
     if (err != 0)
         throw iedb_err(err);

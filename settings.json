@@ -10,5 +10,6 @@
     "Pack_Cache_Size": 50240,
     "Check_Novelty": false,
     "Pack_Max_Size": 2048,
-    "Backup_Path": "testIEDB_Backup"
+    "Backup_Path": "testIEDB_Backup",
+    "Memory_Alloc_Percentage": 10
 }
