@@ -122,7 +122,7 @@ void MemoryManager::GetMemoryUsage(size_t &total, size_t &available)
     uint totalMem = convert_unit(static_cast<float>(total_mem), BYTES);
     total = totalMem;
     available = totalMem - usedMem;
-    cout << "total:" << total << "\navail:" << available;
+    // cout << "total:" << total << "\navail:" << available;
 #endif
 }
 

@@ -214,6 +214,7 @@ int DB_Recovery(const char *path);
 
 int DB_TemporaryFuncCall(void *param1, void *param2, void *param3, int funcID);
 
+int DB_ExtractSerialRhythm(int flows, char **data, int *sequence, char **queue);
 //标准模板数据信息
 struct DB_TreeNodeParams
 {

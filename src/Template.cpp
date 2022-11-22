@@ -701,7 +701,7 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char *buff, vector<lon
                     num = schema.second.tsLen;
                 }
             }
-            if (schema.second.isArray)
+            else if (schema.second.isArray)
             {
                 if (schema.second.valueType == ValueType::IMAGE)
                 {
@@ -1543,10 +1543,10 @@ long Template::GetBytesByCode(char *pathCode)
 
 /**
  * @brief 通过变量名获得编码
- * 
+ *
  * @param name 变量名
  * @param pathCode 编码
- * @return int 
+ * @return int
  */
 int Template::GetCodeByName(const char *name, vector<PathCode> &pathCode)
 {
@@ -1563,10 +1563,10 @@ int Template::GetCodeByName(const char *name, vector<PathCode> &pathCode)
 
 /**
  * @brief 通过变量名获得编码
- * 
+ *
  * @param name 变量名
  * @param pathCode 编码
- * @return int 
+ * @return int
  */
 int Template::GetCodeByName(const char *name, PathCode &pathCode)
 {
@@ -1656,8 +1656,8 @@ int TemplateManager::UnsetTemplate(string path)
 
 /**
  * @brief 通过压缩模板获得文件总长度（不包括图片大小）
- * 
- * @return long 
+ *
+ * @return long
  */
 long ZipTemplate::GetTotalBytes()
 {

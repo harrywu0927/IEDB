@@ -1299,8 +1299,7 @@ int ZipUtils::IsArrayReZip(int schemaPos, char *writebuff, long &writebuff_pos, 
         //直接拷贝
         memcpy(writebuff + writebuff_pos, readbuff + readbuff_pos, CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen);
         writebuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
-        readbuff_pos +
-            CurrentZipTemplate.schemas[schemaPos].second.valueBytes *CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
+        readbuff_pos += CurrentZipTemplate.schemas[schemaPos].second.valueBytes * CurrentZipTemplate.schemas[schemaPos].second.arrayLen;
     }
     else if (readbuff[readbuff_pos - 1] == (char)ONLY_TIME) //只有时间戳
     {

@@ -77,3 +77,4 @@ src/Inseert
 *.bak
 src/Recovery
 *.log
+*.zip

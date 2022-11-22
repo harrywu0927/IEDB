@@ -50,7 +50,7 @@ void *checkTime(void *ptr)
                 vector<string> dirs;
                 readAllDirs(dirs, settings("Filename_Label"));
                 cout << "Start packing...\n";
-                cout << "dir num " << dirs.size() << endl;
+                // cout << "dir num " << dirs.size() << endl;
                 for (auto &dir : dirs)
                 {
                     cout << "Packing " << dir << '\n';
@@ -507,6 +507,100 @@ int DB_InsertRecord(DB_DataBuffer *buffer, int zip)
     }
     IOBusy = 0;
     return errCode;
+}
+
+/**
+ * @brief 将流水线化的数据包分解为单个产品的节拍
+ *
+ * @param flows 流水线数
+ * @param data 数据包
+ * @param sequence 序列数
+ * @param queue 缓冲队列
+ * @return int
+ */
+// int DB_ExtractSerialRhythm(int flows, char **data, int *sequence, char **queue)
+// {
+//     if (CurrentTemplate.path == "")
+//         return StatusCode::SCHEMA_FILE_NOT_FOUND;
+//     if (*sequence < 0)
+//     {
+//         if (*sequence + flows == 0) //第一次接收
+//         {
+//             *queue = (char *)malloc(CurrentTemplate.totalBytes * flows);
+//             memcpy(*queue, *data, CurrentTemplate.totalBytes);
+//             *sequence = *sequence + 1;
+//             return 0;
+//         }
+//         else
+//         {
+//             memcpy(*queue + CurrentTemplate.totalBytes * (flows + (*sequence)), *data, CurrentTemplate.totalBytes);
+//             *sequence = *sequence + 1;
+//             return 0;
+//         }
+//     }
+//     int offset = 0;
+//     char *tmp = new char[CurrentTemplate.totalBytes];
+
+//     int i = 0;
+//     for (auto &&schema : CurrentTemplate.schemas)
+//     {
+//         int bytes = DataType::GetTypeBytes(schema.second);
+//         memcpy(tmp + offset, *queue + CurrentTemplate.totalBytes * ((*sequence + i) % flows) + offset, bytes);
+//         i++;
+//         offset += bytes;
+//     }
+//     memcpy(*queue + CurrentTemplate.totalBytes * ((*sequence) % flows), *data, CurrentTemplate.totalBytes);
+//     *sequence = *sequence + 1;
+//     memcpy(*data, tmp, CurrentTemplate.totalBytes);
+//     // if(*sequence == flows)
+//     //     *sequence = 0;
+//     delete[] tmp;
+//     return 0;
+// }
+int DB_ExtractSerialRhythm(int flows, char **data, int *sequence, char **queue)
+{
+    if (CurrentTemplate.path == "")
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    if (*sequence < 0)
+    {
+        if (*sequence + flows == 1) //第一次接收
+        {
+            *queue = (char *)malloc(CurrentTemplate.totalBytes * flows);
+            memcpy(*queue, *data, CurrentTemplate.totalBytes);
+            *sequence = *sequence + 1;
+            return 0;
+        }
+        else
+        {
+            memcpy(*queue + CurrentTemplate.totalBytes * (flows + (*sequence)), *data, CurrentTemplate.totalBytes);
+            *sequence = *sequence + 1;
+            return 0;
+        }
+    }
+    int offset = 0;
+    char *tmp = new char[CurrentTemplate.totalBytes];
+
+    memcpy(*queue + CurrentTemplate.totalBytes * ((*sequence) % flows), *data, CurrentTemplate.totalBytes);
+    *sequence = *sequence + 1;
+    int i = 0;
+    for (auto &&schema : CurrentTemplate.schemas)
+    {
+        int bytes = DataType::GetTypeBytes(schema.second);
+        memcpy(tmp + offset, *queue + CurrentTemplate.totalBytes * ((*sequence + i) % flows) + offset, bytes);
+        i++;
+        offset += bytes;
+    }
+
+    memcpy(*data, tmp, CurrentTemplate.totalBytes);
+    delete[] tmp;
+    return 0;
+}
+
+int DB_TemporaryFuncCall(void *param1, void *param2, void *param3, int funcID)
+{
+    char *data = (char *)param1;
+    char *queue = (char *)param3;
+    return DB_ExtractSerialRhythm(funcID, &data, (int *)param2, &queue);
 }
 
 // int main()

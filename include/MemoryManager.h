@@ -135,7 +135,7 @@ public:
     {
         GetMemoryUsage(capacity, available);
         int percentage = atoi(settings("Memory_Alloc_Percentage").c_str());
-        startAddr = new Byte[capacity * percentage / 100];
+        // startAddr = new Byte[capacity * percentage / 100];
         IEDB_Memory mem;
         mem.content = startAddr;
         mem.ID = 0;
@@ -145,9 +145,8 @@ public:
         emptyBlocks.insert(mem);
         cout << "Memory allocate " << capacity * percentage / 100;
     };
-    ~MemoryManager()
-    {
-        delete[] startAddr;
+    ~MemoryManager(){
+        // delete[] startAddr;
     };
     IEDB_Memory GetMemory(size_t size);
     void *GetExternalMemory(size_t size);
