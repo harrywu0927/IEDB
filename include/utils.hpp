@@ -59,6 +59,8 @@ namespace fs = std::filesystem;
 #define PACK_FID_SIZE 20
 #define DATA_TYPE_NUM 10
 
+#define CUBICLE_LEVEL 2 //编码中的工位层级
+
 namespace StatusCode
 {
     enum StatusCode
@@ -831,27 +833,17 @@ public:
     }
     unordered_map<string, vector<pair<string, tuple<long, long>>>> allPacks; //磁盘中当前所有目录下的所有包文件的路径、时间段,按照时间升序存放
     void PutPack(string path, pair<char *, long> pack);
-
     pair<char *, long> GetPack(string path);
-
     void ReadPack(string path);
-
     void DeletePack(string path);
-
     void UpdatePack(string path, string newPath, long start, long end);
-
     vector<pair<string, tuple<long, long>>> GetPacksByTime(string pathToLine, long start, long end);
-
     pair<string, pair<char *, long>> GetLastPack(string pathToLine, int index);
-
     pair<char *, long> GetPackByID(string pathToLine, string fileID, bool getpath = 0);
-
     vector<pair<char *, long>> GetPackByIDs(string pathToLine, string fileID, int num, bool getpath = 0);
-
     vector<pair<char *, long>> GetPackByIDs(string pathToLine, string fileIDStart, string fileIDEnd, bool getpath = 0);
-
+    vector<pair<string, tuple<long, long>>> GetFilesInPacksByTime(string pathToLine, long start);
     void AddPack(string &pathToLine, string &path, long &start, long &end);
-
     void ModifyCacheCapacity(int memcap)
     {
         memCapacity = memcap;

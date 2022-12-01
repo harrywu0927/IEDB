@@ -583,11 +583,17 @@ int DB_ExtractSerialRhythm(int flows, char **data, int *sequence, char **queue)
     memcpy(*queue + CurrentTemplate.totalBytes * ((*sequence) % flows), *data, CurrentTemplate.totalBytes);
     *sequence = *sequence + 1;
     int i = 0;
+    // Path code中第三级为工位级
+    int lastCubicle = -1;
     for (auto &&schema : CurrentTemplate.schemas)
     {
         int bytes = DataType::GetTypeBytes(schema.second);
         memcpy(tmp + offset, *queue + CurrentTemplate.totalBytes * ((*sequence + i) % flows) + offset, bytes);
-        i++;
+        if (schema.first.paths[CUBICLE_LEVEL] != lastCubicle)
+        {
+            i++;
+            lastCubicle = schema.first.paths[CUBICLE_LEVEL];
+        }
         offset += bytes;
     }
 

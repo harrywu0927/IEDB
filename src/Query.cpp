@@ -955,7 +955,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 	{
 		if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
 		{
-			char typeNum = Ext_Params.typeList.size(); //数据类型总数
+			unsigned char typeNum = Ext_Params.typeList.size(); //数据类型总数
 			char head[(int)typeNum * QRY_BUFFER_HEAD_ROW + 1];
 			startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
 
@@ -1167,6 +1167,101 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 	if (!Ext_Params.hasIMG)
 		free(rawBuff);
 	IOBusy = false;
+	return err;
+}
+
+/**
+ * @brief 根据开始时间，查询开始时间后指定文件个数的文件数据，数据存放在新开辟的缓冲区buffer中
+ * @param buffer    数据缓冲区
+ * @param params    查询请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @author XIE_2022/11/23
+ */
+int DB_QueryByTimeLater(DB_DataBuffer *buffer, DB_QueryParams *params)
+{
+	int err = 0;
+	char nowFileID[10];
+	string fileid = "";
+	vector<pair<string, long>> filesWithTime, selectedFiles;
+	auto selectedPacks = packManager.GetFilesInPacksByTime(params->pathToLine, params->start);
+	//获取每个数据文件，并带有时间戳
+	readDataFilesWithTimestamps(params->pathToLine, filesWithTime);
+
+	//筛选符合条件的文件
+	for (auto &file : filesWithTime)
+	{
+		if (file.second >= params->start)
+		{
+			selectedFiles.push_back(make_pair(file.first, file.second));
+			break;
+		}
+	}
+	//根据时间升序排序
+	sortByTime(selectedFiles, TIME_ASC);
+	if (selectedFiles.size() < 1 && selectedPacks.size() < 1)
+	{
+		// cout << "没有找到文件" << endl;
+		err = 140;
+	}
+	else
+	{
+		if (selectedPacks.size() >= 1)
+		{
+			for (auto &pack : selectedPacks)
+			{
+				auto pk = packManager.GetPack(pack.first);
+				PackFileReader packReader(pk.first, pk.second);
+				if (packReader.packBuffer == NULL)
+					continue;
+				int fileNum;
+				string templateName;
+				packReader.ReadPackHead(fileNum, templateName);
+				for (int i = 0; i < fileNum; i++)
+				{
+					char *buff = nullptr, *img = nullptr;
+					long timestamp;
+					int zipType, readLength;
+					long dataPos = packReader.Next(readLength, timestamp, fileid, zipType);
+					if (timestamp < params->start) //在时间区间外
+						continue;
+					else
+						break;
+				}
+			}
+		}
+		else
+		{
+			for (int i = 0; i < selectedFiles.size(); i++)
+			{
+				if (selectedFiles[i].second > params->start)
+				{ //分离出文件id
+					vector<string> FileID = DataType::splitWithStl(selectedFiles[i].first, "_");
+					fileid = FileID[0];
+					break;
+				}
+			}
+		}
+		// cout << "id==" << fileid << endl;
+		memset(nowFileID, 0, sizeof(nowFileID));
+		int pos = 0;
+		for (int i = 0; i < fileid.length(); i++)
+		{
+			if (isdigit(fileid[i]))
+			{
+				nowFileID[pos] = fileid[i];
+				pos++;
+				// cout << " i = " << i << (int)nowFileID[pos];
+			}
+		}
+		// cout << endl;
+		params->compareType = CMP_NONE;
+		params->order = ODR_NONE;
+		params->fileID = nowFileID;
+		params->byPath = 1;
+		err = DB_QueryByFileID(buffer, params);
+	}
 	return err;
 }
 
@@ -2203,7 +2298,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 	{
 		if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
 		{
-			char typeNum = Ext_Params.typeList.size(); //数据类型总数
+			unsigned char typeNum = Ext_Params.typeList.size(); //数据类型总数
 			char head[(int)typeNum * 19 + 1];
 			//数据区起始位置
 			startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
@@ -2705,7 +2800,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			{
 				if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
 				{
-					char typeNum = params->byPath ? (Ext_Params.typeList.size() == 0 ? 1 : Ext_Params.typeList.size()) : 1; //数据类型总数
+					unsigned char typeNum = params->byPath ? (Ext_Params.typeList.size() == 0 ? 1 : Ext_Params.typeList.size()) : 1; //数据类型总数
 					char head[(int)typeNum * 19 + 1];
 					startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
 					string startNum = "", endNum = "";
@@ -2966,7 +3061,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		{
 			if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
 			{
-				char typeNum = Ext_Params.typeList.size(); //数据类型总数
+				unsigned char typeNum = Ext_Params.typeList.size(); //数据类型总数
 				char head[(int)typeNum * 19 + 1];
 				startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
 				//此处可能会分配多余的空间
@@ -3206,13 +3301,13 @@ int main()
 	// Py_Initialize();
 	DataTypeConverter converter;
 	DB_QueryParams params;
-	params.pathToLine = "TZ-GUP-Source";
+	params.pathToLine = "Tz-AssembleSrc";
 	params.fileID = "1324834";
 	// params.fileIDend = "300000";
 	params.fileIDend = NULL;
 	char code[10];
 	code[0] = (char)0;
-	code[1] = (char)0;
+	code[1] = (char)1;
 	code[2] = (char)0;
 	code[3] = (char)0;
 	code[4] = 0;
@@ -3233,9 +3328,9 @@ int main()
 	params.compareType = CMP_NONE;
 	params.compareValue = "100";
 	params.compareVariable = "S1ON";
-	params.queryType = FILEID;
+	params.queryType = LAST;
 	params.byPath = 1;
-	params.queryNums = 100;
+	params.queryNums = 1;
 	DB_DataBuffer buffer;
 	buffer.savePath = "/";
 	// cout << settings("Pack_Mode") << endl;
@@ -3245,9 +3340,9 @@ int main()
 	auto startTime = std::chrono::system_clock::now();
 	// char zeros[10] = {0};
 	// memcpy(params.pathCode, zeros, 10);
-	cout << DB_QueryByTimespan(&buffer, &params);
+	// cout << DB_QueryByTimespan(&buffer, &params);
 	// return 0;
-	// DB_QueryLastRecords(&buffer, &params);
+	DB_QueryLastRecords(&buffer, &params);
 	// DB_QueryByTimespan_Single(&buffer, &params);
 	auto endTime = std::chrono::system_clock::now();
 	// free(buffer.buffer);

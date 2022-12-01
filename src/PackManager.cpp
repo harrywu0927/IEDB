@@ -244,6 +244,37 @@ vector<pair<char *, long>> PackManager::GetPackByIDs(string pathToLine, string f
 }
 
 /**
+ * @brief 根据起始时间，获取包含第一个大于起始时间文件的包文件
+ *
+ * @param pathToLine 到产线的路径
+ * @param start 起始时间
+ *
+ * @author xss
+ */
+vector<pair<string, tuple<long, long>>> PackManager::GetFilesInPacksByTime(string pathToLine, long start)
+{
+    vector<pair<string, tuple<long, long>>> selectedPacks;
+    string tmp = pathToLine;
+    while (tmp[0] == '/')
+        tmp.erase(tmp.begin());
+    while (tmp[tmp.size() - 1] == '/')
+        tmp.pop_back();
+    //由于allPacks中的元素在初始化时已经为时间升序型，因此无需再排序
+    for (auto &pack : allPacks[tmp])
+    {
+        long packStart = get<0>(pack.second);
+        long packEnd = get<1>(pack.second);
+        if ((packStart < start && packEnd >= start) || (packStart > start)) //大于指定时间的包
+        {
+            selectedPacks.push_back(pack);
+            // cout << "start=" << start << ",packstart=" << packStart << ",packend=" << packEnd << endl;
+            break;
+        }
+    }
+    return selectedPacks;
+}
+
+/**
  * @brief put
  *
  * @param path 包的路径

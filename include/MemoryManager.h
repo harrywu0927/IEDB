@@ -21,7 +21,8 @@ using namespace std;
 enum Mem_Type
 {
     BLOCK = 1,
-    PAGE = 2
+    PAGE = 2,
+    PAGE_LIST = 3
 };
 
 typedef unsigned char Byte;
@@ -71,11 +72,19 @@ typedef struct os_line_data
 
 typedef struct IEDB_Memory
 {
+    void setAttributes(void *content = nullptr, size_t length = 0, unsigned int ID = 0, size_t offset = 0, Mem_Type type = Mem_Type::BLOCK)
+    {
+        this->content = content;
+        this->length = length;
+        this->ID = ID;
+        this->offset = offset;
+        this->type = (Byte)type;
+    }
     void *content;
     size_t length;
     unsigned int ID; //若是page，ID为从属PagesList的ID
     Byte type;       // 1 = block, 2 = page
-    size_t offset;
+    size_t offset;   //若是page，offset为页号
     bool operator<(const IEDB_Memory &right) const
     {
         if (this->ID == right.ID) //根据id去重
@@ -102,13 +111,13 @@ private:
     IEDB_Memory memPages;
     // Byte *startAddr;
     unsigned int totalPage;
-    PagesListID ID;
+    // PagesListID ID;
 
 public:
     MemoryPages();
     ~MemoryPages();
     bool InsertPages(size_t &size);
-    void RecollectPages(Page &pages);
+    void RecollectPages(IEDB_Memory &pages);
 };
 
 /**
@@ -127,7 +136,8 @@ private:
     unordered_map<BlockID, IEDB_Memory> blockMap;
     unordered_map<PagesListID, MemoryPages> pagesMap;
     unordered_set<PagesListID> pagesSet;
-    set<IEDB_Memory> emptyBlocks;
+    set<IEDB_Memory> emptyBlocks; //此处应使用链表
+    BlockID currentID = 0;
     BlockID AllocateID();
 
 public:
@@ -143,12 +153,12 @@ public:
         mem.offset = 0;
         mem.type = Mem_Type::BLOCK;
         emptyBlocks.insert(mem);
-        cout << "Memory allocate " << capacity * percentage / 100;
+        cout << "Memory allocate " << capacity * percentage / 100 / 1024 / 1024 << '\n';
     };
     ~MemoryManager(){
         // delete[] startAddr;
     };
-    IEDB_Memory GetMemory(size_t size);
+    IEDB_Memory GetMemory(size_t size, Mem_Type type = Mem_Type::BLOCK);
     void *GetExternalMemory(size_t size);
     void GetMemoryUsage(size_t &total, size_t &available);
     void Recollect(IEDB_Memory &mem);

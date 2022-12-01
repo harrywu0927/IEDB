@@ -128,7 +128,7 @@ void MemoryManager::GetMemoryUsage(size_t &total, size_t &available)
 
 MemoryPages::MemoryPages()
 {
-    memPages = memoryManager.GetMemory(MEMORY_PAGE_SIZE * PAGE_NUM);
+    memPages = memoryManager.GetMemory(MEMORY_PAGE_SIZE * PAGE_NUM, Mem_Type::PAGE_LIST);
     totalPage = memPages.length / memPages.length;
 }
 
@@ -140,7 +140,7 @@ BlockID MemoryManager::AllocateID()
 {
 }
 
-IEDB_Memory MemoryManager::GetMemory(size_t size)
+IEDB_Memory MemoryManager::GetMemory(size_t size, Mem_Type type)
 {
     IEDB_Memory mem;
     if (size <= PAGE_THRESH)
@@ -157,10 +157,10 @@ IEDB_Memory MemoryManager::GetMemory(size_t size)
         }
         // Allocate a new pagelist.
         MemoryPages pages;
-        pagesMap[pages.ID] = pages;
-        pagesSet.insert(pages.ID);
+        pagesMap[pages.memPages.ID] = pages;
+        pagesSet.insert(pages.memPages.ID);
         pages.InsertPages(size);
-        mem.ID = pages.ID;
+        mem.ID = pages.memPages.ID;
         mem.length = size;
         mem.type = Mem_Type::PAGE;
     }
@@ -172,19 +172,28 @@ IEDB_Memory MemoryManager::GetMemory(size_t size)
             {
                 mem.length = size;
                 mem.content = it->content;
-                mem.type = Mem_Type::BLOCK;
                 mem.offset = it->offset;
+                //不可对空闲块属性原地修改，因为可能破坏set的有序性
+                IEDB_Memory newMem;
+                newMem.length = it->length - size;
+                newMem.offset = it->offset + size;
+                newMem.content = (char *)it->content + newMem.offset;
+                emptyBlocks.erase(it);
+                newMem.type = Mem_Type::BLOCK;
+                emptyBlocks.insert(newMem);
+                break;
             }
             else if (it->length == size)
             {
                 emptyBlocks.erase(it);
-                mem.length = size;
+                mem.setAttributes(it->content, size, 0, it->offset);
                 break;
             }
         }
         mem.ID = AllocateID();
-
         mem.type = Mem_Type::BLOCK;
+        if (type == Mem_Type::BLOCK)
+            blockMap[mem.ID] = mem;
     }
     return mem;
 }
@@ -196,6 +205,7 @@ void MemoryManager::Recollect(IEDB_Memory &mem)
     }
     else if (mem.type == Mem_Type::PAGE)
     {
+        pagesMap[mem.ID].RecollectPages(mem);
     }
 }
 
@@ -203,6 +213,6 @@ bool MemoryPages::InsertPages(size_t &size)
 {
 }
 
-void MemoryPages::RecollectPages(Page &pages)
+void MemoryPages::RecollectPages(IEDB_Memory &pages)
 {
 }
