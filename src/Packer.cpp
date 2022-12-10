@@ -2,8 +2,8 @@
  * @file Packer.cpp
  * @author your name (you@domain.com)
  * @brief
- * @version 0.9.1
- * @date Last modified in 2022-08-06
+ * @version 0.9.3
+ * @date Last modified in 2022-12-10
  *
  * @copyright Copyright (c) 2022
  *
@@ -24,7 +24,7 @@ int DB_Pack(const char *pathToLine, int num, int packAll)
 {
     vector<pair<string, long>> filesWithTime;
     readDataFilesWithTimestamps(pathToLine, filesWithTime);
-    cout << "size " << filesWithTime.size() << endl;
+    // cout << "size " << filesWithTime.size() << endl;
     return filesWithTime.size() == 0 ? 0 : Packer::Pack(pathToLine, filesWithTime);
 }
 
@@ -52,7 +52,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
         packMutex.unlock();
         return StatusCode::DATAFILE_NOT_FOUND;
     }
-    //升序排序
+    // 升序排序
     sort(filesWithTime.begin(), filesWithTime.end(),
          [](pair<string, long> iter1, pair<string, long> iter2) -> bool
          {
@@ -65,7 +65,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
     long fp;
     char mode[2] = {'w', 'b'};
     DB_Open(const_cast<char *>(pakPath.c_str()), mode, &fp);
-    int filesNum = filesWithTime.size();
+    PACK_FILE_NUM_DTYPE filesNum = filesWithTime.size();
     long temBytes = CurrentTemplate.GetTotalBytes();
     int MAXSIZE = 2048 * 10240; // 20MB
     char *packBuffer = (char *)malloc(MAXSIZE);
@@ -73,13 +73,13 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
         throw bad_alloc();
     memset(packBuffer, 0, MAXSIZE);
     DB_DataBuffer buffer;
-    //写入包头
-    memcpy(packBuffer, &filesNum, 4);
-    memcpy(packBuffer + 4, CurrentTemplate.path.c_str(), CurrentTemplate.path.length() <= 20 ? CurrentTemplate.path.length() : 20);
-    long cur = 24, packTotalSize = 0;
+    // 写入包头
+    memcpy(packBuffer, &filesNum, sizeof(PACK_FILE_NUM_DTYPE));
+    memcpy(packBuffer + sizeof(PACK_FILE_NUM_DTYPE), CurrentTemplate.path.c_str(), CurrentTemplate.path.length() <= TEMPLATE_NAME_SIZE ? CurrentTemplate.path.length() : TEMPLATE_NAME_SIZE);
+    long cur = PACK_HEAD_SIZE, packTotalSize = 0;
     for (auto &file : filesWithTime)
     {
-        if (MAXSIZE - cur < temBytes + 25) //缓冲区不足，Flush之
+        if (MAXSIZE - cur < temBytes + PACK_HEAD_SIZE + 1) // 缓冲区不足，Flush之
         {
             fwrite(packBuffer, cur, 1, (FILE *)fp);
             memset(packBuffer, 0, MAXSIZE);
@@ -88,23 +88,23 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
         }
         memcpy(packBuffer + cur, &file.second, 8);
         cur += 8;
-        char fileID[20] = {0};
+        char fileID[PACK_FID_SIZE] = {0};
         string str = DataType::splitWithStl(fs::path(file.first).stem(), "_")[0];
-        memcpy(fileID, str.c_str(), str.length() <= 20 ? str.length() : 20);
-        memcpy(packBuffer + cur, fileID, 20);
-        cur += 20;
+        memcpy(fileID, str.c_str(), str.length() <= PACK_FID_SIZE ? str.length() : PACK_FID_SIZE);
+        memcpy(packBuffer + cur, fileID, PACK_FID_SIZE);
+        cur += PACK_FID_SIZE;
         buffer.savePath = file.first.c_str();
         if (DB_ReadFile(&buffer) == 0)
         {
             DB_DeleteFile(const_cast<char *>(buffer.savePath));
             if (buffer.length != 0)
             {
-                if (fs::path(file.first).extension() == ".idb") //未压缩
+                if (fs::path(file.first).extension() == ".idb") // 未压缩
                 {
                     char type = 0;
                     memcpy(packBuffer + cur++, &type, 1);
                 }
-                else //不完全压缩
+                else // 不完全压缩
                 {
                     char type = 2;
                     memcpy(packBuffer + cur++, &type, 1);
@@ -119,7 +119,7 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
             else
             {
                 char type = 1;
-                memcpy(packBuffer + cur++, &type, 1); //完全压缩
+                memcpy(packBuffer + cur++, &type, 1); // 完全压缩
             }
         }
         else
@@ -190,15 +190,15 @@ int Packer::RePack(string pathToLine, int packThres)
         if (cursize >= packThreshold)
         {
             char *buffer = new char[cursize];
-            long pos = 24;
-            int newFileNum = 0;
+            long pos = PACK_HEAD_SIZE;
+            PACK_FILE_NUM_DTYPE newFileNum = 0;
             long newStart = getMilliTime(), newEnd = 0;
             for (auto pk = curPacks.begin(); pk != curPacks.end(); pk++)
             {
                 auto packToRepack = packManager.GetPack(pk->first);
                 string templateName;
-                char temName[20] = {0};
-                memcpy(temName, packToRepack.first + 4, 20);
+                char temName[TEMPLATE_NAME_SIZE] = {0};
+                memcpy(temName, packToRepack.first + sizeof(PACK_FILE_NUM_DTYPE), TEMPLATE_NAME_SIZE);
                 templateName = temName;
                 /**
                  * 由于不同的包所使用的模版可能不同，因此仅合并模版相同的包
@@ -206,10 +206,10 @@ int Packer::RePack(string pathToLine, int packThres)
                  */
                 if (lastTemName == "" || templateName == lastTemName)
                 {
-                    memcpy(buffer + pos, packToRepack.first + 24, packToRepack.second - 24);
-                    pos += packToRepack.second - 24;
-                    int fileNum;
-                    memcpy(&fileNum, packToRepack.first, 4);
+                    memcpy(buffer + pos, packToRepack.first + PACK_HEAD_SIZE, packToRepack.second - PACK_HEAD_SIZE);
+                    pos += packToRepack.second - PACK_HEAD_SIZE;
+                    PACK_FILE_NUM_DTYPE fileNum;
+                    memcpy(&fileNum, packToRepack.first, sizeof(PACK_FILE_NUM_DTYPE));
                     newFileNum += fileNum;
                     lastTemName = templateName;
                     packManager.DeletePack(pk->first);
@@ -237,9 +237,9 @@ int Packer::RePack(string pathToLine, int packThres)
                 delete[] buffer;
                 continue;
             }
-            memcpy(buffer, &newFileNum, 4);
-            lastTemName.resize(20, 0);
-            memcpy(buffer + 4, lastTemName.c_str(), 20);
+            memcpy(buffer, &newFileNum, sizeof(PACK_FILE_NUM_DTYPE));
+            lastTemName.resize(TEMPLATE_NAME_SIZE, 0);
+            memcpy(buffer + sizeof(PACK_FILE_NUM_DTYPE), lastTemName.c_str(), TEMPLATE_NAME_SIZE);
             string newPackPath = pathToLine + "/" + to_string(newStart) + "-" + to_string(newEnd) + ".pak";
             long fp;
             char mode[2] = {'w', 'b'};
@@ -269,12 +269,13 @@ int Packer::RePack(string pathToLine, int packThres)
 PackFileReader::PackFileReader(string pathFilePath)
 {
     DB_DataBuffer buffer;
+    buffer.buffer = NULL;
     buffer.savePath = pathFilePath.c_str();
     int err = DB_ReadFile(&buffer);
     if (err != 0)
     {
         errorCode = err;
-        if (errorCode == 190)
+        if (errorCode == StatusCode::EMPTY_PAK)
         {
             throw iedb_err(err, pathFilePath);
         }
@@ -285,7 +286,7 @@ PackFileReader::PackFileReader(string pathFilePath)
         packBuffer = buffer.buffer;
         buffer.buffer = NULL;
         packLength = buffer.length;
-        curPos = 24;
+        curPos = PACK_HEAD_SIZE;
         usingcache = false;
     }
     else
@@ -305,9 +306,10 @@ PackFileReader::PackFileReader(string pathFilePath)
 PackFileReader::PackFileReader(char *buffer, long length, bool freeit)
 {
     if (buffer == nullptr || buffer == NULL)
-        throw iedb_err(StatusCode::DATAFILE_NOT_FOUND);
-    char tempName[20] = {0};
-    memcpy(tempName, buffer + 4, 20);
+        // throw iedb_err(StatusCode::EMPTY_PAK);
+        return;
+    // char tempName[TEMPLATE_NAME_SIZE] = {0};
+    // memcpy(tempName, buffer + 4, 20);
     // TemplateManager::CheckTemplate(tempName);
     // if (CurrentTemplate.hasImage)
     //     hasImg = true;
@@ -316,7 +318,7 @@ PackFileReader::PackFileReader(char *buffer, long length, bool freeit)
     packBuffer = buffer;
     // buffer = NULL;
     packLength = length;
-    curPos = 24;
+    curPos = PACK_HEAD_SIZE;
     if (freeit)
         usingcache = false;
     else
@@ -339,27 +341,27 @@ long PackFileReader::Next(int &readLength, long &timestamp, string &fileID, int 
 {
     memcpy(&timestamp, packBuffer + curPos, 8);
     curPos += 8;
-    char fid[21] = {0}; //多留一个0作为结束位
-    memcpy(fid, packBuffer + curPos, 20);
-    curPos += 20;
+    char fid[PACK_FID_SIZE + 1] = {0}; // 多留一个0作为结束位
+    memcpy(fid, packBuffer + curPos, PACK_FID_SIZE);
+    curPos += PACK_FID_SIZE;
     fileID = fid;
-    zipType = (int)packBuffer[curPos++]; //压缩情况
+    zipType = (int)packBuffer[curPos++]; // 压缩情况
     long dataPos = curPos;
     switch (zipType)
     {
-    case 0: //非压缩
+    case 0: // 非压缩
     {
         readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
         curPos += 4 + readLength;
         break;
     }
-    case 1: //完全压缩
+    case 1: // 完全压缩
     {
         readLength = 0;
         break;
     }
-    case 2: //不完全压缩
+    case 2: // 不完全压缩
     {
         readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
@@ -394,24 +396,24 @@ long PackFileReader::Next(int &readLength, long &timestamp, string &fileID, int 
 long PackFileReader::Next(int &readLength, long &timestamp, int &zipType, char **buffer, char *completeZiped)
 {
     memcpy(&timestamp, packBuffer + curPos, 8);
-    curPos += 28;
-    zipType = (int)packBuffer[curPos++]; //压缩情况
+    curPos += 8 + PACK_FID_SIZE;
+    zipType = (int)packBuffer[curPos++]; // 压缩情况
     long dataPos = curPos;
     switch (zipType)
     {
-    case 0: //非压缩
+    case 0: // 非压缩
     {
         readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
         curPos += 4 + readLength;
         break;
     }
-    case 1: //完全压缩
+    case 1: // 完全压缩
     {
         readLength = 0;
         break;
     }
-    case 2: //不完全压缩
+    case 2: // 不完全压缩
     {
         readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
@@ -446,27 +448,27 @@ long PackFileReader::Next(int &readLength, long &timestamp, int &zipType, char *
 long PackFileReader::Next(int &readLength, string &fileID, int &zipType, char **buffer, char *completeZiped)
 {
     curPos += 8;
-    char fid[21] = {0};
-    memcpy(fid, packBuffer + curPos, 20);
-    curPos += 20;
+    char fid[PACK_FID_SIZE + 1] = {0};
+    memcpy(fid, packBuffer + curPos, PACK_FID_SIZE);
+    curPos += PACK_FID_SIZE;
     fileID = fid;
-    zipType = (int)packBuffer[curPos++]; //压缩情况
+    zipType = (int)packBuffer[curPos++]; // 压缩情况
     long dataPos = curPos;
     switch (zipType)
     {
-    case 0: //非压缩
+    case 0: // 非压缩
     {
         readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
         curPos += 4 + readLength;
         break;
     }
-    case 1: //完全压缩
+    case 1: // 完全压缩
     {
         readLength = 0;
         break;
     }
-    case 2: //不完全压缩
+    case 2: // 不完全压缩
     {
         readLength = *(int *)(packBuffer + curPos);
         dataPos = curPos + 4;
@@ -508,8 +510,8 @@ int PackFileReader::Skip(int num)
 {
     for (int i = 0; i < num; i++)
     {
-        curPos += 28;
-        int ztype = (int)packBuffer[curPos++]; //压缩情况
+        curPos += PACK_FID_SIZE + 8;
+        int ztype = (int)packBuffer[curPos++]; // 压缩情况
         if (ztype != 1)
         {
             curPos += 4 + *(int *)(packBuffer + curPos);
@@ -533,11 +535,11 @@ int PackFileReader::Skip(int num)
  * @return
  * @note
  */
-void PackFileReader::ReadPackHead(int &fileNum, string &templateName)
+void PackFileReader::ReadPackHead(PACK_FILE_NUM_DTYPE &fileNum, string &templateName)
 {
-    memcpy(&fileNum, packBuffer, 4);
-    char temName[20] = {0};
-    memcpy(temName, packBuffer + 4, 20);
+    memcpy(&fileNum, packBuffer, sizeof(PACK_FILE_NUM_DTYPE));
+    char temName[TEMPLATE_NAME_SIZE] = {0};
+    memcpy(temName, packBuffer + sizeof(PACK_FILE_NUM_DTYPE), TEMPLATE_NAME_SIZE);
     templateName = temName;
 }
 // int main()

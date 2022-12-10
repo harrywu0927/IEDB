@@ -86,31 +86,31 @@ void testInsert(string pathtoline)
 
 int main()
 {
-    DB_LoadSchema("JinfeiSeven");
-    int seq = -5;
-    char *data = new char[24];
-    char *queue;
-    for (int i = 0; i < 20; i++)
-    {
-        for (int j = i * 6; j < i * 6 + 6; j++)
-        {
-            memcpy(data + j % 6 * 4, &j, 4);
-        }
-        // DB_ExtractSerialRhythm(6, &data, &seq, &queue);
-        DB_TemporaryFuncCall(data, &seq, queue, 6);
-        if (1)
-        {
-            for (int j = 0; j < 6; j++)
-            {
-                cout << *(int *)(data + j * 4) << " ";
-            }
-            cout << endl;
-        }
-        sleep(1);
-    }
-    delete[] data;
-    free(queue);
-    return 0;
+    // DB_LoadSchema("JinfeiSeven");
+    // int seq = -5;
+    // char *data = new char[24];
+    // char *queue;
+    // for (int i = 0; i < 20; i++)
+    // {
+    //     for (int j = i * 6; j < i * 6 + 6; j++)
+    //     {
+    //         memcpy(data + j % 6 * 4, &j, 4);
+    //     }
+    //     // DB_ExtractSerialRhythm(6, &data, &seq, &queue);
+    //     DB_TemporaryFuncCall(data, &seq, queue, 6);
+    //     if (1)
+    //     {
+    //         for (int j = 0; j < 6; j++)
+    //         {
+    //             cout << *(int *)(data + j * 4) << " ";
+    //         }
+    //         cout << endl;
+    //     }
+    //     sleep(1);
+    // }
+    // delete[] data;
+    // free(queue);
+    // return 0;
     unsigned char mdbuf[20];
     const unsigned char d1[] = "123456789012";
     cout << SHA1(d1, 12, mdbuf) << endl;
@@ -205,9 +205,9 @@ int main()
     for (int i = 0; i < 10; i++)
     {
         printf("\rprocess %4d ", i);
-        //在Linux下\033[K是清除光标到行尾的数据
-        // printf("process %4d \r\033[K", process);
-        // Linux下printf有缓冲区，要用fflush来显示，不然不能及时显示
+        // 在Linux下\033[K是清除光标到行尾的数据
+        //  printf("process %4d \r\033[K", process);
+        //  Linux下printf有缓冲区，要用fflush来显示，不然不能及时显示
         fflush(stdout);
         sleep(1);
     }

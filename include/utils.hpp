@@ -56,70 +56,82 @@ namespace fs = std::filesystem;
 #define DEBUG
 
 #define QRY_BUFFER_HEAD_ROW 19
+#define PATH_CODE_LEVEL 5
+#define PATH_CODE_LEVEL_SIZE 2
+#define TYPE_NUM_SIZE 2
+#define PATH_CODE_SIZE PATH_CODE_LEVEL *PATH_CODE_LEVEL_SIZE
 #define PACK_FID_SIZE 20
 #define DATA_TYPE_NUM 10
 
-#define CUBICLE_LEVEL 2 //编码中的工位层级
+// 模版文件名的长度
+#define TEMPLATE_NAME_SIZE 20
+// 包中ID的长度
+#define PACK_FID_SIZE 20
+// 包头中文件数量的数据类型
+#define PACK_FILE_NUM_DTYPE int
+#define PACK_HEAD_SIZE TEMPLATE_NAME_SIZE + sizeof(PACK_FILE_NUM_DTYPE)
+
+#define CUBICLE_LEVEL 2 // 编码中的工位层级(0-4)
 
 namespace StatusCode
 {
     enum StatusCode
     {
-        DATA_TYPE_MISMATCH_ERROR = 135,   //数据类型不匹配
-        SCHEMA_FILE_NOT_FOUND = 136,      //未找到模版文件
-        PATHCODE_INVALID = 137,           //路径编码不合法
-        UNKNOWN_TYPE = 138,               //未知数据类型
-        TEMPLATE_RESOLUTION_ERROR = 139,  //模版文件解析错误
-        DATAFILE_NOT_FOUND = 140,         //未找到数据文件
-        UNKNOWN_PATHCODE = 141,           //未知的路径编码
-        UNKNOWN_VARIABLE_NAME = 142,      //未知的变量名
-        BUFFER_FULL = 143,                //缓冲区满，还有数据
-        UNKNWON_DATAFILE = 144,           //未知的数据文件或数据文件不合法
-        NO_QUERY_TYPE = 145,              //未指定主查询条件
-        QUERY_TYPE_NOT_SURPPORT = 146,    //不支持的查询方式
-        EMPTY_PATH_TO_LINE = 147,         //到产线的路径为空
-        EMPTY_SAVE_PATH = 148,            //空的存储路径
-        NO_DATA_QUERIED = 149,            //未找到数据
-        VARIABLE_NAME_EXIST = 150,        //变量名已存在
-        PATHCODE_EXIST = 151,             //编码已存在
-        FILENAME_MODIFIED = 152,          //文件名被篡改
-        INVALID_TIMESPAN = 153,           //时间段设置错误或未指定
-        NO_PATHCODE_OR_NAME = 154,        //查询参数中路径编码和变量名均未找到
-        NO_QUERY_NUM = 155,               //未指定查询条数
-        NO_FILEID = 156,                  //未指定文件ID
-        VARIABLE_NOT_ASSIGNED = 157,      //比较某个值时未指定变量名
-        NO_COMPARE_VALUE = 158,           //指定了比较类型却没有赋值
-        ZIPTYPE_ERROR = 159,              //压缩数据类型出现问题
-        NO_ZIP_TYPE = 160,                //未指定压缩/还原条件
+        DATA_TYPE_MISMATCH_ERROR = 135,   // 数据类型不匹配
+        SCHEMA_FILE_NOT_FOUND = 136,      // 未找到模版文件
+        PATHCODE_INVALID = 137,           // 路径编码不合法
+        UNKNOWN_TYPE = 138,               // 未知数据类型
+        TEMPLATE_RESOLUTION_ERROR = 139,  // 模版文件解析错误
+        DATAFILE_NOT_FOUND = 140,         // 未找到数据文件
+        UNKNOWN_PATHCODE = 141,           // 未知的路径编码
+        UNKNOWN_VARIABLE_NAME = 142,      // 未知的变量名
+        BUFFER_FULL = 143,                // 缓冲区满，还有数据
+        UNKNWON_DATAFILE = 144,           // 未知的数据文件或数据文件不合法
+        NO_QUERY_TYPE = 145,              // 未指定主查询条件
+        QUERY_TYPE_NOT_SURPPORT = 146,    // 不支持的查询方式
+        EMPTY_PATH_TO_LINE = 147,         // 到产线的路径为空
+        EMPTY_SAVE_PATH = 148,            // 空的存储路径
+        NO_DATA_QUERIED = 149,            // 未找到数据
+        VARIABLE_NAME_EXIST = 150,        // 变量名已存在
+        PATHCODE_EXIST = 151,             // 编码已存在
+        FILENAME_MODIFIED = 152,          // 文件名被篡改
+        INVALID_TIMESPAN = 153,           // 时间段设置错误或未指定
+        NO_PATHCODE_OR_NAME = 154,        // 查询参数中路径编码和变量名均未找到
+        NO_QUERY_NUM = 155,               // 未指定查询条数
+        NO_FILEID = 156,                  // 未指定文件ID
+        VARIABLE_NOT_ASSIGNED = 157,      // 比较某个值时未指定变量名
+        NO_COMPARE_VALUE = 158,           // 指定了比较类型却没有赋值
+        ZIPTYPE_ERROR = 159,              // 压缩数据类型出现问题
+        NO_ZIP_TYPE = 160,                // 未指定压缩/还原条件
         ISARRAY_ERROR = 161,              // isArray只能为0或者1
         HASTIME_ERROR = 162,              // hasTime只能为0或者1
         ARRAYLEN_ERROR = 163,             // arrayLen不能小于１
         ISTS_ERROR = 164,                 // isTS只能为0或者1
         TSLEN_ERROR = 165,                // TsLen不能小于１
-        DIR_INCLUDE_NUMBER = 166,         //文件夹名包含数字
-        AMBIGUOUS_QUERY_PARAMS = 167,     //查询条件有歧义
-        ML_TYPE_NOT_SUPPORT = 168,        //不支持的机器学习条件
-        NOVEL_DATA_DETECTED = 169,        //检测到奇异数据
-        PYTHON_SCRIPT_NOT_FOUND = 170,    //未找到python脚本文件
+        DIR_INCLUDE_NUMBER = 166,         // 文件夹名包含数字
+        AMBIGUOUS_QUERY_PARAMS = 167,     // 查询条件有歧义
+        ML_TYPE_NOT_SUPPORT = 168,        // 不支持的机器学习条件
+        NOVEL_DATA_DETECTED = 169,        // 检测到奇异数据
+        PYTHON_SCRIPT_NOT_FOUND = 170,    // 未找到python脚本文件
         METHOD_NOT_FOUND_IN_PYTHON = 171, // python脚本中未找到相应的方法
-        VARIABLE_NAME_CHECK_ERROR = 172,  //变量名不合法
-        PATHCODE_CHECK_ERROR = 173,       //路径编码不合法
-        STANDARD_CHECK_ERROR = 174,       //标准值不合法
-        MAX_CHECK_ERROR = 175,            //最大值不合法
-        MIN_CHECK_ERROR = 176,            //最小值不合法
-        VALUE_CHECKE_ERROR = 177,         //变量值不合法
-        VALUE_RANGE_ERROR = 178,          //变量值范围不合法，例如最小值大于最大值
-        INVALID_QRY_PARAMS = 179,         //查询条件不合法
-        INVALID_QUERY_BUFFER = 180,       //查询缓存不合法
-        IMG_NOT_FOUND = 181,              //未在文件中找到图片
+        VARIABLE_NAME_CHECK_ERROR = 172,  // 变量名不合法
+        PATHCODE_CHECK_ERROR = 173,       // 路径编码不合法
+        STANDARD_CHECK_ERROR = 174,       // 标准值不合法
+        MAX_CHECK_ERROR = 175,            // 最大值不合法
+        MIN_CHECK_ERROR = 176,            // 最小值不合法
+        VALUE_CHECKE_ERROR = 177,         // 变量值不合法
+        VALUE_RANGE_ERROR = 178,          // 变量值范围不合法，例如最小值大于最大值
+        INVALID_QRY_PARAMS = 179,         // 查询条件不合法
+        INVALID_QUERY_BUFFER = 180,       // 查询缓存不合法
+        IMG_NOT_FOUND = 181,              // 未在文件中找到图片
         MAX_OR_MIN_ERROR = 182,           // maxOrmin只能为0,1,2
         ZIPNUM_ERROR = 183,               // 压缩数量错误
         ZIPNUM_AND_EID_ERROR = 184,       // zipNum和EID冲突，不能同时设置
-        VARIABLE_NAME_NOT_INT_CODE = 185, //编码中不包含指定变量名
-        MEMORY_INSUFFICIENT = 186,        //内存不足
-        BACKUP_BROKEN = 187,              //备份文件损坏
+        VARIABLE_NAME_NOT_INT_CODE = 185, // 编码中不包含指定变量名
+        MEMORY_INSUFFICIENT = 186,        // 内存不足
+        BACKUP_BROKEN = 187,              // 备份文件损坏
         ERROR_SID_EID_RANGE = 188,        // SID大于EID
-        DATAFILE_MODIFIED = 189,          //文件内容被篡改
+        DATAFILE_MODIFIED = 189,          // 文件内容被篡改
         EMPTY_PAK = 190,
     };
 }
@@ -141,19 +153,19 @@ namespace ValueType
     };
 }
 
-extern int errorCode; //错误码
+extern int errorCode; // 错误码
 
-extern int maxThreads; //此设备支持的最大线程数
+extern int maxThreads; // 此设备支持的最大线程数
 
 extern bool IOBusy; // IO繁忙
 
-extern int RepackThreshold; //再打包的最大大小
+extern int RepackThreshold; // 再打包的最大大小
 
 extern neb::CJsonObject settings;
 
 extern queue<string> fileQueue;
 
-//获取文件相关函数
+// 获取文件相关函数
 void readFileList(string path, vector<string> &files);
 
 void readIDBFilesList(string path, vector<string> &files);
@@ -186,7 +198,7 @@ void readAllDirs(vector<string> &dirs, string basePath);
 
 void readFiles(vector<string> &paths, string path, string extension, bool recursive = false);
 
-//其他函数
+// 其他函数
 long getMilliTime();
 
 void removeFilenameLabel(string &path);
@@ -226,7 +238,7 @@ PyObject *PythonCall(PyObject *Args, const char *moduleName, const char *funcNam
 
 PyObject *PythonCall(const char *moduleName, const char *funcName, const char *path, int num, ...);
 
-//根据时间升序或降序排序
+// 根据时间升序或降序排序
 void sortByTime(vector<pair<string, long>> &selectedFiles, DB_Order order);
 
 class iedb_err : exception
@@ -254,8 +266,8 @@ class PathCode
 public:
     vector<int> paths;
     string name;
-    char code[10];
-    //解码路径为整数数组
+    char code[PATH_CODE_SIZE];
+    // 解码路径为整数数组
     vector<int> DecodePath(char pathEncode[], int &levels)
     {
         DataTypeConverter converter;
@@ -263,8 +275,8 @@ public:
         for (int i = 0; i < levels; i++)
         {
             string str = "  ";
-            str[0] = pathEncode[i * 2];
-            str[1] = pathEncode[i * 2 + 1];
+            str[0] = pathEncode[i * PATH_CODE_LEVEL_SIZE];
+            str[1] = pathEncode[i * PATH_CODE_LEVEL_SIZE + 1];
             res.push_back((int)converter.ToUInt16(const_cast<char *>(str.c_str())));
         }
         return res;
@@ -274,57 +286,57 @@ public:
     {
         this->paths = DecodePath(pathEncode, levels);
         this->name = name;
-        for (size_t i = 0; i < 10; i++)
+        for (size_t i = 0; i < PATH_CODE_SIZE; i++)
         {
             this->code[i] = pathEncode[i];
         }
     }
     inline bool operator==(const PathCode &pathCode)
     {
-        return memcmp(code, pathCode.code, 10) == 0 ? true : false;
+        return memcmp(code, pathCode.code, PATH_CODE_SIZE) == 0 ? true : false;
     }
 };
 
-//管理模板中的数据类型等信息
+// 管理模板中的数据类型等信息
 class DataType
 {
 public:
     bool isArray = false;
     bool hasTime = false;
-    bool isTimeseries = false;      //此值为true时，hasTime不可为true。(时间序列：<value,timestamp>键-值序列)
-    int tsLen;                      //时间序列长度
-    int arrayLen;                   //数组长度
-    int valueBytes;                 //值所占字节
-    long timeseriesSpan = 0;        //时间序列的采样时间
-    ValueType::ValueType valueType; //基本数据类型
+    bool isTimeseries = false;      // 此值为true时，hasTime不可为true。(时间序列：<value,timestamp>键-值序列)
+    int tsLen;                      // 时间序列长度
+    int arrayLen;                   // 数组长度
+    int valueBytes;                 // 值所占字节
+    long timeseriesSpan = 0;        // 时间序列的采样时间
+    ValueType::ValueType valueType; // 基本数据类型
 
     // char maxValue[10];      //最大值
     // char minValue[10];      //最小值
     // char standardValue[10]; //标准值
-    char maxValue[5];      //最大值
-    char minValue[5];      //最小值
-    char standardValue[5]; //标准值
+    char maxValue[5];      // 最大值
+    char minValue[5];      // 最小值
+    char standardValue[5]; // 标准值
     char (*max)[5];
     char (*min)[5];
     char (*standard)[5];
 
-    //实现分割字符串(源字符串也将改变) 线程不安全
+    // 实现分割字符串(源字符串也将改变) 线程不安全
     //@param srcstr     源字符串
     //@param str        划分字符
     static vector<string> StringSplit(char srcstr[], const char *str);
 
-    //使用STL的字符串分割
+    // 使用STL的字符串分割
     static vector<string> splitWithStl(const string &str, const string &pattern);
-    //判断值类型
+    // 判断值类型
     static ValueType::ValueType JudgeValueType(string vType);
-    //判断值类型
+    // 判断值类型
     static string JudgeValueTypeByNum(int &vType);
     static int JudgeByValueType(ValueType::ValueType &vType);
-    //获取值类型所占字节数
+    // 获取值类型所占字节数
     static int GetValueBytes(ValueType::ValueType &type);
-    //获取此数据类型所占的总字节数
+    // 获取此数据类型所占的总字节数
     static int GetTypeBytes(DataType &type);
-    //从字符串中获取数据类型
+    // 从字符串中获取数据类型
     static int GetDataTypeFromStr(char dataType[], DataType &type);
 
     /**
@@ -359,15 +371,15 @@ void SetValueToPyList(PyObject *item, char *buffer, int &cur, DataType &type, in
 
 int getBufferValueType(DataType &type);
 
-class Template //标准模板
+class Template // 标准模板
 {
 public:
     vector<pair<PathCode, DataType>> schemas;
-    string path; //挂载路径
+    string path; // 挂载路径
     // char *temFileBuffer; //模版文件缓存
     // long fileLength;
     long totalBytes;
-    bool hasImage = false; //若包含图片，则查询时需要对每一个节拍对照模版遍历；若不包含，则仅需获取数据的绝对偏移，大大节省查询时间
+    bool hasImage = false; // 若包含图片，则查询时需要对每一个节拍对照模版遍历；若不包含，则仅需获取数据的绝对偏移，大大节省查询时间
     Template() {}
     Template(vector<PathCode> &pathEncodes, vector<DataType> &dataTypes, const char *path)
     {
@@ -453,19 +465,19 @@ extern Template CurrentTemplate;
 extern int maxTemplates;
 extern vector<Template> templates;
 
-//模版的管理
+// 模版的管理
 class TemplateManager
 {
 private:
 public:
-    //将模版设为当前模版
+    // 将模版设为当前模版
     static int SetTemplate(const char *path)
     {
         vector<string> files;
         string pathToLine = path;
         readFileList(pathToLine, files);
         string temPath = "";
-        for (string &file : files) //找到带有后缀tem的文件
+        for (string &file : files) // 找到带有后缀tem的文件
         {
             if (fs::path(file).extension() == ".tem")
             {
@@ -493,15 +505,15 @@ public:
             i += 30;
             char timeFlag;
             memcpy(&timeFlag, buf + i++, 1);
-            memcpy(pathEncode, buf + i, 10);
-            i += 10;
+            memcpy(pathEncode, buf + i, PATH_CODE_SIZE);
+            i += PATH_CODE_SIZE;
             vector<string> paths;
-            PathCode pathCode(pathEncode, sizeof(pathEncode) / 2, variable);
+            PathCode pathCode(pathEncode, PATH_CODE_LEVEL, variable);
             DataType type;
 
             if (DataType::GetDataTypeFromStr(dataType, type) == 0)
             {
-                if ((int)timeFlag == 1 && !type.isTimeseries) //如果是时间序列，即使timeFlag为1，依然不额外携带时间
+                if ((int)timeFlag == 1 && !type.isTimeseries) // 如果是时间序列，即使timeFlag为1，依然不额外携带时间
                     type.hasTime = true;
                 else
                     type.hasTime = false;
@@ -516,7 +528,7 @@ public:
         return 0;
     }
 
-    //卸载指定路径下的模版
+    // 卸载指定路径下的模版
     static int UnsetTemplate(string path);
 
     static int CheckTemplate(string path)
@@ -529,12 +541,12 @@ public:
     }
 };
 
-class ZipTemplate //压缩模板
+class ZipTemplate // 压缩模板
 {
 public:
     vector<pair<string, DataType>> schemas;
     // unordered_map<vector<int>, string> pathNames;
-    string path; //挂载路径
+    string path; // 挂载路径
     // char *temFileBuffer; //模版文件缓存
     long fileLength;
     long totalBytes;
@@ -558,13 +570,13 @@ class ZipTemplateManager
 {
 private:
 public:
-    //将模版设为当前模版
+    // 将模版设为当前模版
     static int SetZipTemplate(const char *path)
     {
         vector<string> files;
         readFileList(path, files);
         string temPath = "";
-        for (string file : files) //找到带有后缀ziptem的文件
+        for (string file : files) // 找到带有后缀ziptem的文件
         {
             string s = file;
             vector<string> vec = DataType::StringSplit(const_cast<char *>(s.c_str()), ".");
@@ -591,17 +603,17 @@ public:
         {
             DataType type;
             char variable[30], dataType[30], standardValue[5], maxValue[5], minValue[5], hasTime[1], timeseriesSpan[4];
-            //变量名
+            // 变量名
             memcpy(variable, buf + i, 30);
             i += 30;
             dataName.push_back(variable);
 
-            //数据类型
+            // 数据类型
             memcpy(dataType, buf + i, 30);
             i += 30;
             if (DataType::GetDataTypeFromStr(dataType, type) == 0)
             {
-                if ((bool)hasTime[0] == true && !type.isTimeseries) //如果是时间序列，即使hasTime为1，依然不额外携带时间
+                if ((bool)hasTime[0] == true && !type.isTimeseries) // 如果是时间序列，即使hasTime为1，依然不额外携带时间
                     type.hasTime = true;
                 else
                     type.hasTime = false;
@@ -609,7 +621,7 @@ public:
             else
                 return errorCode;
 
-            //标准值、最大值、最小值
+            // 标准值、最大值、最小值
             if (type.isArray)
             {
                 memset(type.maxValue, 0, sizeof(type.maxValue));
@@ -733,7 +745,7 @@ public:
     //     CurrentZipTemplate = tem;
     //     return 0;
     // }
-    //卸载指定路径下的模版
+    // 卸载指定路径下的模版
     static int UnsetZipTemplate(string path)
     {
         for (int i = 0; i < ZipTemplates.size(); i++)
@@ -748,7 +760,7 @@ public:
         // CurrentZipTemplate.temFileBuffer = NULL;
         return 0;
     }
-    //检查是否已加载了模板
+    // 检查是否已加载了模板
     static int CheckZipTemplate(string path)
     {
         if ((path != CurrentZipTemplate.path && path != "") || CurrentZipTemplate.path == "")
@@ -759,10 +771,10 @@ public:
     }
 };
 
-//负责数据文件的打包，打包后的数据将存为一个文件，文件名为时间段.pak，
-//格式为数据包头 + 每8字节时间戳，接20字节文件ID，接1字节表示是否为压缩文件(1:完全压缩，2:不完全压缩，0:非压缩），
-//如果长度不为0，则接4字节文件长度，接文件内容；
-//数据包头的格式暂定为：包中文件总数4字节 + 模版文件名20字节
+// 负责数据文件的打包，打包后的数据将存为一个文件，文件名为时间段.pak，
+// 格式为数据包头 + 每8字节时间戳，接20字节文件ID，接1字节表示是否为压缩文件(1:完全压缩，2:不完全压缩，0:非压缩），
+// 如果长度不为0，则接4字节文件长度，接文件内容；
+// 数据包头的格式暂定为：包中文件总数4字节 + 模版文件名20字节
 class Packer
 {
 public:
@@ -774,13 +786,14 @@ public:
 class PackFileReader
 {
 private:
-    long curPos;     //当前读到的位置
+    long curPos;     // 当前读到的位置
     long packLength; // pak长度
-    bool usingcache; //不使用缓存的阅读模式时，将回收此内存
+    bool usingcache; // 不使用缓存的阅读模式时，将回收此内存
     bool hasImg;
 
 public:
     char *packBuffer = NULL; // pak缓存地址
+    PackFileReader(){};
     PackFileReader(string pathFilePath);
     PackFileReader(char *buffer, long length, bool freeit = false);
     ~PackFileReader()
@@ -817,13 +830,13 @@ public:
 class PackManager
 {
 private:
-    long memUsed; //已占用内存大小
+    long memUsed; // 已占用内存大小
     long memCapacity;
-    list<pair<string, pair<char *, long>>> packsInMem;                               //当前内存中的pack文件路径(key)-内存地址、长度(value)
+    list<pair<string, pair<char *, long>>> packsInMem;                               // 当前内存中的pack文件路径(key)-内存地址、长度(value)
     unordered_map<string, list<pair<string, pair<char *, long>>>::iterator> key2pos; // key到双向链表packsInMem中对应value的映射
 
 public:
-    PackManager(long memcap); //初始化allPacks
+    PackManager(long memcap); // 初始化allPacks
     ~PackManager()
     {
         for (auto &pack : packsInMem)
@@ -831,7 +844,7 @@ public:
             free(pack.second.first);
         }
     }
-    unordered_map<string, vector<pair<string, tuple<long, long>>>> allPacks; //磁盘中当前所有目录下的所有包文件的路径、时间段,按照时间升序存放
+    unordered_map<string, vector<pair<string, tuple<long, long>>>> allPacks; // 磁盘中当前所有目录下的所有包文件的路径、时间段,按照时间升序存放
     void PutPack(string path, pair<char *, long> pack);
     pair<char *, long> GetPack(string path);
     void ReadPack(string path);
@@ -852,17 +865,17 @@ public:
 
 extern PackManager packManager;
 
-//产线文件夹命名规范统一为 xxxx/yyy
-extern unordered_map<string, int> curNum; //记录每个产线文件夹当前已有idb文件数
-//文件ID管理
-//根据总体目录结构发放文件ID
+// 产线文件夹命名规范统一为 xxxx/yyy
+extern unordered_map<string, int> curNum; // 记录每个产线文件夹当前已有idb文件数
+// 文件ID管理
+// 根据总体目录结构发放文件ID
 class FileIDManager
 {
 private:
 public:
-    //建立从包到文件ID范围的索引
+    // 建立从包到文件ID范围的索引
     unordered_map<string, tuple<int, int>> fidIndex;
-    //派发文件ID
+    // 派发文件ID
     static string GetFileID(string path);
     static void GetSettings();
     static neb::CJsonObject GetSetting();
@@ -898,7 +911,7 @@ public:
         buffer = NULL;
         CheckBigEndian();
     };
-    QueryBufferReader(DB_DataBuffer *buffer, bool freeit = true); //当freeit设置为false时，不会自动清空buffer
+    QueryBufferReader(DB_DataBuffer *buffer, bool freeit = true); // 当freeit设置为false时，不会自动清空buffer
     ~QueryBufferReader()
     {
         if (freeit && buffer != NULL)

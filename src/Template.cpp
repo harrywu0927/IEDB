@@ -14,8 +14,8 @@ int Template::writeBufferHead(char *pathCode, vector<DataType> &typeList, char *
     vector<PathCode> pathCodes;
     this->GetAllPathsByCode(pathCode, pathCodes);
     buffer[0] = (unsigned char)pathCodes.size();
-    long cur = 1; //当前数据头写位置
-    for (int i = 0; i < pathCodes.size(); i++, cur += 10)
+    long cur = 1; // 当前数据头写位置
+    for (int i = 0; i < pathCodes.size(); i++, cur += PATH_CODE_SIZE)
     {
         buffer[cur++] = (char)getBufferValueType(typeList[i]);
         if (typeList[i].isTimeseries)
@@ -28,7 +28,7 @@ int Template::writeBufferHead(char *pathCode, vector<DataType> &typeList, char *
             memcpy(buffer + cur, &typeList[i].arrayLen, 4);
             cur += 4;
         }
-        memcpy(buffer + cur, pathCodes[i].code, 10);
+        memcpy(buffer + cur, pathCodes[i].code, PATH_CODE_SIZE);
     }
     return cur;
 }
@@ -61,8 +61,8 @@ int Template::writeBufferHead(string name, DataType &type, char *buffer)
                 memcpy(buffer + cur, &type.arrayLen, 4);
                 cur += 4;
             }
-            memcpy(buffer + cur, schema.first.code, 10);
-            cur += 10;
+            memcpy(buffer + cur, schema.first.code, PATH_CODE_SIZE);
+            cur += PATH_CODE_SIZE;
             break;
         }
     }
@@ -100,8 +100,8 @@ int Template::writeBufferHead(vector<string> &names, vector<DataType> &typeList,
                     memcpy(buffer + cur, &typeList[i].arrayLen, 4);
                     cur += 4;
                 }
-                memcpy(buffer + cur, this->schemas[j].first.code, 10);
-                cur += 10;
+                memcpy(buffer + cur, this->schemas[j].first.code, PATH_CODE_SIZE);
+                cur += PATH_CODE_SIZE;
                 break;
             }
         }
@@ -120,15 +120,15 @@ int Template::writeBufferHead(vector<string> &names, vector<DataType> &typeList,
 int Template::GetAllPathsByCode(char *pathCode, vector<PathCode> &pathCodes)
 {
     pathCodes.clear();
-    int level = 5; //路径级数
-    for (int i = 10 - 1; i >= 0 && pathCode[i] == 0; i -= 2)
+    int level = PATH_CODE_LEVEL; // 路径级数
+    for (int i = PATH_CODE_SIZE - 1; i >= 0 && pathCode[i] == 0; i -= PATH_CODE_LEVEL_SIZE)
     {
         level--;
     }
     for (auto const &schema : this->schemas)
     {
         bool codeEquals = true;
-        for (size_t k = 0; k < level * 2; k++) //判断路径编码前缀是否相等
+        for (size_t k = 0; k < level * PATH_CODE_LEVEL_SIZE; k++) // 判断路径编码前缀是否相等
         {
             if (pathCode[k] != schema.first.code[k])
             {
@@ -151,15 +151,15 @@ int Template::GetAllPathsByCode(char *pathCode, vector<PathCode> &pathCodes)
  */
 bool Template::checkHasArray(char *pathCode)
 {
-    int level = 5; //路径级数
-    for (int i = 10 - 1; i >= 0 && pathCode[i] == 0; i -= 2)
+    int level = PATH_CODE_LEVEL; // 路径级数
+    for (int i = PATH_CODE_LEVEL - 1; i >= 0 && pathCode[i] == 0; i -= PATH_CODE_LEVEL_SIZE)
     {
         level--;
     }
     for (auto const &schema : this->schemas)
     {
         bool codeEquals = true;
-        for (size_t k = 0; k < level * 2; k++) //判断路径编码前缀是否相等
+        for (size_t k = 0; k < level * PATH_CODE_LEVEL_SIZE; k++) // 判断路径编码前缀是否相等
         {
             if (pathCode[k] != schema.first.code[k])
             {
@@ -185,15 +185,15 @@ bool Template::checkHasArray(char *pathCode)
  */
 bool Template::checkHasImage(char *pathCode)
 {
-    int level = 5; //路径级数
-    for (int i = 10 - 1; i >= 0 && pathCode[i] == 0; i -= 2)
+    int level = PATH_CODE_LEVEL; // 路径级数
+    for (int i = PATH_CODE_LEVEL - 1; i >= 0 && pathCode[i] == 0; i -= PATH_CODE_LEVEL_SIZE)
     {
         level--;
     }
     for (auto const &schema : this->schemas)
     {
         bool codeEquals = true;
-        for (size_t k = 0; k < level * 2; k++) //判断路径编码前缀是否相等
+        for (size_t k = 0; k < level * PATH_CODE_LEVEL_SIZE; k++) // 判断路径编码前缀是否相等
         {
             if (pathCode[k] != schema.first.code[k])
             {
@@ -219,15 +219,15 @@ bool Template::checkHasImage(char *pathCode)
  */
 bool Template::checkHasTimeseries(char *pathCode)
 {
-    int level = 5; //路径级数
-    for (int i = 10 - 1; i >= 0 && pathCode[i] == 0; i -= 2)
+    int level = PATH_CODE_LEVEL; // 路径级数
+    for (int i = PATH_CODE_LEVEL - 1; i >= 0 && pathCode[i] == 0; i -= PATH_CODE_LEVEL_SIZE)
     {
         level--;
     }
     for (auto const &schema : this->schemas)
     {
         bool codeEquals = true;
-        for (size_t k = 0; k < level * 2; k++) //判断路径编码前缀是否相等
+        for (size_t k = 0; k < level * PATH_CODE_LEVEL_SIZE; k++) // 判断路径编码前缀是否相等
         {
             if (pathCode[k] != schema.first.code[k])
             {
@@ -505,7 +505,7 @@ int Template::FindDatatypePosByCode(char pathCode[], char *buff, long &position,
     for (auto const &schema : this->schemas)
     {
         bool codeEquals = true;
-        for (size_t k = 0; k < 10; k++) //判断路径编码是否相等
+        for (size_t k = 0; k < PATH_CODE_SIZE; k++) // 判断路径编码是否相等
         {
             if (pathCode[k] != schema.first.code[k])
             {
@@ -578,7 +578,7 @@ int Template::FindDatatypePosByCode(char pathCode[], char *buff, long &position,
     for (auto const &schema : this->schemas)
     {
         bool codeEquals = true;
-        for (size_t k = 0; k < 10; k++) //判断路径编码是否相等
+        for (size_t k = 0; k < PATH_CODE_SIZE; k++) // 判断路径编码是否相等
         {
             if (pathCode[k] != schema.first.code[k])
             {
@@ -588,10 +588,10 @@ int Template::FindDatatypePosByCode(char pathCode[], char *buff, long &position,
         if (codeEquals)
         {
             position = pos;
-            int num = 1; //元素个数
+            int num = 1; // 元素个数
             if (schema.second.isTimeseries)
             {
-                if (schema.second.isArray) //暂不支持图片的时间序列
+                if (schema.second.isArray) // 暂不支持图片的时间序列
                 {
                     num = schema.second.arrayLen * schema.second.tsLen;
                 }
@@ -625,7 +625,7 @@ int Template::FindDatatypePosByCode(char pathCode[], char *buff, long &position,
             int num = 1;
             if (schema.second.isTimeseries)
             {
-                if (schema.second.isArray) //暂不支持图片的时间序列
+                if (schema.second.isArray) // 暂不支持图片的时间序列
                 {
                     num = schema.second.arrayLen * schema.second.tsLen;
                 }
@@ -672,15 +672,15 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char *buff, vector<lon
 {
     DataTypeConverter converter;
     long pos = 0;
-    int level = 5; //路径级数
-    for (int i = 10 - 1; i >= 0 && pathCode[i] == 0; i -= 2)
+    int level = PATH_CODE_LEVEL; // 路径级数
+    for (int i = PATH_CODE_SIZE - 1; i >= 0 && pathCode[i] == 0; i -= PATH_CODE_LEVEL_SIZE)
     {
         level--;
     }
     for (auto const &schema : this->schemas)
     {
         bool codeEquals = true;
-        for (size_t k = 0; k < level * 2; k++) //判断路径编码前缀是否相等
+        for (size_t k = 0; k < level * PATH_CODE_LEVEL_SIZE; k++) // 判断路径编码前缀是否相等
         {
             if (pathCode[k] != schema.first.code[k])
             {
@@ -692,7 +692,7 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char *buff, vector<lon
             int num = 1;
             if (schema.second.isTimeseries)
             {
-                if (schema.second.isArray) //暂不支持图片的时间序列
+                if (schema.second.isArray) // 暂不支持图片的时间序列
                 {
                     num = schema.second.arrayLen * schema.second.tsLen;
                 }
@@ -718,7 +718,7 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char *buff, vector<lon
                     num = schema.second.arrayLen;
             }
             positions.push_back(pos);
-            bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); //时间序列整个获取
+            bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); // 时间序列整个获取
             types.push_back(schema.second);
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
             pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
@@ -774,15 +774,15 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char *buff, vector<lon
 int Template::FindMultiDatatypePosByCode(char pathCode[], vector<long> &positions, vector<long> &bytes, vector<DataType> &types)
 {
     long pos = 0;
-    int level = 5; //路径级数
-    for (int i = 10 - 1; i >= 0 && pathCode[i] == 0; i -= 2)
+    int level = PATH_CODE_LEVEL; // 路径级数
+    for (int i = PATH_CODE_SIZE - 1; i >= 0 && pathCode[i] == 0; i -= PATH_CODE_LEVEL_SIZE)
     {
         level--;
     }
     for (auto const &schema : this->schemas)
     {
         bool codeEquals = true;
-        for (size_t k = 0; k < level * 2; k++) //判断路径编码前缀是否相等
+        for (size_t k = 0; k < level * PATH_CODE_LEVEL_SIZE; k++) // 判断路径编码前缀是否相等
         {
             if (pathCode[k] != schema.first.code[k])
             {
@@ -808,7 +808,7 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], vector<long> &position
                 num = schema.second.arrayLen;
             }
             positions.push_back(pos);
-            bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); //时间序列整个获取
+            bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); // 时间序列整个获取
             types.push_back(schema.second);
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
             pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
@@ -853,15 +853,15 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char *buff, vector<lon
 {
     DataTypeConverter converter;
     long pos = 0;
-    int level = 5; //路径级数
-    for (int i = 10 - 1; i >= 0 && pathCode[i] == 0; i -= 2)
+    int level = PATH_CODE_LEVEL; // 路径级数
+    for (int i = PATH_CODE_SIZE - 1; i >= 0 && pathCode[i] == 0; i -= PATH_CODE_LEVEL_SIZE)
     {
         level--;
     }
     for (auto const &schema : this->schemas)
     {
         bool codeEquals = true;
-        for (size_t k = 0; k < level * 2; k++) //判断路径编码前缀是否相等
+        for (size_t k = 0; k < level * PATH_CODE_LEVEL_SIZE; k++) // 判断路径编码前缀是否相等
         {
             if (pathCode[k] != schema.first.code[k])
             {
@@ -899,7 +899,7 @@ int Template::FindMultiDatatypePosByCode(char pathCode[], char *buff, vector<lon
                     num = schema.second.arrayLen;
             }
             positions.push_back(pos);
-            bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); //时间序列整个获取
+            bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); // 时间序列整个获取
             pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
             pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
         }
@@ -960,7 +960,7 @@ int Template::FindDatatypePosByName(const char *name, long &position, long &byte
         {
             nameEquals = false;
         }
-        //可能存在时间序列中的值为数组
+        // 可能存在时间序列中的值为数组
         if (nameEquals)
         {
             position = pos;
@@ -1109,7 +1109,7 @@ int Template::FindDatatypePosByName(const char *name, char *buff, long &position
             int num = 1;
             if (schema.second.isTimeseries)
             {
-                if (schema.second.isArray) //暂不支持图片的时间序列
+                if (schema.second.isArray) // 暂不支持图片的时间序列
                 {
                     num = schema.second.arrayLen * schema.second.tsLen;
                 }
@@ -1143,7 +1143,7 @@ int Template::FindDatatypePosByName(const char *name, char *buff, long &position
             int num = 1;
             if (schema.second.isTimeseries)
             {
-                if (schema.second.isArray) //暂不支持图片的时间序列
+                if (schema.second.isArray) // 暂不支持图片的时间序列
                 {
                     num = schema.second.arrayLen * schema.second.tsLen;
                 }
@@ -1212,7 +1212,7 @@ int Template::FindMultiDatatypePosByNames(vector<string> &names, vector<long> &p
                     num = schema.second.arrayLen;
                 }
                 positions.push_back(pos);
-                bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); //时间序列整个获取
+                bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); // 时间序列整个获取
                 types.push_back(schema.second);
                 pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
                 pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
@@ -1269,7 +1269,7 @@ int Template::FindMultiDatatypePosByNames(vector<string> &names, char *buff, vec
                 int num = 1;
                 if (schema.second.isTimeseries)
                 {
-                    if (schema.second.isArray) //暂不支持图片的时间序列
+                    if (schema.second.isArray) // 暂不支持图片的时间序列
                     {
                         num = schema.second.arrayLen * schema.second.tsLen;
                     }
@@ -1295,7 +1295,7 @@ int Template::FindMultiDatatypePosByNames(vector<string> &names, char *buff, vec
                         num = schema.second.arrayLen;
                 }
                 positions.push_back(pos);
-                bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); //时间序列整个获取
+                bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); // 时间序列整个获取
                 types.push_back(schema.second);
                 pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
                 pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
@@ -1367,7 +1367,7 @@ int Template::FindMultiDatatypePosByNames(vector<string> &names, char *buff, vec
                         num = schema.second.arrayLen;
                 }
                 positions.push_back(pos);
-                bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); //时间序列整个获取
+                bytes.push_back(num * schema.second.valueBytes + schema.second.tsLen * (schema.second.isTimeseries ? 8 : 0)); // 时间序列整个获取
                 pos += schema.second.hasTime ? num * schema.second.valueBytes + 8 : num * schema.second.valueBytes;
                 pos += schema.second.isTimeseries ? 8 * schema.second.tsLen : 0;
             }
@@ -1400,15 +1400,15 @@ int Template::FindMultiDatatypePosByNames(vector<string> &names, char *buff, vec
 vector<DataType> Template::GetAllTypes(char *pathCode)
 {
     vector<DataType> res;
-    int level = 5; //路径级数
-    for (int i = 10 - 1; i >= 0 && pathCode[i] == 0; i -= 2)
+    int level = PATH_CODE_LEVEL; // 路径级数
+    for (int i = PATH_CODE_SIZE - 1; i >= 0 && pathCode[i] == 0; i -= PATH_CODE_LEVEL_SIZE)
     {
         level--;
     }
     for (auto const &schema : this->schemas)
     {
         bool codeEquals = true;
-        for (size_t k = 0; k < level * 2; k++) //判断路径编码前缀是否相等
+        for (size_t k = 0; k < level * PATH_CODE_LEVEL_SIZE; k++) // 判断路径编码前缀是否相等
         {
             if (pathCode[k] != schema.first.code[k])
             {
@@ -1435,7 +1435,7 @@ int Template::GetDataTypeByCode(char *pathCode, DataType &type)
     for (auto const &schema : this->schemas)
     {
         bool codeEquals = true;
-        for (size_t k = 0; k < 10; k++) //判断路径编码是否相等
+        for (size_t k = 0; k < PATH_CODE_SIZE; k++) // 判断路径编码是否相等
         {
             if (pathCode[k] != schema.first.code[k])
             {
@@ -1460,15 +1460,15 @@ int Template::GetDataTypeByCode(char *pathCode, DataType &type)
  */
 int Template::GetDataTypesByCode(char *pathCode, vector<DataType> &types)
 {
-    int level = 5; //路径级数
-    for (int i = 10 - 1; i >= 0 && pathCode[i] == 0; i -= 2)
+    int level = 5; // 路径级数
+    for (int i = PATH_CODE_SIZE - 1; i >= 0 && pathCode[i] == 0; i -= PATH_CODE_LEVEL_SIZE)
     {
         level--;
     }
     for (auto const &schema : this->schemas)
     {
         bool codeEquals = true;
-        for (size_t k = 0; k < level * 2; k++) //判断路径编码前缀是否相等
+        for (size_t k = 0; k < level * PATH_CODE_LEVEL_SIZE; k++) // 判断路径编码前缀是否相等
         {
             if (pathCode[k] != schema.first.code[k])
             {

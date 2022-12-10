@@ -77,7 +77,7 @@ QueryBufferReader::QueryBufferReader(DB_DataBuffer *buffer, bool freeit)
     recordLength = 0;
     rows = 0;
     // Reconstruct the info of each value
-    for (int i = 0; i < typeNum; i++, pos += 10)
+    for (int i = 0; i < typeNum; i++, pos += PATH_CODE_SIZE)
     {
         DataType type;
         int typeVal = this->buffer[pos++];
@@ -521,12 +521,12 @@ void QueryBufferReader::GetPathcodes(vector<PathCode> &pathCodes)
         default:
             break;
         }
-        char code[10];
-        memcpy(code, buffer + pos, 10);
-        pos += 10;
+        char code[PATH_CODE_SIZE];
+        memcpy(code, buffer + pos, PATH_CODE_SIZE);
+        pos += PATH_CODE_SIZE;
         for (size_t j = 0; j < CurrentTemplate.schemas.size(); j++)
         {
-            if (memcmp(CurrentTemplate.schemas[j].first.code, code, 10) == 0)
+            if (memcmp(CurrentTemplate.schemas[j].first.code, code, PATH_CODE_SIZE) == 0)
             {
                 pathCodes.push_back(CurrentTemplate.schemas[j].first);
                 break;

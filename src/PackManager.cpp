@@ -2,8 +2,8 @@
  * @file PackManager.cpp
  * @author your name (you@domain.com)
  * @brief 对内存中pak的LRU管理和pak获取
- * @version 0.9.0
- * @date Last Modification in 2022-07-27
+ * @version 0.9.3
+ * @date Last Modification in 2022-12-10
  *
  * @copyright Copyright (c) 2022
  *
@@ -16,7 +16,7 @@
  *
  * @param memcap Memory amount pack manager can use.
  */
-PackManager::PackManager(long memcap) //初始化allPacks
+PackManager::PackManager(long memcap) // 初始化allPacks
 {
     vector<string> dirs;
 
@@ -87,12 +87,12 @@ vector<pair<string, tuple<long, long>>> PackManager::GetPacksByTime(string pathT
         tmp.erase(tmp.begin());
     while (tmp[tmp.size() - 1] == '/')
         tmp.pop_back();
-    //由于allPacks中的元素在初始化时已经为时间升序型，因此无需再排序
+    // 由于allPacks中的元素在初始化时已经为时间升序型，因此无需再排序
     for (auto &pack : allPacks[tmp])
     {
         long packStart = get<0>(pack.second);
         long packEnd = get<1>(pack.second);
-        if ((packStart < start && packEnd >= start) || (packStart < end && packEnd >= start) || (packStart <= start && packEnd >= end) || (packStart >= start && packEnd <= end)) //落入或部分落入时间区间
+        if ((packStart < start && packEnd >= start) || (packStart < end && packEnd >= start) || (packStart <= start && packEnd >= end) || (packStart >= start && packEnd <= end)) // 落入或部分落入时间区间
         {
             selectedPacks.push_back(pack);
         }
@@ -259,12 +259,12 @@ vector<pair<string, tuple<long, long>>> PackManager::GetFilesInPacksByTime(strin
         tmp.erase(tmp.begin());
     while (tmp[tmp.size() - 1] == '/')
         tmp.pop_back();
-    //由于allPacks中的元素在初始化时已经为时间升序型，因此无需再排序
+    // 由于allPacks中的元素在初始化时已经为时间升序型，因此无需再排序
     for (auto &pack : allPacks[tmp])
     {
         long packStart = get<0>(pack.second);
         long packEnd = get<1>(pack.second);
-        if ((packStart < start && packEnd >= start) || (packStart > start)) //大于指定时间的包
+        if ((packStart < start && packEnd >= start) || (packStart > start)) // 大于指定时间的包
         {
             selectedPacks.push_back(pack);
             // cout << "start=" << start << ",packstart=" << packStart << ",packend=" << packEnd << endl;
@@ -291,7 +291,8 @@ void PackManager::PutPack(string path, pair<char *, long> pack)
     {
         memUsed -= packsInMem.back().second.second;
         key2pos.erase(packsInMem.back().first);
-        free(packsInMem.back().second.first); //置换时注意清空此内存
+        if (packsInMem.back().second.first != NULL)
+            free(packsInMem.back().second.first); // 置换时注意清空此内存
         packsInMem.pop_back();
     }
     packsInMem.push_front({path, pack});
@@ -312,7 +313,7 @@ pair<char *, long> PackManager::GetPack(string path)
         PutPack(path, key2pos[path]->second);
         return key2pos[path]->second;
     }
-    //缺页中断
+    // 缺页中断
     try
     {
         ReadPack(path);
@@ -325,6 +326,8 @@ pair<char *, long> PackManager::GetPack(string path)
     catch (iedb_err &e)
     {
         RuntimeLogger.critical("Error occured when reading pack {} : {}", path, e.what());
+        if (e.code == StatusCode::EMPTY_PAK)
+            return {NULL, 0};
         throw e;
     }
     catch (const std::exception &e)

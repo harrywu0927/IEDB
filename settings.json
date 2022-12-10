@@ -11,5 +11,6 @@
     "Check_Novelty": false,
     "Pack_Max_Size": 2048,
     "Backup_Path": "testIEDB_Backup",
-    "Memory_Alloc_Percentage": 10
+    "Memory_Alloc_Percentage": 10,
+    "Broken_Pack_Auto_Clean": false
 }
