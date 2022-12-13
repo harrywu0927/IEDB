@@ -19,8 +19,36 @@ Template CurrentTemplate;
 mutex curMutex;
 mutex indexMutex;
 mutex memMutex; // 防止多线程访问冲突
+int querySingleDataByPos(char *SourceBuff, char *buff, uint32_t bufferLength, const char *pathToLine, int pos);
+int querySingleDataByPos_onlyData(char *SourceBuff, char *buff, uint32_t bufferLength, const char *pathToLine, int pos);
 
-int recordCount = 0;
+/**
+ * @brief 提取数据时可用到的静态参数，避免DataExtration函数的参数过多从而略微影响性能
+ *
+ * @note 64位Linux系统中函数参数少于7个时， 参数从左到右放入寄存器: rdi, rsi, rdx, rcx, r8, r9。 当参数为7个以上时， 前 6 个与前面一样， 但后面的依次从 “右向左” 放入栈中，即和32位汇编一样。
+ *
+ */
+struct Extraction_Params
+{
+	bool hasIMG;
+	bool hasArray;
+	bool hasTS;
+	vector<long> posList;	   // position of each value
+	vector<long> bytesList;	   // number of bytes of each value
+	vector<DataType> typeList; // type of each value
+	vector<PathCode> pathCodes;
+	// long bytes;
+	// long pos;
+	vector<string> names;
+	int cmpIndex;
+	int sortIndex;
+	// DataType type;	// the type of the value to compare or sort
+	long copyBytes; // number of bytes to copy
+	int compareBytes;
+	long sortPos; // the position of the value to sort
+};
+
+// int recordCount = 0;
 
 /**
  * @brief 从指定路径加载模版文件
@@ -54,174 +82,6 @@ int DB_UnloadSchema(const char *pathToUnset)
 }
 
 /**
- * @brief 回收已分配的内存
- *
- * @param mallocedMemory
- */
-void GarbageMemRecollection(vector<tuple<char *, long, long, long>> &mallocedMemory)
-{
-	for (auto &mem : mallocedMemory)
-	{
-		free(std::get<0>(mem));
-	}
-}
-
-/**
- * @brief 在进行所有的查询操作前，检查输入的查询参数是否合法，若可能引发严重错误，则不允许进入查询
- * @param params        查询请求参数
- *
- * @return  0:success,
- *          others: StatusCode
- * @note
- */
-int CheckQueryParams(DB_QueryParams *params)
-{
-	if (params->pathToLine == NULL)
-	{
-		return StatusCode::EMPTY_PATH_TO_LINE;
-	}
-	if (params->pathCode == NULL && params->valueName == NULL)
-	{
-		return StatusCode::NO_PATHCODE_OR_NAME;
-	}
-	if (params->byPath == 0 && params->valueName == NULL)
-	{
-		return StatusCode::VARIABLE_NAME_CHECK_ERROR;
-	}
-	if (params->byPath != 0 && params->pathCode == NULL)
-	{
-		return StatusCode::PATHCODE_CHECK_ERROR;
-	}
-	if (params->compareType != CMP_NONE)
-	{
-		if (params->compareValue == NULL || params->compareVariable == NULL)
-			return StatusCode::INVALID_QRY_PARAMS;
-	}
-	if (params->order != ODR_NONE)
-	{
-		if (params->sortVariable == NULL)
-			return StatusCode::INVALID_QRY_PARAMS;
-	}
-	switch (params->queryType)
-	{
-	case TIMESPAN:
-	{
-		if (params->start > params->end && params->end != 0)
-		{
-			return StatusCode::INVALID_TIMESPAN;
-		}
-		else if (params->start == 0 && params->end == 0)
-		{
-			return StatusCode::INVALID_TIMESPAN;
-		}
-		else if (params->end == 0)
-		{
-			params->end = getMilliTime();
-		}
-		break;
-	}
-	case LAST:
-	{
-		if (params->queryNums == 0)
-		{
-			return StatusCode::NO_QUERY_NUM;
-		}
-		break;
-	}
-	case FILEID:
-	{
-		if (params->fileID == NULL)
-		{
-			return StatusCode::NO_FILEID;
-		}
-		if (params->fileID != NULL && (params->fileIDend != NULL))
-		{
-			if (params->queryNums != 0 && params->queryNums != 1)
-				return StatusCode::AMBIGUOUS_QUERY_PARAMS;
-			else
-			{
-				long start = atol(params->fileID);
-				long end = atol(params->fileIDend);
-				if (start > end)
-					return StatusCode::INVALID_QRY_PARAMS;
-			}
-		}
-		break;
-	}
-	default:
-		return StatusCode::NO_QUERY_TYPE;
-		break;
-	}
-	return 0;
-}
-
-/**
- * @brief 检查文件是否人为增加或删除内容
- *
- * @param tem
- * @param buff
- * @param size
- */
-void CheckFile(Template &tem, void *buff, size_t size)
-{
-	if (tem.hasImage)
-	{
-		DataTypeConverter converter;
-		char *imgPos = (char *)buff + tem.totalBytes; // 起始图片位置
-		size_t imgOffset = tem.totalBytes;			  // 当前偏移量
-		int imgNum = 0;								  // 图片个数
-		for (auto &schema : tem.schemas)
-		{
-			if (schema.second.valueType == ValueType::IMAGE)
-				imgNum++;
-		}
-		for (int i = 0; i < imgNum; i++)
-		{
-			if (imgOffset >= size)
-			{
-				throw iedb_err(StatusCode::DATAFILE_MODIFIED);
-			}
-			uint imgSize = converter.ToUInt16(imgPos) * converter.ToUInt16(imgPos + sizeof(short)) * converter.ToUInt16(imgPos + 2 * sizeof(short));
-			imgPos += 3 * sizeof(short) + imgSize;
-			imgOffset += 3 * sizeof(short) + imgSize;
-		}
-		if (imgOffset < size)
-			throw iedb_err(StatusCode::DATAFILE_MODIFIED);
-	}
-	else
-	{
-		if (tem.totalBytes != size)
-			throw iedb_err(StatusCode::DATAFILE_MODIFIED);
-	}
-}
-
-/**
- * @brief 提取数据时可用到的静态参数，避免DataExtration函数的参数过多从而略微影响性能
- *
- * @note 64位Linux系统中函数参数少于7个时， 参数从左到右放入寄存器: rdi, rsi, rdx, rcx, r8, r9。 当参数为7个以上时， 前 6 个与前面一样， 但后面的依次从 “右向左” 放入栈中，即和32位汇编一样。
- *
- */
-struct Extraction_Params
-{
-	bool hasIMG;
-	bool hasArray;
-	bool hasTS;
-	vector<long> posList;	   // position of each value
-	vector<long> bytesList;	   // number of bytes of each value
-	vector<DataType> typeList; // type of each value
-	vector<PathCode> pathCodes;
-	// long bytes;
-	// long pos;
-	vector<string> names;
-	int cmpIndex;
-	int sortIndex;
-	// DataType type;	// the type of the value to compare or sort
-	long copyBytes; // number of bytes to copy
-	int compareBytes;
-	long sortPos; // the position of the value to sort
-};
-
-/**
  * @brief Get the Extraction Params object
  *
  * @param Ext_Params
@@ -242,6 +102,8 @@ int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Param
 	{
 		err = CurrentTemplate.FindMultiDatatypePosByCode(Qry_Params->pathCode, Ext_Params.posList, Ext_Params.bytesList, Ext_Params.typeList);
 		Ext_Params.copyBytes = CurrentTemplate.GetBytesByCode(Qry_Params->pathCode);
+		if (err != 0)
+			return err;
 		if (CurrentTemplate.GetAllPathsByCode(Qry_Params->pathCode, Ext_Params.pathCodes) != 0)
 			return StatusCode::UNKNOWN_PATHCODE;
 		// Find the index of variable to be sorted or compared in paths.
@@ -289,6 +151,8 @@ int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Param
 	else
 	{
 		err = CurrentTemplate.FindMultiDatatypePosByNames(Ext_Params.names, Ext_Params.posList, Ext_Params.bytesList, Ext_Params.typeList);
+		if (err != 0)
+			return err;
 		Ext_Params.copyBytes = 0;
 		for (auto &byte : Ext_Params.bytesList)
 		{
@@ -490,8 +354,7 @@ inline int DataExtraction_NonIMG(char *buffer, vector<tuple<char *, long, long, 
 		memcpy(buffer + cur + lineCur, data + Ext_Params.posList[i], curBytes);
 		lineCur += curBytes;
 	}
-	// recordCount++;
-	// cout << recordCount << endl;
+	// cout<<cur<<endl;
 	bool canCopy = false; // 根据比较结果决定是否允许拷贝
 
 	if (Qry_params->compareType != CMP_NONE && Ext_Params.compareBytes != 0 && !Ext_Params.typeList[Ext_Params.cmpIndex].isTimeseries && !Ext_Params.typeList[Ext_Params.cmpIndex].isArray) // 可比较
@@ -554,6 +417,358 @@ inline int DataExtraction_NonIMG(char *buffer, vector<tuple<char *, long, long, 
 		return 0;
 	}
 	return -1;
+}
+
+/**
+ * @brief 直接从指定数据里根据编号分割出指定的数据,前提是源数据就是已经可以存成文件的数据
+ *
+ * @param SourceBuff 源数据
+ * @param buff 搜索后数据(带头)
+ * @param pathToLine 路径
+ * @param pos 编号，顺序
+ * @return int
+ */
+int querySingleDataByPos(char *SourceBuff, char *buff, uint32_t bufferLength, const char *pathToLine, int pos)
+{
+	// 确认当前模版
+	int err = 0;
+	long buff_pos = 0;
+	if (pathToLine == NULL)
+		return StatusCode::EMPTY_SAVE_PATH;
+	err = DB_LoadSchema(pathToLine); // 加载模板
+	if (err)
+	{
+		cout << "未加载模板" << endl;
+		IOBusy = false;
+		return StatusCode::SCHEMA_FILE_NOT_FOUND;
+	}
+
+	// 不存在这个变量
+	if (pos > CurrentTemplate.schemas.size() || pos <= 0)
+		return StatusCode::NO_DATA_QUERIED;
+
+	DataTypeConverter converter;
+	// 计算偏移量
+	for (int i = 1; i < pos; i++)
+	{
+		if (CurrentTemplate.schemas[i - 1].second.valueType == ValueType::IMAGE)
+		{
+			// 暂定图片前面有2字节长度，2字节宽度和2字节通道
+			char length[2] = {0};
+			memcpy(length, SourceBuff + buff_pos, 2);
+			uint16_t imageLength = converter.ToUInt16(length);
+			char width[2] = {0};
+			memcpy(width, SourceBuff + buff_pos + 2, 2);
+			uint16_t imageWidth = converter.ToUInt16(width);
+			char channel[2] = {0};
+			memcpy(channel, SourceBuff + buff_pos + 4, 2);
+			uint16_t imageChannel = converter.ToUInt16(channel);
+			uint32_t imageSize = imageChannel * imageLength * imageWidth;
+			buff_pos += 6 + imageSize;
+		}
+		else
+		{
+			if (CurrentTemplate.schemas[i - 1].second.isArray)
+				buff_pos += CurrentTemplate.schemas[i - 1].second.arrayLen * CurrentTemplate.schemas[i - 1].second.valueBytes;
+			else
+				buff_pos += CurrentTemplate.schemas[i - 1].second.valueBytes;
+		}
+	}
+
+	long startPos;
+	DB_QueryParams *params;
+	params->byPath = 1;
+	params->pathToLine = pathToLine;
+	params->pathCode = CurrentTemplate.schemas[pos - 1].first.code;
+	params->valueName = NULL;
+	Extraction_Params Ext_Params;
+	err = GetExtractionParams(Ext_Params, params);
+	if (params->byPath && params->pathCode != NULL)
+		CurrentTemplate.GetAllPathsByCode(params->pathCode, Ext_Params.pathCodes);
+	if (err != 0)
+	{
+		return err;
+	}
+
+	if (!Ext_Params.hasIMG) // 当查询条件不含图片时，结果的总长度已确定
+	{
+		unsigned char typeNum = Ext_Params.typeList.size(); // 数据类型总数
+		char head[(int)typeNum * QRY_BUFFER_HEAD_ROW + TYPE_NUM_SIZE];
+		// 数据区起始位置
+		startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); // 写入缓冲区头，获取数据区起始位置
+		buff = (char *)malloc(Ext_Params.copyBytes + startPos);
+		if (buff == NULL)
+		{
+			throw bad_alloc();
+		}
+		memcpy(buff, head, startPos);
+		bufferLength += startPos;
+	}
+
+	// 获得数据
+	if (CurrentTemplate.schemas[pos - 1].second.valueType == ValueType::IMAGE)
+	{
+		// 暂定图片前面有2字节长度，2字节宽度和2字节通道
+		char length[2] = {0};
+		memcpy(length, SourceBuff + buff_pos, 2);
+		uint16_t imageLength = converter.ToUInt16(length);
+		char width[2] = {0};
+		memcpy(width, SourceBuff + buff_pos + 2, 2);
+		uint16_t imageWidth = converter.ToUInt16(width);
+		char channel[2] = {0};
+		memcpy(channel, SourceBuff + buff_pos + 4, 2);
+		uint16_t imageChannel = converter.ToUInt16(channel);
+		uint32_t imageSize = imageChannel * imageLength * imageWidth;
+		memcpy(buff + startPos, SourceBuff + buff_pos + 6, imageSize);
+		bufferLength += imageSize;
+	}
+	else
+	{
+		if (CurrentTemplate.schemas[pos - 1].second.isArray)
+		{
+			memcpy(buff + startPos, SourceBuff + buff_pos, CurrentTemplate.schemas[pos - 1].second.arrayLen * CurrentTemplate.schemas[pos - 1].second.valueBytes);
+			bufferLength += CurrentTemplate.schemas[pos - 1].second.arrayLen * CurrentTemplate.schemas[pos - 1].second.valueBytes;
+		}
+		else
+		{
+			memcpy(buff + startPos, SourceBuff + buff_pos, CurrentTemplate.schemas[pos - 1].second.valueBytes);
+			bufferLength += CurrentTemplate.schemas[pos - 1].second.valueBytes;
+		}
+	}
+
+	return err;
+}
+
+/**
+ * @brief 直接从指定数据里根据编号分割出指定的数据,前提是源数据就是已经可以存成文件的数据
+ *
+ * @param SourceBuff 源数据
+ * @param buff 搜索后数据(不带头，只有数据)
+ * @param pathToLine 路径
+ * @param pos 编号，顺序
+ * @return int
+ */
+int querySingleDataByPos_onlyData(char *SourceBuff, char *buff, uint32_t bufferLength, const char *pathToLine, int pos)
+{
+	// 确认当前模版
+	int err = 0;
+	long buff_pos = 0;
+	if (pathToLine == NULL)
+		return StatusCode::EMPTY_SAVE_PATH;
+	err = DB_LoadSchema(pathToLine); // 加载模板
+	if (err)
+	{
+		cout << "未加载模板" << endl;
+		IOBusy = false;
+		return StatusCode::SCHEMA_FILE_NOT_FOUND;
+	}
+
+	// 不存在这个变量
+	if (pos > CurrentTemplate.schemas.size() || pos <= 0)
+		return StatusCode::NO_DATA_QUERIED;
+
+	DataTypeConverter converter;
+	// 计算偏移量
+	for (int i = 1; i < pos; i++)
+	{
+		if (CurrentTemplate.schemas[i - 1].second.valueType == ValueType::IMAGE)
+		{
+			// 暂定图片前面有2字节长度，2字节宽度和2字节通道
+			char length[2] = {0};
+			memcpy(length, SourceBuff + buff_pos, 2);
+			uint16_t imageLength = converter.ToUInt16(length);
+			char width[2] = {0};
+			memcpy(width, SourceBuff + buff_pos + 2, 2);
+			uint16_t imageWidth = converter.ToUInt16(width);
+			char channel[2] = {0};
+			memcpy(channel, SourceBuff + buff_pos + 4, 2);
+			uint16_t imageChannel = converter.ToUInt16(channel);
+			uint32_t imageSize = imageChannel * imageLength * imageWidth;
+			buff_pos += 6 + imageSize;
+		}
+		else
+		{
+			if (CurrentTemplate.schemas[i - 1].second.isArray)
+				buff_pos += CurrentTemplate.schemas[i - 1].second.arrayLen * CurrentTemplate.schemas[i - 1].second.valueBytes;
+			else
+				buff_pos += CurrentTemplate.schemas[i - 1].second.valueBytes;
+		}
+	}
+
+	// 获得数据
+	if (CurrentTemplate.schemas[pos - 1].second.valueType == ValueType::IMAGE)
+	{
+		// 暂定图片前面有2字节长度，2字节宽度和2字节通道
+		char length[2] = {0};
+		memcpy(length, SourceBuff + buff_pos, 2);
+		uint16_t imageLength = converter.ToUInt16(length);
+		char width[2] = {0};
+		memcpy(width, SourceBuff + buff_pos + 2, 2);
+		uint16_t imageWidth = converter.ToUInt16(width);
+		char channel[2] = {0};
+		memcpy(channel, SourceBuff + buff_pos + 4, 2);
+		uint16_t imageChannel = converter.ToUInt16(channel);
+		uint32_t imageSize = imageChannel * imageLength * imageWidth;
+		memcpy(buff, SourceBuff + buff_pos + 6, imageSize);
+		bufferLength += imageSize;
+	}
+	else
+	{
+		if (CurrentTemplate.schemas[pos - 1].second.isArray)
+		{
+			memcpy(buff, SourceBuff + buff_pos, CurrentTemplate.schemas[pos - 1].second.arrayLen * CurrentTemplate.schemas[pos - 1].second.valueBytes);
+			bufferLength += CurrentTemplate.schemas[pos - 1].second.arrayLen * CurrentTemplate.schemas[pos - 1].second.valueBytes;
+		}
+		else
+		{
+			memcpy(buff, SourceBuff + buff_pos, CurrentTemplate.schemas[pos - 1].second.valueBytes);
+			bufferLength += CurrentTemplate.schemas[pos - 1].second.valueBytes;
+		}
+	}
+
+	return err;
+}
+
+/**
+ * @brief 回收已分配的内存
+ *
+ * @param mallocedMemory
+ */
+void GarbageMemRecollection(vector<tuple<char *, long, long, long>> &mallocedMemory)
+{
+	for (auto &mem : mallocedMemory)
+	{
+		free(std::get<0>(mem));
+	}
+}
+
+/**
+ * @brief 在进行所有的查询操作前，检查输入的查询参数是否合法，若可能引发严重错误，则不允许进入查询
+ * @param params        查询请求参数
+ *
+ * @return  0:success,
+ *          others: StatusCode
+ * @note
+ */
+int CheckQueryParams(DB_QueryParams *params)
+{
+	if (params->pathToLine == NULL)
+	{
+		return StatusCode::EMPTY_PATH_TO_LINE;
+	}
+	if (params->pathCode == NULL && params->valueName == NULL)
+	{
+		return StatusCode::NO_PATHCODE_OR_NAME;
+	}
+	if (params->byPath == 0 && params->valueName == NULL)
+	{
+		return StatusCode::VARIABLE_NAME_CHECK_ERROR;
+	}
+	if (params->byPath != 0 && params->pathCode == NULL)
+	{
+		return StatusCode::PATHCODE_CHECK_ERROR;
+	}
+	if (params->compareType != CMP_NONE)
+	{
+		if (params->compareValue == NULL || params->compareVariable == NULL)
+			return StatusCode::INVALID_QRY_PARAMS;
+	}
+	if (params->order != ODR_NONE)
+	{
+		if (params->sortVariable == NULL)
+			return StatusCode::INVALID_QRY_PARAMS;
+	}
+	switch (params->queryType)
+	{
+	case TIMESPAN:
+	{
+		if (params->start > params->end && params->end != 0)
+		{
+			return StatusCode::INVALID_TIMESPAN;
+		}
+		else if (params->start == 0 && params->end == 0)
+		{
+			return StatusCode::INVALID_TIMESPAN;
+		}
+		else if (params->end == 0)
+		{
+			params->end = getMilliTime();
+		}
+		break;
+	}
+	case LAST:
+	{
+		if (params->queryNums == 0)
+		{
+			return StatusCode::NO_QUERY_NUM;
+		}
+		break;
+	}
+	case FILEID:
+	{
+		if (params->fileID == NULL)
+		{
+			return StatusCode::NO_FILEID;
+		}
+		if (params->fileID != NULL && (params->fileIDend != NULL))
+		{
+			if (params->queryNums != 0 && params->queryNums != 1)
+				return StatusCode::AMBIGUOUS_QUERY_PARAMS;
+			else
+			{
+				long start = atol(params->fileID);
+				long end = atol(params->fileIDend);
+				if (start > end)
+					return StatusCode::INVALID_QRY_PARAMS;
+			}
+		}
+		break;
+	}
+	default:
+		return StatusCode::NO_QUERY_TYPE;
+		break;
+	}
+	return 0;
+}
+
+/**
+ * @brief 检查文件是否人为增加或删除内容
+ *
+ * @param tem
+ * @param buff
+ * @param size
+ */
+void CheckFile(Template &tem, void *buff, size_t size)
+{
+	if (tem.hasImage)
+	{
+		DataTypeConverter converter;
+		char *imgPos = (char *)buff + tem.totalBytes; // 起始图片位置
+		size_t imgOffset = tem.totalBytes;			  // 当前偏移量
+		int imgNum = 0;								  // 图片个数
+		for (auto &schema : tem.schemas)
+		{
+			if (schema.second.valueType == ValueType::IMAGE)
+				imgNum++;
+		}
+		for (int i = 0; i < imgNum; i++)
+		{
+			if (imgOffset >= size)
+			{
+				throw iedb_err(StatusCode::DATAFILE_MODIFIED);
+			}
+			uint imgSize = converter.ToUInt16(imgPos) * converter.ToUInt16(imgPos + sizeof(short)) * converter.ToUInt16(imgPos + 2 * sizeof(short));
+			imgPos += 3 * sizeof(short) + imgSize;
+			imgOffset += 3 * sizeof(short) + imgSize;
+		}
+		if (imgOffset < size)
+			throw iedb_err(StatusCode::DATAFILE_MODIFIED);
+	}
+	else
+	{
+		if (tem.totalBytes != size)
+			throw iedb_err(StatusCode::DATAFILE_MODIFIED);
+	}
 }
 
 /**
@@ -3375,7 +3590,7 @@ int main()
 	params.start = 1670000000000;
 	params.end = 1671356050000;
 	// params.end = 1651894834176;
-	params.order = ODR_NONE;
+	params.order = DESCEND;
 	params.sortVariable = "S1ON";
 	params.compareType = CMP_NONE;
 	params.compareValue = "100";
@@ -3392,7 +3607,7 @@ int main()
 	auto startTime = std::chrono::system_clock::now();
 	// char zeros[10] = {0};
 	// memcpy(params.pathCode, zeros, 10);
-	// cout << DB_QueryByTimespan(&buffer, &params);
+	cout << DB_QueryLastRecords(&buffer, &params);
 	// return 0;
 	cout << DB_ExecuteQuery(&buffer, &params);
 	// DB_QueryByTimespan_Single(&buffer, &params);
