@@ -3566,7 +3566,7 @@ int main()
 	// Py_Initialize();
 	DataTypeConverter converter;
 	DB_QueryParams params;
-	params.pathToLine = "Tz-Assemble";
+	params.pathToLine = "Tz-Assemblezip";
 	params.fileID = "2326993";
 	// params.fileIDend = "300000";
 	params.fileIDend = NULL;
@@ -3593,7 +3593,7 @@ int main()
 	params.compareType = CMP_NONE;
 	params.compareValue = "100";
 	params.compareVariable = "S1ON";
-	params.queryType = TIMESPAN;
+	params.queryType = LAST;
 	params.byPath = 0;
 	params.queryNums = 100;
 	DB_DataBuffer buffer;

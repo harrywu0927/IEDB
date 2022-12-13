@@ -658,7 +658,7 @@ int DB_TemporaryFuncCall(void *param1, void *param2, void *param3, int funcID)
 //     memcpy(buffer.buffer + 52, uintarr, 4);
 //     memcpy(buffer.buffer + 56, uintarr, 4);
 //     buffer.length = 248;
-//     buffer.savePath = "Tz-Screwzip";
+//     buffer.savePath = "Tz-Assemblezip";
 //     DB_InsertRecord(&buffer, 0);
 //     sleep(10);
 //     return 0;
