@@ -20,6 +20,8 @@ mutex curMutex;
 mutex indexMutex;
 mutex memMutex; // 防止多线程访问冲突
 
+int recordCount = 0;
+
 /**
  * @brief 从指定路径加载模版文件
  * @param path    路径
@@ -488,7 +490,8 @@ inline int DataExtraction_NonIMG(char *buffer, vector<tuple<char *, long, long, 
 		memcpy(buffer + cur + lineCur, data + Ext_Params.posList[i], curBytes);
 		lineCur += curBytes;
 	}
-
+	// recordCount++;
+	// cout << recordCount << endl;
 	bool canCopy = false; // 根据比较结果决定是否允许拷贝
 
 	if (Qry_params->compareType != CMP_NONE && Ext_Params.compareBytes != 0 && !Ext_Params.typeList[Ext_Params.cmpIndex].isTimeseries && !Ext_Params.typeList[Ext_Params.cmpIndex].isArray) // 可比较
@@ -960,7 +963,8 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 			startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); // 写入缓冲区头，获取数据区起始位置
 
 			// 此处可能会分配多余的空间，但最多在两个包的可接受大小内
-			//  int size = Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos;
+			int size = Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos;
+			cout << size << endl;
 			rawBuff = (char *)malloc(Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos);
 			if (rawBuff == NULL)
 			{
@@ -3349,13 +3353,13 @@ int main()
 	// Py_Initialize();
 	DataTypeConverter converter;
 	DB_QueryParams params;
-	params.pathToLine = "Tz-Screw";
+	params.pathToLine = "Tz-Assemble";
 	params.fileID = "1324834";
 	// params.fileIDend = "300000";
 	params.fileIDend = NULL;
 	char code[10];
 	code[0] = (char)0;
-	code[1] = (char)1;
+	code[1] = (char)0;
 	code[2] = (char)0;
 	code[3] = (char)0;
 	code[4] = 0;
@@ -3368,7 +3372,7 @@ int main()
 	params.pathCode = code;
 	// params.valueName = "S1ON,S1OFF";
 	params.valueName = "S1ON";
-	params.start = 1670650000000;
+	params.start = 1670000000000;
 	params.end = 1671356050000;
 	// params.end = 1651894834176;
 	params.order = ODR_NONE;
@@ -3378,7 +3382,7 @@ int main()
 	params.compareVariable = "S1ON";
 	params.queryType = TIMESPAN;
 	params.byPath = 1;
-	params.queryNums = 1;
+	params.queryNums = 10;
 	DB_DataBuffer buffer;
 	buffer.savePath = "/";
 	// cout << settings("Pack_Mode") << endl;
@@ -3390,7 +3394,7 @@ int main()
 	// memcpy(params.pathCode, zeros, 10);
 	// cout << DB_QueryByTimespan(&buffer, &params);
 	// return 0;
-	DB_ExecuteQuery(&buffer, &params);
+	cout << DB_ExecuteQuery(&buffer, &params);
 	// DB_QueryByTimespan_Single(&buffer, &params);
 	auto endTime = std::chrono::system_clock::now();
 	// free(buffer.buffer);

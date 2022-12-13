@@ -326,10 +326,11 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
                     continue;
                 string fileName = dir_entry.path().filename();
                 string dirWithoutPrefix = d + "/" + fileName;
-                for (int i = 0; i <= settings("Filename_Label").length(); i++)
-                {
-                    dirWithoutPrefix.erase(dirWithoutPrefix.begin());
-                }
+                removeFilenameLabel(dirWithoutPrefix);
+                // for (int i = 0; i <= settings("Filename_Label").length(); i++)
+                // {
+                //     dirWithoutPrefix.erase(dirWithoutPrefix.begin());
+                // }
                 if (fs::path(fileName).extension() == ".pak")
                 {
                     PackFileReader packReader(dirWithoutPrefix);
@@ -347,7 +348,12 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
                         // cout << "skipping " << fileName << "\n";
                         if (packReader.Skip(fileNum - 2))
                         {
-                            RuntimeLogger.critical("Broken pack detected : {}. Check and repair it, or it may cause system down.", dir_entry.path().string());
+                            RuntimeLogger.critical("Broken pack detected : {}. Check and repair it, or it may lead to system down.", dir_entry.path().string());
+                            if (settings("Broken_Pack_Auto_Clean") == "true")
+                            {
+
+                                RuntimeLogger.warn("Automatically delete pack : {}", dir_entry.path().string());
+                            }
                             continue;
                         }
                         packReader.Next(readLength, fileID, zipType);
@@ -370,6 +376,15 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
                     }
                     int minNum = atoi(startNum.c_str());
                     int maxNum = atoi(endNum.c_str());
+                    if (minNum > maxNum)
+                    {
+                        RuntimeLogger.critical("Abnormal pack detected : {}", dir_entry.path().string());
+                        if (settings("Broken_Pack_Auto_Clean") == "true")
+                        {
+                            RuntimeLogger.warn("Automatically delete pack : {}", dir_entry.path().string());
+                            DB_DeleteFile(const_cast<char *>(dirWithoutPrefix.c_str()));
+                        }
+                    }
                     fileIDManager.fidIndex[dirWithoutPrefix] = make_tuple(minNum, maxNum >= minNum ? maxNum : minNum);
                     if (max < maxNum)
                         max = maxNum;
@@ -407,14 +422,22 @@ unordered_map<string, int> getDirCurrentFileIDIndex()
     {
         // cerr << "Error code " << e.code << "\n";
         RuntimeLogger.critical("Error occured with code {}: {}", e.code, e.what());
+        if ((e.code == StatusCode::EMPTY_PAK || e.code == StatusCode::DATAFILE_MODIFIED || e.code == StatusCode::UNKNWON_DATAFILE) && settings("Broken_Pack_Auto_Clean") == "true")
+        {
+            RuntimeLogger.warn("Automatically delete : {}", e.content);
+            DB_DeleteFile(const_cast<char *>(e.content.c_str()));
+        }
+        return getDirCurrentFileIDIndex();
     }
     catch (fs::filesystem_error &e)
     {
-        RuntimeLogger.critical("File system error occured : {}", e.what());
+        RuntimeLogger.critical("File system error occured when initializing system : {}. Aborted.", e.what());
+        exit(0);
     }
     catch (const std::exception &e)
     {
-        std::cerr << e.what() << '\n';
+        RuntimeLogger.critical("File system error occured when initializing system : {}. Aborted.", e.what());
+        exit(0);
     }
 
     return map;

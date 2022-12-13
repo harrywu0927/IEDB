@@ -13,6 +13,8 @@ long FileIDManager::GetPacksRhythmNum(vector<pair<string, tuple<long, long>>> &p
     {
         auto range = fidIndex[pack.first];
         res += std::get<1>(range) - std::get<0>(range) + 1;
+        // cout << res << endl;
+        cout << pack.first << ":" << std::get<1>(range) << "-" << std::get<0>(range) << "=" << std::get<1>(range) - std::get<0>(range) << endl;
     }
     return res;
 }
@@ -59,7 +61,7 @@ neb::CJsonObject FileIDManager::GetSetting()
     }
     catch (const std::exception &e)
     {
-        RuntimeLogger.critical("Failed to load settings file : {} Program will be aborted.", e.what());
+        RuntimeLogger.critical("Failed to load settings file : {}. Program will be aborted.", e.what());
         exit(0);
     }
 
@@ -78,7 +80,7 @@ string FileIDManager::GetFileID(string path)
     if (paths.size() > 0)
         prefix = paths[paths.size() - 1];
     // cout << prefix << endl;
-    //去除首尾的‘/’，使其符合命名规范
+    // 去除首尾的‘/’，使其符合命名规范
     if (path[0] == '/')
         path.erase(path.begin());
     if (path[path.size() - 1] == '/')
@@ -97,7 +99,7 @@ string FileIDManager::GetFileID(string path)
     curNum[path]++;
     if ((settings("Zip_Mode") == "quantitative") && (curNum[path] % atoi(settings("Zip_Num").c_str()) == 0))
     {
-        DB_ZipFile(const_cast<char *>(path.c_str()),const_cast<char *>(path.c_str()));
+        DB_ZipFile(const_cast<char *>(path.c_str()), const_cast<char *>(path.c_str()));
     }
     if ((settings("Pack_Mode") == "quantitative") && (curNum[path] % atoi(settings("Pack_Num").c_str()) == 0))
     {
