@@ -18,7 +18,7 @@ using namespace std;
 Template CurrentTemplate;
 mutex curMutex;
 mutex indexMutex;
-mutex memMutex; //防止多线程访问冲突
+mutex memMutex; // 防止多线程访问冲突
 int querySingleDataByPos(char *SourceBuff, char *buff, uint32_t bufferLength, const char *pathToLine, int pos);
 int querySingleDataByPos_onlyData(char *SourceBuff, char *buff, uint32_t bufferLength, const char *pathToLine, int pos);
 
@@ -100,6 +100,8 @@ int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Param
 	{
 		err = CurrentTemplate.FindMultiDatatypePosByCode(Qry_Params->pathCode, Ext_Params.posList, Ext_Params.bytesList, Ext_Params.typeList);
 		Ext_Params.copyBytes = CurrentTemplate.GetBytesByCode(Qry_Params->pathCode);
+		if (err != 0)
+			return err;
 		if (CurrentTemplate.GetAllPathsByCode(Qry_Params->pathCode, Ext_Params.pathCodes) != 0)
 			return StatusCode::UNKNOWN_PATHCODE;
 		// Find the index of variable to be sorted or compared in paths.
@@ -147,6 +149,8 @@ int GetExtractionParams(Extraction_Params &Ext_Params, DB_QueryParams *Qry_Param
 	else
 	{
 		err = CurrentTemplate.FindMultiDatatypePosByNames(Ext_Params.names, Ext_Params.posList, Ext_Params.bytesList, Ext_Params.typeList);
+		if (err != 0)
+			return err;
 		Ext_Params.copyBytes = 0;
 		for (auto &byte : Ext_Params.bytesList)
 		{
@@ -424,12 +428,12 @@ inline int DataExtraction_NonIMG(char *buffer, vector<tuple<char *, long, long, 
  */
 int querySingleDataByPos(char *SourceBuff, char *buff, uint32_t bufferLength, const char *pathToLine, int pos)
 {
-	//确认当前模版
+	// 确认当前模版
 	int err = 0;
 	long buff_pos = 0;
 	if (pathToLine == NULL)
 		return StatusCode::EMPTY_SAVE_PATH;
-	err = DB_LoadSchema(pathToLine); //加载模板
+	err = DB_LoadSchema(pathToLine); // 加载模板
 	if (err)
 	{
 		cout << "未加载模板" << endl;
@@ -437,17 +441,17 @@ int querySingleDataByPos(char *SourceBuff, char *buff, uint32_t bufferLength, co
 		return StatusCode::SCHEMA_FILE_NOT_FOUND;
 	}
 
-	//不存在这个变量
+	// 不存在这个变量
 	if (pos > CurrentTemplate.schemas.size() || pos <= 0)
 		return StatusCode::NO_DATA_QUERIED;
 
 	DataTypeConverter converter;
-	//计算偏移量
+	// 计算偏移量
 	for (int i = 1; i < pos; i++)
 	{
 		if (CurrentTemplate.schemas[i - 1].second.valueType == ValueType::IMAGE)
 		{
-			//暂定图片前面有2字节长度，2字节宽度和2字节通道
+			// 暂定图片前面有2字节长度，2字节宽度和2字节通道
 			char length[2] = {0};
 			memcpy(length, SourceBuff + buff_pos, 2);
 			uint16_t imageLength = converter.ToUInt16(length);
@@ -484,12 +488,12 @@ int querySingleDataByPos(char *SourceBuff, char *buff, uint32_t bufferLength, co
 		return err;
 	}
 
-	if (!Ext_Params.hasIMG) //当查询条件不含图片时，结果的总长度已确定
+	if (!Ext_Params.hasIMG) // 当查询条件不含图片时，结果的总长度已确定
 	{
-		unsigned char typeNum = Ext_Params.typeList.size(); //数据类型总数
+		unsigned char typeNum = Ext_Params.typeList.size(); // 数据类型总数
 		char head[(int)typeNum * QRY_BUFFER_HEAD_ROW + TYPE_NUM_SIZE];
-		//数据区起始位置
-		startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); //写入缓冲区头，获取数据区起始位置
+		// 数据区起始位置
+		startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); // 写入缓冲区头，获取数据区起始位置
 		buff = (char *)malloc(Ext_Params.copyBytes + startPos);
 		if (buff == NULL)
 		{
@@ -499,10 +503,10 @@ int querySingleDataByPos(char *SourceBuff, char *buff, uint32_t bufferLength, co
 		bufferLength += startPos;
 	}
 
-	//获得数据
+	// 获得数据
 	if (CurrentTemplate.schemas[pos - 1].second.valueType == ValueType::IMAGE)
 	{
-		//暂定图片前面有2字节长度，2字节宽度和2字节通道
+		// 暂定图片前面有2字节长度，2字节宽度和2字节通道
 		char length[2] = {0};
 		memcpy(length, SourceBuff + buff_pos, 2);
 		uint16_t imageLength = converter.ToUInt16(length);
@@ -544,12 +548,12 @@ int querySingleDataByPos(char *SourceBuff, char *buff, uint32_t bufferLength, co
  */
 int querySingleDataByPos_onlyData(char *SourceBuff, char *buff, uint32_t bufferLength, const char *pathToLine, int pos)
 {
-	//确认当前模版
+	// 确认当前模版
 	int err = 0;
 	long buff_pos = 0;
 	if (pathToLine == NULL)
 		return StatusCode::EMPTY_SAVE_PATH;
-	err = DB_LoadSchema(pathToLine); //加载模板
+	err = DB_LoadSchema(pathToLine); // 加载模板
 	if (err)
 	{
 		cout << "未加载模板" << endl;
@@ -557,17 +561,17 @@ int querySingleDataByPos_onlyData(char *SourceBuff, char *buff, uint32_t bufferL
 		return StatusCode::SCHEMA_FILE_NOT_FOUND;
 	}
 
-	//不存在这个变量
+	// 不存在这个变量
 	if (pos > CurrentTemplate.schemas.size() || pos <= 0)
 		return StatusCode::NO_DATA_QUERIED;
 
 	DataTypeConverter converter;
-	//计算偏移量
+	// 计算偏移量
 	for (int i = 1; i < pos; i++)
 	{
 		if (CurrentTemplate.schemas[i - 1].second.valueType == ValueType::IMAGE)
 		{
-			//暂定图片前面有2字节长度，2字节宽度和2字节通道
+			// 暂定图片前面有2字节长度，2字节宽度和2字节通道
 			char length[2] = {0};
 			memcpy(length, SourceBuff + buff_pos, 2);
 			uint16_t imageLength = converter.ToUInt16(length);
@@ -589,10 +593,10 @@ int querySingleDataByPos_onlyData(char *SourceBuff, char *buff, uint32_t bufferL
 		}
 	}
 
-	//获得数据
+	// 获得数据
 	if (CurrentTemplate.schemas[pos - 1].second.valueType == ValueType::IMAGE)
 	{
-		//暂定图片前面有2字节长度，2字节宽度和2字节通道
+		// 暂定图片前面有2字节长度，2字节宽度和2字节通道
 		char length[2] = {0};
 		memcpy(length, SourceBuff + buff_pos, 2);
 		uint16_t imageLength = converter.ToUInt16(length);
@@ -1172,8 +1176,8 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 			startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); // 写入缓冲区头，获取数据区起始位置
 
 			// 此处可能会分配多余的空间，但最多在两个包的可接受大小内
-			 int size = Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos;
-			cout<<size<<endl;
+			int size = Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos;
+			cout << size << endl;
 			rawBuff = (char *)malloc(Ext_Params.copyBytes * (selectedFiles.size() + fileIDManager.GetPacksRhythmNum(selectedPacks)) + startPos);
 			if (rawBuff == NULL)
 			{
@@ -3584,13 +3588,13 @@ int main()
 	params.start = 1553728593562;
 	params.end = 1671250000000;
 	// params.end = 1651894834176;
-	params.order = ODR_NONE;
+	params.order = DESCEND;
 	params.sortVariable = "S1ON";
 	params.compareType = CMP_NONE;
 	params.compareValue = "100";
 	params.compareVariable = "S1ON";
 	params.queryType = TIMESPAN;
-	params.byPath = 1;
+	params.byPath = 0;
 	params.queryNums = 100;
 	DB_DataBuffer buffer;
 	buffer.savePath = "/";
@@ -3601,10 +3605,10 @@ int main()
 	auto startTime = std::chrono::system_clock::now();
 	// char zeros[10] = {0};
 	// memcpy(params.pathCode, zeros, 10);
-	// cout << DB_QueryLastRecords(&buffer, &params);
+	cout << DB_QueryLastRecords(&buffer, &params);
 	// return 0;
 	// cout<< DB_QueryLastRecords(&buffer, &params);
-	DB_QueryByTimespan(&buffer, &params);
+	// DB_QueryByTimespan(&buffer, &params);
 	auto endTime = std::chrono::system_clock::now();
 	// free(buffer.buffer);
 	std::cout << "第一次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
