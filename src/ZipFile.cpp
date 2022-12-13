@@ -1413,8 +1413,8 @@ int DB_ZipFile(const char *ZipTemPath, const char *pathToLine)
         IOBusy = false;
         return StatusCode::DATAFILE_NOT_FOUND;
     }
-    //如果文件数小于1000则采用单线程压缩
-    if (filesWithTime.size() < 1000)
+    //如果文件数小于500则采用单线程压缩
+    if (filesWithTime.size() < 500)
     {
         IOBusy = false;
         err = DB_ZipFile_Single(ZipTemPath, pathToLine);

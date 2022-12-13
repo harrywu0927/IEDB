@@ -1,5 +1,7 @@
 #include <utils.hpp>
 
+int DB_NoveltyFit_new(DB_QueryParams *params, double *maxLine, double *minLine,double *avgLine);
+
 /**
  * @brief Append value in buffer to PyList object
  *
@@ -599,6 +601,60 @@ int DB_NoveltyFit(DB_QueryParams *params, double *maxLine, double *minLine)
             PyObject *ret = PyObject_CallObject(pFunc, pArgs);
             *maxLine = PyFloat_AsDouble(PyTuple_GetItem(ret, 0)); //转换为c类型的数据
             *minLine = PyFloat_AsDouble(PyTuple_GetItem(ret, 1));
+        }
+        Py_XDECREF(pFunc);
+    }
+    Py_DECREF(arr);
+    Py_XDECREF(pArgs);
+    Py_XDECREF(mymodule);
+    return 0;
+}
+
+int DB_NoveltyFit_new(DB_QueryParams *params, double *maxLine, double *minLine,double *avgLine)
+{
+    if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
+        return StatusCode::SCHEMA_FILE_NOT_FOUND;
+    int dim = 1;
+    if (params->byPath) // ristrict type num to 1
+    {
+        auto allTypes = CurrentTemplate.GetAllTypes(params->pathCode);
+        if (allTypes.size() > 1)
+            return StatusCode::ML_TYPE_NOT_SUPPORT;
+        dim = allTypes[0].isArray ? allTypes[0].arrayLen : 1;
+        if (allTypes[0].isTimeseries)
+            dim++;
+    }
+    DB_DataBuffer buffer;
+    int err = DB_ExecuteQuery(&buffer, params);
+    if (err != 0)
+        return err;
+    if (!Py_IsInitialized())
+        Py_Initialize();
+    PyObject *arr = ConvertToPyList_ML(&buffer);
+
+    // 指定py文件目录
+    PyRun_SimpleString("import sys");
+    PyRun_SimpleString("if './' not in sys.path: sys.path.append('./')");
+
+    PyObject *mymodule = PyImport_ImportModule("Novelty_Outlier");
+    PyObject *pArgs, *pFunc;
+    long res = 0;
+    if (mymodule != NULL)
+    {
+        // 从模块中获取函数
+        pFunc = PyObject_GetAttrString(mymodule, "NoveltyFit");
+
+        if (pFunc && PyCallable_Check(pFunc))
+        {
+            // 创建参数元组
+            pArgs = PyTuple_New(1);
+            PyTuple_SetItem(pArgs, 0, arr);
+            // PyTuple_SetItem(pArgs, 1, PyLong_FromLong(dim));
+            // 函数执行
+            PyObject *ret = PyObject_CallObject(pFunc, pArgs);
+            *maxLine = PyFloat_AsDouble(PyTuple_GetItem(ret, 0)); //转换为c类型的数据
+            *minLine = PyFloat_AsDouble(PyTuple_GetItem(ret, 1));
+            *avgLine = PyFloat_AsDouble(PyTuple_GetItem(ret, 2));
         }
         Py_XDECREF(pFunc);
     }

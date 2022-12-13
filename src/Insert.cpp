@@ -36,14 +36,17 @@ void *checkTime(void *ptr)
                 cout << "Start Zipping...\n";
                 for (auto &dir : dirs)
                 {
-                    cout << "Zipping " << dir << '\n';
-                    removeFilenameLabel(dir);
-                    DB_ZipFile(dir.c_str(), dir.c_str());
+                    if (dir.find("zip") != string::npos)
+                    {
+                        cout << "Zipping " << dir << '\n';
+                        removeFilenameLabel(dir);
+                        int err = DB_ZipFile(dir.c_str(), dir.c_str());
+                    }
                 }
                 cout << "Zip complete\n";
             }
         }
-        else if (settings("Pack_Mode") == "timed")
+        if (settings("Pack_Mode") == "timed")
         {
             if (curTime % interval < interval)
             {
@@ -654,8 +657,9 @@ int DB_TemporaryFuncCall(void *param1, void *param2, void *param3, int funcID)
 //     memcpy(buffer.buffer + 48, uintarr, 4);
 //     memcpy(buffer.buffer + 52, uintarr, 4);
 //     memcpy(buffer.buffer + 56, uintarr, 4);
-//     buffer.length = 60;
-//     buffer.savePath = "RobotTsTest";
+//     buffer.length = 248;
+//     buffer.savePath = "Tz-Screwzip";
 //     DB_InsertRecord(&buffer, 0);
+//     sleep(10);
 //     return 0;
 // }

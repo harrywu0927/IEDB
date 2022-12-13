@@ -13,6 +13,7 @@ long FileIDManager::GetPacksRhythmNum(vector<pair<string, tuple<long, long>>> &p
     {
         auto range = fidIndex[pack.first];
         res += std::get<1>(range) - std::get<0>(range) + 1;
+        cout<<res<<endl;
     }
     return res;
 }
