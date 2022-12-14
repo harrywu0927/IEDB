@@ -492,7 +492,7 @@ int querySingleDataByPos(char *SourceBuff, char *buff, uint32_t bufferLength, co
 
 	if (!Ext_Params.hasIMG) // 当查询条件不含图片时，结果的总长度已确定
 	{
-		unsigned char typeNum = Ext_Params.typeList.size(); // 数据类型总数
+		QRY_BUFFER_HEAD_DTYPE typeNum = Ext_Params.typeList.size(); // 数据类型总数
 		char head[(int)typeNum * QRY_BUFFER_HEAD_ROW + TYPE_NUM_SIZE];
 		// 数据区起始位置
 		startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); // 写入缓冲区头，获取数据区起始位置
@@ -790,7 +790,7 @@ int WriteDataToBuffer(vector<tuple<char *, long, long, long>> &mallocedMemory, E
 		return StatusCode::NO_DATA_QUERIED;
 	}
 	// 动态分配内存
-	unsigned char typeNum = Ext_Params.typeList.size(); // 数据类型总数
+	QRY_BUFFER_HEAD_DTYPE typeNum = Ext_Params.typeList.size(); // 数据类型总数
 	char head[(int)typeNum * QRY_BUFFER_HEAD_ROW + TYPE_NUM_SIZE];
 	// 数据区起始位置
 	int startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); // 写入缓冲区头，获取数据区起始位置
@@ -1173,7 +1173,7 @@ int DB_QueryByTimespan(DB_DataBuffer *buffer, DB_QueryParams *params)
 	{
 		if (!Ext_Params.hasIMG) // 当查询条件不含图片时，结果的总长度已确定
 		{
-			unsigned char typeNum = Ext_Params.typeList.size(); // 数据类型总数
+			QRY_BUFFER_HEAD_DTYPE typeNum = Ext_Params.typeList.size(); // 数据类型总数
 			char head[(int)typeNum * QRY_BUFFER_HEAD_ROW + TYPE_NUM_SIZE];
 			startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); // 写入缓冲区头，获取数据区起始位置
 
@@ -2529,7 +2529,7 @@ int DB_QueryLastRecords(DB_DataBuffer *buffer, DB_QueryParams *params)
 	{
 		if (!Ext_Params.hasIMG) // 当查询条件不含图片时，结果的总长度已确定
 		{
-			unsigned char typeNum = Ext_Params.typeList.size(); // 数据类型总数
+			QRY_BUFFER_HEAD_DTYPE typeNum = Ext_Params.typeList.size(); // 数据类型总数
 			char head[(int)typeNum * QRY_BUFFER_HEAD_ROW + TYPE_NUM_SIZE];
 			// 数据区起始位置
 			startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); // 写入缓冲区头，获取数据区起始位置
@@ -3000,7 +3000,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 
 					// 开始拷贝数据
 
-					unsigned char typeNum = typeList.size(); // 数据类型总数
+					QRY_BUFFER_HEAD_DTYPE typeNum = typeList.size(); // 数据类型总数
 
 					// char *data = (char *)malloc(copyBytes + 1 + (int)typeNum * 11);
 					char head[(int)typeNum * QRY_BUFFER_HEAD_ROW + TYPE_NUM_SIZE];
@@ -3050,7 +3050,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 			{
 				if (!Ext_Params.hasIMG) // 当查询条件不含图片时，结果的总长度已确定
 				{
-					unsigned char typeNum = params->byPath ? (Ext_Params.typeList.size() == 0 ? 1 : Ext_Params.typeList.size()) : 1; // 数据类型总数
+					QRY_BUFFER_HEAD_DTYPE typeNum = params->byPath ? (Ext_Params.typeList.size() == 0 ? 1 : Ext_Params.typeList.size()) : 1; // 数据类型总数
 					char head[(int)typeNum * QRY_BUFFER_HEAD_ROW + TYPE_NUM_SIZE];
 					startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); // 写入缓冲区头，获取数据区起始位置
 					string startNum = "", endNum = "";
@@ -3320,7 +3320,7 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 		{
 			if (!Ext_Params.hasIMG) // 当查询条件不含图片时，结果的总长度已确定
 			{
-				unsigned char typeNum = Ext_Params.typeList.size(); // 数据类型总数
+				QRY_BUFFER_HEAD_DTYPE typeNum = Ext_Params.typeList.size(); // 数据类型总数
 				char head[(int)typeNum * QRY_BUFFER_HEAD_ROW + TYPE_NUM_SIZE];
 				startPos = params->byPath ? CurrentTemplate.writeBufferHead(params->pathCode, Ext_Params.typeList, head) : CurrentTemplate.writeBufferHead(Ext_Params.names, Ext_Params.typeList, head); // 写入缓冲区头，获取数据区起始位置
 				// 此处可能会分配多余的空间
@@ -3563,70 +3563,70 @@ int DB_QueryByFileID(DB_DataBuffer *buffer, DB_QueryParams *params)
 	IOBusy = false;
 	return StatusCode::DATAFILE_NOT_FOUND;
 }
-int main()
-{
-	// Py_Initialize();
-	DataTypeConverter converter;
-	DB_QueryParams params;
-	params.pathToLine = "Tz-Assemble";
-	params.fileID = "1324834";
-	// params.fileIDend = "300000";
-	params.fileIDend = NULL;
-	char code[10];
-	code[0] = (char)0;
-	code[1] = (char)0;
-	code[2] = (char)0;
-	code[3] = (char)0;
-	code[4] = 0;
-	// code[4] = 'R';
-	code[5] = (char)0;
-	code[6] = 0;
-	code[7] = (char)0;
-	code[8] = (char)0;
-	code[9] = (char)0;
-	params.pathCode = code;
-	// params.valueName = "S1ON,S1OFF";
-	params.valueName = "S1ON";
-	params.start = 1670000000000;
-	params.end = 1671356050000;
-	// params.end = 1651894834176;
-	params.order = DESCEND;
-	params.sortVariable = "S1ON";
-	params.compareType = CMP_NONE;
-	params.compareValue = "100";
-	params.compareVariable = "S1ON";
-	params.queryType = TIMESPAN;
-	params.byPath = 1;
-	params.queryNums = 10;
-	DB_DataBuffer buffer;
-	buffer.savePath = "/";
-	// cout << settings("Pack_Mode") << endl;
-	// vector<pair<string, long>> files;
-	// readDataFilesWithTimestamps("", files);
-	// Packer::Pack("/",files);
-	auto startTime = std::chrono::system_clock::now();
-	// char zeros[10] = {0};
-	// memcpy(params.pathCode, zeros, 10);
-	cout << DB_QueryLastRecords(&buffer, &params);
-	// return 0;
-	cout << DB_ExecuteQuery(&buffer, &params);
-	// DB_QueryByTimespan_Single(&buffer, &params);
-	auto endTime = std::chrono::system_clock::now();
-	// free(buffer.buffer);
-	std::cout << "第一次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
+// int main()
+// {
+// 	// Py_Initialize();
+// 	DataTypeConverter converter;
+// 	DB_QueryParams params;
+// 	params.pathToLine = "Tz-Assemble";
+// 	params.fileID = "1324834";
+// 	// params.fileIDend = "300000";
+// 	params.fileIDend = NULL;
+// 	char code[10];
+// 	code[0] = (char)0;
+// 	code[1] = (char)0;
+// 	code[2] = (char)0;
+// 	code[3] = (char)0;
+// 	code[4] = 0;
+// 	// code[4] = 'R';
+// 	code[5] = (char)0;
+// 	code[6] = 0;
+// 	code[7] = (char)0;
+// 	code[8] = (char)0;
+// 	code[9] = (char)0;
+// 	params.pathCode = code;
+// 	// params.valueName = "S1ON,S1OFF";
+// 	params.valueName = "S1ON";
+// 	params.start = 1670000000000;
+// 	params.end = 1671356050000;
+// 	// params.end = 1651894834176;
+// 	params.order = DESCEND;
+// 	params.sortVariable = "S1ON";
+// 	params.compareType = CMP_NONE;
+// 	params.compareValue = "100";
+// 	params.compareVariable = "S1ON";
+// 	params.queryType = TIMESPAN;
+// 	params.byPath = 1;
+// 	params.queryNums = 10;
+// 	DB_DataBuffer buffer;
+// 	buffer.savePath = "/";
+// 	// cout << settings("Pack_Mode") << endl;
+// 	// vector<pair<string, long>> files;
+// 	// readDataFilesWithTimestamps("", files);
+// 	// Packer::Pack("/",files);
+// 	auto startTime = std::chrono::system_clock::now();
+// 	// char zeros[10] = {0};
+// 	// memcpy(params.pathCode, zeros, 10);
+// 	cout << DB_QueryLastRecords(&buffer, &params);
+// 	// return 0;
+// 	cout << DB_ExecuteQuery(&buffer, &params);
+// 	// DB_QueryByTimespan_Single(&buffer, &params);
+// 	auto endTime = std::chrono::system_clock::now();
+// 	// free(buffer.buffer);
+// 	std::cout << "第一次查询耗时:" << std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() << std::endl;
 
-	if (buffer.bufferMalloced)
-	{
-		cout << buffer.length << endl;
-		for (int i = 0; i < 50; i++)
-		{
-			cout << (int)*(char *)(buffer.buffer + i) << " ";
-			if (i % 11 == 0)
-				cout << endl;
-		}
+// 	if (buffer.bufferMalloced)
+// 	{
+// 		cout << buffer.length << endl;
+// 		for (int i = 0; i < 50; i++)
+// 		{
+// 			cout << (int)*(char *)(buffer.buffer + i) << " ";
+// 			if (i % 11 == 0)
+// 				cout << endl;
+// 		}
 
-		free(buffer.buffer);
-	}
-	// buffer.buffer = NULL;
-	return 0;
-}
+// 		free(buffer.buffer);
+// 	}
+// 	// buffer.buffer = NULL;
+// 	return 0;
+// }

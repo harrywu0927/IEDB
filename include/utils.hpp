@@ -1,6 +1,6 @@
 #ifndef _UTILS_HPP
 #define _UTILS_HPP
-#endif
+
 #include <Python.h>
 #include <vector>
 #include <string>
@@ -58,9 +58,12 @@ namespace fs = std::filesystem;
 #define QRY_BUFFER_HEAD_ROW 19
 #define PATH_CODE_LEVEL 5
 #define PATH_CODE_LEVEL_SIZE 2
+#define QRY_BUFFER_HEAD_DTYPE unsigned short
 #define TYPE_NUM_SIZE 2
 #define PATH_CODE_SIZE PATH_CODE_LEVEL *PATH_CODE_LEVEL_SIZE
+// 包中FID大小
 #define PACK_FID_SIZE 20
+// 基本数据类型总数
 #define DATA_TYPE_NUM 10
 
 // 模版文件名的长度
@@ -985,3 +988,4 @@ public:
      */
     void GetPathcodes(vector<PathCode> &pathCodes);
 };
+#endif

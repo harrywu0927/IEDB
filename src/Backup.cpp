@@ -88,19 +88,19 @@ void BackupHelper::CheckBackup(FILE *file, size_t filesize, long filenum)
     size_t curPos = ftell(file);
     size_t lastPos = curPos;
     long scanedFile = 0;
-    long pakLen;
-    unsigned short pakPathLen;
-    size_t compressedSize;
+    PACK_SIZE_DTYPE pakLen;
+    PACK_PATH_SIZE_DTYPE pakPathLen;
+    COMPRESSED_PACK_SIZE_DTYPE compressedSize;
     Byte *compressedBuffer = nullptr;
     try
     {
         while (curPos < filesize - 23 && scanedFile < filenum)
         {
             lastPos = curPos;
-            std::fread(&pakLen, 8, 1, file);
-            std::fread(&pakPathLen, 2, 1, file);
-            std::fseek(file, pakPathLen + 5, SEEK_CUR);
-            std::fread(&compressedSize, 8, 1, file);
+            std::fread(&pakLen, sizeof(pakLen), 1, file);
+            std::fread(&pakPathLen, sizeof(pakPathLen), 1, file);
+            std::fseek(file, pakPathLen + LZMA_PROPS_SIZE, SEEK_CUR);
+            std::fread(&compressedSize, sizeof(compressedSize), 1, file);
 
             if (std::ftell(file) + compressedSize > filesize)
             {
@@ -108,12 +108,12 @@ void BackupHelper::CheckBackup(FILE *file, size_t filesize, long filenum)
                 fseek(file, lastPos, SEEK_SET);
                 throw iedb_err(StatusCode::DATAFILE_MODIFIED);
             }
-            Byte sha1[20];
+            Byte sha1[SHA1_SIZE];
             ComputeSHA1(compressedSize, file, sha1);
             /* Compare the computed sha1 value and the stored value */
-            Byte sha1_backup[20];
-            std::fread(sha1_backup, 1, 20, file);
-            if (memcmp(sha1, sha1_backup, 20) != 0)
+            Byte sha1_backup[SHA1_SIZE];
+            std::fread(sha1_backup, 1, SHA1_SIZE, file);
+            if (memcmp(sha1, sha1_backup, SHA1_SIZE) != 0)
             {
                 fseek(file, lastPos, SEEK_SET);
                 throw iedb_err(StatusCode::DATAFILE_MODIFIED);
@@ -157,7 +157,7 @@ int WritePacks(vector<string> &paks, FILE *file)
     int err = 0;
     char *writeBuffer = new char[WRITE_BUFFER_SIZE];
     char *readBuffer = new char[READ_BUFFER_SIZE];
-    std::setvbuf(file, writeBuffer, _IOFBF, WRITE_BUFFER_SIZE); //设置写缓冲
+    std::setvbuf(file, writeBuffer, _IOFBF, WRITE_BUFFER_SIZE); // 设置写缓冲
     for (auto &pak : paks)
     {
         FILE *pakfile;
@@ -169,15 +169,15 @@ int WritePacks(vector<string> &paks, FILE *file)
             {
                 throw iedb_err(errno);
             }
-            long paklen;
+            PACK_SIZE_DTYPE paklen;
             DB_GetFileLengthByFilePtr((long)pakfile, &paklen);
-            unsigned short pakPathLen = pak.length();
+            PACK_PATH_SIZE_DTYPE pakPathLen = pak.length();
             // DB_Write((long)file, (char *)(&paklen), 8);
             // DB_Write((long)file, (char *)(&pakPathLen), 2);
             // DB_Write((long)file, (char *)(pak.c_str()), pakPathLen);
 
-            std::fwrite(&paklen, 8, 1, file);
-            std::fwrite(&pakPathLen, 2, 1, file);
+            std::fwrite(&paklen, sizeof(paklen), 1, file);
+            std::fwrite(&pakPathLen, sizeof(pakPathLen), 1, file);
             std::fwrite(pak.c_str(), pakPathLen, 1, file);
 
             /* Compress the content of pack using LZMA */
@@ -190,8 +190,8 @@ int WritePacks(vector<string> &paks, FILE *file)
                 pakpos += readlen;
             }
             compressedBuffer = new Byte[paklen];
-            size_t compressedLen = paklen, outpropsSize = LZMA_PROPS_SIZE;
-            Byte outprops[5];
+            COMPRESSED_PACK_SIZE_DTYPE compressedLen = paklen, outpropsSize = LZMA_PROPS_SIZE;
+            Byte outprops[LZMA_PROPS_SIZE];
             if ((err = LzmaCompress(compressedBuffer, &compressedLen, pakBuffer, paklen, outprops, &outpropsSize, 5, 1 << 24, 3, 0, 2, 3, 2)) != 0)
             {
                 throw iedb_err(err);
@@ -204,9 +204,9 @@ int WritePacks(vector<string> &paks, FILE *file)
             fwrite(compressedBuffer, compressedLen, 1, file);
 
             /* Write the SHA1 hashed value */
-            Byte md[20] = {0};
+            Byte md[SHA1_SIZE] = {0};
             SHA1(compressedBuffer, compressedLen, md);
-            fwrite(md, 20, 1, file);
+            fwrite(md, SHA1_SIZE, 1, file);
             delete[] compressedBuffer;
         }
         catch (bad_alloc &e)

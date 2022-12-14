@@ -94,7 +94,8 @@ int Packer::Pack(string pathToLine, vector<pair<string, long>> &filesWithTime)
         memcpy(packBuffer + cur, fileID, PACK_FID_SIZE);
         cur += PACK_FID_SIZE;
         buffer.savePath = file.first.c_str();
-        if (DB_ReadFile(&buffer) == 0)
+        int err = DB_ReadFile(&buffer);
+        if (err == 0 || err == StatusCode::EMPTY_PAK)
         {
             DB_DeleteFile(const_cast<char *>(buffer.savePath));
             if (buffer.length != 0)
@@ -542,10 +543,10 @@ void PackFileReader::ReadPackHead(PACK_FILE_NUM_DTYPE &fileNum, string &template
     memcpy(temName, packBuffer + sizeof(PACK_FILE_NUM_DTYPE), TEMPLATE_NAME_SIZE);
     templateName = temName;
 }
-// int main()
-// {
-//     vector<pair<string, long>> files;
-//     readDataFilesWithTimestamps("Robot_UDP", files);
-//     Packer::Pack("Robot_UDP", files);
-//     return 0;
-// }
+int main()
+{
+    vector<pair<string, long>> files;
+    readDataFilesWithTimestamps("TzAssemblezip", files);
+    Packer::Pack("TzAssemblezip", files);
+    return 0;
+}

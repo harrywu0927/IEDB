@@ -1,6 +1,6 @@
 #ifndef _INSERT_HPP
 #define _INSERT_HPP
-#endif
+
 #include <list>
 #include <CassFactoryDB.h>
 #include <future>
@@ -86,7 +86,7 @@ int InsertBuffer::flush(int switcher)
             if (item.zip == true)
             {
                 item.savePath.append(".idbzip");
-                if (item.data[0] == 0) //数据未压缩
+                if (item.data[0] == 0) // 数据未压缩
                 {
                     int err = DB_Open(const_cast<char *>(item.savePath.c_str()), mode, &fp);
                     if (err == 0)
@@ -108,7 +108,7 @@ int InsertBuffer::flush(int switcher)
                         throw iedb_err(err);
                     }
                 }
-                else if (item.data[0] == 1) //数据完全压缩
+                else if (item.data[0] == 1) // 数据完全压缩
                 {
 
                     int err = DB_Open(const_cast<char *>(item.savePath.c_str()), mode, &fp);
@@ -121,7 +121,7 @@ int InsertBuffer::flush(int switcher)
                         throw iedb_err(err);
                     }
                 }
-                else if (item.data[0] == 2) //数据未完全压缩
+                else if (item.data[0] == 2) // 数据未完全压缩
                 {
                     int err = DB_Open(const_cast<char *>(item.savePath.c_str()), mode, &fp);
                     if (err == 0)
@@ -181,3 +181,4 @@ int InsertBuffer::flush(int switcher)
     }
     return 0;
 }
+#endif

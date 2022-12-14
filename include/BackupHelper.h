@@ -2,15 +2,14 @@
  * @file BackupHelper.h
  * @author your name (you@domain.com)
  * @brief
- * @version 0.9.1
- * @date Last Modification in 2022-08-10
+ * @version 0.9.3
+ * @date Last Modification in 2022-12-14
  *
  * @copyright Copyright (c) 2022
  *
  ******************************************/
 #ifndef _BACKUP_HELPER_H
 #define _BACKUP_HELPER_H
-#endif
 
 #include "utils.hpp"
 #include <string>
@@ -19,6 +18,12 @@
 using namespace std;
 #define WRITE_BUFFER_SIZE 1 << 25 // 32MB
 #define READ_BUFFER_SIZE 1 << 25  // 32MB
+
+#define PACK_SIZE_DTYPE long
+#define COMPRESSED_PACK_SIZE_DTYPE unsigned long
+#define PACK_PATH_SIZE_DTYPE unsigned short
+#define FILE_CNT_DTYPE long
+#define SHA1_SIZE 20
 /**
  * @brief bak文件头定义：
  * 按照字节序依次为：
@@ -63,7 +68,7 @@ public:
         memcpy(&timestamp, h, 8);
         memcpy(&fileNum, h + 8, 8);
         ushort L = *((ushort *)(h + 16));
-        if (L > 1000) //文件内容可能被篡改
+        if (L > 1000) // 文件内容可能被篡改
             return -1;
         char p[L];
         fread(p, L, 1, file);
@@ -83,3 +88,5 @@ public:
 };
 
 extern BackupHelper backupHelper;
+
+#endif

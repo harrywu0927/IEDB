@@ -1,6 +1,6 @@
 #ifndef _MEMORY_MANAGER_H
 #define _MEMORY_MANAGER_H
-#endif
+
 #include <unistd.h>
 #include <sys/sysctl.h>
 #include <memory>
@@ -82,21 +82,21 @@ typedef struct IEDB_Memory
     }
     void *content;
     size_t length;
-    unsigned int ID; //若是page，ID为从属PagesList的ID
+    unsigned int ID; // 若是page，ID为从属PagesList的ID
     Byte type;       // 1 = block, 2 = page
-    size_t offset;   //若是page，offset为页号
+    size_t offset;   // 若是page，offset为页号
     bool operator<(const IEDB_Memory &right) const
     {
-        if (this->ID == right.ID) //根据id去重
+        if (this->ID == right.ID) // 根据id去重
             return false;
-        return this->length < right.length; //升序
+        return this->length < right.length; // 升序
     }
 } IEDB_Memory;
 
 typedef struct
 {
-    unsigned int offset; //页号
-    unsigned int pages;  //页数
+    unsigned int offset; // 页号
+    unsigned int pages;  // 页数
 } Page;
 
 /**
@@ -136,7 +136,7 @@ private:
     unordered_map<BlockID, IEDB_Memory> blockMap;
     unordered_map<PagesListID, MemoryPages> pagesMap;
     unordered_set<PagesListID> pagesSet;
-    set<IEDB_Memory> emptyBlocks; //此处应使用链表
+    set<IEDB_Memory> emptyBlocks; // 此处应使用链表
     BlockID currentID = 0;
     BlockID AllocateID();
 
@@ -164,3 +164,4 @@ public:
     void Recollect(IEDB_Memory &mem);
 };
 extern MemoryManager memoryManager;
+#endif

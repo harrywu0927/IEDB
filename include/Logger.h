@@ -1,6 +1,6 @@
 #ifndef _LOGGER_H
 #define _LOGGER_H
-#endif
+
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/common.h>
@@ -78,3 +78,4 @@ public:
 };
 
 extern Logger RuntimeLogger;
+#endif

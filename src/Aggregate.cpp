@@ -96,7 +96,7 @@ int ParseBufferHead(vector<DataType> &typeList, int &pos, int &recordLength, cha
  */
 int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
-    //检查是否有图片或数组
+    // 检查是否有图片或数组
     int err;
     if ((err = CheckQueryParams(params)) != 0)
         return err;
@@ -110,25 +110,25 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
         return err;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
-    int typeNum = buffer->buffer[0];
+    QRY_BUFFER_HEAD_DTYPE typeNum = *((QRY_BUFFER_HEAD_DTYPE *)(buffer->buffer));
     vector<DataType> typeList;
-    int recordLength = 0; //每行的长度
-    int pos = 1;
+    int recordLength = 0; // 每行的长度
+    int pos = sizeof(QRY_BUFFER_HEAD_DTYPE);
     ParseBufferHead(typeList, pos, recordLength, buffer->buffer);
-    long startPos = pos; //数据区起始位置
+    long startPos = pos; // 数据区起始位置
     // cout << "buffer length" << buffer->length << endl;
-    long rows = (buffer->length - startPos) / recordLength; //获取行数
-    long cur = startPos;                                    //在buffer中的偏移量
+    long rows = (buffer->length - startPos) / recordLength; // 获取行数
+    long cur = startPos;                                    // 在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
     memcpy(newBuffer, buffer->buffer, startPos);
-    long newBufCur = startPos; //在新缓冲区中的偏移量
+    long newBufCur = startPos; // 在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
         cur = startPos + getBufferDataPos(typeList, i);
-        int bytes = typeList[i].valueBytes;    //此类型的值字节数
-        char *column = new char[bytes * rows]; //每列的所有值缓存
-        long colPos = 0;                       //在column中的偏移量
+        int bytes = typeList[i].valueBytes;    // 此类型的值字节数
+        char *column = new char[bytes * rows]; // 每列的所有值缓存
+        long colPos = 0;                       // 在column中的偏移量
         for (int j = 0; j < rows; j++)
         {
             memcpy(column + colPos, buffer->buffer + cur, bytes);
@@ -288,7 +288,7 @@ int DB_MAX(DB_DataBuffer *buffer, DB_QueryParams *params)
  */
 int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
-    //检查是否有图片或数组
+    // 检查是否有图片或数组
     int err;
     if ((err = CheckQueryParams(params)) != 0)
         return err;
@@ -302,24 +302,24 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
         return err;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
-    int typeNum = buffer->buffer[0];
+    QRY_BUFFER_HEAD_DTYPE typeNum = *((QRY_BUFFER_HEAD_DTYPE *)(buffer->buffer));
     vector<DataType> typeList;
-    int recordLength = 0; //每行的长度
-    int pos = 1;
+    int recordLength = 0; // 每行的长度
+    int pos = sizeof(QRY_BUFFER_HEAD_DTYPE);
     ParseBufferHead(typeList, pos, recordLength, buffer->buffer);
-    long startPos = pos;                                    //数据区起始位置
-    long rows = (buffer->length - startPos) / recordLength; //获取行数
-    long cur = startPos;                                    //在buffer中的偏移量
+    long startPos = pos;                                    // 数据区起始位置
+    long rows = (buffer->length - startPos) / recordLength; // 获取行数
+    long cur = startPos;                                    // 在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
     memcpy(newBuffer, buffer->buffer, startPos);
-    long newBufCur = startPos; //在新缓冲区中的偏移量
+    long newBufCur = startPos; // 在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
         cur = startPos + getBufferDataPos(typeList, i);
-        int bytes = typeList[i].valueBytes;    //此类型的值字节数
-        char *column = new char[bytes * rows]; //每列的所有值缓存
-        long colPos = 0;                       //在column中的偏移量
+        int bytes = typeList[i].valueBytes;    // 此类型的值字节数
+        char *column = new char[bytes * rows]; // 每列的所有值缓存
+        long colPos = 0;                       // 在column中的偏移量
         for (int j = 0; j < rows; j++)
         {
             memcpy(column + colPos, buffer->buffer + cur, bytes);
@@ -479,7 +479,7 @@ int DB_MIN(DB_DataBuffer *buffer, DB_QueryParams *params)
  */
 int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
-    //检查是否有图片或数组
+    // 检查是否有图片或数组
     int err;
     if ((err = CheckQueryParams(params)) != 0)
         return err;
@@ -493,24 +493,24 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
         return err;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
-    int typeNum = buffer->buffer[0];
+    QRY_BUFFER_HEAD_DTYPE typeNum = *((QRY_BUFFER_HEAD_DTYPE *)(buffer->buffer));
     vector<DataType> typeList;
-    int recordLength = 1; //每行的长度
-    int pos = 1;
+    int recordLength = 0; // 每行的长度
+    int pos = sizeof(QRY_BUFFER_HEAD_DTYPE);
     ParseBufferHead(typeList, pos, recordLength, buffer->buffer);
-    long startPos = pos;                                    //数据区起始位置
-    long rows = (buffer->length - startPos) / recordLength; //获取行数
-    long cur = startPos;                                    //在buffer中的偏移量
+    long startPos = pos;                                    // 数据区起始位置
+    long rows = (buffer->length - startPos) / recordLength; // 获取行数
+    long cur = startPos;                                    // 在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
     // memcpy(newBuffer, buffer->buffer, startPos);
-    long newBufCur = startPos; //在新缓冲区中的偏移量
+    long newBufCur = startPos; // 在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
         cur = startPos + getBufferDataPos(typeList, i);
-        int bytes = typeList[i].valueBytes;    //此类型的值字节数
-        char *column = new char[bytes * rows]; //每列的所有值缓存
-        long colPos = 0;                       //在column中的偏移量
+        int bytes = typeList[i].valueBytes;    // 此类型的值字节数
+        char *column = new char[bytes * rows]; // 每列的所有值缓存
+        long colPos = 0;                       // 在column中的偏移量
         for (int j = 0; j < rows; j++)
         {
             memcpy(column + colPos, buffer->buffer + cur, bytes);
@@ -656,11 +656,11 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
     }
     free(buffer->buffer);
     buffer->buffer = NULL;
-    //重写缓冲区头
+    // 重写缓冲区头
     for (int i = 0; i < typeList.size(); i++)
     {
         if (typeList[i].valueType != ValueType::REAL)
-            typeList[i].valueType = ValueType::DINT; //可能超出32位数字表示范围，不是浮点数暂时统一用DINT表示
+            typeList[i].valueType = ValueType::DINT; // 可能超出32位数字表示范围，不是浮点数暂时统一用DINT表示
     }
     if (params->byPath)
         CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
@@ -681,7 +681,7 @@ int DB_SUM(DB_DataBuffer *buffer, DB_QueryParams *params)
  */
 int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
-    //检查是否有图片或数组
+    // 检查是否有图片或数组
     int err;
     if ((err = CheckQueryParams(params)) != 0)
         return err;
@@ -695,24 +695,24 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
         return err;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
-    int typeNum = buffer->buffer[0];
+    QRY_BUFFER_HEAD_DTYPE typeNum = *((QRY_BUFFER_HEAD_DTYPE *)(buffer->buffer));
     vector<DataType> typeList;
-    int recordLength = 0; //每行的长度
-    int pos = 1;
+    int recordLength = 0; // 每行的长度
+    int pos = sizeof(QRY_BUFFER_HEAD_DTYPE);
     ParseBufferHead(typeList, pos, recordLength, buffer->buffer);
-    long startPos = pos;                                    //数据区起始位置
-    long rows = (buffer->length - startPos) / recordLength; //获取行数
-    long cur = startPos;                                    //在buffer中的偏移量
+    long startPos = pos;                                    // 数据区起始位置
+    long rows = (buffer->length - startPos) / recordLength; // 获取行数
+    long cur = startPos;                                    // 在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
     // memcpy(newBuffer, buffer->buffer, startPos);
-    long newBufCur = startPos; //在新缓冲区中的偏移量
+    long newBufCur = startPos; // 在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
         cur = startPos + getBufferDataPos(typeList, i);
-        int bytes = typeList[i].valueBytes;    //此类型的值字节数
-        char *column = new char[bytes * rows]; //每列的所有值缓存
-        long colPos = 0;                       //在column中的偏移量
+        int bytes = typeList[i].valueBytes;    // 此类型的值字节数
+        char *column = new char[bytes * rows]; // 每列的所有值缓存
+        long colPos = 0;                       // 在column中的偏移量
         for (int j = 0; j < rows; j++)
         {
             memcpy(column + colPos, buffer->buffer + cur, bytes);
@@ -833,7 +833,7 @@ int DB_AVG(DB_DataBuffer *buffer, DB_QueryParams *params)
     for (int i = 0; i < typeList.size(); i++)
     {
         if (typeList[i].valueType != ValueType::REAL)
-            typeList[i].valueType = ValueType::REAL; //均值统一用浮点数表示
+            typeList[i].valueType = ValueType::REAL; // 均值统一用浮点数表示
     }
     if (params->byPath)
         CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
@@ -861,16 +861,16 @@ int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
     vector<DataType> typeList;
-    int recordLength = 0; //每行的长度
-    int pos = 1;
+    int recordLength = 0; // 每行的长度
+    int pos = sizeof(QRY_BUFFER_HEAD_DTYPE);
     ParseBufferHead(typeList, pos, recordLength, buffer->buffer);
-    long startPos = pos;                                    //数据区起始位置
-    long rows = (buffer->length - startPos) / recordLength; //获取行数
-    long cur = startPos;                                    //在buffer中的偏移量
+    long startPos = pos;                                    // 数据区起始位置
+    long rows = (buffer->length - startPos) / recordLength; // 获取行数
+    long cur = startPos;                                    // 在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
     // memcpy(newBuffer, buffer->buffer, startPos);
-    long newBufCur = startPos; //在新缓冲区中的偏移量
+    long newBufCur = startPos; // 在新缓冲区中的偏移量
     char res[4] = {0};
     for (int k = 0; k < 4; k++)
     {
@@ -883,7 +883,7 @@ int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
     for (int i = 0; i < typeList.size(); i++)
     {
         if (typeList[i].valueType != ValueType::UDINT)
-            typeList[i].valueType = ValueType::UDINT; //计数统一用32位无符号数表示
+            typeList[i].valueType = ValueType::UDINT; // 计数统一用32位无符号数表示
     }
     if (params->byPath)
         CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
@@ -904,7 +904,7 @@ int DB_COUNT(DB_DataBuffer *buffer, DB_QueryParams *params)
  */
 int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
-    //检查是否有图片或数组
+    // 检查是否有图片或数组
     int err;
     if ((err = CheckQueryParams(params)) != 0)
         return err;
@@ -918,24 +918,24 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
         return err;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
-    int typeNum = buffer->buffer[0];
+    QRY_BUFFER_HEAD_DTYPE typeNum = *((QRY_BUFFER_HEAD_DTYPE *)(buffer->buffer));
     vector<DataType> typeList;
-    int recordLength = 0; //每行的长度
-    int pos = 1;
+    int recordLength = 0; // 每行的长度
+    int pos = sizeof(QRY_BUFFER_HEAD_DTYPE);
     ParseBufferHead(typeList, pos, recordLength, buffer->buffer);
-    long startPos = pos;                                    //数据区起始位置
-    long rows = (buffer->length - startPos) / recordLength; //获取行数
-    long cur = startPos;                                    //在buffer中的偏移量
+    long startPos = pos;                                    // 数据区起始位置
+    long rows = (buffer->length - startPos) / recordLength; // 获取行数
+    long cur = startPos;                                    // 在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
     // memcpy(newBuffer, buffer->buffer, startPos);
-    long newBufCur = startPos; //在新缓冲区中的偏移量
+    long newBufCur = startPos; // 在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
         cur = startPos + getBufferDataPos(typeList, i);
-        int bytes = typeList[i].valueBytes;    //此类型的值字节数
-        char *column = new char[bytes * rows]; //每列的所有值缓存
-        long colPos = 0;                       //在column中的偏移量
+        int bytes = typeList[i].valueBytes;    // 此类型的值字节数
+        char *column = new char[bytes * rows]; // 每列的所有值缓存
+        long colPos = 0;                       // 在column中的偏移量
         for (int j = 0; j < rows; j++)
         {
             memcpy(column + colPos, buffer->buffer + cur, bytes);
@@ -1098,7 +1098,7 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
     for (int i = 0; i < typeList.size(); i++)
     {
         if (typeList[i].valueType != ValueType::REAL)
-            typeList[i].valueType = ValueType::REAL; //标准差统一用浮点数表示
+            typeList[i].valueType = ValueType::REAL; // 标准差统一用浮点数表示
     }
     if (params->byPath)
         CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
@@ -1119,7 +1119,7 @@ int DB_STD(DB_DataBuffer *buffer, DB_QueryParams *params)
  */
 int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
 {
-    //检查是否有图片或数组
+    // 检查是否有图片或数组
     int err;
     if ((err = CheckQueryParams(params)) != 0)
         return err;
@@ -1133,24 +1133,24 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
         return err;
     if (!buffer->bufferMalloced)
         return StatusCode::NO_DATA_QUERIED;
-    int typeNum = buffer->buffer[0];
+    QRY_BUFFER_HEAD_DTYPE typeNum = *((QRY_BUFFER_HEAD_DTYPE *)(buffer->buffer));
     vector<DataType> typeList;
-    int recordLength = 0; //每行的长度
-    int pos = 1;
+    int recordLength = 0; // 每行的长度
+    int pos = sizeof(QRY_BUFFER_HEAD_DTYPE);
     ParseBufferHead(typeList, pos, recordLength, buffer->buffer);
-    long startPos = pos;                                    //数据区起始位置
-    long rows = (buffer->length - startPos) / recordLength; //获取行数
-    long cur = startPos;                                    //在buffer中的偏移量
+    long startPos = pos;                                    // 数据区起始位置
+    long rows = (buffer->length - startPos) / recordLength; // 获取行数
+    long cur = startPos;                                    // 在buffer中的偏移量
     char *newBuffer = (char *)malloc(recordLength + startPos);
     buffer->length = startPos + recordLength;
     // memcpy(newBuffer, buffer->buffer, startPos);
-    long newBufCur = startPos; //在新缓冲区中的偏移量
+    long newBufCur = startPos; // 在新缓冲区中的偏移量
     for (int i = 0; i < typeNum; i++)
     {
         cur = startPos + getBufferDataPos(typeList, i);
-        int bytes = typeList[i].valueBytes;    //此类型的值字节数
-        char *column = new char[bytes * rows]; //每列的所有值缓存
-        long colPos = 0;                       //在column中的偏移量
+        int bytes = typeList[i].valueBytes;    // 此类型的值字节数
+        char *column = new char[bytes * rows]; // 每列的所有值缓存
+        long colPos = 0;                       // 在column中的偏移量
         for (int j = 0; j < rows; j++)
         {
             memcpy(column + colPos, buffer->buffer + cur, bytes);
@@ -1312,7 +1312,7 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
     for (int i = 0; i < typeList.size(); i++)
     {
         if (typeList[i].valueType != ValueType::REAL)
-            typeList[i].valueType = ValueType::REAL; //方差统一用浮点数表示
+            typeList[i].valueType = ValueType::REAL; // 方差统一用浮点数表示
     }
     if (params->byPath)
         CurrentTemplate.writeBufferHead(params->pathCode, typeList, newBuffer);
@@ -1332,7 +1332,7 @@ int DB_STDEV(DB_DataBuffer *buffer, DB_QueryParams *params)
 int DB_GetNormalDataCount_Single(DB_QueryParams *params, long *count)
 {
     int err = 0;
-    err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
+    err = DB_LoadZipSchema(params->pathToLine); // 加载压缩模板
     if (err)
     {
         cout << "未加载模板" << endl;
@@ -1355,7 +1355,7 @@ int DB_GetNormalDataCount_Single(DB_QueryParams *params, long *count)
             {
                 continue;
             }
-            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            if (S_ISREG(fileInfo.st_mode)) // 是常规文件
             {
                 if (file.second >= params->start && file.second <= params->end)
                 {
@@ -1390,7 +1390,7 @@ int DB_GetNormalDataCount_Single(DB_QueryParams *params, long *count)
             {
                 long start = atol(timespan[0].c_str());
                 long end = atol(timespan[1].c_str());
-                if ((start < params->start && end >= params->start) || (start < params->end && end >= params->start) || (start <= params->start && end >= params->end) || (start >= params->start && end <= params->end)) //落入或部分落入时间区间
+                if ((start < params->start && end >= params->start) || (start < params->end && end >= params->start) || (start <= params->start && end >= params->end) || (start >= params->start && end <= params->end)) // 落入或部分落入时间区间
                 {
                     selectedPacks.push_back(make_pair(file, start));
                 }
@@ -1439,7 +1439,7 @@ int DB_GetNormalDataCount_Single(DB_QueryParams *params, long *count)
             {
                 continue;
             }
-            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            if (S_ISREG(fileInfo.st_mode)) // 是常规文件
             {
                 if (fileInfo.st_size == 0)
                 {
@@ -1560,7 +1560,7 @@ int DB_GetNormalDataCount_Single(DB_QueryParams *params, long *count)
             {
                 continue;
             }
-            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            if (S_ISREG(fileInfo.st_mode)) // 是常规文件
             {
                 if (fileInfo.st_size == 0)
                 {
@@ -1700,7 +1700,7 @@ int CountSinglePack_Normal(DB_QueryParams *param, pair<char *, long> pack)
 int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
 {
     int err = 0;
-    err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
+    err = DB_LoadZipSchema(params->pathToLine); // 加载压缩模板
     if (err)
     {
         cout << "未加载模板" << endl;
@@ -1723,7 +1723,7 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
             {
                 continue;
             }
-            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            if (S_ISREG(fileInfo.st_mode)) // 是常规文件
             {
                 if (file.second >= params->start && file.second <= params->end)
                 {
@@ -1758,7 +1758,7 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
         }
         while (index < packFiles.size())
         {
-            for (int j = 0; j < maxThreads - 1; j++) //留一个线程循环遍历线程集，确认每个线程的运行状态
+            for (int j = 0; j < maxThreads - 1; j++) // 留一个线程循环遍历线程集，确认每个线程的运行状态
             {
                 if (status[j] == future_status::ready)
                 {
@@ -1805,7 +1805,7 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
             {
                 continue;
             }
-            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            if (S_ISREG(fileInfo.st_mode)) // 是常规文件
             {
                 if (fileInfo.st_size == 0)
                 {
@@ -1938,7 +1938,7 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
         sortByTime(dataWithTime, TIME_ASC);
         bool firstIndexFound = false;
         string currentFileID;
-        if ((params->queryNums == 1 || params->queryNums == 0) && params->fileIDend != NULL) //首尾ID方式
+        if ((params->queryNums == 1 || params->queryNums == 0) && params->fileIDend != NULL) // 首尾ID方式
         {
             auto packs = packManager.GetPackByIDs(params->pathToLine, params->fileID, params->fileIDend);
             for (auto &pack : packs)
@@ -1974,7 +1974,7 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
                         break;
                 }
             }
-            if (currentFileID != fileidEnd) //还未结束
+            if (currentFileID != fileidEnd) // 还未结束
             {
                 for (auto &file : dataWithTime)
                 {
@@ -2024,7 +2024,7 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
                 }
             }
         }
-        else //首ID + 数量
+        else // 首ID + 数量
         {
             auto packs = packManager.GetPackByIDs(params->pathToLine, fileid, params->queryNums);
             int scanNum = 0;
@@ -2130,7 +2130,7 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
             {
                 continue;
             }
-            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            if (S_ISREG(fileInfo.st_mode)) // 是常规文件
             {
                 if (fileInfo.st_size == 0)
                 {
@@ -2163,7 +2163,7 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
         }
         while (index < packFiles.size())
         {
-            for (int j = 0; j < maxThreads - 1; j++) //留一个线程循环遍历线程集，确认每个线程的运行状态
+            for (int j = 0; j < maxThreads - 1; j++) // 留一个线程循环遍历线程集，确认每个线程的运行状态
             {
                 if (status[j] == future_status::ready)
                 {
@@ -2210,7 +2210,7 @@ int DB_GetNormalDataCount(DB_QueryParams *params, long *count)
 int DB_GetAbnormalDataCount_Single(DB_QueryParams *params, long *count)
 {
     int err = 0;
-    err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
+    err = DB_LoadZipSchema(params->pathToLine); // 加载压缩模板
     if (err)
     {
         cout << "未加载模板" << endl;
@@ -2233,7 +2233,7 @@ int DB_GetAbnormalDataCount_Single(DB_QueryParams *params, long *count)
             {
                 continue;
             }
-            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            if (S_ISREG(fileInfo.st_mode)) // 是常规文件
             {
                 if (file.second >= params->start && file.second <= params->end)
                 {
@@ -2268,7 +2268,7 @@ int DB_GetAbnormalDataCount_Single(DB_QueryParams *params, long *count)
             {
                 long start = atol(timespan[0].c_str());
                 long end = atol(timespan[1].c_str());
-                if ((start < params->start && end >= params->start) || (start < params->end && end >= params->start) || (start <= params->start && end >= params->end) || (start >= params->start && end <= params->end)) //落入或部分落入时间区间
+                if ((start < params->start && end >= params->start) || (start < params->end && end >= params->start) || (start <= params->start && end >= params->end) || (start >= params->start && end <= params->end)) // 落入或部分落入时间区间
                 {
                     selectedPacks.push_back(make_pair(file, start));
                 }
@@ -2317,7 +2317,7 @@ int DB_GetAbnormalDataCount_Single(DB_QueryParams *params, long *count)
             {
                 continue;
             }
-            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            if (S_ISREG(fileInfo.st_mode)) // 是常规文件
             {
                 if (dataWithTime[i].first.back() != 'p') // is .idb
                 {
@@ -2438,7 +2438,7 @@ int DB_GetAbnormalDataCount_Single(DB_QueryParams *params, long *count)
             {
                 continue;
             }
-            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            if (S_ISREG(fileInfo.st_mode)) // 是常规文件
             {
                 if (file.back() != 'p') // is .idb
                 {
@@ -2584,7 +2584,7 @@ int CountSinglePack_Abnormal(DB_QueryParams *param, pair<char *, long> pack)
 int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
 {
     int err = 0;
-    err = DB_LoadZipSchema(params->pathToLine); //加载压缩模板
+    err = DB_LoadZipSchema(params->pathToLine); // 加载压缩模板
     if (err)
     {
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
@@ -2606,7 +2606,7 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
             {
                 continue;
             }
-            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            if (S_ISREG(fileInfo.st_mode)) // 是常规文件
             {
                 if (file.second >= params->start && file.second <= params->end)
                 {
@@ -2641,7 +2641,7 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
         }
         while (index < packFiles.size())
         {
-            for (int j = 0; j < maxThreads - 1; j++) //留一个线程循环遍历线程集，确认每个线程的运行状态
+            for (int j = 0; j < maxThreads - 1; j++) // 留一个线程循环遍历线程集，确认每个线程的运行状态
             {
                 if (status[j] == future_status::ready)
                 {
@@ -2688,7 +2688,7 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
             {
                 continue;
             }
-            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            if (S_ISREG(fileInfo.st_mode)) // 是常规文件
             {
                 if (dataWithTime[i].first.back() != 'p') // is .idb
                 {
@@ -2821,7 +2821,7 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
         sortByTime(dataWithTime, TIME_ASC);
         bool firstIndexFound = false;
         string currentFileID;
-        if ((params->queryNums == 1 || params->queryNums == 0) && params->fileIDend != NULL) //首尾ID方式
+        if ((params->queryNums == 1 || params->queryNums == 0) && params->fileIDend != NULL) // 首尾ID方式
         {
             auto packs = packManager.GetPackByIDs(params->pathToLine, params->fileID, params->fileIDend);
             for (auto &pack : packs)
@@ -2857,7 +2857,7 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
                         break;
                 }
             }
-            if (currentFileID != fileidEnd) //还未结束
+            if (currentFileID != fileidEnd) // 还未结束
             {
                 for (auto &file : dataWithTime)
                 {
@@ -2907,7 +2907,7 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
                 }
             }
         }
-        else //首ID + 数量
+        else // 首ID + 数量
         {
             auto packs = packManager.GetPackByIDs(params->pathToLine, fileid, params->queryNums);
             int scanNum = 0;
@@ -3013,7 +3013,7 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
             {
                 continue;
             }
-            if (S_ISREG(fileInfo.st_mode)) //是常规文件
+            if (S_ISREG(fileInfo.st_mode)) // 是常规文件
             {
                 if (file.back() != 'p') // is .idb
                 {
@@ -3045,7 +3045,7 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
         }
         while (index < packFiles.size())
         {
-            for (int j = 0; j < maxThreads - 1; j++) //留一个线程循环遍历线程集，确认每个线程的运行状态
+            for (int j = 0; j < maxThreads - 1; j++) // 留一个线程循环遍历线程集，确认每个线程的运行状态
             {
                 if (status[j] == future_status::ready)
                 {
@@ -3093,7 +3093,7 @@ int DB_GetAbnormalDataCount(DB_QueryParams *params, long *count)
  */
 int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode, int no_query)
 {
-    //此处的pathcode和valuename仅仅为比较数值筛选时指定的变量，下方查询时将转为所有变量
+    // 此处的pathcode和valuename仅仅为比较数值筛选时指定的变量，下方查询时将转为所有变量
     if (TemplateManager::CheckTemplate(params->pathToLine) != 0)
         return StatusCode::SCHEMA_FILE_NOT_FOUND;
     if (ZipTemplateManager::CheckZipTemplate(params->pathToLine) != 0)
@@ -3106,11 +3106,11 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
             int err = CurrentTemplate.GetAllPathsByCode(params->pathCode, pathCodes);
             if (err != 0)
                 return err;
-            if ((params->queryType != QRY_NONE || params->compareType != CMP_NONE) && pathCodes.size() > 1 && (params->valueName == NULL || strcmp(params->valueName, "") == 0)) //若此编码包含的数据类型大于1，而未指定变量名，又需要比较或排序，返回异常
+            if ((params->queryType != QRY_NONE || params->compareType != CMP_NONE) && pathCodes.size() > 1 && (params->valueName == NULL || strcmp(params->valueName, "") == 0)) // 若此编码包含的数据类型大于1，而未指定变量名，又需要比较或排序，返回异常
                 return StatusCode::INVALID_QRY_PARAMS;
             else
             {
-                if ((params->valueName == NULL || strcmp(params->valueName, "") == 0) && (params->queryType != QRY_NONE || params->compareType != CMP_NONE)) //由于编码会变为全0，因此若需要排序或比较，需要添加变量名
+                if ((params->valueName == NULL || strcmp(params->valueName, "") == 0) && (params->queryType != QRY_NONE || params->compareType != CMP_NONE)) // 由于编码会变为全0，因此若需要排序或比较，需要添加变量名
                 {
                     params->valueName = pathCodes[0].name.c_str();
                 }
@@ -3160,13 +3160,13 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
         }
 
         PyObject *table = ConvertToPyList_ML(buffer);
-        char *set = new char[reader.rows]; //此数组中值为1的下标表示异常数据在查询结果中的行
+        char *set = new char[reader.rows]; // 此数组中值为1的下标表示异常数据在查询结果中的行
         memset(set, 0, reader.rows);
         for (int i = 0; i < typeIndexes.size(); i++)
         {
-            if (reader.typeList[i].valueType == ValueType::IMAGE) //图片不判断
+            if (reader.typeList[i].valueType == ValueType::IMAGE) // 图片不判断
                 continue;
-            PyObject *col = PyList_New(reader.rows); //逐列数据判断是否异常
+            PyObject *col = PyList_New(reader.rows); // 逐列数据判断是否异常
             for (int j = 0; j < reader.rows; j++)
             {
                 PyList_SetItem(col, j, PyList_GetItem(PyList_GetItem(table, j), typeIndexes[i]));
@@ -3273,13 +3273,13 @@ int DB_GetAbnormalRhythm(DB_DataBuffer *buffer, DB_QueryParams *params, int mode
             }
         }
         PyObject *table = ConvertToPyList_ML(buffer);
-        char *set = new char[reader.rows]; //此数组中值为1的下标表示异常数据在查询结果中的行
+        char *set = new char[reader.rows]; // 此数组中值为1的下标表示异常数据在查询结果中的行
         memset(set, 0, reader.rows);
         for (int i = 0; i < typeIndexes.size(); i++)
         {
-            if (reader.typeList[i].valueType == ValueType::IMAGE) //图片不判断
+            if (reader.typeList[i].valueType == ValueType::IMAGE) // 图片不判断
                 continue;
-            PyObject *col = PyList_New(reader.rows); //逐列数据判断是否异常
+            PyObject *col = PyList_New(reader.rows); // 逐列数据判断是否异常
             for (int j = 0; j < reader.rows; j++)
             {
                 PyList_SetItem(col, j, PyList_GetItem(PyList_GetItem(table, j), typeIndexes[i]));

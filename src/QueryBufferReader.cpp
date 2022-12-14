@@ -72,8 +72,8 @@ QueryBufferReader::QueryBufferReader(DB_DataBuffer *buffer, bool freeit)
     this->freeit = freeit;
     this->buffer = buffer->buffer;
     this->length = buffer->length;
-    int typeNum = this->buffer[0];
-    int pos = 1;
+    QRY_BUFFER_HEAD_DTYPE typeNum = *((QRY_BUFFER_HEAD_DTYPE *)(this->buffer));
+    int pos = sizeof(QRY_BUFFER_HEAD_DTYPE);
     recordLength = 0;
     rows = 0;
     // Reconstruct the info of each value
@@ -81,7 +81,7 @@ QueryBufferReader::QueryBufferReader(DB_DataBuffer *buffer, bool freeit)
     {
         DataType type;
         int typeVal = this->buffer[pos++];
-        switch ((typeVal - 1) / 10)
+        switch ((typeVal - 1) / DATA_TYPE_NUM)
         {
         case 0:
         {
@@ -138,7 +138,7 @@ QueryBufferReader::QueryBufferReader(DB_DataBuffer *buffer, bool freeit)
         default:
             break;
         }
-        type.valueType = (ValueType::ValueType)((typeVal - 1) % 10 + 1);
+        type.valueType = (ValueType::ValueType)((typeVal - 1) % DATA_TYPE_NUM + 1);
         type.valueBytes = DataType::GetValueBytes(type.valueType);
         typeList.push_back(type);
         if (type.valueType == ValueType::IMAGE)
@@ -488,7 +488,7 @@ void QueryBufferReader::GetPathcodes(vector<PathCode> &pathCodes)
     for (size_t i = 0; i < typeList.size(); i++)
     {
         int typeVal = this->buffer[pos++];
-        switch ((typeVal - 1) / 10)
+        switch ((typeVal - 1) / DATA_TYPE_NUM)
         {
         case 0:
         {

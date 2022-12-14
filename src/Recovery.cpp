@@ -2,8 +2,8 @@
  * @file Recovery.cpp
  * @author your name (you@domain.com)
  * @brief
- * @version 0.9.1
- * @date Last modification in 2022-08-10
+ * @version 0.9.3
+ * @date Last modification in 2022-12-14
  *
  * @copyright Copyright (c) 2022
  *
@@ -94,10 +94,10 @@ int BackupHelper::DataRecovery(string path)
     size_t filesize = fs::file_size(selectedBackup);
     size_t curPos = ftell(backup);
     size_t startPos = curPos;
-    long scanedFile = 0;
+    FILE_CNT_DTYPE scanedFile = 0;
     size_t pakLen;
-    unsigned short pakPathLen;
-    size_t compressedSize;
+    PACK_PATH_SIZE_DTYPE pakPathLen;
+    COMPRESSED_PACK_SIZE_DTYPE compressedSize;
     // if (string(check) != "checkpoint")
     // {
     //     logger.warn("Backup file {} broken, trying to rollback to previous checkpoint...", selectedBackup);
@@ -140,8 +140,8 @@ int BackupHelper::DataRecovery(string path)
         fseek(backup, startPos, SEEK_SET);
         for (int i = 0; i < filenum; i++)
         {
-            fread(&pakLen, 8, 1, backup);
-            fread(&pakPathLen, 2, 1, backup);
+            fread(&pakLen, sizeof(PACK_SIZE_DTYPE), 1, backup);
+            fread(&pakPathLen, sizeof(PACK_PATH_SIZE_DTYPE), 1, backup);
             char pakPath[pakPathLen + 1];
             memset(pakPath, 0, pakPathLen + 1);
             fread(pakPath, pakPathLen, 1, backup);
@@ -149,18 +149,18 @@ int BackupHelper::DataRecovery(string path)
             if (string(pakPath) == path)
             {
                 /* Package found, uncompress the data and overwrite it to <path> */
-                Byte outProps[5] = {0};
-                fread(outProps, 5, 1, backup);
-                fread(&compressedSize, 8, 1, backup);
+                Byte outProps[LZMA_PROPS_SIZE] = {0};
+                fread(outProps, LZMA_PROPS_SIZE, 1, backup);
+                fread(&compressedSize, sizeof(PACK_SIZE_DTYPE), 1, backup);
                 uncompressed = new Byte[pakLen];
                 compressed = new Byte[compressedSize];
                 fread(compressed, 1, compressedSize, backup);
 
-                //计算和检查SHA1值
-                Byte sha1[20], sha1_backup[20];
-                std::fread(sha1_backup, 1, 20, backup);
+                // 计算和检查SHA1值
+                Byte sha1[SHA1_SIZE], sha1_backup[SHA1_SIZE];
+                std::fread(sha1_backup, 1, SHA1_SIZE, backup);
                 SHA1(compressed, compressedSize, sha1);
-                if (memcmp(sha1, sha1_backup, 20) != 0)
+                if (memcmp(sha1, sha1_backup, SHA1_SIZE) != 0)
                 {
                     throw iedb_err(StatusCode::DATAFILE_MODIFIED);
                 }
@@ -182,9 +182,9 @@ int BackupHelper::DataRecovery(string path)
             }
             else
             {
-                fseek(backup, 5, SEEK_CUR);
-                fread(&compressedSize, 8, 1, backup);
-                fseek(backup, compressedSize + 20, SEEK_CUR);
+                fseek(backup, LZMA_PROPS_SIZE, SEEK_CUR);
+                fread(&compressedSize, sizeof(compressedSize), 1, backup);
+                fseek(backup, compressedSize + SHA1_SIZE, SEEK_CUR);
             }
         }
         fclose(backup);
@@ -276,10 +276,10 @@ int BackupHelper::RecoverAll(string path)
         size_t filesize = fs::file_size(bak);
         size_t curPos = ftell(backup);
         size_t startPos = curPos;
-        long scanedFile = 0;
+        FILE_CNT_DTYPE scanedFile = 0;
         size_t pakLen;
-        unsigned short pakPathLen;
-        size_t compressedSize;
+        PACK_PATH_SIZE_DTYPE pakPathLen;
+        COMPRESSED_PACK_SIZE_DTYPE compressedSize;
         // if (string(check) != "checkpoint")
         // {
         //     // spdlog::warn("Backup file {} broken, trying to rollback to previous checkpoint...", bak);
@@ -324,23 +324,23 @@ int BackupHelper::RecoverAll(string path)
             fseek(backup, startPos, SEEK_SET);
             for (int i = 0; i < filenum; i++)
             {
-                fread(&pakLen, 8, 1, backup);
-                fread(&pakPathLen, 2, 1, backup);
+                fread(&pakLen, sizeof(PACK_SIZE_DTYPE), 1, backup);
+                fread(&pakPathLen, sizeof(PACK_PATH_SIZE_DTYPE), 1, backup);
                 char pakPath[pakPathLen + 1];
                 memset(pakPath, 0, pakPathLen + 1);
                 fread(pakPath, pakPathLen, 1, backup);
-                Byte outProps[5] = {0};
-                fread(outProps, 5, 1, backup);
-                fread(&compressedSize, 8, 1, backup);
+                Byte outProps[LZMA_PROPS_SIZE] = {0};
+                fread(outProps, LZMA_PROPS_SIZE, 1, backup);
+                fread(&compressedSize, sizeof(COMPRESSED_PACK_SIZE_DTYPE), 1, backup);
                 uncompressed = new Byte[pakLen];
                 compressed = new Byte[compressedSize];
                 fread(compressed, 1, compressedSize, backup);
 
-                //计算和检查SHA1值
-                Byte sha1[20], sha1_backup[20];
-                std::fread(sha1_backup, 1, 20, backup);
+                // 计算和检查SHA1值
+                Byte sha1[SHA1_SIZE], sha1_backup[SHA1_SIZE];
+                std::fread(sha1_backup, 1, SHA1_SIZE, backup);
                 SHA1(compressed, compressedSize, sha1);
-                if (memcmp(sha1, sha1_backup, 20) != 0)
+                if (memcmp(sha1, sha1_backup, SHA1_SIZE) != 0)
                 {
                     throw iedb_err(StatusCode::DATAFILE_MODIFIED);
                 }
